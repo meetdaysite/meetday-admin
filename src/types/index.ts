@@ -19,3 +19,14 @@ export type EventStatus = "PENDING" | "APPROVED" | "REJECTED" | "EDIT_REQUESTED"
 export type CouponStatus = "ACTIVE" | "EXPIRED" | "DISABLED"
 
 export type DiscountType = "PERCENTAGE" | "FLAT"
+
+export type Admin = {
+	id: string
+	name: string
+	email: string
+	role: Role
+	cityScope: string | null
+	status: InviteStatus
+	invitedAt: Date
+	joinedAt: Date | null
+}
