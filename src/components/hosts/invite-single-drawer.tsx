@@ -1,12 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Upload, CheckCircle2, Loader2 } from "lucide-react"
-import { usePermission } from "@/lib/hooks/use-permission"
+import { CheckCircle2, Loader2 } from "lucide-react"
+import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -48,10 +47,17 @@ function Field({
 	)
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Props ────────────────────────────────────────────────────────────────────
 
-export default function HostInvitePage() {
-	const canInvite = usePermission("host.invite")
+type Props = {
+	open: boolean
+	onClose: () => void
+	onOpenBulk: () => void
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function InviteSingleDrawer({ open, onClose, onOpenBulk }: Props) {
 	const [sent, setSent] = useState(false)
 
 	const {
@@ -64,26 +70,31 @@ export default function HostInvitePage() {
 		defaultValues: { name: "", email: "", phone: "", city: "" },
 	})
 
+	function handleClose() {
+		onClose()
+		// reset after animation
+		setTimeout(() => {
+			setSent(false)
+			reset()
+		}, 300)
+	}
+
 	async function onSubmit(_values: FormValues) {
 		// TODO: replace with real API call
 		await new Promise((r) => setTimeout(r, 900))
 		setSent(true)
 	}
 
-	if (!canInvite) {
-		return (
-			<div className="p-6 max-w-7xl mx-auto">
-				<p className="text-sm text-neutral-light">You don't have permission to invite hosts.</p>
-			</div>
-		)
-	}
-
-	// ── Success state ──────────────────────────────────────────────────────────
-
-	if (sent) {
-		return (
-			<div className="p-6 max-w-7xl mx-auto">
-				<div className="flex flex-col items-center justify-center py-20 text-center">
+	return (
+		<Drawer
+			open={open}
+			onClose={handleClose}
+			title="Invite Host"
+			description="Send an invitation email to a new host."
+		>
+			{sent ? (
+				/* ── Success state ─────────────────────────────────────────────── */
+				<div className="flex flex-col items-center justify-center py-16 text-center">
 					<div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-50">
 						<CheckCircle2 size={28} className="text-green-600" />
 					</div>
@@ -101,36 +112,19 @@ export default function HostInvitePage() {
 						>
 							Invite another
 						</button>
-						<Link
-							href="/hosts/invite/bulk"
+						<button
+							onClick={() => {
+								handleClose()
+								onOpenBulk()
+							}}
 							className="rounded-lg border border-neutral-200 px-4 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
 						>
 							Bulk upload
-						</Link>
+						</button>
 					</div>
 				</div>
-			</div>
-		)
-	}
-
-	// ── Form ───────────────────────────────────────────────────────────────────
-
-	return (
-		<div className="p-6 space-y-6 max-w-7xl mx-auto">
-			{/* Header */}
-			<div className="flex items-center justify-between">
-				<h1 className="text-base font-semibold text-foreground">Invite Host</h1>
-				<Link
-					href="/hosts/invite/bulk"
-					className="flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
-				>
-					<Upload size={13} />
-					Bulk upload
-				</Link>
-			</div>
-
-			{/* Card */}
-			<div className="rounded-xl border border-neutral-200 bg-white p-6 max-w-md">
+			) : (
+				/* ── Form ──────────────────────────────────────────────────────── */
 				<form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 					<Field label="Full name" error={errors.name?.message}>
 						<input
@@ -173,7 +167,7 @@ export default function HostInvitePage() {
 						/>
 					</Field>
 
-					<div className="pt-1">
+					<DrawerFooter className="px-0 border-0 pt-4 justify-start">
 						<button
 							type="submit"
 							disabled={isSubmitting}
@@ -182,9 +176,16 @@ export default function HostInvitePage() {
 							{isSubmitting && <Loader2 size={13} className="animate-spin" />}
 							Send invitation
 						</button>
-					</div>
+						<button
+							type="button"
+							onClick={handleClose}
+							className="rounded-lg border border-neutral-200 px-4 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
+						>
+							Cancel
+						</button>
+					</DrawerFooter>
 				</form>
-			</div>
-		</div>
+			)}
+		</Drawer>
 	)
 }

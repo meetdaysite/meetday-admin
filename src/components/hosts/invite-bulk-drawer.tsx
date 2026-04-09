@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react"
 import { useDropzone } from "react-dropzone"
 import { type ColumnDef } from "@tanstack/react-table"
-import Link from "next/link"
 import {
 	Upload,
 	FileText,
@@ -17,6 +16,7 @@ import {
 	X as XIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Drawer } from "@/components/ui/drawer"
 import { DataTable } from "@/components/ui/data-table"
 import { parseHostFile, downloadErrorReport, downloadTemplate } from "@/lib/parse-host-file"
 import type { BulkHostRow } from "@/types"
@@ -27,13 +27,13 @@ const STEPS = ["Upload", "Preview", "Done"] as const
 
 function StepIndicator({ current }: { current: number }) {
 	return (
-		<div className="flex items-center">
+		<div className="flex items-center w-full">
 			{STEPS.map((label, i) => (
-				<div key={label} className="flex items-center">
+				<div key={label} className={cn("flex items-center", i > 0 && "flex-1")}>
 					{i > 0 && (
 						<div
 							className={cn(
-								"h-px w-12 sm:w-20 transition-colors",
+								"h-px flex-1 transition-colors",
 								i <= current ? "bg-brand-red" : "bg-neutral-200",
 							)}
 						/>
@@ -73,9 +73,9 @@ function StepIndicator({ current }: { current: number }) {
 // ─── Step 1: Upload ───────────────────────────────────────────────────────────
 
 function UploadStep({ onContinue }: { onContinue: (rows: BulkHostRow[]) => void }) {
-	const [file, setFile]         = useState<File | null>(null)
-	const [rows, setRows]         = useState<BulkHostRow[] | null>(null)
-	const [parseError, setError]  = useState<string | null>(null)
+	const [file, setFile]           = useState<File | null>(null)
+	const [rows, setRows]           = useState<BulkHostRow[] | null>(null)
+	const [parseError, setError]    = useState<string | null>(null)
 	const [isParsing, setIsParsing] = useState(false)
 
 	const onDrop = useCallback(async (accepted: File[]) => {
@@ -109,12 +109,12 @@ function UploadStep({ onContinue }: { onContinue: (rows: BulkHostRow[]) => void 
 	const errorCount = rows ? rows.length - validCount : 0
 
 	return (
-		<div className="space-y-5 max-w-lg">
+		<div className="space-y-5">
 			{/* Dropzone */}
 			<div
 				{...getRootProps()}
 				className={cn(
-					"flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-14 transition-colors",
+					"flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-12 transition-colors",
 					isDragActive
 						? "border-brand-red bg-brand-red/5"
 						: rows
@@ -254,13 +254,6 @@ function PreviewStep({
 			),
 		},
 		{
-			id: "phone",
-			header: "Phone",
-			cell: ({ row }) => (
-				<span className="text-xs text-neutral-dark">{row.original.phone || "—"}</span>
-			),
-		},
-		{
 			id: "city",
 			header: "City",
 			cell: ({ row }) => (
@@ -375,13 +368,17 @@ function DoneStep({
 	sentCount,
 	failedRows,
 	onReset,
+	onClose,
+	onOpenSingle,
 }: {
 	sentCount: number
 	failedRows: BulkHostRow[]
 	onReset: () => void
+	onClose: () => void
+	onOpenSingle: () => void
 }) {
 	return (
-		<div className="mx-auto flex max-w-sm flex-col items-center py-14 text-center">
+		<div className="flex flex-col items-center py-14 text-center">
 			<div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
 				<CheckCircle2 size={32} className="text-green-600" />
 			</div>
@@ -417,20 +414,32 @@ function DoneStep({
 				>
 					Upload another file
 				</button>
-				<Link
-					href="/hosts/invite"
+				<button
+					type="button"
+					onClick={() => {
+						onClose()
+						onOpenSingle()
+					}}
 					className="rounded-lg border border-neutral-200 px-4 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
 				>
 					Single invite
-				</Link>
+				</button>
 			</div>
 		</div>
 	)
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Props ────────────────────────────────────────────────────────────────────
 
-export default function BulkInvitePage() {
+type Props = {
+	open: boolean
+	onClose: () => void
+	onOpenSingle: () => void
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function InviteBulkDrawer({ open, onClose, onOpenSingle }: Props) {
 	const [step, setStep]             = useState(0)
 	const [rows, setRows]             = useState<BulkHostRow[]>([])
 	const [isSending, setIsSending]   = useState(false)
@@ -459,37 +468,42 @@ export default function BulkInvitePage() {
 		setFailedRows([])
 	}
 
+	function handleClose() {
+		onClose()
+		// reset after animation
+		setTimeout(handleReset, 300)
+	}
+
 	return (
-		<div className="p-6 space-y-6 max-w-7xl mx-auto">
-			{/* Header */}
-			<div className="flex items-center gap-3">
-				<Link
-					href="/hosts/invite"
-					className="flex items-center gap-1.5 text-xs text-neutral-light hover:text-neutral-dark transition-colors"
-				>
-					<ArrowLeft size={13} />
-					Single invite
-				</Link>
-				<span className="text-neutral-200">/</span>
-				<h1 className="text-base font-semibold text-foreground">Bulk Upload</h1>
+		<Drawer
+			open={open}
+			onClose={handleClose}
+			title="Bulk Invite Hosts"
+			description="Upload a CSV or XLSX file to send invitations in bulk."
+			width="max-w-2xl"
+		>
+			<div className="space-y-6">
+				<StepIndicator current={step} />
+
+				{step === 0 && <UploadStep onContinue={handleContinue} />}
+				{step === 1 && (
+					<PreviewStep
+						rows={rows}
+						onBack={() => setStep(0)}
+						onSend={handleSend}
+						isSending={isSending}
+					/>
+				)}
+				{step === 2 && (
+					<DoneStep
+						sentCount={sentCount}
+						failedRows={failedRows}
+						onReset={handleReset}
+						onClose={handleClose}
+						onOpenSingle={onOpenSingle}
+					/>
+				)}
 			</div>
-
-			{/* Step indicator */}
-			<StepIndicator current={step} />
-
-			{/* Step content */}
-			{step === 0 && <UploadStep onContinue={handleContinue} />}
-			{step === 1 && (
-				<PreviewStep
-					rows={rows}
-					onBack={() => setStep(0)}
-					onSend={handleSend}
-					isSending={isSending}
-				/>
-			)}
-			{step === 2 && (
-				<DoneStep sentCount={sentCount} failedRows={failedRows} onReset={handleReset} />
-			)}
-		</div>
+		</Drawer>
 	)
 }

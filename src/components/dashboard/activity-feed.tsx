@@ -73,7 +73,7 @@ function FeedRow({ item }: { item: ActivityItem }) {
 					<span className="text-neutral-dark">{cfg.label}</span>{" "}
 					<span className="font-medium">{item.targetName}</span>
 				</p>
-				<p className="mt-0.5 text-[11px] text-neutral-light">
+				<p className="mt-0.5 text-[11px] text-neutral-light" suppressHydrationWarning>
 					{formatDistanceToNow(item.createdAt, { addSuffix: true })}
 				</p>
 			</div>

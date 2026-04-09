@@ -2,11 +2,13 @@
 
 import { useMemo, useState } from "react"
 import { type ColumnDef } from "@tanstack/react-table"
-import { Search } from "lucide-react"
+import { Search, UserPlus, Upload } from "lucide-react"
 import { usePermission } from "@/lib/hooks/use-permission"
 import { DataTable } from "@/components/ui/data-table"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { HostReviewDrawer, type HostAction } from "@/components/hosts/host-review-drawer"
+import { InviteSingleDrawer } from "@/components/hosts/invite-single-drawer"
+import { InviteBulkDrawer } from "@/components/hosts/invite-bulk-drawer"
 import type { Host, HostStatus } from "@/types"
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
@@ -131,6 +133,10 @@ export default function HostQueuePage() {
 	const [selectedHost, setSelectedHost] = useState<Host | null>(null)
 	const [drawerOpen, setDrawerOpen] = useState(false)
 
+	const canInvite = usePermission("host.invite")
+	const [singleOpen, setSingleOpen] = useState(false)
+	const [bulkOpen, setBulkOpen] = useState(false)
+
 	// Unique cities for the city filter select
 	const cities = useMemo(
 		() => Array.from(new Set(hosts.map((h) => h.city))).sort(),
@@ -252,6 +258,24 @@ export default function HostQueuePage() {
 						{pendingCount} pending
 					</span>
 				)}
+				{canInvite && (
+					<div className="ml-auto flex items-center gap-2">
+						<button
+							onClick={() => setSingleOpen(true)}
+							className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
+						>
+							<UserPlus size={13} />
+							Invite Host
+						</button>
+						<button
+							onClick={() => setBulkOpen(true)}
+							className="flex items-center gap-1.5 rounded-lg bg-brand-red px-3.5 py-2 text-xs font-semibold text-white hover:bg-brand-red-deep transition-colors"
+						>
+							<Upload size={13} />
+							Bulk Upload
+						</button>
+					</div>
+				)}
 			</div>
 
 			{/* Filters */}
@@ -353,6 +377,18 @@ export default function HostQueuePage() {
 				onClose={() => { setDrawerOpen(false); setSelectedHost(null) }}
 				host={selectedHost}
 				onAction={handleAction}
+			/>
+
+			{/* Invite drawers */}
+			<InviteSingleDrawer
+				open={singleOpen}
+				onClose={() => setSingleOpen(false)}
+				onOpenBulk={() => { setSingleOpen(false); setBulkOpen(true) }}
+			/>
+			<InviteBulkDrawer
+				open={bulkOpen}
+				onClose={() => setBulkOpen(false)}
+				onOpenSingle={() => { setBulkOpen(false); setSingleOpen(true) }}
 			/>
 		</div>
 	)
