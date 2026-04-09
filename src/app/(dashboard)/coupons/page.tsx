@@ -1,14 +1,14 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import Link from "next/link"
-import { type ColumnDef } from "@tanstack/react-table"
-import { Plus, Search, Percent, IndianRupee } from "lucide-react"
-import { usePermission } from "@/lib/hooks/use-permission"
+import { CouponUsageDrawer } from "@/components/coupons/coupon-usage-drawer"
 import { DataTable } from "@/components/ui/data-table"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { CouponUsageDrawer } from "@/components/coupons/coupon-usage-drawer"
+import { usePermission } from "@/lib/hooks/use-permission"
 import type { Coupon, CouponStatus } from "@/types"
+import { type ColumnDef } from "@tanstack/react-table"
+import { Plus, Search } from "lucide-react"
+import Link from "next/link"
+import { useMemo, useState } from "react"
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
@@ -154,10 +154,10 @@ export default function CouponsPage() {
 				header: "Discount",
 				cell: ({ row }) => {
 					const c = row.original
-					const Icon = c.discountType === "PERCENTAGE" ? Percent : IndianRupee
+					// const Icon = c.discountType === "PERCENTAGE" ? Percent : IndianRupee
 					return (
 						<span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-							<Icon size={10} />
+							{/* <Icon size={10} /> */}
 							{discountLabel(c)}
 						</span>
 					)
