@@ -23,6 +23,7 @@ export type DataTableProps<TData, TValue> = {
 	skeletonRows?: number
 	emptyState?: React.ReactNode
 	onRowClick?: (row: TData) => void
+	getRowClassName?: (row: TData) => string
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -34,6 +35,7 @@ export function DataTable<TData, TValue>({
 	skeletonRows = 5,
 	emptyState,
 	onRowClick,
+	getRowClassName,
 }: DataTableProps<TData, TValue>) {
 	"use no memo"
 
@@ -124,6 +126,7 @@ export function DataTable<TData, TValue>({
 								className={cn(
 									"transition-colors",
 									onRowClick && "cursor-pointer hover:bg-neutral-50",
+									getRowClassName?.(row.original),
 								)}
 							>
 								{row.getVisibleCells().map((cell) => (
