@@ -7,11 +7,28 @@ import { z } from "zod"
 import { useRouter } from "next/navigation"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { signInWithEmailAndPassword } from "firebase/auth"
+import { firebaseAuth } from "@/lib/firebase/config"
+import { apiClient } from "@/lib/api/client"
 import { useAuthStore } from "@/stores/auth.store"
 import { cn } from "@/lib/utils"
+import type { Role } from "@/types"
+
+type MeResponse = {
+	id: string
+	email: string
+	phone: string | null
+	firstName: string
+	lastName: string
+	avatarUrl: string | null
+	isActive: boolean
+	mustCompleteProfile: boolean
+	role: Record<string, Role>
+	cityScope?: string
+}
 
 const loginSchema = z.object({
-	email: z.string().email("Invalid email address"),
+	email: z.email("Invalid email address"),
 	password: z.string().min(1, "Password is required"),
 })
 
@@ -32,9 +49,19 @@ export default function LoginPage() {
 
 	async function onSubmit(values: LoginValues) {
 		try {
-			// Mock — replace with real API call
-			await new Promise(resolve => setTimeout(resolve, 900))
-			setAuth({ id: "1", name: "Super Admin", email: values.email }, "SUPER_ADMIN", "mock-token-123")
+			const credential = await signInWithEmailAndPassword(firebaseAuth, values.email, values.password)
+			const idToken = await credential.user.getIdToken()
+
+			const { data } = await apiClient.get<MeResponse>("/auth/me", {
+				headers: { Authorization: `Bearer ${idToken}` },
+			})
+
+			setAuth(
+				{ id: data.id, name: `${data.firstName} ${data.lastName}`, email: data.email },
+				data?.role?.name,
+				idToken,
+				data.cityScope,
+			)
 			router.push("/dashboard")
 		} catch {
 			toast.error("Invalid credentials. Please try again.")
@@ -44,7 +71,9 @@ export default function LoginPage() {
 	return (
 		<div className="space-y-8">
 			<div className="space-y-1.5">
-				<h1 className="font-hagrid text-[2rem] font-extrabold text-foreground leading-tight">Welcome back</h1>
+				<h1 className="font-hagrid text-[2rem] font-extrabold text-foreground leading-tight">
+					Welcome back
+				</h1>
 				<p className="text-neutral-dark text-sm">Sign in to the Meetday Admin Panel.</p>
 			</div>
 
@@ -77,7 +106,10 @@ export default function LoginPage() {
 						<label htmlFor="password" className="block text-sm font-medium text-foreground">
 							Password
 						</label>
-						<a href="#" className="text-xs text-brand-red hover:text-brand-red-deep transition-colors">
+						<a
+							href="#"
+							className="text-xs text-brand-red hover:text-brand-red-deep transition-colors"
+						>
 							Forgot password?
 						</a>
 					</div>

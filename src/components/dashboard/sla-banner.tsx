@@ -36,7 +36,7 @@ export function SlaBanner({ hostsOverdue, eventsOverdue, thresholdHours = 48 }: 
 		>
 			<AlertTriangle
 				size={16}
-				className="mt-0.5 flex-shrink-0 text-amber-500"
+				className="mt-0.5 shrink-0 text-amber-500"
 				aria-hidden
 			/>
 
@@ -59,7 +59,7 @@ export function SlaBanner({ hostsOverdue, eventsOverdue, thresholdHours = 48 }: 
 			<button
 				onClick={() => setDismissed(true)}
 				aria-label="Dismiss SLA warning"
-				className="flex-shrink-0 rounded p-0.5 text-amber-500 hover:bg-amber-100 hover:text-amber-800 transition-colors"
+				className="shrink-0 rounded p-0.5 text-amber-500 hover:bg-amber-100 hover:text-amber-800 transition-colors"
 			>
 				<X size={14} />
 			</button>

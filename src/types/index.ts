@@ -1,3 +1,10 @@
+// Shape of every successful API response before the interceptor unwraps it
+export type ApiResponse<T> = {
+	success: boolean
+	timestamp: string
+	data: T
+}
+
 export type Role = "SUPER_ADMIN" | "CITY_ADMIN" | "MODERATOR" | "SUPPORT"
 
 export type Permission =

@@ -6,10 +6,10 @@ export function AuthShell({ children }: AuthShellProps) {
 	return (
 		<div className="min-h-screen flex">
 			{/* Left brand panel — desktop only */}
-			<div className="hidden lg:flex w-[440px] xl:w-[500px] flex-shrink-0 bg-brand-red flex-col justify-between p-12 relative overflow-hidden">
+			<div className="hidden lg:flex w-110 xl:w-125 shrink-0 bg-brand-red-deep flex-col justify-between p-12 relative overflow-hidden">
 				{/* Decorative rings */}
-				<div className="absolute -bottom-40 -right-40 w-[480px] h-[480px] rounded-full border border-white/10 pointer-events-none" />
-				<div className="absolute -bottom-20 -right-20 w-[320px] h-[320px] rounded-full border border-white/10 pointer-events-none" />
+				<div className="absolute -bottom-40 -right-40 w-120 h-120 rounded-full border border-white/10 pointer-events-none" />
+				<div className="absolute -bottom-20 -right-20 w-[320px] h-80 rounded-full border border-white/10 pointer-events-none" />
 
 				{/* Logo */}
 				<div className="flex items-baseline gap-2.5">
@@ -23,7 +23,7 @@ export function AuthShell({ children }: AuthShellProps) {
 						Managing great events,{" "}
 						<span className="text-white/55">one city at a time.</span>
 					</p>
-					<p className="text-white/55 text-sm leading-relaxed max-w-[300px]">
+					<p className="text-white/55 text-sm leading-relaxed max-w-75">
 						Internal operations tooling. Restricted to authorized Meetday personnel only.
 					</p>
 				</div>

@@ -1,7 +1,9 @@
 import type { Permission, Role } from "@/types";
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
+import { signOut } from "firebase/auth"
 import { setAuthToken } from "@/lib/api/client"
+import { firebaseAuth } from "@/lib/firebase/config"
 
 const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
 	SUPER_ADMIN: [
@@ -42,6 +44,7 @@ export const useAuthStore = create<AuthState>()(
 			},
 			clearAuth: () => {
 				setAuthToken(null)
+				signOut(firebaseAuth)
 				set({ user: null, role: null, token: null, cityScope: null })
 			},
 			hasPermission: permission => {
