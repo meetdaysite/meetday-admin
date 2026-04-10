@@ -1,6 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
 import { type ColumnDef } from "@tanstack/react-table"
 import { UserPlus, Globe, MapPin } from "lucide-react"
 import { useAuthStore } from "@/stores/auth.store"
@@ -8,8 +9,29 @@ import { usePermission } from "@/lib/hooks/use-permission"
 import { DataTable } from "@/components/ui/data-table"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { InviteAdminDrawer } from "@/components/admins/invite-admin-drawer"
+import { InviteAdminDrawer, type InviteAdminSubmitValues } from "@/components/admins/invite-admin-drawer"
+import { inviteAdmin, getAdmins } from "@/lib/api/admins"
 import type { Admin, Role } from "@/types"
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const PAGE_LIMIT = 20
+
+type RoleFilter = Exclude<Role, "SUPER_ADMIN"> | "ALL"
+type ActiveFilter = "ALL" | "true" | "false"
+
+const ROLE_FILTER_OPTIONS: { label: string; value: RoleFilter }[] = [
+	{ label: "All roles",   value: "ALL" },
+	{ label: "City Admin",  value: "CITY_ADMIN" },
+	{ label: "Moderator",   value: "MODERATOR" },
+	{ label: "Support",     value: "SUPPORT" },
+]
+
+const ACTIVE_FILTER_OPTIONS: { label: string; value: ActiveFilter }[] = [
+	{ label: "All",      value: "ALL" },
+	{ label: "Active",   value: "true" },
+	{ label: "Inactive", value: "false" },
+]
 
 // ─── Role badge ───────────────────────────────────────────────────────────────
 
@@ -37,86 +59,10 @@ function RoleBadge({ role }: { role: Role }) {
 	)
 }
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
-
-const MOCK_ADMINS: Admin[] = [
-	{
-		id: "1",
-		name: "Aniket Chakraborty",
-		email: "aniket@meetday.in",
-		role: "SUPER_ADMIN",
-		cityScope: null,
-		status: "ACCEPTED",
-		invitedAt: new Date("2024-01-10"),
-		joinedAt: new Date("2024-01-11"),
-	},
-	{
-		id: "2",
-		name: "Priya Sharma",
-		email: "priya@meetday.in",
-		role: "CITY_ADMIN",
-		cityScope: "Mumbai",
-		status: "ACCEPTED",
-		invitedAt: new Date("2024-02-15"),
-		joinedAt: new Date("2024-02-17"),
-	},
-	{
-		id: "3",
-		name: "Ravi Mehta",
-		email: "ravi@meetday.in",
-		role: "MODERATOR",
-		cityScope: null,
-		status: "ACCEPTED",
-		invitedAt: new Date("2024-03-01"),
-		joinedAt: new Date("2024-03-03"),
-	},
-	{
-		id: "4",
-		name: "Neha Singh",
-		email: "neha@meetday.in",
-		role: "CITY_ADMIN",
-		cityScope: "Bangalore",
-		status: "PENDING",
-		invitedAt: new Date("2024-04-01"),
-		joinedAt: null,
-	},
-	{
-		id: "5",
-		name: "Arjun Patel",
-		email: "arjun@meetday.in",
-		role: "SUPPORT",
-		cityScope: null,
-		status: "ACCEPTED",
-		invitedAt: new Date("2024-03-20"),
-		joinedAt: new Date("2024-03-22"),
-	},
-	{
-		id: "6",
-		name: "Divya Nair",
-		email: "divya@meetday.in",
-		role: "MODERATOR",
-		cityScope: null,
-		status: "EXPIRED",
-		invitedAt: new Date("2024-01-05"),
-		joinedAt: null,
-	},
-	{
-		id: "7",
-		name: "Sameer Khan",
-		email: "sameer@meetday.in",
-		role: "CITY_ADMIN",
-		cityScope: "Pune",
-		status: "REVOKED",
-		invitedAt: new Date("2024-02-20"),
-		joinedAt: null,
-	},
-]
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatDate(date: Date | null): string {
-	if (!date) return "—"
-	return date.toLocaleDateString("en-IN", {
+function formatDate(iso: string): string {
+	return new Date(iso).toLocaleDateString("en-IN", {
 		day: "numeric",
 		month: "short",
 		year: "numeric",
@@ -129,34 +75,66 @@ export default function AdminsPage() {
 	const currentUserId = useAuthStore((s) => s.user?.id)
 	const canInvite = usePermission("admin.invite")
 
-	const [admins, setAdmins] = useState<Admin[]>(MOCK_ADMINS)
+	const [isLoading, setIsLoading] = useState(true)
+	const [admins, setAdmins] = useState<Admin[]>([])
+	const [total, setTotal] = useState(0)
+	const [page, setPage] = useState(1)
+	const [roleFilter, setRoleFilter] = useState<RoleFilter>("ALL")
+	const [activeFilter, setActiveFilter] = useState<ActiveFilter>("ALL")
+
 	const [drawerOpen, setDrawerOpen] = useState(false)
 	const [isInviting, setIsInviting] = useState(false)
-
 	const [revokeTarget, setRevokeTarget] = useState<Admin | null>(null)
 	const [isRevoking, setIsRevoking] = useState(false)
 
-	async function handleInvite(values: {
-		email: string
-		role: Role
-		cityScope?: string
-	}) {
-		setIsInviting(true)
-		// TODO: replace with real API call
-		await new Promise((r) => setTimeout(r, 1000))
-		const newAdmin: Admin = {
-			id: String(Date.now()),
-			name: values.email.split("@")[0],
-			email: values.email,
-			role: values.role,
-			cityScope: values.cityScope ?? null,
-			status: "PENDING",
-			invitedAt: new Date(),
-			joinedAt: null,
+	const fetchAdmins = useCallback(async () => {
+		setIsLoading(true)
+		try {
+			const res = await getAdmins({
+				page,
+				limit: PAGE_LIMIT,
+				...(roleFilter !== "ALL" && { role: roleFilter }),
+				...(activeFilter !== "ALL" && { isActive: activeFilter === "true" }),
+			})
+			setAdmins(res.admins)
+			setTotal(res.total)
+		} catch {
+			toast.error("Failed to load admins")
+		} finally {
+			setIsLoading(false)
 		}
-		setAdmins((prev) => [newAdmin, ...prev])
-		setIsInviting(false)
-		setDrawerOpen(false)
+	}, [page, roleFilter, activeFilter])
+
+	useEffect(() => {
+		fetchAdmins()
+	}, [fetchAdmins])
+
+	async function handleInvite(values: InviteAdminSubmitValues) {
+		setIsInviting(true)
+		try {
+			await inviteAdmin({
+				email: values.email,
+				firstName: values.firstName,
+				lastName: values.lastName,
+				roleId: values.roleId,
+				managedCities: values.managedCities,
+			})
+			setDrawerOpen(false)
+			toast.success("Invitation sent", {
+				description: `${values.firstName} ${values.lastName} will receive an email shortly.`,
+			})
+			if (page === 1) {
+				fetchAdmins()
+			} else {
+				setPage(1) // triggers useEffect → re-fetch
+			}
+		} catch (err: unknown) {
+			const message =
+				err instanceof Error ? err.message : "Failed to send invitation. Please try again."
+			toast.error("Invite failed", { description: message })
+		} finally {
+			setIsInviting(false)
+		}
 	}
 
 	async function handleRevoke() {
@@ -164,13 +142,9 @@ export default function AdminsPage() {
 		setIsRevoking(true)
 		// TODO: replace with real API call
 		await new Promise((r) => setTimeout(r, 800))
-		setAdmins((prev) =>
-			prev.map((a) =>
-				a.id === revokeTarget.id ? { ...a, status: "REVOKED" } : a,
-			),
-		)
 		setIsRevoking(false)
 		setRevokeTarget(null)
+		fetchAdmins()
 	}
 
 	const columns = useMemo<ColumnDef<Admin>[]>(
@@ -181,7 +155,7 @@ export default function AdminsPage() {
 				cell: ({ row }) => (
 					<div>
 						<p className="text-xs font-semibold text-foreground leading-none mb-0.5">
-							{row.original.name}
+							{row.original.firstName} {row.original.lastName}
 						</p>
 						<p className="text-[11px] text-neutral-light">{row.original.email}</p>
 					</div>
@@ -192,14 +166,14 @@ export default function AdminsPage() {
 				header: "Role",
 				accessorKey: "role",
 				enableSorting: true,
-				cell: ({ row }) => <RoleBadge role={row.original.role} />,
+				cell: ({ row }) => <RoleBadge role={row.original.role.name} />,
 			},
 			{
 				id: "scope",
 				header: "Scope",
 				cell: ({ row }) => {
-					const city = row.original.cityScope
-					if (!city)
+					const cities = row.original.adminProfile?.managedCities ?? []
+					if (cities.length === 0)
 						return (
 							<span className="inline-flex items-center gap-1 text-xs text-neutral-light">
 								<Globe size={12} />
@@ -209,7 +183,7 @@ export default function AdminsPage() {
 					return (
 						<span className="inline-flex items-center gap-1 text-xs text-foreground">
 							<MapPin size={12} className="text-neutral-light" />
-							{city}
+							{cities.join(", ")}
 						</span>
 					)
 				},
@@ -217,18 +191,18 @@ export default function AdminsPage() {
 			{
 				id: "status",
 				header: "Status",
-				accessorKey: "status",
-				enableSorting: true,
-				cell: ({ row }) => <StatusBadge status={row.original.status} />,
+				cell: ({ row }) => (
+					<StatusBadge status={row.original.isActive ? "ACTIVE" : "DISABLED"} />
+				),
 			},
 			{
 				id: "joined",
 				header: "Member since",
-				accessorKey: "joinedAt",
+				accessorKey: "createdAt",
 				enableSorting: true,
 				cell: ({ row }) => (
 					<span className="text-xs text-neutral-dark">
-						{formatDate(row.original.joinedAt)}
+						{formatDate(row.original.createdAt)}
 					</span>
 				),
 			},
@@ -240,10 +214,8 @@ export default function AdminsPage() {
 							cell: ({ row }) => {
 								const admin = row.original
 								const isSelf = admin.id === currentUserId
-								const isRevokable =
-									admin.status === "PENDING" || admin.status === "ACCEPTED"
 
-								if (isSelf || !isRevokable) return null
+								if (isSelf || !admin.isActive) return null
 
 								return (
 									<button
@@ -264,7 +236,7 @@ export default function AdminsPage() {
 		[canInvite, currentUserId],
 	)
 
-	const activeCount = admins.filter((a) => a.status === "ACCEPTED").length
+	const totalPages = Math.ceil(total / PAGE_LIMIT)
 
 	return (
 		<div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -272,9 +244,11 @@ export default function AdminsPage() {
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-3">
 					<h1 className="text-base font-semibold text-foreground">Admins</h1>
-					<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-dark">
-						{activeCount} active
-					</span>
+					{total > 0 && (
+						<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-dark">
+							{total} total
+						</span>
+					)}
 				</div>
 
 				{canInvite && (
@@ -288,16 +262,74 @@ export default function AdminsPage() {
 				)}
 			</div>
 
+			{/* Filters */}
+			<div className="flex items-center gap-3">
+				<select
+					value={roleFilter}
+					onChange={(e) => {
+						setRoleFilter(e.target.value as RoleFilter)
+						setPage(1)
+					}}
+					className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-foreground focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+				>
+					{ROLE_FILTER_OPTIONS.map((o) => (
+						<option key={o.value} value={o.value}>{o.label}</option>
+					))}
+				</select>
+
+				<select
+					value={activeFilter}
+					onChange={(e) => {
+						setActiveFilter(e.target.value as ActiveFilter)
+						setPage(1)
+					}}
+					className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-foreground focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+				>
+					{ACTIVE_FILTER_OPTIONS.map((o) => (
+						<option key={o.value} value={o.value}>{o.label}</option>
+					))}
+				</select>
+			</div>
+
 			{/* Table */}
 			<DataTable
 				columns={columns}
 				data={admins}
+				isLoading={isLoading}
 				emptyState={
 					<div className="py-12 text-center text-sm text-neutral-light">
 						No admins found.
 					</div>
 				}
 			/>
+
+			{/* Pagination */}
+			{totalPages > 1 && (
+				<div className="flex items-center justify-between text-xs text-neutral-light">
+					<span>
+						Showing {(page - 1) * PAGE_LIMIT + 1}–{Math.min(page * PAGE_LIMIT, total)} of {total}
+					</span>
+					<div className="flex items-center gap-2">
+						<button
+							disabled={page === 1}
+							onClick={() => setPage((p) => p - 1)}
+							className="rounded-md px-2.5 py-1 text-xs font-medium border border-neutral-200 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+						>
+							Previous
+						</button>
+						<span className="font-medium text-foreground">
+							{page} / {totalPages}
+						</span>
+						<button
+							disabled={page >= totalPages}
+							onClick={() => setPage((p) => p + 1)}
+							className="rounded-md px-2.5 py-1 text-xs font-medium border border-neutral-200 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+						>
+							Next
+						</button>
+					</div>
+				</div>
+			)}
 
 			{/* Invite drawer */}
 			{canInvite && (
@@ -317,7 +349,7 @@ export default function AdminsPage() {
 				title="Revoke access"
 				description={
 					revokeTarget
-						? `This will immediately revoke ${revokeTarget.name}'s access to the admin panel. They won't be able to log in until re-invited.`
+						? `This will immediately revoke ${revokeTarget.firstName} ${revokeTarget.lastName}'s access to the admin panel. They won't be able to log in until re-invited.`
 						: ""
 				}
 				confirmLabel="Revoke access"

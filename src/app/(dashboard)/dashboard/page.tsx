@@ -1,10 +1,12 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Clock, CalendarDays, ShieldCheck, Tag } from "lucide-react"
 import { useAuthStore } from "@/stores/auth.store"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { SlaBanner } from "@/components/dashboard/sla-banner"
 import { ActivityFeed, type ActivityItem } from "@/components/dashboard/activity-feed"
+import { SkeletonDashboardPage } from "@/components/ui/skeleton"
 
 // ─── Mock data (replace with API queries) ────────────────────────────────────
 
@@ -76,10 +78,18 @@ const MOCK_ACTIVITY: ActivityItem[] = [
 
 export default function DashboardPage() {
 	const { hasPermission } = useAuthStore()
+	const [isLoading, setIsLoading] = useState(true)
+
+	useEffect(() => {
+		const t = setTimeout(() => setIsLoading(false), 600) // TODO: remove when real API is wired up
+		return () => clearTimeout(t)
+	}, [])
 
 	const showCoupons = hasPermission("coupon.view")
 	const showHostQueue = hasPermission("host.approve")
 	const showEventQueue = hasPermission("event.approve")
+
+	if (isLoading) return <SkeletonDashboardPage />
 
 	return (
 		<div className="p-6 space-y-6 max-w-7xl mx-auto">

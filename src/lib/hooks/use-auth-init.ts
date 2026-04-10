@@ -17,9 +17,16 @@ export function useAuthInit() {
 	const user = useAuthStore((s) => s.user)
 	const setAuth = useAuthStore((s) => s.setAuth)
 	const clearAuth = useAuthStore((s) => s.clearAuth)
+	const setInitialized = useAuthStore((s) => s.setInitialized)
 
 	useEffect(() => {
-		if (!token || user) return
+		if (!token) return
+
+		if (user) {
+			// Full state already hydrated from persistence.
+			setInitialized()
+			return
+		}
 
 		// Token was persisted but user context was lost (e.g. page reload).
 		// Restore session by calling /auth/me with the stored token.
@@ -28,5 +35,6 @@ export function useAuthInit() {
 			.get<MeResponse>("/auth/me")
 			.then(({ data }) => setAuth(data.user, data.role, token, data.cityScope))
 			.catch(() => clearAuth())
-	}, []) // eslint-disable-line react-hooks/exhaustive-deps
+			.finally(() => setInitialized())
+	}, [token])
 }

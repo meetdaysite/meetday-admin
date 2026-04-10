@@ -7,6 +7,12 @@ export type ApiResponse<T> = {
 
 export type Role = "SUPER_ADMIN" | "CITY_ADMIN" | "MODERATOR" | "SUPPORT"
 
+export type RoleDefinition = {
+	id: string
+	name: Role
+	description: string
+}
+
 export type Permission =
 	| "admin.invite"
 	| "host.invite"
@@ -29,13 +35,13 @@ export type DiscountType = "PERCENTAGE" | "FLAT"
 
 export type Admin = {
 	id: string
-	name: string
+	firstName: string
+	lastName: string
 	email: string
-	role: Role
-	cityScope: string | null
-	status: InviteStatus
-	invitedAt: Date
-	joinedAt: Date | null
+	isActive: boolean
+	createdAt: string
+	role: { name: Role }
+	adminProfile: { managedCities: string[] } | null
 }
 
 export type Host = {

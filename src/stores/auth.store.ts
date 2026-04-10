@@ -26,9 +26,11 @@ type AuthState = {
 	role: Role | null
 	cityScope: string | null
 	token: string | null
+	isInitializing: boolean
 	setAuth: (user: AuthState["user"], role: Role, token: string, cityScope?: string) => void
 	clearAuth: () => void
 	hasPermission: (permission: Permission) => boolean
+	setInitialized: () => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -38,6 +40,8 @@ export const useAuthStore = create<AuthState>()(
 			role: null,
 			cityScope: null,
 			token: null,
+			isInitializing: true,
+			setInitialized: () => set({ isInitializing: false }),
 			setAuth: (user, role, token, cityScope = undefined) => {
 				setAuthToken(token)
 				set({ user, role, token, cityScope })
@@ -55,7 +59,8 @@ export const useAuthStore = create<AuthState>()(
 		}),
 		{
 			name: "meetday-auth",
-			partialize: (state) => ({ token: state.token }),
+			skipHydration: true,
+			partialize: (state) => ({ token: state.token, user: state.user, role: state.role, cityScope: state.cityScope }),
 		},
 	),
 )

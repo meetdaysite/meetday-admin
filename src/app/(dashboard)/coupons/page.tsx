@@ -8,7 +8,7 @@ import type { Coupon, CouponStatus } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Plus, Search } from "lucide-react"
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
@@ -112,10 +112,16 @@ export default function CouponsPage() {
 	const canView   = usePermission("coupon.view")
 	const canCreate = usePermission("coupon.create")
 
+	const [isLoading, setIsLoading] = useState(true)
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL")
 	const [search, setSearch] = useState("")
 	const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null)
 	const [drawerOpen, setDrawerOpen] = useState(false)
+
+	useEffect(() => {
+		const t = setTimeout(() => setIsLoading(false), 600) // TODO: remove when real API is wired up
+		return () => clearTimeout(t)
+	}, [])
 
 	const filtered = useMemo(() => {
 		const q = search.toLowerCase()
@@ -307,6 +313,7 @@ export default function CouponsPage() {
 			<DataTable
 				columns={columns}
 				data={filtered}
+				isLoading={isLoading}
 				onRowClick={(c) => { setSelectedCoupon(c); setDrawerOpen(true) }}
 				emptyState={
 					<div className="py-12 text-center text-sm text-neutral-light">

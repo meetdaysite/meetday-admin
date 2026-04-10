@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Search } from "lucide-react"
 import { usePermission } from "@/lib/hooks/use-permission"
@@ -168,10 +168,16 @@ const STATUS_TABS: { label: string; value: StatusFilter }[] = [
 export default function EventQueuePage() {
 	const canApprove = usePermission("event.approve")
 
+	const [isLoading, setIsLoading] = useState(true)
 	const [events, setEvents] = useState<Event[]>(MOCK_EVENTS)
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL")
 	const [cityFilter, setCityFilter] = useState("ALL")
 	const [search, setSearch] = useState("")
+
+	useEffect(() => {
+		const t = setTimeout(() => setIsLoading(false), 600) // TODO: remove when real API is wired up
+		return () => clearTimeout(t)
+	}, [])
 
 	const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
 	const [drawerOpen, setDrawerOpen] = useState(false)
@@ -375,6 +381,7 @@ export default function EventQueuePage() {
 			<DataTable
 				columns={columns}
 				data={filtered}
+				isLoading={isLoading}
 				onRowClick={openDrawer}
 				getRowClassName={getRowTint}
 				emptyState={

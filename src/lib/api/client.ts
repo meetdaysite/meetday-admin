@@ -1,4 +1,5 @@
 import axios from "axios"
+import { firebaseAuth } from "@/lib/firebase/config"
 
 export const apiClient = axios.create({
 	baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api",
@@ -6,6 +7,18 @@ export const apiClient = axios.create({
 	headers: {
 		"Content-Type": "application/json",
 	},
+})
+
+// Attach a fresh Firebase ID token before every request.
+// Firebase SDK caches the token and silently refreshes it ~5 min before expiry,
+// so getIdToken() is cheap on the hot path.
+apiClient.interceptors.request.use(async (config) => {
+	const user = firebaseAuth.currentUser
+	if (user) {
+		const token = await user.getIdToken()
+		config.headers["Authorization"] = `Bearer ${token}`
+	}
+	return config
 })
 
 // Unwrap the success envelope so callers get T directly from response.data

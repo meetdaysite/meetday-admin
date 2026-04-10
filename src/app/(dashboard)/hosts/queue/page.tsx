@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Search, UserPlus, Upload } from "lucide-react"
 import { usePermission } from "@/lib/hooks/use-permission"
@@ -125,10 +125,16 @@ const STATUS_TABS: { label: string; value: StatusFilter }[] = [
 export default function HostQueuePage() {
 	const canApprove = usePermission("host.approve")
 
+	const [isLoading, setIsLoading] = useState(true)
 	const [hosts, setHosts] = useState<Host[]>(MOCK_HOSTS)
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL")
 	const [cityFilter, setCityFilter] = useState("ALL")
 	const [search, setSearch] = useState("")
+
+	useEffect(() => {
+		const t = setTimeout(() => setIsLoading(false), 600) // TODO: remove when real API is wired up
+		return () => clearTimeout(t)
+	}, [])
 
 	const [selectedHost, setSelectedHost] = useState<Host | null>(null)
 	const [drawerOpen, setDrawerOpen] = useState(false)
@@ -345,6 +351,7 @@ export default function HostQueuePage() {
 			<DataTable
 				columns={columns}
 				data={filtered}
+				isLoading={isLoading}
 				onRowClick={openDrawer}
 				getRowClassName={getRowTint}
 				emptyState={
