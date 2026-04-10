@@ -2,8 +2,10 @@
 
 import { Sidebar } from "./sidebar"
 import { Topbar } from "./topbar"
+import { useAuthInit } from "@/lib/hooks/use-auth-init"
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
+	useAuthInit()
 	return (
 		<div className="flex h-screen overflow-hidden bg-background">
 			<Sidebar />

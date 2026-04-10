@@ -1,5 +1,7 @@
 import type { Permission, Role } from "@/types";
 import { create } from "zustand"
+import { persist } from "zustand/middleware"
+import { setAuthToken } from "@/lib/api/client"
 
 const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
 	SUPER_ADMIN: [
@@ -27,16 +29,30 @@ type AuthState = {
 	hasPermission: (permission: Permission) => boolean
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-	user: null,
-	role: null,
-	cityScope: null,
-	token: null,
-	setAuth: (user, role, token, cityScope = undefined) => set({ user, role, token, cityScope }),
-	clearAuth: () => set({ user: null, role: null, token: null, cityScope: null }),
-	hasPermission: permission => {
-		const role = get().role
-		if (!role) return false
-		return ROLE_PERMISSIONS[role].includes(permission)
-	},
-}))
+export const useAuthStore = create<AuthState>()(
+	persist(
+		(set, get) => ({
+			user: null,
+			role: null,
+			cityScope: null,
+			token: null,
+			setAuth: (user, role, token, cityScope = undefined) => {
+				setAuthToken(token)
+				set({ user, role, token, cityScope })
+			},
+			clearAuth: () => {
+				setAuthToken(null)
+				set({ user: null, role: null, token: null, cityScope: null })
+			},
+			hasPermission: permission => {
+				const role = get().role
+				if (!role) return false
+				return ROLE_PERMISSIONS[role].includes(permission)
+			},
+		}),
+		{
+			name: "meetday-auth",
+			partialize: (state) => ({ token: state.token }),
+		},
+	),
+)
