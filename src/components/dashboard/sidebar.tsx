@@ -9,6 +9,7 @@ import {
 	CalendarDays,
 	ShieldCheck,
 	Tag,
+	UserCircle,
 	type LucideIcon,
 } from "lucide-react"
 import { useAuthStore } from "@/stores/auth.store"
@@ -52,6 +53,10 @@ const NAV: NavSection[] = [
 			{ label: "Admins", href: "/admins", icon: ShieldCheck, permission: "admin.invite" },
 			{ label: "Coupons", href: "/coupons", icon: Tag, permission: "coupon.view" },
 		],
+	},
+	{
+		title: "Account",
+		items: [{ label: "My Profile", href: "/profile", icon: UserCircle }],
 	},
 ]
 
