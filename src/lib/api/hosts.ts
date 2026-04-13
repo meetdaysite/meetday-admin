@@ -26,3 +26,11 @@ export async function getHostById(id: string): Promise<HostDetail> {
 	const { data } = await apiClient.get<HostDetail>(`/admin/hosts/${id}`)
 	return data
 }
+
+export async function approveHost(id: string): Promise<void> {
+	await apiClient.post(`/admin/hosts/${id}/approve`)
+}
+
+export async function rejectHost(id: string, rejectionReason: string): Promise<void> {
+	await apiClient.post(`/admin/hosts/${id}/reject`, { rejectionReason })
+}

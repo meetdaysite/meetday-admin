@@ -5,7 +5,7 @@ import { InviteBulkDrawer } from "@/components/hosts/invite-bulk-drawer"
 import { InviteSingleDrawer } from "@/components/hosts/invite-single-drawer"
 import { DataTable } from "@/components/ui/data-table"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { getHosts } from "@/lib/api/hosts"
+import { getHosts, approveHost, rejectHost } from "@/lib/api/hosts"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { ApprovalStatus, Host, KycStatus, HostPlan } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
@@ -99,12 +99,42 @@ export default function HostQueuePage() {
 		setDrawerOpen(true)
 	}
 
-	async function handleAction(hostId: string, _action: HostAction) {
-		// TODO: replace with real approve/reject API calls
-		await new Promise((r) => setTimeout(r, 800))
-		setDrawerOpen(false)
-		setSelectedHost(null)
-		fetchHosts()
+	async function handleAction(hostId: string, action: HostAction, reason?: string) {
+		const call = action === "approve" ? approveHost(hostId) : rejectHost(hostId, reason!)
+		try {
+			await call
+			toast.success(action === "approve" ? "Host approved" : "Host rejected", {
+				description:
+					action === "approve"
+						? "The host has been approved and will be notified."
+						: "The host has been rejected and will be notified.",
+			})
+			fetchHosts()
+		} catch (err: unknown) {
+			const axiosErr = err as { response?: { status?: number; data?: { message?: string } } }
+			const status = axiosErr?.response?.status
+			if (status === 401) {
+				router.replace("/login")
+				throw err
+			}
+			if (status === 403) {
+				toast.error("Permission denied", {
+					description: `You don't have permission to ${action} hosts.`,
+				})
+			} else if (status === 404) {
+				toast.error("Host not found")
+			} else if (status === 400) {
+				const msg = axiosErr?.response?.data?.message
+				toast.error(`Cannot ${action} host`, {
+					description: msg ?? "Host is not in a pending state.",
+				})
+			} else {
+				toast.error(`Failed to ${action} host`, {
+					description: "Something went wrong. Please try again.",
+				})
+			}
+			throw err
+		}
 	}
 
 	function handleCitySearch(e: React.FormEvent) {

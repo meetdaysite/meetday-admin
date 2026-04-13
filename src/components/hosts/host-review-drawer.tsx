@@ -10,6 +10,7 @@ import {
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { RejectHostDialog } from "@/components/hosts/reject-host-dialog"
 import { getHostById } from "@/lib/api/hosts"
 import type { Host, HostDetail } from "@/types"
 
@@ -21,7 +22,7 @@ export type HostReviewDrawerProps = {
 	open: boolean
 	onClose: () => void
 	host: Host | null
-	onAction: (hostId: string, action: HostAction) => Promise<void>
+	onAction: (hostId: string, action: HostAction, reason?: string) => Promise<void>
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -418,6 +419,7 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 	const [fetchState, setFetchState] = useState<"loading" | "error" | "done">("loading")
 	const [errorMessage, setErrorMessage] = useState<string | null>(null)
 	const [actionLoading, setActionLoading] = useState<HostAction | null>(null)
+	const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
 
 	// Fetch full detail whenever the drawer opens
 	useEffect(() => {
@@ -457,24 +459,33 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 
 	function handleClose() {
 		setActionLoading(null)
+		setRejectDialogOpen(false)
 		setDetail(null)
 		setFetchState("loading")
 		setErrorMessage(null)
 		onClose()
 	}
 
-	async function handleAction(action: HostAction) {
+	async function handleApprove() {
 		if (!host) return
-		setActionLoading(action)
+		setActionLoading("approve")
 		try {
-			await onAction(host.id, action)
+			await onAction(host.id, "approve")
 			handleClose()
 		} finally {
 			setActionLoading(null)
 		}
 	}
 
-	const canAct = (detail?.approvalStatus ?? host?.approvalStatus) === "PENDING"
+	async function handleRejectConfirm(reason: string) {
+		if (!host) return
+		await onAction(host.id, "reject", reason)
+		setRejectDialogOpen(false)
+		handleClose()
+	}
+
+	const isPending = (detail?.approvalStatus ?? host?.approvalStatus) === "PENDING"
+	const canApprove = isPending && (detail?.kycStatus ?? host?.kycStatus) === "VERIFIED"
 	const isBusy = actionLoading !== null
 
 	return (
@@ -499,28 +510,28 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 			{fetchState === "done" && detail && <HostDetailContent detail={detail} />}
 
 			{/* Footer */}
-			<DrawerFooter className={canAct ? "justify-between" : "justify-end"}>
-				{canAct && (
+			<DrawerFooter className={isPending ? "justify-between" : "justify-end"}>
+				{isPending && (
 					<>
 						<button
-							onClick={() => handleAction("reject")}
+							onClick={() => setRejectDialogOpen(true)}
 							disabled={isBusy || fetchState !== "done"}
 							className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
 						>
-							{actionLoading === "reject" && <Loader2 size={12} className="animate-spin" />}
 							Reject
 						</button>
 						<button
-							onClick={() => handleAction("approve")}
-							disabled={isBusy || fetchState !== "done"}
-							className="flex items-center gap-1.5 rounded-lg bg-brand-red px-3.5 py-2 text-xs font-semibold text-white hover:bg-brand-red-deep transition-colors disabled:opacity-70"
+							onClick={handleApprove}
+							disabled={isBusy || fetchState !== "done" || !canApprove}
+							title={!canApprove ? "KYC must be verified before approving" : undefined}
+							className="flex items-center gap-1.5 rounded-lg bg-brand-red px-3.5 py-2 text-xs font-semibold text-white hover:bg-brand-red-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
 						>
 							{actionLoading === "approve" && <Loader2 size={12} className="animate-spin" />}
 							Approve
 						</button>
 					</>
 				)}
-				{!canAct && (
+				{!isPending && (
 					<button
 						onClick={handleClose}
 						className="rounded-lg border border-neutral-200 px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
@@ -529,6 +540,13 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 					</button>
 				)}
 			</DrawerFooter>
+
+			<RejectHostDialog
+				open={rejectDialogOpen}
+				onClose={() => setRejectDialogOpen(false)}
+				onConfirm={handleRejectConfirm}
+				hostName={host?.displayName ?? ""}
+			/>
 		</Drawer>
 	)
 }
