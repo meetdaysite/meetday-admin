@@ -7,8 +7,11 @@ import { setAuthToken } from "@/lib/api/client"
 import type { Role } from "@/types"
 
 type MeResponse = {
-	user: { id: string; name: string; email: string }
-	role: Role
+	id: string
+	email: string
+	firstName: string
+	lastName: string
+	role: { name: Role }
 	cityScope?: string
 }
 
@@ -22,18 +25,27 @@ export function useAuthInit() {
 	useEffect(() => {
 		if (!token) return
 
+		// Always restore the axios default header on reload (in-memory state is
+		// cleared on every page load; Firebase currentUser restores async so we
+		// can't rely solely on the request interceptor for the first requests).
+		setAuthToken(token)
+
 		if (user) {
 			// Full state already hydrated from persistence.
 			setInitialized()
 			return
 		}
 
-		// Token was persisted but user context was lost (e.g. page reload).
-		// Restore session by calling /auth/me with the stored token.
-		setAuthToken(token)
+		// Token was persisted but user context was lost (e.g. page reload with
+		// old localStorage format). Restore session by calling /auth/me.
 		apiClient
 			.get<MeResponse>("/auth/me")
-			.then(({ data }) => setAuth(data.user, data.role, token, data.cityScope))
+			.then(({ data }) => setAuth(
+				{ id: data.id, name: `${data.firstName} ${data.lastName}`, email: data.email },
+				data.role?.name,
+				token,
+				data.cityScope,
+			))
 			.catch(() => clearAuth())
 			.finally(() => setInitialized())
 	}, [token])

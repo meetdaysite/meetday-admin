@@ -25,7 +25,7 @@ export function StatCard({ icon: Icon, label, value, sub, href, trend, empty }: 
 		>
 			{/* Header row */}
 			<div className="flex items-start justify-between gap-2">
-				<div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-red/10 flex-shrink-0">
+				<div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-red/10 shrink-0">
 					<Icon size={16} className="text-brand-red" />
 				</div>
 

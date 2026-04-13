@@ -7,7 +7,7 @@ import { z } from "zod"
 import { useRouter } from "next/navigation"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { signInWithEmailAndPassword } from "firebase/auth"
+import { signInWithEmailAndPassword, signOut } from "firebase/auth"
 import { firebaseAuth } from "@/lib/firebase/config"
 import { apiClient } from "@/lib/api/client"
 import { useAuthStore } from "@/stores/auth.store"
@@ -55,6 +55,12 @@ export default function LoginPage() {
 			const { data } = await apiClient.get<MeResponse>("/auth/me", {
 				headers: { Authorization: `Bearer ${idToken}` },
 			})
+
+			if (!data.isActive) {
+				await signOut(firebaseAuth)
+				toast.error("Your account is not yet active. Complete the invite link sent to your email.")
+				return
+			}
 
 			setAuth(
 				{ id: data.id, name: `${data.firstName} ${data.lastName}`, email: data.email },
