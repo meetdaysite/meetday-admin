@@ -27,6 +27,86 @@ export type InviteStatus = "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED"
 
 export type HostStatus = "PENDING" | "APPROVED" | "REJECTED" | "INFO_REQUESTED"
 
+export type ApprovalStatus = "PENDING" | "APPROVED" | "REJECTED"
+export type KycStatus = "NOT_SUBMITTED" | "PENDING" | "VERIFIED" | "FAILED"
+export type VerificationStatus = KycStatus
+export type HostPlan = "DISCOVER" | "SELL" | "COMMUNITY"
+export type SubscriptionStatus = "ACTIVE" | "CANCELLED" | "EXPIRED"
+export type BillingCycle = "MONTHLY" | "ANNUAL"
+export type PayoutAccountStatus = "PENDING_ADMIN_REVIEW" | "DEACTIVATED"
+
+export type HostSubscription = {
+	plan: HostPlan
+	status: SubscriptionStatus
+	billingCycle: BillingCycle
+	currentPeriodEnd: string
+}
+
+export type HostCategory = {
+	hostProfileId: string
+	categoryId: string
+	category: {
+		id: string
+		name: string
+		description: string
+	}
+}
+
+export type PayoutAccount = {
+	id: string
+	accountHolderName: string
+	maskedAccountNumber: string
+	bankName: string
+	accountType: string
+	status: PayoutAccountStatus
+	isVerified: boolean
+}
+
+export type HostDetail = {
+	id: string
+	displayName: string
+	legalName: string | null
+	hostType: string
+	approvalStatus: ApprovalStatus
+	currentPlan: HostPlan
+	rejectionReason: string | null
+	approvedAt: string | null
+	kycStatus: KycStatus
+	kycVerifiedAt: string | null
+	kycFailureReason: string | null
+	panVerificationStatus: VerificationStatus
+	panVerificationReference: string | null
+	bankVerificationStatus: VerificationStatus
+	yearsOfExperience: number | null
+	totalEventsPreviouslyHosted: number | null
+	totalEventsHosted: number
+	averageRating: number | null
+	totalReviews: number
+	operatingCities: string[]
+	hostBio: string | null
+	tagline: string | null
+	languages: string[]
+	socialLinks: { website?: string; instagram?: string } | null
+	portfolioLinks: string[]
+	address?: {
+		street: string | null
+		city: string
+		state: string
+		pincode: string
+		country: string
+	}
+	user: {
+		firstName: string
+		lastName: string
+		email: string | null
+		phone: string | null
+		isActive: boolean
+	}
+	categories: HostCategory[]
+	subscriptions: HostSubscription[]
+	payoutAccount: PayoutAccount | null
+}
+
 export type EventStatus = "PENDING" | "APPROVED" | "REJECTED" | "EDIT_REQUESTED"
 
 export type CouponStatus = "ACTIVE" | "EXPIRED" | "DISABLED"
@@ -46,12 +126,23 @@ export type Admin = {
 
 export type Host = {
 	id: string
-	name: string
-	email: string
-	phone: string | null
-	city: string
-	status: HostStatus
-	invitedAt: Date
+	displayName: string
+	hostType: string
+	kycStatus: KycStatus
+	approvalStatus: ApprovalStatus
+	currentPlan: HostPlan
+	operatingCities: string[]
+	address?: {
+		city: string
+		state: string
+		pincode: string
+	}
+	user: {
+		firstName: string
+		lastName: string
+		email: string | null
+	}
+	categories: HostCategory[]
 }
 
 export type TicketTier = {

@@ -1,248 +1,192 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { type ColumnDef } from "@tanstack/react-table"
-import { Search, UserPlus, Upload } from "lucide-react"
-import { usePermission } from "@/lib/hooks/use-permission"
+import { HostReviewDrawer, type HostAction } from "@/components/hosts/host-review-drawer"
+import { InviteBulkDrawer } from "@/components/hosts/invite-bulk-drawer"
+import { InviteSingleDrawer } from "@/components/hosts/invite-single-drawer"
 import { DataTable } from "@/components/ui/data-table"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { HostReviewDrawer, type HostAction } from "@/components/hosts/host-review-drawer"
-import { InviteSingleDrawer } from "@/components/hosts/invite-single-drawer"
-import { InviteBulkDrawer } from "@/components/hosts/invite-bulk-drawer"
-import type { Host, HostStatus } from "@/types"
+import { getHosts } from "@/lib/api/hosts"
+import { usePermission } from "@/lib/hooks/use-permission"
+import type { ApprovalStatus, Host, KycStatus, HostPlan } from "@/types"
+import { type ColumnDef } from "@tanstack/react-table"
+import { Search, Upload, UserPlus } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
-// Dates relative to today (2026-04-09) to show age tinting variety
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-const MOCK_HOSTS: Host[] = [
-	{
-		id: "1",
-		name: "Rahul Sharma",
-		email: "rahul@example.com",
-		phone: "+91 98765 43210",
-		city: "Mumbai",
-		status: "PENDING",
-		invitedAt: new Date("2026-04-07"), // 2 days — no tint
-	},
-	{
-		id: "2",
-		name: "Priya Verma",
-		email: "priya@example.com",
-		phone: "+91 87654 32109",
-		city: "Bangalore",
-		status: "PENDING",
-		invitedAt: new Date("2026-04-04"), // 5 days — no tint
-	},
-	{
-		id: "3",
-		name: "Arjun Mehta",
-		email: "arjun@example.com",
-		phone: null,
-		city: "Pune",
-		status: "PENDING",
-		invitedAt: new Date("2026-03-30"), // 10 days — amber tint
-	},
-	{
-		id: "4",
-		name: "Divya Nair",
-		email: "divya@example.com",
-		phone: "+91 76543 21098",
-		city: "Chennai",
-		status: "PENDING",
-		invitedAt: new Date("2026-03-22"), // 18 days — orange tint
-	},
-	{
-		id: "5",
-		name: "Meera Iyer",
-		email: "meera@example.com",
-		phone: "+91 43210 98765",
-		city: "Bangalore",
-		status: "PENDING",
-		invitedAt: new Date("2026-04-08"), // 1 day — no tint
-	},
-	{
-		id: "6",
-		name: "Vikram Singh",
-		email: "vikram@example.com",
-		phone: "+91 54321 09876",
-		city: "Mumbai",
-		status: "INFO_REQUESTED",
-		invitedAt: new Date("2026-03-25"), // 15 days — orange tint
-	},
-	{
-		id: "7",
-		name: "Sameer Khan",
-		email: "sameer@example.com",
-		phone: "+91 65432 10987",
-		city: "Delhi",
-		status: "APPROVED",
-		invitedAt: new Date("2026-03-15"),
-	},
-	{
-		id: "8",
-		name: "Anita Roy",
-		email: "anita@example.com",
-		phone: null,
-		city: "Hyderabad",
-		status: "REJECTED",
-		invitedAt: new Date("2026-03-10"),
-	},
-]
+const PAGE_LIMIT = 20
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function getDays(date: Date): number {
-	return Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24))
-}
-
-function formatDate(date: Date): string {
-	return date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-}
-
-function getRowTint(host: Host): string {
-	if (host.status !== "PENDING" && host.status !== "INFO_REQUESTED") return ""
-	if (host.status === "INFO_REQUESTED") return "bg-sky-50/60"
-	const days = getDays(host.invitedAt)
-	if (days >= 14) return "bg-orange-50"
-	if (days >= 7) return "bg-amber-50"
-	return ""
-}
-
-// ─── Filter config ────────────────────────────────────────────────────────────
-
-type StatusFilter = HostStatus | "ALL"
+type StatusFilter = ApprovalStatus | "ALL"
 
 const STATUS_TABS: { label: string; value: StatusFilter }[] = [
-	{ label: "All", value: "ALL" },
-	{ label: "Pending", value: "PENDING" },
-	{ label: "Info Requested", value: "INFO_REQUESTED" },
+	{ label: "All",      value: "ALL" },
+	{ label: "Pending",  value: "PENDING" },
 	{ label: "Approved", value: "APPROVED" },
 	{ label: "Rejected", value: "REJECTED" },
 ]
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getRowTint(host: Host): string {
+	if (host.approvalStatus === "PENDING") return "bg-amber-50"
+	return ""
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HostQueuePage() {
+	const router = useRouter()
 	const canApprove = usePermission("host.approve")
+	const canInvite = usePermission("host.invite")
 
 	const [isLoading, setIsLoading] = useState(true)
-	const [hosts, setHosts] = useState<Host[]>(MOCK_HOSTS)
-	const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL")
-	const [cityFilter, setCityFilter] = useState("ALL")
-	const [search, setSearch] = useState("")
+	const [error, setError] = useState<string | null>(null)
+	const [hosts, setHosts] = useState<Host[]>([])
+	const [total, setTotal] = useState(0)
+	const [page, setPage] = useState(1)
 
-	useEffect(() => {
-		const t = setTimeout(() => setIsLoading(false), 600) // TODO: remove when real API is wired up
-		return () => clearTimeout(t)
-	}, [])
+	const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL")
+	const [kycFilter, setKycFilter] = useState<KycStatus | "ALL">("ALL")
+	const [planFilter, setPlanFilter] = useState<HostPlan | "ALL">("ALL")
+	const [cityFilter, setCityFilter] = useState("")
+	const [cityInput, setCityInput] = useState("")
+	const [search, setSearch] = useState("")
 
 	const [selectedHost, setSelectedHost] = useState<Host | null>(null)
 	const [drawerOpen, setDrawerOpen] = useState(false)
-
-	const canInvite = usePermission("host.invite")
 	const [singleOpen, setSingleOpen] = useState(false)
 	const [bulkOpen, setBulkOpen] = useState(false)
 
-	// Unique cities for the city filter select
-	const cities = useMemo(
-		() => Array.from(new Set(hosts.map((h) => h.city))).sort(),
-		[hosts],
-	)
+	const fetchHosts = useCallback(async () => {
+		setIsLoading(true)
+		setError(null)
+		try {
+			const res = await getHosts({
+				page,
+				limit: PAGE_LIMIT,
+				...(statusFilter !== "ALL" && { approvalStatus: statusFilter }),
+				...(kycFilter !== "ALL" && { kycStatus: kycFilter }),
+				...(planFilter !== "ALL" && { plan: planFilter }),
+				...(cityFilter && { city: cityFilter }),
+			})
+			setHosts(res.hosts)
+			setTotal(res.total)
+		} catch (err: unknown) {
+			const status = (err as { response?: { status?: number } })?.response?.status
+			if (status === 401) {
+				router.replace("/login")
+				return
+			}
+			if (status === 403) {
+				setError("You don't have permission to view the host queue.")
+			} else {
+				toast.error("Failed to load hosts")
+				setError("Something went wrong. Please try again.")
+			}
+		} finally {
+			setIsLoading(false)
+		}
+	}, [page, statusFilter, kycFilter, planFilter, cityFilter, router])
 
-	const filtered = useMemo(() => {
-		const q = search.toLowerCase()
-		return hosts
-			.filter((h) => statusFilter === "ALL" || h.status === statusFilter)
-			.filter((h) => cityFilter === "ALL" || h.city === cityFilter)
-			.filter(
-				(h) =>
-					!q ||
-					h.name.toLowerCase().includes(q) ||
-					h.email.toLowerCase().includes(q),
-			)
-	}, [hosts, statusFilter, cityFilter, search])
-
-	const pendingCount = hosts.filter(
-		(h) => h.status === "PENDING" || h.status === "INFO_REQUESTED",
-	).length
+	useEffect(() => {
+		fetchHosts()
+	}, [fetchHosts])
 
 	function openDrawer(host: Host) {
 		setSelectedHost(host)
 		setDrawerOpen(true)
 	}
 
-	async function handleAction(hostId: string, action: HostAction) {
-		const statusMap: Record<HostAction, HostStatus> = {
-			approve: "APPROVED",
-			reject: "REJECTED",
-			request_info: "INFO_REQUESTED",
-		}
-		// Optimistic update
-		setHosts((prev) =>
-			prev.map((h) => (h.id === hostId ? { ...h, status: statusMap[action] } : h)),
-		)
-		// TODO: replace with real API call
+	async function handleAction(hostId: string, _action: HostAction) {
+		// TODO: replace with real approve/reject API calls
 		await new Promise((r) => setTimeout(r, 800))
+		setDrawerOpen(false)
+		setSelectedHost(null)
+		fetchHosts()
 	}
+
+	function handleCitySearch(e: React.FormEvent) {
+		e.preventDefault()
+		setPage(1)
+		setCityFilter(cityInput.trim())
+	}
+
+	// Client-side search on the already-loaded page of results
+	const filtered = useMemo(() => {
+		const q = search.toLowerCase()
+		if (!q) return hosts
+		return hosts.filter(
+			(h) =>
+				h.displayName.toLowerCase().includes(q) ||
+				(h.user.email ?? "").toLowerCase().includes(q) ||
+				`${h.user.firstName} ${h.user.lastName}`.toLowerCase().includes(q),
+		)
+	}, [hosts, search])
+
+	const pendingCount = total > 0 && statusFilter === "PENDING" ? total : undefined
 
 	const columns = useMemo<ColumnDef<Host>[]>(
 		() => [
 			{
 				id: "host",
 				header: "Host",
-				cell: ({ row }) => (
-					<div>
-						<p className="text-xs font-semibold text-foreground leading-none mb-0.5">
-							{row.original.name}
-						</p>
-						<p className="text-[11px] text-neutral-light">{row.original.email}</p>
-					</div>
-				),
-			},
-			{
-				id: "city",
-				header: "City",
-				accessorKey: "city",
-				enableSorting: true,
-				cell: ({ row }) => (
-					<span className="text-xs text-foreground">{row.original.city}</span>
-				),
-			},
-			{
-				id: "applied",
-				header: "Applied",
-				accessorKey: "invitedAt",
-				enableSorting: true,
 				cell: ({ row }) => {
-					const days = getDays(row.original.invitedAt)
-					const ageColor =
-						days >= 14
-							? "text-orange-600"
-							: days >= 7
-								? "text-amber-600"
-								: "text-neutral-light"
+					const h = row.original
 					return (
 						<div>
-							<p className="text-xs text-neutral-dark">
-								{formatDate(row.original.invitedAt)}
+							<p className="text-xs font-semibold text-foreground leading-none mb-0.5">
+								{h.displayName}
 							</p>
-							<p className={`text-[11px] font-medium ${ageColor}`}>
-								{days === 0 ? "Today" : days === 1 ? "Yesterday" : `${days} days ago`}
+							<p className="text-[11px] text-neutral-light">
+								{h.user.firstName} {h.user.lastName} · {h.user.email}
 							</p>
 						</div>
 					)
 				},
 			},
 			{
+				id: "cities",
+				header: "Cities",
+				cell: ({ row }) => {
+					const cities = row.original.operatingCities
+					if (!cities?.length) return <span className="text-[11px] text-neutral-light">—</span>
+					return (
+						<span className="text-xs text-foreground">
+							{cities.slice(0, 2).join(", ")}
+							{cities.length > 2 && (
+								<span className="text-neutral-light"> +{cities.length - 2}</span>
+							)}
+						</span>
+					)
+				},
+			},
+			{
+				id: "plan",
+				header: "Plan",
+				cell: ({ row }) => (
+					<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-dark">
+						{row.original.currentPlan}
+					</span>
+				),
+			},
+			{
+				id: "kycStatus",
+				header: "KYC",
+				cell: ({ row }) => <StatusBadge status={row.original.kycStatus} />,
+			},
+			{
 				id: "status",
 				header: "Status",
-				accessorKey: "status",
 				enableSorting: true,
-				cell: ({ row }) => <StatusBadge status={row.original.status} />,
+				cell: ({ row }) => <StatusBadge status={row.original.approvalStatus} />,
 			},
 		],
 		[],
 	)
+
+	const totalPages = Math.ceil(total / PAGE_LIMIT)
 
 	if (!canApprove) {
 		return (
@@ -259,7 +203,7 @@ export default function HostQueuePage() {
 			{/* Header */}
 			<div className="flex items-center gap-3">
 				<h1 className="text-base font-semibold text-foreground">Host Queue</h1>
-				{pendingCount > 0 && (
+				{pendingCount !== undefined && pendingCount > 0 && (
 					<span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700">
 						{pendingCount} pending
 					</span>
@@ -289,15 +233,12 @@ export default function HostQueuePage() {
 				{/* Status tabs */}
 				<div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
 					{STATUS_TABS.map((tab) => {
-						const count =
-							tab.value === "ALL"
-								? hosts.length
-								: hosts.filter((h) => h.status === tab.value).length
 						const active = statusFilter === tab.value
+						const count = active ? total : null
 						return (
 							<button
 								key={tab.value}
-								onClick={() => setStatusFilter(tab.value)}
+								onClick={() => { setStatusFilter(tab.value); setPage(1) }}
 								className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
 									active
 										? "bg-brand-red text-white"
@@ -305,21 +246,23 @@ export default function HostQueuePage() {
 								}`}
 							>
 								{tab.label}
-								<span
-									className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
-										active ? "bg-white/20 text-white" : "bg-white text-neutral-dark"
-									}`}
-								>
-									{count}
-								</span>
+								{count !== null && (
+									<span
+										className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
+											active ? "bg-white/20 text-white" : "bg-white text-neutral-dark"
+										}`}
+									>
+										{count}
+									</span>
+								)}
 							</button>
 						)
 					})}
 				</div>
 
-				{/* Search + city filter */}
-				<div className="flex items-center gap-3">
-					<div className="relative flex-1 max-w-xs">
+				{/* Search + dropdowns + city filter */}
+				<div className="flex items-center gap-2 flex-wrap">
+					<div className="relative flex-1 min-w-48 max-w-xs">
 						<Search
 							size={13}
 							className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-light pointer-events-none"
@@ -332,51 +275,101 @@ export default function HostQueuePage() {
 							className="w-full rounded-lg border border-neutral-200 bg-white pl-8 pr-3 py-2 text-xs placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
 						/>
 					</div>
+
 					<select
-						value={cityFilter}
-						onChange={(e) => setCityFilter(e.target.value)}
+						value={kycFilter}
+						onChange={(e) => { setKycFilter(e.target.value as KycStatus | "ALL"); setPage(1) }}
 						className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-foreground focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
 					>
-						<option value="ALL">All cities</option>
-						{cities.map((c) => (
-							<option key={c} value={c}>
-								{c}
-							</option>
-						))}
+						<option value="ALL">KYC: All</option>
+						<option value="NOT_SUBMITTED">Not Submitted</option>
+						<option value="PENDING">Pending</option>
+						<option value="VERIFIED">Verified</option>
+						<option value="FAILED">Failed</option>
 					</select>
+
+					<select
+						value={planFilter}
+						onChange={(e) => { setPlanFilter(e.target.value as HostPlan | "ALL"); setPage(1) }}
+						className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-foreground focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+					>
+						<option value="ALL">Plan: All</option>
+						<option value="DISCOVER">Discover</option>
+						<option value="SELL">Sell</option>
+						<option value="COMMUNITY">Community</option>
+					</select>
+
+					<form onSubmit={handleCitySearch} className="flex items-center gap-1.5">
+						<input
+							type="text"
+							value={cityInput}
+							onChange={(e) => setCityInput(e.target.value)}
+							placeholder="Filter by city…"
+							className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors w-36"
+						/>
+						{cityFilter && (
+							<button
+								type="button"
+								onClick={() => { setCityInput(""); setCityFilter(""); setPage(1) }}
+								className="rounded-lg border border-neutral-200 px-2.5 py-2 text-xs text-neutral-dark hover:bg-neutral-50 transition-colors"
+							>
+								Clear
+							</button>
+						)}
+					</form>
 				</div>
 			</div>
 
-			{/* Table */}
-			<DataTable
-				columns={columns}
-				data={filtered}
-				isLoading={isLoading}
-				onRowClick={openDrawer}
-				getRowClassName={getRowTint}
-				emptyState={
-					<div className="py-12 text-center text-sm text-neutral-light">
-						No hosts match the current filters.
-					</div>
-				}
-			/>
+			{/* Error state */}
+			{error ? (
+				<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+					{error}
+				</div>
+			) : (
+				<>
+					{/* Table */}
+					<DataTable
+						columns={columns}
+						data={filtered}
+						isLoading={isLoading}
+						onRowClick={openDrawer}
+						getRowClassName={getRowTint}
+						emptyState={
+							<div className="py-12 text-center text-sm text-neutral-light">
+								No hosts match the current filters.
+							</div>
+						}
+					/>
 
-			{/* Age tint legend */}
-			<div className="flex items-center gap-4 text-[11px] text-neutral-light">
-				<span className="font-medium">Row colour:</span>
-				<span className="flex items-center gap-1.5">
-					<span className="w-3 h-3 rounded-sm bg-amber-100 border border-amber-200" />
-					7–13 days pending
-				</span>
-				<span className="flex items-center gap-1.5">
-					<span className="w-3 h-3 rounded-sm bg-orange-100 border border-orange-200" />
-					14+ days pending
-				</span>
-				<span className="flex items-center gap-1.5">
-					<span className="w-3 h-3 rounded-sm bg-sky-100 border border-sky-200" />
-					Info requested
-				</span>
-			</div>
+					{/* Pagination */}
+					{totalPages > 1 && (
+						<div className="flex items-center justify-between text-xs text-neutral-light">
+							<span>
+								Showing {(page - 1) * PAGE_LIMIT + 1}–{Math.min(page * PAGE_LIMIT, total)} of {total}
+							</span>
+							<div className="flex items-center gap-2">
+								<button
+									disabled={page === 1}
+									onClick={() => setPage((p) => p - 1)}
+									className="rounded-md px-2.5 py-1 text-xs font-medium border border-neutral-200 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+								>
+									Previous
+								</button>
+								<span className="font-medium text-foreground">
+									{page} / {totalPages}
+								</span>
+								<button
+									disabled={page >= totalPages}
+									onClick={() => setPage((p) => p + 1)}
+									className="rounded-md px-2.5 py-1 text-xs font-medium border border-neutral-200 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+								>
+									Next
+								</button>
+							</div>
+						</div>
+					)}
+				</>
+			)}
 
 			{/* Review drawer */}
 			<HostReviewDrawer
