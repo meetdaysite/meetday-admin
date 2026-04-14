@@ -1,93 +1,36 @@
 "use client"
 
-import { useMemo } from "react"
-import { Tag, Percent, IndianRupee, Calendar, Users, Clock, ShoppingBag } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Tag, Percent, IndianRupee, Users, Clock, AlertCircle, Loader2 } from "lucide-react"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
-import { StatusBadge } from "@/components/ui/status-badge"
-import type { Coupon, CouponUsage } from "@/types"
-
-// ─── Mock usage data ──────────────────────────────────────────────────────────
-
-export const MOCK_USAGE: CouponUsage[] = [
-	{
-		id: "u1",
-		couponId: "c1",
-		userName: "Priya Verma",
-		userEmail: "priya@example.com",
-		eventTitle: "Sunday Brunch Social",
-		city: "Mumbai",
-		usedAt: new Date("2026-04-08T11:30:00"),
-		orderAmount: 1200,
-		discountAmount: 240,
-	},
-	{
-		id: "u2",
-		couponId: "c1",
-		userName: "Arjun Mehta",
-		userEmail: "arjun@example.com",
-		eventTitle: "Rooftop Networking Night",
-		city: "Mumbai",
-		usedAt: new Date("2026-04-07T19:00:00"),
-		orderAmount: 800,
-		discountAmount: 160,
-	},
-	{
-		id: "u3",
-		couponId: "c1",
-		userName: "Divya Nair",
-		userEmail: "divya@example.com",
-		eventTitle: "Sunday Brunch Social",
-		city: "Mumbai",
-		usedAt: new Date("2026-04-06T10:15:00"),
-		orderAmount: 1200,
-		discountAmount: 240,
-	},
-	{
-		id: "u4",
-		couponId: "c2",
-		userName: "Rahul Sharma",
-		userEmail: "rahul@example.com",
-		eventTitle: "Startup Mixer Pune",
-		city: "Pune",
-		usedAt: new Date("2026-04-05T18:00:00"),
-		orderAmount: 500,
-		discountAmount: 50,
-	},
-	{
-		id: "u5",
-		couponId: "c3",
-		userName: "Meera Iyer",
-		userEmail: "meera@example.com",
-		eventTitle: "Comedy Night Bangalore",
-		city: "Bangalore",
-		usedAt: new Date("2026-03-30T20:00:00"),
-		orderAmount: 600,
-		discountAmount: 300,
-	},
-]
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { getCouponById, disableCoupon } from "@/lib/api/coupons"
+import type { Coupon, CouponRedemption } from "@/types"
+import axios from "axios"
+import { toast } from "sonner"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatDate(date: Date): string {
-	return date.toLocaleDateString("en-IN", {
+function formatDateTime(iso: string): string {
+	const d = new Date(iso)
+	return d.toLocaleDateString("en-IN", {
 		day: "numeric",
 		month: "short",
 		year: "numeric",
-	})
+	}) + " · " + d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
 }
 
-function formatTime(date: Date): string {
-	return date.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+function fmtRate(rate: number): string {
+	// Rates may be fractional (e.g. 0.15 = 15%) or whole numbers
+	if (rate > 0 && rate <= 1) return `${(rate * 100).toFixed(1)}%`
+	return `${rate}%`
 }
 
-function formatAmount(n: number): string {
-	return `₹${n.toLocaleString("en-IN")}`
-}
-
-function applicabilityLabel(coupon: Coupon): string {
-	if (coupon.applicability === "ALL") return "All cities & events"
-	if (coupon.applicability === "CITY") return coupon.cities.join(", ") || "—"
-	return `${coupon.eventIds.length} event(s)`
+function getApiErrorMessage(err: unknown): string {
+	if (axios.isAxiosError(err)) {
+		return err.response?.data?.message ?? err.message
+	}
+	return err instanceof Error ? err.message : "Something went wrong"
 }
 
 // ─── Summary stat ─────────────────────────────────────────────────────────────
@@ -106,9 +49,14 @@ function Stat({ icon: Icon, label, value }: { icon: React.ElementType; label: st
 	)
 }
 
-// ─── Timeline event ───────────────────────────────────────────────────────────
+// ─── Redemption timeline item ─────────────────────────────────────────────────
 
-function TimelineItem({ usage, isLast }: { usage: CouponUsage; isLast: boolean }) {
+function RedemptionItem({ redemption, isLast }: { redemption: CouponRedemption; isLast: boolean }) {
+	const userName = redemption.user
+		? `${redemption.user.firstName} ${redemption.user.lastName}`
+		: "Unknown user"
+	const userEmail = redemption.user?.email ?? "—"
+
 	return (
 		<div className="flex gap-3">
 			{/* Dot + line */}
@@ -118,31 +66,25 @@ function TimelineItem({ usage, isLast }: { usage: CouponUsage; isLast: boolean }
 			</div>
 
 			{/* Content */}
-			<div className={`pb-5 flex-1 min-w-0 ${isLast ? "" : ""}`}>
+			<div className="pb-5 flex-1 min-w-0">
 				<div className="flex items-start justify-between gap-2">
 					<div className="min-w-0">
-						<p className="text-xs font-semibold text-foreground truncate">{usage.userName}</p>
-						<p className="text-[11px] text-neutral-light truncate">{usage.userEmail}</p>
+						<p className="text-xs font-semibold text-foreground truncate">{userName}</p>
+						<p className="text-[11px] text-neutral-light truncate">{userEmail}</p>
 					</div>
 					<div className="text-right shrink-0">
 						<p className="text-xs font-semibold text-green-700">
-							−{formatAmount(usage.discountAmount)}
+							{fmtRate(redemption.discountedFeeRate)}
 						</p>
 						<p className="text-[11px] text-neutral-light">
-							on {formatAmount(usage.orderAmount)}
+							from {fmtRate(redemption.originalFeeRate)}
 						</p>
 					</div>
 				</div>
 
-				<div className="mt-1.5 flex items-center gap-3 text-[11px] text-neutral-light">
-					<span className="flex items-center gap-1">
-						<ShoppingBag size={10} />
-						{usage.eventTitle}
-					</span>
-					<span className="flex items-center gap-1">
-						<Clock size={10} />
-						{formatDate(usage.usedAt)} · {formatTime(usage.usedAt)}
-					</span>
+				<div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-neutral-light">
+					<Clock size={10} />
+					{formatDateTime(redemption.createdAt)}
 				</div>
 			</div>
 		</div>
@@ -155,103 +97,195 @@ export type CouponUsageDrawerProps = {
 	open: boolean
 	onClose: () => void
 	coupon: Coupon | null
+	onDisableSuccess?: (id: string) => void
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function CouponUsageDrawer({ open, onClose, coupon }: CouponUsageDrawerProps) {
-	const usage = useMemo(
-		() => MOCK_USAGE.filter((u) => u.couponId === coupon?.id),
-		[coupon?.id],
-	)
+export function CouponUsageDrawer({ open, onClose, coupon, onDisableSuccess }: CouponUsageDrawerProps) {
+	const [detail, setDetail]               = useState<Coupon | null>(null)
+	const [isLoadingDetail, setLoadingDetail] = useState(false)
+	const [detailError, setDetailError]     = useState<string | null>(null)
 
-	const totalSaved = useMemo(
-		() => usage.reduce((sum, u) => sum + u.discountAmount, 0),
-		[usage],
-	)
+	const [confirmDisable, setConfirmDisable] = useState(false)
+	const [isDisabling, setIsDisabling]       = useState(false)
+
+	// Fetch full detail whenever a coupon is opened
+	useEffect(() => {
+		if (!open || !coupon?.id) {
+			setDetail(null)
+			setDetailError(null)
+			return
+		}
+
+		let cancelled = false
+		setLoadingDetail(true)
+		setDetailError(null)
+
+		getCouponById(coupon.id)
+			.then((data) => { if (!cancelled) setDetail(data) })
+			.catch((err) => {
+				if (cancelled) return
+				if (axios.isAxiosError(err) && err.response?.status === 404) {
+					setDetailError("This coupon no longer exists.")
+				} else {
+					setDetailError("Failed to load coupon details.")
+				}
+			})
+			.finally(() => { if (!cancelled) setLoadingDetail(false) })
+
+		return () => { cancelled = true }
+	}, [open, coupon?.id])
+
+	async function handleDisable() {
+		if (!detail) return
+		setIsDisabling(true)
+		try {
+			await disableCoupon(detail.id)
+			const updated = { ...detail, isActive: false }
+			setDetail(updated)
+			setConfirmDisable(false)
+			toast.success("Coupon disabled", {
+				description: `${detail.code} has been disabled and can no longer be redeemed.`,
+			})
+			onDisableSuccess?.(detail.id)
+		} catch (err) {
+			const message = getApiErrorMessage(err)
+			toast.error("Failed to disable coupon", { description: message })
+		} finally {
+			setIsDisabling(false)
+		}
+	}
+
+	const displayCoupon = detail ?? coupon
+	const usageCount    = detail?.usageCount ?? detail?.redemptions?.length ?? coupon?.usageCount ?? 0
+	const redemptions   = detail?.redemptions ?? []
 
 	return (
-		<Drawer
-			open={open}
-			onClose={onClose}
-			title={coupon?.code ?? ""}
-			description={coupon?.description ?? "Coupon details & usage history"}
-			width="max-w-lg"
-		>
-			{coupon && (
-				<div className="space-y-6">
-					{/* Status */}
-					<StatusBadge status={coupon.status} />
-
-					{/* Summary grid */}
-					<div className="grid grid-cols-2 gap-4">
-						<Stat
-							icon={coupon.discountType === "PERCENTAGE" ? Percent : IndianRupee}
-							label="Discount"
-							value={
-								coupon.discountType === "PERCENTAGE"
-									? `${coupon.discountValue}% off`
-									: `₹${coupon.discountValue} flat`
-							}
-						/>
-						<Stat
-							icon={Tag}
-							label="Applicability"
-							value={applicabilityLabel(coupon)}
-						/>
-						<Stat
-							icon={Users}
-							label="Uses"
-							value={
-								coupon.maxUses === null
-									? `${coupon.usedCount} (unlimited)`
-									: `${coupon.usedCount} / ${coupon.maxUses}`
-							}
-						/>
-						<Stat
-							icon={Calendar}
-							label="Expires"
-							value={coupon.expiresAt ? formatDate(coupon.expiresAt) : "Never"}
-						/>
+		<>
+			<Drawer
+				open={open}
+				onClose={onClose}
+				title={displayCoupon?.code ?? ""}
+				description={displayCoupon?.description ?? "Coupon details & usage history"}
+				width="max-w-lg"
+			>
+				{/* Loading state */}
+				{isLoadingDetail && (
+					<div className="flex items-center justify-center py-12">
+						<Loader2 size={20} className="animate-spin text-neutral-light" />
 					</div>
+				)}
 
-					{/* Total saved */}
-					{usage.length > 0 && (
-						<div className="rounded-xl bg-green-50 border border-green-100 px-4 py-3 flex items-center justify-between">
-							<p className="text-xs font-medium text-green-800">Total discount given</p>
-							<p className="text-sm font-semibold text-green-700">{formatAmount(totalSaved)}</p>
+				{/* Error state */}
+				{detailError && !isLoadingDetail && (
+					<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 flex items-center gap-2.5">
+						<AlertCircle size={14} className="text-red-600 shrink-0" />
+						<p className="text-xs text-red-700">{detailError}</p>
+					</div>
+				)}
+
+				{/* Content */}
+				{!isLoadingDetail && !detailError && displayCoupon && (
+					<div className="space-y-6">
+						{/* Status badge */}
+						<span
+							className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+								displayCoupon.isActive
+									? "bg-green-50 text-green-700"
+									: "bg-neutral-100 text-neutral-dark"
+							}`}
+						>
+							{displayCoupon.isActive ? "Active" : "Inactive"}
+						</span>
+
+						{/* Summary grid */}
+						<div className="grid grid-cols-2 gap-4">
+							<Stat
+								icon={displayCoupon.discountType === "PERCENTAGE" ? Percent : IndianRupee}
+								label="Discount"
+								value={
+									displayCoupon.discountType === "PERCENTAGE"
+										? `${displayCoupon.discountValue}% off`
+										: `₹${displayCoupon.discountValue} flat`
+								}
+							/>
+							<Stat
+								icon={Tag}
+								label="Target"
+								value={displayCoupon.target === "HOST" ? "Host" : "Attendee"}
+							/>
+							<Stat
+								icon={Users}
+								label="Total Uses"
+								value={
+									displayCoupon.maxUsages != null
+										? `${usageCount} / ${displayCoupon.maxUsages}`
+										: `${usageCount} / ∞`
+								}
+							/>
+							{displayCoupon.maxUsagesPerUser != null && (
+								<Stat
+									icon={Users}
+									label="Per-User Limit"
+									value={String(displayCoupon.maxUsagesPerUser)}
+								/>
+							)}
 						</div>
-					)}
 
-					{/* Timeline */}
-					<div>
-						<p className="text-[11px] font-semibold tracking-wider uppercase text-neutral-light mb-3">
-							Usage History
-						</p>
-
-						{usage.length === 0 ? (
-							<p className="text-xs text-neutral-light py-4 text-center">
-								No usage recorded yet.
+						{/* Redemptions */}
+						<div>
+							<p className="text-[11px] font-semibold tracking-wider uppercase text-neutral-light mb-3">
+								Redemption History
 							</p>
-						) : (
-							<div>
-								{usage.map((u, i) => (
-									<TimelineItem key={u.id} usage={u} isLast={i === usage.length - 1} />
-								))}
-							</div>
-						)}
-					</div>
-				</div>
-			)}
 
-			<DrawerFooter>
-				<button
-					onClick={onClose}
-					className="rounded-lg border border-neutral-200 px-4 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
-				>
-					Close
-				</button>
-			</DrawerFooter>
-		</Drawer>
+							{redemptions.length === 0 ? (
+								<p className="text-xs text-neutral-light py-4 text-center">
+									No redemptions recorded yet.
+								</p>
+							) : (
+								<div>
+									{redemptions.map((r, i) => (
+										<RedemptionItem key={r.id} redemption={r} isLast={i === redemptions.length - 1} />
+									))}
+								</div>
+							)}
+						</div>
+					</div>
+				)}
+
+				<DrawerFooter>
+					{!isLoadingDetail && !detailError && displayCoupon?.isActive && (
+						<button
+							onClick={() => setConfirmDisable(true)}
+							className="rounded-lg border border-red-200 px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
+						>
+							Disable Coupon
+						</button>
+					)}
+					<button
+						onClick={onClose}
+						className="rounded-lg border border-neutral-200 px-4 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
+					>
+						Close
+					</button>
+				</DrawerFooter>
+			</Drawer>
+
+			<ConfirmDialog
+				open={confirmDisable}
+				onClose={() => setConfirmDisable(false)}
+				onConfirm={handleDisable}
+				title="Disable coupon"
+				description={
+					detail
+						? `Disable ${detail.code}? It will immediately stop being accepted at checkout and cannot be re-enabled from this panel.`
+						: ""
+				}
+				confirmLabel="Disable"
+				destructive
+				isLoading={isDisabling}
+			/>
+		</>
 	)
 }

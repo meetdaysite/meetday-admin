@@ -32,3 +32,11 @@ export async function getAdmins(params?: GetAdminsParams): Promise<AdminsListRes
 	const { data } = await apiClient.get<AdminsListResponse>("/admin/admins", { params })
 	return data
 }
+
+export async function deactivateAdmin(id: string): Promise<void> {
+	await apiClient.patch(`/admin/admins/${id}/deactivate`)
+}
+
+export async function reactivateAdmin(id: string): Promise<void> {
+	await apiClient.patch(`/admin/admins/${id}/reactivate`)
+}

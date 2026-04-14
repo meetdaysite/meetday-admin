@@ -1,109 +1,50 @@
 "use client"
 
+import { CreateCouponDrawer } from "@/components/coupons/create-coupon-drawer"
 import { CouponUsageDrawer } from "@/components/coupons/coupon-usage-drawer"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { DataTable } from "@/components/ui/data-table"
-import { StatusBadge } from "@/components/ui/status-badge"
+import { getCoupons, disableCoupon } from "@/lib/api/coupons"
 import { usePermission } from "@/lib/hooks/use-permission"
-import type { Coupon, CouponStatus } from "@/types"
+import type { Coupon, CouponTarget } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
+import axios from "axios"
 import { Plus, Search } from "lucide-react"
-import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-const MOCK_COUPONS: Coupon[] = [
-	{
-		id: "c1",
-		code: "MEET20",
-		description: "20% off for Mumbai launch",
-		discountType: "PERCENTAGE",
-		discountValue: 20,
-		applicability: "CITY",
-		cities: ["Mumbai"],
-		eventIds: [],
-		maxUses: 100,
-		usedCount: 3,
-		expiresAt: new Date("2026-05-31"),
-		status: "ACTIVE",
-		createdAt: new Date("2026-04-01"),
-		createdBy: "Aniket C.",
-	},
-	{
-		id: "c2",
-		code: "FLAT50",
-		description: "₹50 flat off — Pune pilot",
-		discountType: "FLAT",
-		discountValue: 50,
-		applicability: "CITY",
-		cities: ["Pune"],
-		eventIds: [],
-		maxUses: 200,
-		usedCount: 1,
-		expiresAt: new Date("2026-06-30"),
-		status: "ACTIVE",
-		createdAt: new Date("2026-04-03"),
-		createdBy: "Aniket C.",
-	},
-	{
-		id: "c3",
-		code: "BLROPEN",
-		description: "Bangalore open beta — ₹300 flat",
-		discountType: "FLAT",
-		discountValue: 300,
-		applicability: "CITY",
-		cities: ["Bangalore"],
-		eventIds: [],
-		maxUses: 50,
-		usedCount: 50,
-		expiresAt: new Date("2026-03-31"),
-		status: "EXPIRED",
-		createdAt: new Date("2026-03-01"),
-		createdBy: "Aniket C.",
-	},
-	{
-		id: "c4",
-		code: "ALLCITIES10",
-		description: "10% off sitewide — trial",
-		discountType: "PERCENTAGE",
-		discountValue: 10,
-		applicability: "ALL",
-		cities: [],
-		eventIds: [],
-		maxUses: null,
-		usedCount: 0,
-		expiresAt: null,
-		status: "DISABLED",
-		createdAt: new Date("2026-03-15"),
-		createdBy: "Aniket C.",
-	},
-]
+const PAGE_LIMIT = 20
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatDate(date: Date): string {
-	return date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-}
 
 function discountLabel(c: Coupon): string {
 	return c.discountType === "PERCENTAGE" ? `${c.discountValue}%` : `₹${c.discountValue}`
 }
 
-function applicabilityLabel(c: Coupon): string {
-	if (c.applicability === "ALL") return "All"
-	if (c.applicability === "CITY") return c.cities.join(", ")
-	return `${c.eventIds.length} event(s)`
+function getApiErrorMessage(err: unknown): string {
+	if (axios.isAxiosError(err)) {
+		return err.response?.data?.message ?? err.message
+	}
+	return err instanceof Error ? err.message : "Something went wrong"
 }
 
 // ─── Filter config ────────────────────────────────────────────────────────────
 
-type StatusFilter = CouponStatus | "ALL"
+type ActiveFilter = "ALL" | "true" | "false"
+type TargetFilter = CouponTarget | "ALL"
 
-const STATUS_TABS: { label: string; value: StatusFilter }[] = [
+const ACTIVE_TABS: { label: string; value: ActiveFilter }[] = [
 	{ label: "All", value: "ALL" },
-	{ label: "Active", value: "ACTIVE" },
-	{ label: "Expired", value: "EXPIRED" },
-	{ label: "Disabled", value: "DISABLED" },
+	{ label: "Active", value: "true" },
+	{ label: "Inactive", value: "false" },
+]
+
+const TARGET_OPTIONS: { label: string; value: TargetFilter }[] = [
+	{ label: "All targets", value: "ALL" },
+	{ label: "Host", value: "HOST" },
+	{ label: "Attendee", value: "ATTENDEE" },
 ]
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -112,31 +53,95 @@ export default function CouponsPage() {
 	const canView   = usePermission("coupon.view")
 	const canCreate = usePermission("coupon.create")
 
-	const [isLoading, setIsLoading] = useState(true)
-	const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL")
-	const [search, setSearch] = useState("")
+	// ── List state ──
+	const [isLoading, setIsLoading]     = useState(true)
+	const [error, setError]             = useState<string | null>(null)
+	const [coupons, setCoupons]         = useState<Coupon[]>([])
+	const [total, setTotal]             = useState(0)
+	const [page, setPage]               = useState(1)
+
+	// ── Filter state ──
+	const [activeFilter, setActiveFilter]   = useState<ActiveFilter>("ALL")
+	const [targetFilter, setTargetFilter]   = useState<TargetFilter>("ALL")
+	const [search, setSearch]               = useState("")
+
+	// ── Drawer state ──
 	const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null)
-	const [drawerOpen, setDrawerOpen] = useState(false)
+	const [drawerOpen, setDrawerOpen]         = useState(false)
+
+	// ── Create drawer state ──
+	const [createDrawerOpen, setCreateDrawerOpen] = useState(false)
+
+	// ── Disable state ──
+	const [disableTarget, setDisableTarget] = useState<Coupon | null>(null)
+	const [isDisabling, setIsDisabling]     = useState(false)
+
+	// ── Fetch ──
+	const fetchCoupons = useCallback(async () => {
+		setIsLoading(true)
+		setError(null)
+		try {
+			const res = await getCoupons({
+				page,
+				limit: PAGE_LIMIT,
+				...(targetFilter !== "ALL" && { target: targetFilter }),
+				...(activeFilter !== "ALL" && { isActive: activeFilter === "true" }),
+			})
+			setCoupons(res.coupons)
+			setTotal(res.total)
+		} catch (err) {
+			setError("Failed to load coupons")
+			toast.error("Failed to load coupons")
+		} finally {
+			setIsLoading(false)
+		}
+	}, [page, activeFilter, targetFilter])
 
 	useEffect(() => {
-		const t = setTimeout(() => setIsLoading(false), 600) // TODO: remove when real API is wired up
-		return () => clearTimeout(t)
-	}, [])
+		fetchCoupons()
+	}, [fetchCoupons])
 
-	const filtered = useMemo(() => {
-		const q = search.toLowerCase()
-		return MOCK_COUPONS
-			.filter((c) => statusFilter === "ALL" || c.status === statusFilter)
-			.filter(
-				(c) =>
-					!q ||
-					c.code.toLowerCase().includes(q) ||
-					(c.description ?? "").toLowerCase().includes(q),
+	// Reset to page 1 when filters change
+	useEffect(() => {
+		setPage(1)
+	}, [activeFilter, targetFilter])
+
+	// ── Disable handler ──
+	async function handleDisable() {
+		if (!disableTarget) return
+		setIsDisabling(true)
+		try {
+			await disableCoupon(disableTarget.id)
+			setCoupons((prev) =>
+				prev.map((c) => (c.id === disableTarget.id ? { ...c, isActive: false } : c)),
 			)
-	}, [statusFilter, search])
+			// If the drawer is showing the same coupon, update its state too
+			if (selectedCoupon?.id === disableTarget.id) {
+				setSelectedCoupon((prev) => prev ? { ...prev, isActive: false } : prev)
+			}
+			setDisableTarget(null)
+			toast.success("Coupon disabled", {
+				description: `${disableTarget.code} has been disabled and can no longer be redeemed.`,
+			})
+		} catch (err) {
+			const message = getApiErrorMessage(err)
+			toast.error("Failed to disable coupon", { description: message })
+		} finally {
+			setIsDisabling(false)
+		}
+	}
 
-	const activeCount = MOCK_COUPONS.filter((c) => c.status === "ACTIVE").length
+	// ── Client-side search (code filter) ──
+	const filtered = useMemo(() => {
+		if (!search.trim()) return coupons
+		const q = search.toLowerCase()
+		return coupons.filter((c) => c.code.toLowerCase().includes(q))
+	}, [coupons, search])
 
+	const activeCount = coupons.filter((c) => c.isActive).length
+	const totalPages  = Math.ceil(total / PAGE_LIMIT)
+
+	// ── Columns ──
 	const columns = useMemo<ColumnDef<Coupon>[]>(
 		() => [
 			{
@@ -156,41 +161,46 @@ export default function CouponsPage() {
 				),
 			},
 			{
-				id: "discount",
-				header: "Discount",
+				id: "target",
+				header: "Target",
 				cell: ({ row }) => {
-					const c = row.original
-					// const Icon = c.discountType === "PERCENTAGE" ? Percent : IndianRupee
+					const t = row.original.target
 					return (
-						<span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-							{/* <Icon size={10} /> */}
-							{discountLabel(c)}
+						<span
+							className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+								t === "HOST"
+									? "bg-purple-50 text-purple-700"
+									: "bg-sky-50 text-sky-700"
+							}`}
+						>
+							{t === "HOST" ? "Host" : "Attendee"}
 						</span>
 					)
 				},
 			},
 			{
-				id: "applicability",
-				header: "Applies to",
+				id: "discount",
+				header: "Discount",
 				cell: ({ row }) => (
-					<span className="text-xs text-foreground">{applicabilityLabel(row.original)}</span>
+					<span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
+						{discountLabel(row.original)}
+					</span>
 				),
 			},
 			{
 				id: "uses",
 				header: "Uses",
-				accessorKey: "usedCount",
-				enableSorting: true,
 				cell: ({ row }) => {
 					const c = row.original
-					const pct = c.maxUses ? Math.round((c.usedCount / c.maxUses) * 100) : null
+					const used = c.usageCount ?? c.redemptions?.length ?? 0
+					const pct  = c.maxUsages != null ? Math.round((used / c.maxUsages) * 100) : null
 					return (
-						<div className="space-y-1 min-w-20">
+						<div className="space-y-1 min-w-24">
 							<p className="text-xs text-foreground">
-								{c.usedCount}
-								{c.maxUses !== null && (
-									<span className="text-neutral-light"> / {c.maxUses}</span>
-								)}
+								{used}
+								<span className="text-neutral-light">
+									{c.maxUsages != null ? ` / ${c.maxUsages}` : " / ∞"}
+								</span>
 							</p>
 							{pct !== null && (
 								<div className="h-1 w-16 rounded-full bg-neutral-100 overflow-hidden">
@@ -205,27 +215,47 @@ export default function CouponsPage() {
 				},
 			},
 			{
-				id: "expires",
-				header: "Expires",
-				accessorKey: "expiresAt",
-				enableSorting: true,
-				cell: ({ row }) => (
-					<span className="text-xs text-neutral-dark">
-						{row.original.expiresAt ? formatDate(row.original.expiresAt) : "Never"}
-					</span>
-				),
-			},
-			{
 				id: "status",
 				header: "Status",
-				accessorKey: "status",
-				enableSorting: true,
-				cell: ({ row }) => <StatusBadge status={row.original.status} />,
+				cell: ({ row }) => {
+					const active = row.original.isActive
+					return (
+						<span
+							className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+								active
+									? "bg-green-50 text-green-700"
+									: "bg-neutral-100 text-neutral-dark"
+							}`}
+						>
+							{active ? "Active" : "Inactive"}
+						</span>
+					)
+				},
+			},
+			{
+				id: "actions",
+				header: "",
+				cell: ({ row }) => {
+					const c = row.original
+					if (!c.isActive) return null
+					return (
+						<button
+							onClick={(e) => {
+								e.stopPropagation()
+								setDisableTarget(c)
+							}}
+							className="rounded-md px-2.5 py-1 text-[11px] font-semibold text-neutral-dark border border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300 transition-colors"
+						>
+							Disable
+						</button>
+					)
+				},
 			},
 		],
 		[],
 	)
 
+	// ── Permission guard ──
 	if (!canView) {
 		return (
 			<div className="p-6 max-w-7xl mx-auto">
@@ -242,7 +272,7 @@ export default function CouponsPage() {
 			<div className="flex items-center justify-between gap-3">
 				<div className="flex items-center gap-3">
 					<h1 className="text-base font-semibold text-foreground">Coupons</h1>
-					{activeCount > 0 && (
+					{!isLoading && activeCount > 0 && (
 						<span className="rounded-full bg-green-100 px-2.5 py-0.5 text-[11px] font-semibold text-green-700">
 							{activeCount} active
 						</span>
@@ -250,47 +280,49 @@ export default function CouponsPage() {
 				</div>
 
 				{canCreate && (
-					<Link
-						href="/coupons/new"
+					<button
+						onClick={() => setCreateDrawerOpen(true)}
 						className="inline-flex items-center gap-1.5 rounded-lg bg-brand-red px-3.5 py-2 text-xs font-semibold text-white hover:bg-brand-red-deep transition-colors"
 					>
 						<Plus size={13} />
 						New Coupon
-					</Link>
+					</button>
 				)}
 			</div>
 
 			{/* Filters */}
 			<div className="space-y-3">
-				{/* Status tabs */}
+				{/* Active status tabs */}
 				<div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
-					{STATUS_TABS.map((tab) => {
-						const count =
-							tab.value === "ALL"
-								? MOCK_COUPONS.length
-								: MOCK_COUPONS.filter((c) => c.status === tab.value).length
-						const active = statusFilter === tab.value
+					{ACTIVE_TABS.map((tab) => {
+						const active = activeFilter === tab.value
 						return (
 							<button
 								key={tab.value}
-								onClick={() => setStatusFilter(tab.value)}
-								className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+								onClick={() => setActiveFilter(tab.value)}
+								className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
 									active
 										? "bg-brand-red text-white"
 										: "bg-neutral-100 text-neutral-dark hover:bg-neutral-200"
 								}`}
 							>
 								{tab.label}
-								<span
-									className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
-										active ? "bg-white/20 text-white" : "bg-white text-neutral-dark"
-									}`}
-								>
-									{count}
-								</span>
 							</button>
 						)
 					})}
+
+					<div className="w-px h-4 bg-neutral-200 mx-1 shrink-0" />
+
+					{/* Target filter */}
+					<select
+						value={targetFilter}
+						onChange={(e) => setTargetFilter(e.target.value as TargetFilter)}
+						className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-dark focus:border-brand-red focus:outline-none transition-colors"
+					>
+						{TARGET_OPTIONS.map((o) => (
+							<option key={o.value} value={o.value}>{o.label}</option>
+						))}
+					</select>
 				</div>
 
 				{/* Search */}
@@ -303,11 +335,24 @@ export default function CouponsPage() {
 						type="text"
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
-						placeholder="Search by code or description…"
+						placeholder="Search by code…"
 						className="w-full rounded-lg border border-neutral-200 bg-white pl-8 pr-3 py-2 text-xs placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
 					/>
 				</div>
 			</div>
+
+			{/* Error state */}
+			{error && !isLoading && (
+				<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs text-red-700 flex items-center justify-between">
+					<span>{error}</span>
+					<button
+						onClick={fetchCoupons}
+						className="text-xs font-semibold underline underline-offset-2"
+					>
+						Retry
+					</button>
+				</div>
+			)}
 
 			{/* Table */}
 			<DataTable
@@ -322,11 +367,70 @@ export default function CouponsPage() {
 				}
 			/>
 
-			{/* Usage history drawer */}
+			{/* Pagination */}
+			{!isLoading && totalPages > 1 && (
+				<div className="flex items-center justify-between text-xs text-neutral-dark pt-1">
+					<p>
+						Page {page} of {totalPages} · {total} total
+					</p>
+					<div className="flex items-center gap-2">
+						<button
+							onClick={() => setPage((p) => p - 1)}
+							disabled={page <= 1}
+							className="rounded-lg border border-neutral-200 px-3 py-1.5 font-semibold hover:bg-neutral-50 transition-colors disabled:opacity-40"
+						>
+							Previous
+						</button>
+						<button
+							onClick={() => setPage((p) => p + 1)}
+							disabled={page >= totalPages}
+							className="rounded-lg border border-neutral-200 px-3 py-1.5 font-semibold hover:bg-neutral-50 transition-colors disabled:opacity-40"
+						>
+							Next
+						</button>
+					</div>
+				</div>
+			)}
+
+			{/* Create coupon drawer */}
+			<CreateCouponDrawer
+				open={createDrawerOpen}
+				onClose={() => setCreateDrawerOpen(false)}
+				onSuccess={() => {
+					if (page === 1) {
+						fetchCoupons()
+					} else {
+						setPage(1)
+					}
+				}}
+			/>
+
+			{/* Usage / details drawer */}
 			<CouponUsageDrawer
 				open={drawerOpen}
 				onClose={() => { setDrawerOpen(false); setSelectedCoupon(null) }}
 				coupon={selectedCoupon}
+				onDisableSuccess={(id) => {
+					setCoupons((prev) =>
+						prev.map((c) => (c.id === id ? { ...c, isActive: false } : c)),
+					)
+				}}
+			/>
+
+			{/* Disable confirmation */}
+			<ConfirmDialog
+				open={!!disableTarget}
+				onClose={() => setDisableTarget(null)}
+				onConfirm={handleDisable}
+				title="Disable coupon"
+				description={
+					disableTarget
+						? `Disable ${disableTarget.code}? It will immediately stop being accepted at checkout and cannot be re-enabled from this panel.`
+						: ""
+				}
+				confirmLabel="Disable"
+				destructive
+				isLoading={isDisabling}
 			/>
 		</div>
 	)

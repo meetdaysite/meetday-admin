@@ -177,23 +177,36 @@ export type BulkHostRow = {
 
 export type CouponApplicability = "ALL" | "CITY" | "EVENT"
 
+export type CouponTarget = "HOST" | "ATTENDEE"
+
+export type CouponRedemption = {
+	id: string
+	originalFeeRate: number
+	discountedFeeRate: number
+	createdAt: string
+	user?: {
+		id: string
+		firstName: string
+		lastName: string
+		email: string
+	}
+}
+
 export type Coupon = {
 	id: string
 	code: string
-	description: string | null
+	description?: string
+	target: CouponTarget
 	discountType: DiscountType
-	discountValue: number       // percentage (0–100) or flat INR amount
-	applicability: CouponApplicability
-	cities: string[]            // populated when applicability === "CITY"
-	eventIds: string[]          // populated when applicability === "EVENT"
-	maxUses: number | null      // null = unlimited
-	usedCount: number
-	expiresAt: Date | null
-	status: CouponStatus
-	createdAt: Date
-	createdBy: string
+	discountValue: number
+	usageCount?: number
+	maxUsages: number | null       // null = unlimited total uses
+	maxUsagesPerUser: number | null // null = unlimited per-user uses
+	isActive: boolean
+	redemptions: CouponRedemption[]
 }
 
+/** @deprecated Use CouponRedemption instead */
 export type CouponUsage = {
 	id: string
 	couponId: string

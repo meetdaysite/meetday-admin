@@ -10,7 +10,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { InviteAdminDrawer, type InviteAdminSubmitValues } from "@/components/admins/invite-admin-drawer"
-import { inviteAdmin, getAdmins } from "@/lib/api/admins"
+import { inviteAdmin, getAdmins, deactivateAdmin, reactivateAdmin } from "@/lib/api/admins"
 import type { Admin, Role } from "@/types"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -84,8 +84,10 @@ export default function AdminsPage() {
 
 	const [drawerOpen, setDrawerOpen] = useState(false)
 	const [isInviting, setIsInviting] = useState(false)
-	const [revokeTarget, setRevokeTarget] = useState<Admin | null>(null)
-	const [isRevoking, setIsRevoking] = useState(false)
+	const [deactivateTarget, setDeactivateTarget] = useState<Admin | null>(null)
+	const [isDeactivating, setIsDeactivating] = useState(false)
+	const [reactivateTarget, setReactivateTarget] = useState<Admin | null>(null)
+	const [isReactivating, setIsReactivating] = useState(false)
 
 	const fetchAdmins = useCallback(async () => {
 		setIsLoading(true)
@@ -137,14 +139,46 @@ export default function AdminsPage() {
 		}
 	}
 
-	async function handleRevoke() {
-		if (!revokeTarget) return
-		setIsRevoking(true)
-		// TODO: replace with real API call
-		await new Promise((r) => setTimeout(r, 800))
-		setIsRevoking(false)
-		setRevokeTarget(null)
-		fetchAdmins()
+	async function handleDeactivate() {
+		if (!deactivateTarget) return
+		setIsDeactivating(true)
+		try {
+			await deactivateAdmin(deactivateTarget.id)
+			setAdmins((prev) =>
+				prev.map((a) => (a.id === deactivateTarget.id ? { ...a, isActive: false } : a)),
+			)
+			setDeactivateTarget(null)
+			toast.success("Admin deactivated", {
+				description: `${deactivateTarget.firstName} ${deactivateTarget.lastName}'s access has been revoked.`,
+			})
+		} catch (err: unknown) {
+			const message =
+				err instanceof Error ? err.message : "Failed to deactivate admin. Please try again."
+			toast.error("Deactivation failed", { description: message })
+		} finally {
+			setIsDeactivating(false)
+		}
+	}
+
+	async function handleReactivate() {
+		if (!reactivateTarget) return
+		setIsReactivating(true)
+		try {
+			await reactivateAdmin(reactivateTarget.id)
+			setAdmins((prev) =>
+				prev.map((a) => (a.id === reactivateTarget.id ? { ...a, isActive: true } : a)),
+			)
+			setReactivateTarget(null)
+			toast.success("Admin reactivated", {
+				description: `${reactivateTarget.firstName} ${reactivateTarget.lastName}'s access has been restored.`,
+			})
+		} catch (err: unknown) {
+			const message =
+				err instanceof Error ? err.message : "Failed to reactivate admin. Please try again."
+			toast.error("Reactivation failed", { description: message })
+		} finally {
+			setIsReactivating(false)
+		}
 	}
 
 	const columns = useMemo<ColumnDef<Admin>[]>(
@@ -214,18 +248,33 @@ export default function AdminsPage() {
 							cell: ({ row }) => {
 								const admin = row.original
 								const isSelf = admin.id === currentUserId
+								const isTargetSuperAdmin = admin.role.name === "SUPER_ADMIN"
 
-								if (isSelf || !admin.isActive) return null
+								if (isSelf || isTargetSuperAdmin) return null
+
+								if (admin.isActive) {
+									return (
+										<button
+											onClick={(e) => {
+												e.stopPropagation()
+												setDeactivateTarget(admin)
+											}}
+											className="rounded-md px-2.5 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-50 transition-colors"
+										>
+											Deactivate
+										</button>
+									)
+								}
 
 								return (
 									<button
 										onClick={(e) => {
 											e.stopPropagation()
-											setRevokeTarget(admin)
+											setReactivateTarget(admin)
 										}}
-										className="rounded-md px-2.5 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-50 transition-colors"
+										className="rounded-md px-2.5 py-1 text-[11px] font-semibold text-green-600 hover:bg-green-50 transition-colors"
 									>
-										Revoke
+										Reactivate
 									</button>
 								)
 							},
@@ -341,20 +390,35 @@ export default function AdminsPage() {
 				/>
 			)}
 
-			{/* Revoke confirm dialog */}
+			{/* Deactivate confirm dialog */}
 			<ConfirmDialog
-				open={!!revokeTarget}
-				onClose={() => setRevokeTarget(null)}
-				onConfirm={handleRevoke}
-				title="Revoke access"
+				open={!!deactivateTarget}
+				onClose={() => setDeactivateTarget(null)}
+				onConfirm={handleDeactivate}
+				title="Deactivate admin"
 				description={
-					revokeTarget
-						? `This will immediately revoke ${revokeTarget.firstName} ${revokeTarget.lastName}'s access to the admin panel. They won't be able to log in until re-invited.`
+					deactivateTarget
+						? `This will immediately revoke ${deactivateTarget.firstName} ${deactivateTarget.lastName}'s access to the admin panel. They won't be able to log in until reactivated.`
 						: ""
 				}
-				confirmLabel="Revoke access"
+				confirmLabel="Deactivate"
 				destructive
-				isLoading={isRevoking}
+				isLoading={isDeactivating}
+			/>
+
+			{/* Reactivate confirm dialog */}
+			<ConfirmDialog
+				open={!!reactivateTarget}
+				onClose={() => setReactivateTarget(null)}
+				onConfirm={handleReactivate}
+				title="Reactivate admin"
+				description={
+					reactivateTarget
+						? `This will restore ${reactivateTarget.firstName} ${reactivateTarget.lastName}'s access to the admin panel.`
+						: ""
+				}
+				confirmLabel="Reactivate"
+				isLoading={isReactivating}
 			/>
 		</div>
 	)
