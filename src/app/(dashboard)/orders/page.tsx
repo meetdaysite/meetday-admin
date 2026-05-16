@@ -8,22 +8,22 @@ import { toast } from "sonner"
 import { usePermission } from "@/lib/hooks/use-permission"
 import { DataTable } from "@/components/ui/data-table"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { EventReviewDrawer, type EventAction } from "@/components/events/event-review-drawer"
-import { getEvents, approveEvent, rejectEvent, forceCancelEvent, type GetEventsParams } from "@/lib/api/events"
-import type { Event, EventStatus } from "@/types"
+import { OrderDetailDrawer } from "@/components/orders/order-detail-drawer"
+import { getOrders, type GetOrdersParams } from "@/lib/api/orders"
+import type { Order, OrderStatus } from "@/types"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const PAGE_LIMIT = 20
 
-type StatusFilter = EventStatus | "ALL"
+type StatusFilter = OrderStatus | "ALL"
 
 const STATUS_TABS: { label: string; value: StatusFilter }[] = [
-	{ label: "All",          value: "ALL" },
-	{ label: "Under Review", value: "UNDER_REVIEW" },
-	{ label: "Published",    value: "PUBLISHED" },
-	{ label: "Draft",        value: "DRAFT" },
-	{ label: "Cancelled",    value: "CANCELLED" },
+	{ label: "All",             value: "ALL" },
+	{ label: "Confirmed",       value: "CONFIRMED" },
+	{ label: "Pending Payment", value: "PENDING_PAYMENT" },
+	{ label: "Cancelled",       value: "CANCELLED" },
+	{ label: "Refunded",        value: "REFUNDED" },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -32,175 +32,136 @@ function formatDate(iso: string): string {
 	return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
 }
 
-function formatEventDate(iso: string): string {
-	return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function EventsPage() {
+export default function OrdersPage() {
 	const router = useRouter()
-	const canApprove = usePermission("event.approve")
+	const canView = usePermission("order.view")
 
 	const [isLoading, setIsLoading] = useState(true)
-	const [error, setError] = useState<string | null>(null)
-	const [events, setEvents] = useState<Event[]>([])
-	const [total, setTotal] = useState(0)
-	const [page, setPage] = useState(1)
+	const [error, setError]         = useState<string | null>(null)
+	const [orders, setOrders]       = useState<Order[]>([])
+	const [total, setTotal]         = useState(0)
+	const [page, setPage]           = useState(1)
 
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL")
-	const [cityInput, setCityInput] = useState("")
-	const [cityFilter, setCityFilter] = useState("")
-	const [search, setSearch] = useState("")
+	const [search, setSearch]             = useState("")
+	const [bookingIdFilter, setBookingIdFilter] = useState("")
+	const [bookingIdInput, setBookingIdInput]   = useState("")
+	const [fromDate, setFromDate]               = useState("")
+	const [toDate, setToDate]                   = useState("")
 
-	const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
-	const [drawerOpen, setDrawerOpen] = useState(false)
+	const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+	const [drawerOpen, setDrawerOpen]       = useState(false)
 
-	const fetchEvents = useCallback(async () => {
+	const fetchOrders = useCallback(async () => {
 		setIsLoading(true)
 		setError(null)
 		try {
-			const params: GetEventsParams = { page, limit: PAGE_LIMIT }
+			const params: GetOrdersParams = { page, limit: PAGE_LIMIT }
 			if (statusFilter !== "ALL") params.status = statusFilter
-			if (cityFilter) params.city = cityFilter
-			const res = await getEvents(params)
-			setEvents(res.events)
-			setTotal(res.total ?? res.events.length)
+			if (bookingIdFilter) params.bookingId = bookingIdFilter
+			if (fromDate) params.from = fromDate
+			if (toDate) params.to = toDate
+			const res = await getOrders(params)
+			setOrders(res.orders)
+			setTotal(res.total ?? res.orders.length)
 		} catch (err: unknown) {
 			const status = (err as { response?: { status?: number } })?.response?.status
 			if (status === 401) { router.replace("/login"); return }
 			if (status === 403) {
-				setError("You don't have permission to view events.")
+				setError("You don't have permission to view orders.")
 			} else {
-				toast.error("Failed to load events")
+				toast.error("Failed to load orders")
 				setError("Something went wrong. Please try again.")
 			}
 		} finally {
 			setIsLoading(false)
 		}
-	}, [page, statusFilter, cityFilter, router])
+	}, [page, statusFilter, bookingIdFilter, fromDate, toDate, router])
 
 	useEffect(() => {
-		fetchEvents()
-	}, [fetchEvents])
+		fetchOrders()
+	}, [fetchOrders])
 
 	const filtered = useMemo(() => {
 		const q = search.toLowerCase()
-		if (!q) return events
-		return events.filter(
-			(e) =>
-				e.title.toLowerCase().includes(q) ||
-				e.hostProfile.displayName.toLowerCase().includes(q) ||
-				e.hostProfile.user.email.toLowerCase().includes(q),
+		if (!q) return orders
+		return orders.filter(
+			(o) =>
+				o.bookingId.toLowerCase().includes(q) ||
+				o.event.title.toLowerCase().includes(q) ||
+				`${o.user.firstName} ${o.user.lastName}`.toLowerCase().includes(q) ||
+				o.user.email.toLowerCase().includes(q),
 		)
-	}, [events, search])
+	}, [orders, search])
 
-	function openDrawer(event: Event) {
-		setSelectedEvent(event)
-		setDrawerOpen(true)
-	}
-
-	function handleCitySearch(e: React.FormEvent) {
+	function handleBookingSearch(e: React.FormEvent) {
 		e.preventDefault()
 		setPage(1)
-		setCityFilter(cityInput.trim())
-	}
-
-	async function handleAction(eventId: string, action: EventAction, message?: string) {
-		try {
-			if (action === "approve") await approveEvent(eventId)
-			else if (action === "reject") await rejectEvent(eventId, message!)
-			else if (action === "force_cancel") await forceCancelEvent(eventId, message!)
-
-			const labels: Record<EventAction, string> = {
-				approve: "Event approved",
-				reject: "Event rejected",
-				force_cancel: "Event force-cancelled",
-			}
-			toast.success(labels[action])
-			fetchEvents()
-		} catch (err: unknown) {
-			const axiosErr = err as { response?: { status?: number; data?: { message?: string } } }
-			const status = axiosErr?.response?.status
-			if (status === 401) { router.replace("/login"); throw err }
-			if (status === 403) {
-				toast.error("Permission denied", { description: `You don't have permission to ${action} events.` })
-			} else if (status === 404) {
-				toast.error("Event not found")
-			} else if (status === 400) {
-				const msg = axiosErr?.response?.data?.message
-				toast.error(`Cannot ${action} event`, { description: msg ?? "Event is not in the required state." })
-			} else {
-				toast.error(`Failed to ${action} event`, { description: "Something went wrong. Please try again." })
-			}
-			throw err
-		}
+		setBookingIdFilter(bookingIdInput.trim())
 	}
 
 	const totalPages = Math.ceil(total / PAGE_LIMIT)
 
-	const columns = useMemo<ColumnDef<Event>[]>(
+	const columns = useMemo<ColumnDef<Order>[]>(
 		() => [
+			{
+				id: "booking",
+				header: "Booking ID",
+				cell: ({ row }) => (
+					<span className="font-mono text-xs font-semibold text-foreground">
+						{row.original.bookingId}
+					</span>
+				),
+			},
 			{
 				id: "event",
 				header: "Event",
+				cell: ({ row }) => (
+					<div>
+						<p className="text-xs font-semibold text-foreground leading-none mb-0.5">
+							{row.original.event.title}
+						</p>
+						<p className="text-[11px] text-neutral-light">{row.original.event.city}</p>
+					</div>
+				),
+			},
+			{
+				id: "attendee",
+				header: "Attendee",
 				cell: ({ row }) => {
-					const e = row.original
+					const u = row.original.user
 					return (
 						<div>
-							<p className="text-xs font-semibold text-foreground leading-none mb-0.5">{e.title}</p>
-							<p className="text-[11px] text-neutral-light">{e.hostProfile.displayName}</p>
+							<p className="text-xs font-semibold text-foreground leading-none mb-0.5">
+								{u.firstName} {u.lastName}
+							</p>
+							<p className="text-[11px] text-neutral-light">{u.email}</p>
 						</div>
 					)
 				},
-			},
-			{
-				id: "type",
-				header: "Type",
-				cell: ({ row }) => (
-					<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-dark">
-						{row.original.eventType}
-					</span>
-				),
-			},
-			{
-				id: "city",
-				header: "City",
-				cell: ({ row }) => (
-					<span className="text-xs text-foreground">{row.original.city}</span>
-				),
-			},
-			{
-				id: "eventDate",
-				header: "Event Date",
-				cell: ({ row }) => (
-					<span className="text-xs text-foreground">{formatEventDate(row.original.eventDate)}</span>
-				),
-			},
-			{
-				id: "created",
-				header: "Created",
-				cell: ({ row }) => (
-					<span className="text-xs text-neutral-dark">
-						{row.original.createdAt ? formatDate(row.original.createdAt) : "—"}
-					</span>
-				),
 			},
 			{
 				id: "status",
 				header: "Status",
 				cell: ({ row }) => <StatusBadge status={row.original.status} />,
 			},
+			{
+				id: "createdAt",
+				header: "Date",
+				cell: ({ row }) => (
+					<span className="text-xs text-neutral-dark">{formatDate(row.original.createdAt)}</span>
+				),
+			},
 		],
 		[],
 	)
 
-	if (!canApprove) {
+	if (!canView) {
 		return (
 			<div className="p-6 max-w-7xl mx-auto">
-				<p className="text-sm text-neutral-light">
-					You don&apos;t have permission to view events.
-				</p>
+				<p className="text-sm text-neutral-light">You don&apos;t have permission to view orders.</p>
 			</div>
 		)
 	}
@@ -209,7 +170,7 @@ export default function EventsPage() {
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
 			<div className="flex items-center gap-3">
-				<h1 className="text-base font-semibold text-foreground">All Events</h1>
+				<h1 className="text-base font-semibold text-foreground">Orders</h1>
 				<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-dark">
 					{total}
 				</span>
@@ -237,7 +198,7 @@ export default function EventsPage() {
 					})}
 				</div>
 
-				{/* Search + city */}
+				{/* Search + booking ID + date range */}
 				<div className="flex items-center gap-2 flex-wrap">
 					<div className="relative flex-1 min-w-48 max-w-xs">
 						<Search
@@ -248,32 +209,47 @@ export default function EventsPage() {
 							type="text"
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
-							placeholder="Search by title or host…"
+							placeholder="Search by event, attendee…"
 							className="w-full rounded-lg border border-neutral-200 bg-white pl-8 pr-3 py-2 text-xs placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
 						/>
 					</div>
-					<form onSubmit={handleCitySearch} className="flex items-center gap-1.5">
+
+					<form onSubmit={handleBookingSearch} className="flex items-center gap-1.5">
 						<input
 							type="text"
-							value={cityInput}
-							onChange={(e) => setCityInput(e.target.value)}
-							placeholder="Filter by city…"
-							className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors w-36"
+							value={bookingIdInput}
+							onChange={(e) => setBookingIdInput(e.target.value)}
+							placeholder="Booking ID…"
+							className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors w-36 font-mono"
 						/>
-						{cityFilter && (
+						{bookingIdFilter && (
 							<button
 								type="button"
-								onClick={() => { setCityInput(""); setCityFilter(""); setPage(1) }}
+								onClick={() => { setBookingIdInput(""); setBookingIdFilter(""); setPage(1) }}
 								className="rounded-lg border border-neutral-200 px-2.5 py-2 text-xs text-neutral-dark hover:bg-neutral-50 transition-colors"
 							>
 								Clear
 							</button>
 						)}
 					</form>
+
+					<input
+						type="date"
+						value={fromDate}
+						onChange={(e) => { setFromDate(e.target.value); setPage(1) }}
+						className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-foreground focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+					/>
+					<span className="text-xs text-neutral-light">to</span>
+					<input
+						type="date"
+						value={toDate}
+						onChange={(e) => { setToDate(e.target.value); setPage(1) }}
+						className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-foreground focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+					/>
 				</div>
 			</div>
 
-			{/* Error state */}
+			{/* Error */}
 			{error ? (
 				<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
 					{error}
@@ -284,10 +260,10 @@ export default function EventsPage() {
 						columns={columns}
 						data={filtered}
 						isLoading={isLoading}
-						onRowClick={openDrawer}
+						onRowClick={(order) => { setSelectedOrder(order); setDrawerOpen(true) }}
 						emptyState={
 							<div className="py-12 text-center text-sm text-neutral-light">
-								No events match the current filters.
+								No orders match the current filters.
 							</div>
 						}
 					/>
@@ -319,11 +295,10 @@ export default function EventsPage() {
 				</>
 			)}
 
-			<EventReviewDrawer
+			<OrderDetailDrawer
 				open={drawerOpen}
-				onClose={() => { setDrawerOpen(false); setSelectedEvent(null) }}
-				event={selectedEvent}
-				onAction={handleAction}
+				onClose={() => { setDrawerOpen(false); setSelectedOrder(null) }}
+				order={selectedOrder}
 			/>
 		</div>
 	)

@@ -22,6 +22,11 @@ export async function getHosts(params?: GetHostsParams): Promise<HostsListRespon
 	return data
 }
 
+export async function getPendingHosts(params?: GetHostsParams): Promise<HostsListResponse> {
+	const { data } = await apiClient.get<HostsListResponse>("/admin/hosts/pending", { params })
+	return data
+}
+
 export async function getHostById(id: string): Promise<HostDetail> {
 	const { data } = await apiClient.get<HostDetail>(`/admin/hosts/${id}`)
 	return data
@@ -33,4 +38,12 @@ export async function approveHost(id: string): Promise<void> {
 
 export async function rejectHost(id: string, rejectionReason: string): Promise<void> {
 	await apiClient.post(`/admin/hosts/${id}/reject`, { rejectionReason })
+}
+
+export async function suspendHost(id: string, reason: string): Promise<void> {
+	await apiClient.post(`/admin/hosts/${id}/suspend`, { reason })
+}
+
+export async function restoreHost(id: string): Promise<void> {
+	await apiClient.post(`/admin/hosts/${id}/restore`)
 }

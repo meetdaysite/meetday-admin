@@ -22,12 +22,16 @@ export type Permission =
 	| "coupon.view"
 	| "moderation.read"
 	| "moderation.action"
+	| "category.manage"
+	| "interest.manage"
+	| "order.view"
+	| "audit.read"
 
 export type InviteStatus = "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED"
 
 export type HostStatus = "PENDING" | "APPROVED" | "REJECTED" | "INFO_REQUESTED"
 
-export type ApprovalStatus = "PENDING" | "APPROVED" | "REJECTED"
+export type ApprovalStatus = "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED"
 export type KycStatus = "NOT_SUBMITTED" | "PENDING" | "VERIFIED" | "FAILED"
 export type VerificationStatus = KycStatus
 export type HostPlan = "DISCOVER" | "SELL" | "COMMUNITY"
@@ -107,7 +111,7 @@ export type HostDetail = {
 	payoutAccount: PayoutAccount | null
 }
 
-export type EventStatus = "PENDING" | "APPROVED" | "REJECTED" | "EDIT_REQUESTED"
+export type EventStatus = "DRAFT" | "UNDER_REVIEW" | "PUBLISHED" | "CANCELLED"
 
 export type CouponStatus = "ACTIVE" | "EXPIRED" | "DISABLED"
 
@@ -150,19 +154,96 @@ export type TicketTier = {
 	name: string
 	price: number // 0 = free
 	capacity: number
+	sold?: number
+}
+
+export type EventHostProfile = {
+	id: string
+	displayName: string
+	user: {
+		id: string
+		firstName: string
+		lastName: string
+		email: string
+	}
+}
+
+export type EventMediaItem = {
+	id: string
+	eventId: string
+	url: string
+	type: "COVER" | "GALLERY"
+	order: number
+	createdAt: string
+}
+
+export type EventTicket = {
+	id: string
+	eventId: string
+	name: string
+	price: string
+	totalCapacity: number
+	soldCount: number
+	maxPerPerson: number
+	description: string | null
+	saleStartDate: string
+	saleEndDate: string
+	createdAt: string
+	updatedAt: string
+}
+
+export type RefundPolicyType = "NO_REFUND" | "PARTIAL_REFUND" | "FULL_REFUND"
+
+export type EventRefundPolicy = {
+	id: string
+	eventId: string
+	type: RefundPolicyType
+	cutoffHours: number | null
+	refundPercent: number | null
+	refundTo: string
 }
 
 export type Event = {
 	id: string
 	title: string
-	hostName: string
-	hostEmail: string
+	eventType: string
+	eventDate: string
 	city: string
-	date: Date
-	coverImage: string | null
+	isFree: boolean
+	status?: EventStatus        // absent in pending-events response
+	updatedAt?: string          // present in pending-events, absent in all-events
+	createdAt?: string          // present in all-events, absent in pending-events
+	submittedAt?: string | null // present in all-events
+	category: { id: string; name: string } | null
+	hostProfile: EventHostProfile
+}
+
+export type EventDetail = Omit<Event, "status" | "updatedAt"> & {
 	status: EventStatus
-	ticketTiers: TicketTier[]
-	submittedAt: Date
+	updatedAt: string
+	description: string | null
+	startTime: string | null
+	endTime: string | null
+	venueName: string | null
+	fullAddress: string | null
+	languages: string[]
+	tags: string[]
+	whatToExpect: string[]
+	whoShouldAttend: string[]
+	visibility: string
+	ageRestriction: string | null
+	specialInstructions: string | null
+	vibeSummary: string | null
+	crowdPulse: string | null
+	platformFeeWaived: boolean
+	adminRejectionRemark: string | null
+	reviewedBy: string | null
+	reviewedAt: string | null
+	cancelledAt: string | null
+	cancellationReason: string | null
+	media: EventMediaItem[]
+	tickets: EventTicket[]
+	refundPolicy: EventRefundPolicy | null
 }
 
 export type BulkHostRow = {
@@ -217,4 +298,93 @@ export type CouponUsage = {
 	usedAt: Date
 	orderAmount: number
 	discountAmount: number
+}
+
+// ─── Category ─────────────────────────────────────────────────────────────────
+
+export type Category = {
+	id: string
+	name: string
+	description: string | null
+	isActive: boolean
+	createdAt: string
+	updatedAt?: string
+}
+
+// ─── Orders ───────────────────────────────────────────────────────────────────
+
+export type OrderStatus = "PENDING_PAYMENT" | "CONFIRMED" | "CANCELLED" | "REFUNDED"
+
+export type Order = {
+	id: string
+	bookingId: string
+	status: OrderStatus
+	createdAt: string
+	user: { id: string; firstName: string; lastName: string; email: string }
+	event: { id: string; title: string; city: string }
+}
+
+export type OrderAttendee = {
+	id: string
+	firstName: string
+	lastName: string
+	email: string
+	ticketCode: string
+	tierName: string
+}
+
+export type OrderDetail = Order & {
+	totalAmount: number
+	platformFee: number
+	hostPayout: number
+	couponCode: string | null
+	discountAmount: number
+	attendees: OrderAttendee[]
+}
+
+// ─── Audit Logs ───────────────────────────────────────────────────────────────
+
+export type AuditLog = {
+	id: string
+	action: string
+	actorId: string | null
+	actor: { id: string; firstName: string; lastName: string; email: string } | null
+	entityType: string | null
+	entityId: string | null
+	metadata: Record<string, unknown> | null
+	createdAt: string
+}
+
+// ─── Interests ────────────────────────────────────────────────────────────────
+
+export type Interest = {
+	id: string
+	name: string
+	slug: string
+	description: string | null
+	image: string | null
+	createdAt: string
+	updatedAt?: string
+}
+
+export type InterestCategory = {
+	interestId: string
+	categoryId: string
+	category: { id: string; name: string }
+}
+
+export type InterestDetail = Interest & {
+	categories: InterestCategory[]
+}
+
+// ─── Reviews ─────────────────────────────────────────────────────────────────
+
+export type Review = {
+	id: string
+	rating: number
+	content: string | null
+	isVisible: boolean
+	createdAt: string
+	event: { id: string; title: string; city: string }
+	reviewer: { id: string; firstName: string; lastName: string; email: string }
 }

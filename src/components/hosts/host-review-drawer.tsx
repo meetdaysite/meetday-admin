@@ -7,6 +7,7 @@ import {
 	Briefcase, CreditCard, BadgeCheck, AlertTriangle,
 	Globe, Link, BookOpen, Languages,
 } from "lucide-react"
+import * as Dialog from "@radix-ui/react-dialog"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -16,7 +17,7 @@ import type { Host, HostDetail } from "@/types"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type HostAction = "approve" | "reject"
+export type HostAction = "approve" | "reject" | "suspend" | "restore"
 
 export type HostReviewDrawerProps = {
 	open: boolean
@@ -411,6 +412,96 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 	)
 }
 
+// ─── Suspend dialog ───────────────────────────────────────────────────────────
+
+function SuspendHostDialog({
+	open,
+	onClose,
+	onConfirm,
+	hostName,
+}: {
+	open: boolean
+	onClose: () => void
+	onConfirm: (reason: string) => Promise<void>
+	hostName: string
+}) {
+	const [reason, setReason] = useState("")
+	const [isLoading, setIsLoading] = useState(false)
+
+	async function handleSubmit(e: React.FormEvent) {
+		e.preventDefault()
+		if (!reason.trim()) return
+		setIsLoading(true)
+		try {
+			await onConfirm(reason.trim())
+			setReason("")
+		} finally {
+			setIsLoading(false)
+		}
+	}
+
+	function handleClose() {
+		if (isLoading) return
+		setReason("")
+		onClose()
+	}
+
+	return (
+		<Dialog.Root open={open} onOpenChange={(v) => !v && handleClose()}>
+			<Dialog.Portal>
+				<Dialog.Overlay className="fixed inset-0 z-60 bg-black/40" />
+				<Dialog.Content className="fixed left-1/2 top-1/2 z-60 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-xl focus:outline-none">
+					<Dialog.Title className="text-sm font-semibold text-foreground">
+						Suspend Host
+					</Dialog.Title>
+					<Dialog.Description className="mt-1.5 text-xs text-neutral-dark leading-relaxed">
+						Provide a reason for suspending{" "}
+						<span className="font-medium text-foreground">{hostName}</span>. The host will be
+						notified and can no longer submit or accept new orders.
+					</Dialog.Description>
+
+					<form onSubmit={handleSubmit} className="mt-4 space-y-4">
+						<div>
+							<label className="block text-[11px] font-semibold text-neutral-dark mb-1.5">
+								Suspension reason{" "}
+								<span className="text-red-500" aria-hidden>*</span>
+							</label>
+							<textarea
+								value={reason}
+								onChange={(e) => setReason(e.target.value)}
+								placeholder="e.g. Multiple reports of fraudulent event listings."
+								rows={4}
+								disabled={isLoading}
+								autoFocus
+								className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-xs text-foreground placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors resize-none disabled:opacity-50"
+							/>
+						</div>
+
+						<div className="flex items-center justify-end gap-3">
+							<button
+								type="button"
+								onClick={handleClose}
+								disabled={isLoading}
+								className="rounded-lg border border-neutral-200 px-4 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors disabled:opacity-50"
+							>
+								Cancel
+							</button>
+							<button
+								type="submit"
+								disabled={isLoading || !reason.trim()}
+								className="flex items-center gap-1.5 rounded-lg bg-orange-600 px-4 py-2 text-xs font-semibold text-white hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+							>
+								{isLoading && <Loader2 size={13} className="animate-spin" />}
+								Suspend Host
+							</button>
+						</div>
+					</form>
+				</Dialog.Content>
+			</Dialog.Portal>
+		</Dialog.Root>
+	)
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDrawerProps) {
@@ -420,6 +511,7 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 	const [errorMessage, setErrorMessage] = useState<string | null>(null)
 	const [actionLoading, setActionLoading] = useState<HostAction | null>(null)
 	const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
+	const [suspendDialogOpen, setSuspendDialogOpen] = useState(false)
 
 	// Fetch full detail whenever the drawer opens
 	useEffect(() => {
@@ -460,6 +552,7 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 	function handleClose() {
 		setActionLoading(null)
 		setRejectDialogOpen(false)
+		setSuspendDialogOpen(false)
 		setDetail(null)
 		setFetchState("loading")
 		setErrorMessage(null)
@@ -484,7 +577,33 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 		handleClose()
 	}
 
-	const isPending = (detail?.approvalStatus ?? host?.approvalStatus) === "PENDING"
+	async function handleSuspendConfirm(reason: string) {
+		if (!host) return
+		setActionLoading("suspend")
+		try {
+			await onAction(host.id, "suspend", reason)
+			setSuspendDialogOpen(false)
+			handleClose()
+		} finally {
+			setActionLoading(null)
+		}
+	}
+
+	async function handleRestore() {
+		if (!host) return
+		setActionLoading("restore")
+		try {
+			await onAction(host.id, "restore")
+			handleClose()
+		} finally {
+			setActionLoading(null)
+		}
+	}
+
+	const approvalStatus = detail?.approvalStatus ?? host?.approvalStatus
+	const isPending = approvalStatus === "PENDING"
+	const isApproved = approvalStatus === "APPROVED"
+	const isSuspended = approvalStatus === "SUSPENDED"
 	const canApprove = isPending && (detail?.kycStatus ?? host?.kycStatus) === "VERIFIED"
 	const isBusy = actionLoading !== null
 
@@ -510,7 +629,7 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 			{fetchState === "done" && detail && <HostDetailContent detail={detail} />}
 
 			{/* Footer */}
-			<DrawerFooter className={isPending ? "justify-between" : "justify-end"}>
+			<DrawerFooter className={isPending || isApproved || isSuspended ? "justify-between" : "justify-end"}>
 				{isPending && (
 					<>
 						<button
@@ -531,7 +650,42 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 						</button>
 					</>
 				)}
-				{!isPending && (
+				{isApproved && (
+					<>
+						<button
+							onClick={handleClose}
+							className="rounded-lg border border-neutral-200 px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
+						>
+							Close
+						</button>
+						<button
+							onClick={() => setSuspendDialogOpen(true)}
+							disabled={isBusy || fetchState !== "done"}
+							className="flex items-center gap-1.5 rounded-lg border border-orange-200 px-3.5 py-2 text-xs font-semibold text-orange-700 hover:bg-orange-50 transition-colors disabled:opacity-50"
+						>
+							Suspend
+						</button>
+					</>
+				)}
+				{isSuspended && (
+					<>
+						<button
+							onClick={handleClose}
+							className="rounded-lg border border-neutral-200 px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
+						>
+							Close
+						</button>
+						<button
+							onClick={handleRestore}
+							disabled={isBusy || fetchState !== "done"}
+							className="flex items-center gap-1.5 rounded-lg bg-brand-red px-3.5 py-2 text-xs font-semibold text-white hover:bg-brand-red-deep transition-colors disabled:opacity-50"
+						>
+							{actionLoading === "restore" && <Loader2 size={12} className="animate-spin" />}
+							Restore
+						</button>
+					</>
+				)}
+				{!isPending && !isApproved && !isSuspended && (
 					<button
 						onClick={handleClose}
 						className="rounded-lg border border-neutral-200 px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
@@ -545,6 +699,13 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 				open={rejectDialogOpen}
 				onClose={() => setRejectDialogOpen(false)}
 				onConfirm={handleRejectConfirm}
+				hostName={host?.displayName ?? ""}
+			/>
+
+			<SuspendHostDialog
+				open={suspendDialogOpen}
+				onClose={() => setSuspendDialogOpen(false)}
+				onConfirm={handleSuspendConfirm}
 				hostName={host?.displayName ?? ""}
 			/>
 		</Drawer>

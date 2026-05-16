@@ -43,13 +43,15 @@ export function DataTable<TData, TValue>({
 
 	// eslint-disable-next-line react-hooks/incompatible-library
 	const table = useReactTable({
-		data,
+		data: data ?? [],
 		columns,
 		state: { sorting },
 		onSortingChange: setSorting,
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 	})
+
+	const tableRows = !isLoading ? (table.getRowModel()?.rows ?? []) : []
 
 	return (
 		<div className="overflow-hidden rounded-xl border border-neutral-200">
@@ -107,7 +109,7 @@ export function DataTable<TData, TValue>({
 						Array.from({ length: skeletonRows }).map((_, i) => (
 							<SkeletonTableRow key={i} cells={columns.length} />
 						))
-					) : table.getRowModel().rows.length === 0 ? (
+					) : tableRows.length === 0 ? (
 						<tr>
 							<td colSpan={columns.length}>
 								{emptyState ?? (
@@ -119,7 +121,7 @@ export function DataTable<TData, TValue>({
 							</td>
 						</tr>
 					) : (
-						table.getRowModel().rows.map((row) => (
+						tableRows.map((row) => (
 							<tr
 								key={row.id}
 								onClick={() => onRowClick?.(row.original)}

@@ -7,9 +7,15 @@ import {
 	LayoutDashboard,
 	Clock,
 	CalendarDays,
+	CalendarRange,
 	ShieldCheck,
 	Tag,
 	UserCircle,
+	LayoutGrid,
+	ShoppingBag,
+	ScrollText,
+	Star,
+	Sparkles,
 	type LucideIcon,
 } from "lucide-react"
 import { useAuthStore } from "@/stores/auth.store"
@@ -24,6 +30,7 @@ type NavItem = {
 	href: string
 	icon: LucideIcon
 	permission?: Permission
+	exact?: boolean
 }
 
 type NavSection = {
@@ -45,13 +52,24 @@ const NAV: NavSection[] = [
 		title: "Events",
 		items: [
 			{ label: "Event Queue", href: "/events/queue", icon: CalendarDays, permission: "event.approve" },
+			{ label: "All Events",  href: "/events",       icon: CalendarRange, permission: "event.approve", exact: true },
 		],
 	},
 	{
 		title: "Management",
 		items: [
-			{ label: "Admins", href: "/admins", icon: ShieldCheck, permission: "admin.invite" },
-			{ label: "Coupons", href: "/coupons", icon: Tag, permission: "coupon.view" },
+			{ label: "Admins",     href: "/admins",     icon: ShieldCheck, permission: "admin.invite" },
+			{ label: "Coupons",    href: "/coupons",    icon: Tag,         permission: "coupon.view" },
+			{ label: "Categories", href: "/categories", icon: LayoutGrid,  permission: "category.manage" },
+			{ label: "Interests",  href: "/interests",  icon: Sparkles,    permission: "interest.manage" },
+			{ label: "Orders",     href: "/orders",     icon: ShoppingBag, permission: "order.view" },
+		],
+	},
+	{
+		title: "Moderation",
+		items: [
+			{ label: "Reviews",    href: "/reviews",    icon: Star,       permission: "moderation.read" },
+			{ label: "Audit Logs", href: "/audit-logs", icon: ScrollText, permission: "audit.read" },
 		],
 	},
 	{
@@ -119,8 +137,9 @@ export function Sidebar() {
 
 	const collapsed = sidebarCollapsed
 
-	function isActive(href: string) {
-		return pathname === href || pathname.startsWith(href + "/")
+	function isActive(item: NavItem) {
+		if (item.exact) return pathname === item.href
+		return pathname === item.href || pathname.startsWith(item.href + "/")
 	}
 
 	function canSee(permission?: Permission) {
@@ -196,7 +215,7 @@ export function Sidebar() {
 										<NavLink
 											key={item.href}
 											item={item}
-											active={isActive(item.href)}
+											active={isActive(item)}
 											collapsed={collapsed}
 											onNavigate={() => setSidebarOpen(false)}
 										/>

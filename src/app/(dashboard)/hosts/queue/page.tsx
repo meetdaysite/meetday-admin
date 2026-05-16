@@ -5,7 +5,7 @@ import { InviteBulkDrawer } from "@/components/hosts/invite-bulk-drawer"
 import { InviteSingleDrawer } from "@/components/hosts/invite-single-drawer"
 import { DataTable } from "@/components/ui/data-table"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { getHosts, approveHost, rejectHost } from "@/lib/api/hosts"
+import { getHosts, approveHost, rejectHost, suspendHost, restoreHost } from "@/lib/api/hosts"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { ApprovalStatus, Host, KycStatus, HostPlan } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
@@ -21,10 +21,11 @@ const PAGE_LIMIT = 20
 type StatusFilter = ApprovalStatus | "ALL"
 
 const STATUS_TABS: { label: string; value: StatusFilter }[] = [
-	{ label: "All",      value: "ALL" },
-	{ label: "Pending",  value: "PENDING" },
-	{ label: "Approved", value: "APPROVED" },
-	{ label: "Rejected", value: "REJECTED" },
+	{ label: "All",       value: "ALL" },
+	{ label: "Pending",   value: "PENDING" },
+	{ label: "Approved",  value: "APPROVED" },
+	{ label: "Rejected",  value: "REJECTED" },
+	{ label: "Suspended", value: "SUSPENDED" },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -100,15 +101,21 @@ export default function HostQueuePage() {
 	}
 
 	async function handleAction(hostId: string, action: HostAction, reason?: string) {
-		const call = action === "approve" ? approveHost(hostId) : rejectHost(hostId, reason!)
+		const callMap: Record<HostAction, () => Promise<void>> = {
+			approve: () => approveHost(hostId),
+			reject:  () => rejectHost(hostId, reason!),
+			suspend: () => suspendHost(hostId, reason!),
+			restore: () => restoreHost(hostId),
+		}
+		const successMap: Record<HostAction, string> = {
+			approve: "Host approved",
+			reject:  "Host rejected",
+			suspend: "Host suspended",
+			restore: "Host restored",
+		}
 		try {
-			await call
-			toast.success(action === "approve" ? "Host approved" : "Host rejected", {
-				description:
-					action === "approve"
-						? "The host has been approved and will be notified."
-						: "The host has been rejected and will be notified.",
-			})
+			await callMap[action]()
+			toast.success(successMap[action])
 			fetchHosts()
 		} catch (err: unknown) {
 			const axiosErr = err as { response?: { status?: number; data?: { message?: string } } }
@@ -126,7 +133,7 @@ export default function HostQueuePage() {
 			} else if (status === 400) {
 				const msg = axiosErr?.response?.data?.message
 				toast.error(`Cannot ${action} host`, {
-					description: msg ?? "Host is not in a pending state.",
+					description: msg ?? "Host is not in the required state.",
 				})
 			} else {
 				toast.error(`Failed to ${action} host`, {
@@ -137,7 +144,7 @@ export default function HostQueuePage() {
 		}
 	}
 
-	function handleCitySearch(e: React.FormEvent) {
+	function handleCitySearch(e: React.SyntheticEvent<HTMLFormElement>) {
 		e.preventDefault()
 		setPage(1)
 		setCityFilter(cityInput.trim())
