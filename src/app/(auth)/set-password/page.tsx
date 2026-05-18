@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -25,7 +25,7 @@ const passwordSchema = z
 type PasswordValues = z.infer<typeof passwordSchema>
 type Stage = "validating" | "valid" | "invalid" | "done"
 
-export default function CompleteProfilePage() {
+function SetPasswordContent() {
 	const searchParams = useSearchParams()
 	const router = useRouter()
 
@@ -46,6 +46,7 @@ export default function CompleteProfilePage() {
 		const code = searchParams.get("oobCode")
 
 		if (mode !== "resetPassword" || !code) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setStage("invalid")
 			return
 		}
@@ -240,5 +241,18 @@ export default function CompleteProfilePage() {
 				</div>
 			)}
 		</>
+	)
+}
+
+export default function SetPasswordPage() {
+	return (
+		<Suspense fallback={
+			<div className="flex flex-col items-center gap-4 py-10">
+				<Loader2 size={32} className="animate-spin text-brand-red" />
+				<p className="text-sm text-neutral-dark">Loading…</p>
+			</div>
+		}>
+			<SetPasswordContent />
+		</Suspense>
 	)
 }

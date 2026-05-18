@@ -183,7 +183,7 @@ export default function HostsPage() {
 				id: "location",
 				header: "Location",
 				cell: ({ row }) => {
-					const { city, state } = row.original.address
+					const { city, state } = row.original.address ?? {}
 					return (
 						<span className="inline-flex items-center gap-1 text-xs text-foreground">
 							<MapPin size={12} className="text-neutral-light shrink-0" />

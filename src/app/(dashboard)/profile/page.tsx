@@ -79,7 +79,7 @@ function InfoRow({
 		<div className="py-3 flex items-start gap-3">
 			<Icon size={14} className="mt-0.5 shrink-0 text-neutral-light" />
 			<div className="min-w-0 flex-1">
-				<p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-neutral-light mb-0.5">
+				<p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-light mb-0.5">
 					{label}
 				</p>
 				<div className="text-xs text-foreground">{value}</div>
@@ -103,6 +103,7 @@ export default function ProfilePage() {
 	useEffect(() => {
 		let cancelled = false
 
+		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setState("loading")
 		setProfile(null)
 		setErrorMessage(null)

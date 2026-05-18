@@ -166,12 +166,12 @@ export default function EventQueuePage() {
 				id: "submitted",
 				header: "Updated",
 				cell: ({ row }) => {
-					const days = getDaysSince(row.original.updatedAt)
+					const days = row.original.updatedAt ? getDaysSince(row.original.updatedAt) : 0
 					const ageColor =
 						days >= 14 ? "text-orange-600" : days >= 7 ? "text-amber-600" : "text-neutral-light"
 					return (
 						<div>
-							<p className="text-xs text-neutral-dark">{formatDate(row.original.updatedAt)}</p>
+							<p className="text-xs text-neutral-dark">{row.original.updatedAt ? formatDate(row.original.updatedAt) : "—"}</p>
 							<p className={`text-[11px] font-medium ${ageColor}`}>
 								{days === 0 ? "Today" : days === 1 ? "Yesterday" : `${days} days ago`}
 							</p>

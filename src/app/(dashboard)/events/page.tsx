@@ -189,7 +189,7 @@ export default function EventsPage() {
 			{
 				id: "status",
 				header: "Status",
-				cell: ({ row }) => <StatusBadge status={row.original.status} />,
+				cell: ({ row }) => row.original.status ? <StatusBadge status={row.original.status} /> : "—",
 			},
 		],
 		[],

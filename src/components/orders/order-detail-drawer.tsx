@@ -183,7 +183,7 @@ function OrderDetailContent({ detail }: { detail: OrderDetail }) {
 				<>
 					<div className="border-t border-neutral-100" />
 					<div>
-						<SectionLabel>Tickets ({detail.attendees.length})</SectionLabel>
+						<SectionLabel>{`Tickets (${detail.attendees.length})`}</SectionLabel>
 						<div className="rounded-xl border border-neutral-200 overflow-hidden">
 							<table className="w-full text-xs">
 								<thead>
@@ -233,6 +233,7 @@ export function OrderDetailDrawer({ open, onClose, order }: OrderDetailDrawerPro
 	useEffect(() => {
 		if (!open || !order) return
 		let cancelled = false
+		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setDetail(null)
 		setFetchState("loading")
 		setErrorMessage(null)
