@@ -1,5 +1,6 @@
-"use client"
+﻿"use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import * as Tooltip from "@radix-ui/react-tooltip"
@@ -23,7 +24,7 @@ import { useUIStore } from "@/stores/ui.store"
 import { cn } from "@/lib/utils"
 import type { Permission } from "@/types"
 
-// ─── Nav config ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Nav config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type NavItem = {
 	label: string
@@ -78,7 +79,7 @@ const NAV: NavSection[] = [
 	},
 ]
 
-// ─── Nav link ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Nav link â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function NavLink({
 	item,
@@ -101,8 +102,8 @@ function NavLink({
 				"flex items-center gap-2.5 rounded-md text-sm font-medium transition-colors",
 				collapsed ? "justify-center w-9 h-9 mx-auto" : "px-3 py-2 mx-1",
 				active
-					? "bg-brand-red/10 text-brand-red"
-					: "text-neutral-dark hover:bg-neutral-100 hover:text-foreground",
+					? "bg-surface-brand-soft text-text-brand"
+					: "text-text-secondary hover:bg-neutral-100 hover:text-text-primary",
 			)}
 		>
 			<Icon size={15} className="shrink-0" />
@@ -119,7 +120,7 @@ function NavLink({
 				<Tooltip.Content
 					side="right"
 					sideOffset={10}
-					className="z-50 rounded-md bg-foreground px-2.5 py-1.5 text-xs text-white shadow-md animate-in fade-in-0 zoom-in-95"
+					className="z-50 rounded-md bg-text-primary px-2.5 py-1.5 text-xs text-white shadow-md animate-in fade-in-0 zoom-in-95"
 				>
 					{item.label}
 				</Tooltip.Content>
@@ -128,7 +129,7 @@ function NavLink({
 	)
 }
 
-// ─── Sidebar ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function Sidebar() {
 	const pathname = usePathname()
@@ -160,7 +161,7 @@ export function Sidebar() {
 			{/* Sidebar panel */}
 			<aside
 				className={cn(
-					"fixed inset-y-0 left-0 z-50 flex flex-col bg-white border-r border-neutral-200",
+					"fixed inset-y-0 left-0 z-50 flex flex-col bg-surface-canvas border-r border-border-default",
 					"transition-[width,transform] duration-200 ease-in-out",
 					"lg:relative lg:translate-x-0",
 					collapsed ? "lg:w-17" : "lg:w-60",
@@ -171,25 +172,17 @@ export function Sidebar() {
 				{/* Logo */}
 				<div
 					className={cn(
-						"flex items-center h-14 shrink-0 border-b border-neutral-200",
+						"flex items-center h-14 shrink-0 border-b border-border-default",
 						collapsed ? "justify-center" : "px-5",
 					)}
 				>
 					{collapsed ? (
-						<Link
-							href="/dashboard"
-							className="w-8 h-8 rounded-md bg-brand-red flex items-center justify-center shrink-0"
-						>
-							<span className="font-hagrid text-white text-sm font-extrabold leading-none">M</span>
+						<Link href="/dashboard" className="shrink-0">
+							<Image src="/brand_logo.svg" alt="Meetday" width={28} height={28} className="object-contain" />
 						</Link>
 					) : (
-						<Link href="/dashboard" className="flex items-baseline gap-2 min-w-0">
-							<span className="font-hagrid text-foreground text-lg font-extrabold tracking-tight">
-								meetday
-							</span>
-							<span className="text-neutral-light text-[10px] font-medium tracking-[0.18em] uppercase">
-								admin
-							</span>
+						<Link href="/dashboard" className="min-w-0">
+							<Image src="/brand_logo.svg" alt="Meetday" width={120} height={32} className="object-contain" />
 						</Link>
 					)}
 				</div>
@@ -203,12 +196,12 @@ export function Sidebar() {
 						return (
 							<div key={si} className={si > 0 ? "mt-3" : undefined}>
 								{!collapsed && section.title && (
-									<p className="px-4 pb-1 text-[10px] font-semibold tracking-[0.12em] uppercase text-neutral-light">
+									<p className="px-4 pb-1 text-[10px] font-semibold tracking-[0.12em] uppercase text-text-tertiary">
 										{section.title}
 									</p>
 								)}
 								{collapsed && si > 0 && (
-									<div className="mx-auto w-5 h-px bg-neutral-200 mb-3" />
+									<div className="mx-auto w-5 h-px bg-border-default mb-3" />
 								)}
 								<div className={cn("space-y-0.5", collapsed && "flex flex-col items-center")}>
 									{visible.map(item => (

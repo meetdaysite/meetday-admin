@@ -7,7 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { CheckCircle2, Eye, EyeOff, Loader2, XCircle } from "lucide-react"
 import { AuthShell } from "@/components/auth/auth-shell"
-import { cn } from "@/lib/utils"
+import { TextField } from "@/components/ui/TextField"
+import { Button } from "@/components/ui/Button"
 
 const acceptSchema = z
 	.object({
@@ -62,8 +63,8 @@ export default function InvitePage() {
 			{/* Validating */}
 			{stage === "validating" && (
 				<div className="flex flex-col items-center gap-4 py-10">
-					<Loader2 size={32} className="animate-spin text-brand-red" />
-					<p className="text-sm text-neutral-dark">Validating your invite link…</p>
+					<Loader2 size={32} className="animate-spin text-text-brand" />
+					<p className="text-sm text-text-secondary">Validating your invite link…</p>
 				</div>
 			)}
 
@@ -75,18 +76,15 @@ export default function InvitePage() {
 							<XCircle size={32} className="text-red-400" />
 						</div>
 						<div className="text-center space-y-1.5">
-							<h2 className="font-hagrid text-2xl font-extrabold text-foreground">Link expired</h2>
-							<p className="text-sm text-neutral-dark max-w-[320px]">
+							<h2 className="text-2xl font-extrabold text-text-primary">Link expired</h2>
+							<p className="text-sm text-text-secondary max-w-[320px]">
 								This invite link is invalid or has already been used. Contact your administrator for a new one.
 							</p>
 						</div>
 					</div>
-					<button
-						onClick={() => router.push("/login")}
-						className="w-full h-11 rounded-md border border-neutral-light text-sm font-medium text-foreground hover:bg-neutral-100 transition-colors"
-					>
+					<Button variant="secondary" className="w-full" onClick={() => router.push("/login")}>
 						Back to sign in
-					</button>
+					</Button>
 				</div>
 			)}
 
@@ -94,121 +92,75 @@ export default function InvitePage() {
 			{stage === "valid" && (
 				<div className="space-y-8">
 					<div className="space-y-1.5">
-						<h1 className="font-hagrid text-[2rem] font-extrabold text-foreground leading-tight">
+						<h1 className="text-[2rem] font-extrabold text-text-primary leading-tight">
 							Accept invite
 						</h1>
-						<p className="text-sm text-neutral-dark">
+						<p className="text-sm text-text-secondary">
 							You&apos;ve been invited as{" "}
-							<span className="font-medium text-foreground">{inviteEmail}</span>. Set a password to get started.
+							<span className="font-medium text-text-primary">{inviteEmail}</span>. Set a password to get started.
 						</p>
 					</div>
 
 					<form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
-						{/* Name */}
-						<div className="space-y-1.5">
-							<label htmlFor="name" className="block text-sm font-medium text-foreground">
-								Your name
-							</label>
-							<input
-								id="name"
-								type="text"
-								autoComplete="name"
-								placeholder="Jane Smith"
-								className={cn(
-									"w-full h-11 px-4 rounded-md border bg-white text-sm text-foreground",
-									"placeholder:text-neutral-light",
-									"focus:outline-none focus:ring-2 focus:ring-brand-red/25 focus:border-brand-red",
-									"transition-colors",
-									errors.name ? "border-red-400" : "border-neutral-light",
-								)}
-								{...register("name")}
-							/>
-							{errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
-						</div>
+						<TextField
+							label="Your name"
+							id="name"
+							type="text"
+							autoComplete="name"
+							placeholder="Jane Smith"
+							error={!!errors.name}
+							helperText={errors.name?.message}
+							{...register("name")}
+						/>
 
-						{/* Password */}
-						<div className="space-y-1.5">
-							<label htmlFor="inv-password" className="block text-sm font-medium text-foreground">
-								Password
-							</label>
-							<div className="relative">
-								<input
-									id="inv-password"
-									type={showPassword ? "text" : "password"}
-									placeholder="At least 8 characters"
-									className={cn(
-										"w-full h-11 pl-4 pr-11 rounded-md border bg-white text-sm text-foreground",
-										"placeholder:text-neutral-light",
-										"focus:outline-none focus:ring-2 focus:ring-brand-red/25 focus:border-brand-red",
-										"transition-colors",
-										errors.password ? "border-red-400" : "border-neutral-light",
-									)}
-									{...register("password")}
-								/>
+						<TextField
+							label="Password"
+							id="inv-password"
+							type={showPassword ? "text" : "password"}
+							placeholder="At least 8 characters"
+							error={!!errors.password}
+							helperText={errors.password?.message}
+							rightIcon={
 								<button
 									type="button"
 									onClick={() => setShowPassword(v => !v)}
-									className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-light hover:text-neutral-dark transition-colors"
+									className="text-text-tertiary hover:text-text-secondary transition-colors"
 									tabIndex={-1}
 								>
 									{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
 								</button>
-							</div>
-							{errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
-						</div>
+							}
+							{...register("password")}
+						/>
 
-						{/* Confirm password */}
-						<div className="space-y-1.5">
-							<label htmlFor="confirm-password" className="block text-sm font-medium text-foreground">
-								Confirm password
-							</label>
-							<div className="relative">
-								<input
-									id="confirm-password"
-									type={showConfirm ? "text" : "password"}
-									placeholder="Repeat your password"
-									className={cn(
-										"w-full h-11 pl-4 pr-11 rounded-md border bg-white text-sm text-foreground",
-										"placeholder:text-neutral-light",
-										"focus:outline-none focus:ring-2 focus:ring-brand-red/25 focus:border-brand-red",
-										"transition-colors",
-										errors.confirmPassword ? "border-red-400" : "border-neutral-light",
-									)}
-									{...register("confirmPassword")}
-								/>
+						<TextField
+							label="Confirm password"
+							id="confirm-password"
+							type={showConfirm ? "text" : "password"}
+							placeholder="Repeat your password"
+							error={!!errors.confirmPassword}
+							helperText={errors.confirmPassword?.message}
+							rightIcon={
 								<button
 									type="button"
 									onClick={() => setShowConfirm(v => !v)}
-									className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-light hover:text-neutral-dark transition-colors"
+									className="text-text-tertiary hover:text-text-secondary transition-colors"
 									tabIndex={-1}
 								>
 									{showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
 								</button>
-							</div>
-							{errors.confirmPassword && (
-								<p className="text-xs text-red-500">{errors.confirmPassword.message}</p>
-							)}
-						</div>
+							}
+							{...register("confirmPassword")}
+						/>
 
-						<button
+						<Button
 							type="submit"
 							disabled={isSubmitting}
-							className={cn(
-								"w-full h-11 rounded-md bg-brand-red text-white text-sm font-semibold",
-								"hover:bg-brand-red-deep active:scale-[0.99] transition-all",
-								"flex items-center justify-center gap-2",
-								"disabled:opacity-60 disabled:cursor-not-allowed",
-							)}
+							className="w-full"
+							leftIcon={isSubmitting ? <Loader2 size={15} className="animate-spin" /> : undefined}
 						>
-							{isSubmitting ? (
-								<>
-									<Loader2 size={15} className="animate-spin" />
-									Activating account…
-								</>
-							) : (
-								"Activate account"
-							)}
-						</button>
+							{isSubmitting ? "Activating account…" : "Activate account"}
+						</Button>
 					</form>
 				</div>
 			)}
@@ -221,21 +173,15 @@ export default function InvitePage() {
 							<CheckCircle2 size={32} className="text-green-500" />
 						</div>
 						<div className="text-center space-y-1.5">
-							<h2 className="font-hagrid text-2xl font-extrabold text-foreground">You&apos;re all set!</h2>
-							<p className="text-sm text-neutral-dark">
+							<h2 className="text-2xl font-extrabold text-text-primary">You&apos;re all set!</h2>
+							<p className="text-sm text-text-secondary">
 								Your account has been activated. You can now sign in.
 							</p>
 						</div>
 					</div>
-					<button
-						onClick={() => router.push("/login")}
-						className={cn(
-							"w-full h-11 rounded-md bg-brand-red text-white text-sm font-semibold",
-							"hover:bg-brand-red-deep transition-colors",
-						)}
-					>
+					<Button className="w-full" onClick={() => router.push("/login")}>
 						Go to sign in
-					</button>
+					</Button>
 				</div>
 			)}
 		</AuthShell>

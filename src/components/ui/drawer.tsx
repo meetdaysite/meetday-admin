@@ -28,7 +28,7 @@ export function DrawerFooter({
 	return (
 		<div
 			className={cn(
-				"flex items-center justify-end gap-3 border-t border-neutral-100 px-6 py-4 shrink-0",
+				"flex items-center justify-end gap-3 border-t border-border-subtle px-6 py-4 shrink-0",
 				className,
 			)}
 		>
@@ -66,7 +66,7 @@ export function Drawer({
 							<Dialog.Content asChild forceMount>
 								<motion.div
 									className={cn(
-										"fixed right-0 inset-y-0 z-50 flex flex-col bg-white shadow-2xl w-full",
+										"fixed right-0 inset-y-0 z-50 flex flex-col bg-surface-canvas shadow-2xl w-full",
 										width,
 									)}
 									initial={{ x: "100%" }}
@@ -75,20 +75,20 @@ export function Drawer({
 									transition={{ type: "spring", damping: 30, stiffness: 300 }}
 								>
 									{/* Header */}
-									<div className="flex items-start justify-between border-b border-neutral-100 px-6 py-5 shrink-0">
+									<div className="flex items-start justify-between border-b border-border-subtle px-6 py-5 shrink-0">
 										<div>
-											<Dialog.Title className="text-sm font-semibold text-foreground">
+											<Dialog.Title className="text-sm font-semibold text-text-primary">
 												{title}
 											</Dialog.Title>
 											{description && (
-												<Dialog.Description className="mt-1 text-xs text-neutral-light">
+												<Dialog.Description className="mt-1 text-xs text-text-tertiary">
 													{description}
 												</Dialog.Description>
 											)}
 										</div>
 										<button
 											onClick={onClose}
-											className="rounded-lg p-1.5 text-neutral-light hover:bg-neutral-100 hover:text-neutral-dark transition-colors"
+											className="rounded-action p-1.5 text-icon-muted hover:bg-surface-card-muted hover:text-icon-primary transition-colors"
 											aria-label="Close drawer"
 										>
 											<X size={16} />

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -12,13 +12,13 @@ import { CategoryDrawer } from "@/components/categories/category-drawer"
 import { getCategories } from "@/lib/api/categories"
 import type { Category } from "@/types"
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function formatDate(iso: string): string {
 	return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function CategoriesPage() {
 	const router = useRouter()
@@ -93,15 +93,15 @@ export default function CategoriesPage() {
 				id: "name",
 				header: "Name",
 				cell: ({ row }) => (
-					<p className="text-xs font-semibold text-foreground">{row.original.name}</p>
+					<p className="text-xs font-semibold text-text-primary">{row.original.name}</p>
 				),
 			},
 			{
 				id: "description",
 				header: "Description",
 				cell: ({ row }) => (
-					<p className="text-xs text-neutral-light max-w-xs truncate">
-						{row.original.description ?? <span className="italic">—</span>}
+					<p className="text-xs text-text-tertiary max-w-xs truncate">
+						{row.original.description ?? <span className="italic">â€”</span>}
 					</p>
 				),
 			},
@@ -116,7 +116,7 @@ export default function CategoriesPage() {
 				id: "createdAt",
 				header: "Created",
 				cell: ({ row }) => (
-					<span className="text-xs text-neutral-dark">{formatDate(row.original.createdAt)}</span>
+					<span className="text-xs text-text-secondary">{formatDate(row.original.createdAt)}</span>
 				),
 			},
 		],
@@ -127,14 +127,14 @@ export default function CategoriesPage() {
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
 			<div className="flex items-center gap-3">
-				<h1 className="text-base font-semibold text-foreground">Categories</h1>
-				<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-dark">
+				<h1 className="text-base font-semibold text-text-primary">Categories</h1>
+				<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
 					{categories.length}
 				</span>
 				{canManage && (
 					<button
 						onClick={openCreate}
-						className="ml-auto flex items-center gap-1.5 rounded-lg bg-brand-red px-3.5 py-2 text-xs font-semibold text-white hover:bg-brand-red-deep transition-colors"
+						className="ml-auto flex items-center gap-1.5 rounded-lg bg-action-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors"
 					>
 						<Plus size={13} />
 						New Category
@@ -146,14 +146,14 @@ export default function CategoriesPage() {
 			<div className="relative max-w-xs">
 				<Search
 					size={13}
-					className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-light pointer-events-none"
+					className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
 				/>
 				<input
 					type="text"
 					value={search}
 					onChange={(e) => setSearch(e.target.value)}
 					placeholder="Search categories…"
-					className="w-full rounded-lg border border-neutral-200 bg-white pl-8 pr-3 py-2 text-xs placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+					className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 				/>
 			</div>
 
@@ -169,7 +169,7 @@ export default function CategoriesPage() {
 					isLoading={isLoading}
 					onRowClick={canManage ? openEdit : undefined}
 					emptyState={
-						<div className="py-12 text-center text-sm text-neutral-light">
+						<div className="py-12 text-center text-sm text-text-tertiary">
 							No categories found.
 						</div>
 					}

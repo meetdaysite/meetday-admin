@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -13,7 +13,7 @@ import type { HostAction } from "@/components/hosts/host-review-drawer"
 import { getHosts, approveHost, rejectHost } from "@/lib/api/hosts"
 import type { Host, ApprovalStatus, KycStatus, HostPlan } from "@/types"
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const PAGE_LIMIT = 20
 
@@ -43,7 +43,7 @@ const PLAN_FILTER_OPTIONS: { label: string; value: PlanFilter }[] = [
 	{ label: "Community",  value: "COMMUNITY" },
 ]
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function HostsPage() {
 	const router = useRouter()
@@ -151,10 +151,10 @@ export default function HostsPage() {
 					const h = row.original
 					return (
 						<div>
-							<p className="text-xs font-semibold text-foreground leading-none mb-0.5">
+							<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
 								{h.displayName}
 							</p>
-							<p className="text-[11px] text-neutral-light">
+							<p className="text-[11px] text-text-tertiary">
 								{h.user.firstName} {h.user.lastName} · {h.user.email}
 							</p>
 						</div>
@@ -165,7 +165,7 @@ export default function HostsPage() {
 				id: "type",
 				header: "Type",
 				cell: ({ row }) => (
-					<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-dark">
+					<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
 						{row.original.hostType}
 					</span>
 				),
@@ -174,7 +174,7 @@ export default function HostsPage() {
 				id: "plan",
 				header: "Plan",
 				cell: ({ row }) => (
-					<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-dark">
+					<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
 						{row.original.currentPlan}
 					</span>
 				),
@@ -185,8 +185,8 @@ export default function HostsPage() {
 				cell: ({ row }) => {
 					const { city, state } = row.original.address ?? {}
 					return (
-						<span className="inline-flex items-center gap-1 text-xs text-foreground">
-							<MapPin size={12} className="text-neutral-light shrink-0" />
+						<span className="inline-flex items-center gap-1 text-xs text-text-primary">
+							<MapPin size={12} className="text-text-tertiary shrink-0" />
 							{[city, state].filter(Boolean).join(", ")}
 						</span>
 					)
@@ -208,12 +208,12 @@ export default function HostsPage() {
 				cell: ({ row }) => {
 					const cats = row.original.categories
 					if (cats.length === 0)
-						return <span className="text-xs text-neutral-light">—</span>
+						return <span className="text-xs text-text-tertiary">â€”</span>
 					return (
-						<span className="text-xs text-foreground">
+						<span className="text-xs text-text-primary">
 							{cats.slice(0, 2).join(", ")}
 							{cats.length > 2 && (
-								<span className="text-neutral-light"> +{cats.length - 2}</span>
+								<span className="text-text-tertiary"> +{cats.length - 2}</span>
 							)}
 						</span>
 					)
@@ -230,9 +230,9 @@ export default function HostsPage() {
 			{/* Page header */}
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-3">
-					<h1 className="text-base font-semibold text-foreground">Hosts</h1>
+					<h1 className="text-base font-semibold text-text-primary">Hosts</h1>
 					{total > 0 && (
-						<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-dark">
+						<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
 							{total} total
 						</span>
 					)}
@@ -244,7 +244,7 @@ export default function HostsPage() {
 				<select
 					value={approvalFilter}
 					onChange={(e) => { setApprovalFilter(e.target.value as ApprovalFilter); setPage(1) }}
-					className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-foreground focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 				>
 					{APPROVAL_FILTER_OPTIONS.map((o) => (
 						<option key={o.value} value={o.value}>{o.label}</option>
@@ -254,7 +254,7 @@ export default function HostsPage() {
 				<select
 					value={kycFilter}
 					onChange={(e) => { setKycFilter(e.target.value as KycFilter); setPage(1) }}
-					className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-foreground focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 				>
 					{KYC_FILTER_OPTIONS.map((o) => (
 						<option key={o.value} value={o.value}>{o.label}</option>
@@ -264,7 +264,7 @@ export default function HostsPage() {
 				<select
 					value={planFilter}
 					onChange={(e) => { setPlanFilter(e.target.value as PlanFilter); setPage(1) }}
-					className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-foreground focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 				>
 					{PLAN_FILTER_OPTIONS.map((o) => (
 						<option key={o.value} value={o.value}>{o.label}</option>
@@ -277,13 +277,13 @@ export default function HostsPage() {
 						value={cityInput}
 						onChange={(e) => setCityInput(e.target.value)}
 						placeholder="Filter by city…"
-						className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-foreground placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors w-36"
+						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors w-36"
 					/>
 					{cityFilter && (
 						<button
 							type="button"
 							onClick={() => { setCityInput(""); setCityFilter(""); setPage(1) }}
-							className="rounded-lg border border-neutral-200 px-2.5 py-2 text-xs text-neutral-dark hover:bg-neutral-50 transition-colors"
+							className="rounded-lg border border-border-default px-2.5 py-2 text-xs text-text-secondary hover:bg-neutral-50 transition-colors"
 						>
 							Clear
 						</button>
@@ -305,7 +305,7 @@ export default function HostsPage() {
 						isLoading={isLoading}
 						onRowClick={canApprove ? (row) => setSelectedHost(row) : undefined}
 						emptyState={
-							<div className="py-12 text-center text-sm text-neutral-light">
+							<div className="py-12 text-center text-sm text-text-tertiary">
 								No hosts found.
 							</div>
 						}
@@ -313,25 +313,25 @@ export default function HostsPage() {
 
 					{/* Pagination */}
 					{totalPages > 1 && (
-						<div className="flex items-center justify-between text-xs text-neutral-light">
+						<div className="flex items-center justify-between text-xs text-text-tertiary">
 							<span>
-								Showing {(page - 1) * PAGE_LIMIT + 1}–{Math.min(page * PAGE_LIMIT, total)} of {total}
+								Showing {(page - 1) * PAGE_LIMIT + 1}â€“{Math.min(page * PAGE_LIMIT, total)} of {total}
 							</span>
 							<div className="flex items-center gap-2">
 								<button
 									disabled={page === 1}
 									onClick={() => setPage((p) => p - 1)}
-									className="rounded-md px-2.5 py-1 text-xs font-medium border border-neutral-200 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 								>
 									Previous
 								</button>
-								<span className="font-medium text-foreground">
+								<span className="font-medium text-text-primary">
 									{page} / {totalPages}
 								</span>
 								<button
 									disabled={page >= totalPages}
 									onClick={() => setPage((p) => p + 1)}
-									className="rounded-md px-2.5 py-1 text-xs font-medium border border-neutral-200 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 								>
 									Next
 								</button>

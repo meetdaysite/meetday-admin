@@ -1,10 +1,10 @@
-"use client"
+﻿"use client"
 
 import * as Dialog from "@radix-ui/react-dialog"
 import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type ConfirmDialogProps = {
 	open: boolean
@@ -18,7 +18,7 @@ export type ConfirmDialogProps = {
 	isLoading?: boolean
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function ConfirmDialog({
 	open,
@@ -35,11 +35,11 @@ export function ConfirmDialog({
 		<Dialog.Root open={open} onOpenChange={(v) => !v && onClose()}>
 			<Dialog.Portal>
 				<Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
-				<Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-xl focus:outline-none">
-					<Dialog.Title className="text-sm font-semibold text-foreground">
+				<Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl bg-surface-card p-6 shadow-xl focus:outline-none">
+					<Dialog.Title className="text-sm font-semibold text-text-primary">
 						{title}
 					</Dialog.Title>
-					<Dialog.Description className="mt-2 text-sm text-neutral-dark leading-relaxed">
+					<Dialog.Description className="mt-2 text-sm text-text-secondary leading-relaxed">
 						{description}
 					</Dialog.Description>
 
@@ -47,7 +47,7 @@ export function ConfirmDialog({
 						<button
 							onClick={onClose}
 							disabled={isLoading}
-							className="rounded-lg border border-neutral-200 px-4 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors disabled:opacity-50"
+							className="rounded-action border border-border-default px-4 py-2 text-xs font-semibold text-text-primary hover:bg-action-secondary-hover transition-colors disabled:opacity-50"
 						>
 							{cancelLabel}
 						</button>
@@ -55,10 +55,10 @@ export function ConfirmDialog({
 							onClick={onConfirm}
 							disabled={isLoading}
 							className={cn(
-								"flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white transition-colors disabled:opacity-70",
+								"flex items-center gap-1.5 rounded-action px-4 py-2 text-xs font-semibold text-action-primary-text transition-colors disabled:opacity-70",
 								destructive
-									? "bg-red-600 hover:bg-red-700"
-									: "bg-brand-red hover:bg-brand-red-deep",
+									? "bg-color-red-600 hover:bg-color-red-700"
+									: "bg-action-primary hover:bg-action-primary-hover",
 							)}
 						>
 							{isLoading && <Loader2 size={13} className="animate-spin" />}

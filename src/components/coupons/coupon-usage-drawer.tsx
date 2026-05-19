@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { Tag, Percent, IndianRupee, Users, Clock, AlertCircle, Loader2 } from "lucide-react"
@@ -9,7 +9,7 @@ import type { Coupon, CouponRedemption } from "@/types"
 import axios from "axios"
 import { toast } from "sonner"
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function formatDateTime(iso: string): string {
 	const d = new Date(iso)
@@ -33,56 +33,56 @@ function getApiErrorMessage(err: unknown): string {
 	return err instanceof Error ? err.message : "Something went wrong"
 }
 
-// ─── Summary stat ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Summary stat â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function Stat({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
 	return (
 		<div className="flex items-start gap-2.5">
 			<div className="mt-0.5 w-7 h-7 rounded-md bg-neutral-100 flex items-center justify-center shrink-0">
-				<Icon size={13} className="text-neutral-dark" />
+				<Icon size={13} className="text-text-secondary" />
 			</div>
 			<div>
-				<p className="text-[11px] text-neutral-light">{label}</p>
-				<p className="text-sm font-medium text-foreground">{value}</p>
+				<p className="text-[11px] text-text-tertiary">{label}</p>
+				<p className="text-sm font-medium text-text-primary">{value}</p>
 			</div>
 		</div>
 	)
 }
 
-// ─── Redemption timeline item ─────────────────────────────────────────────────
+// â”€â”€â”€ Redemption timeline item â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function RedemptionItem({ redemption, isLast }: { redemption: CouponRedemption; isLast: boolean }) {
 	const userName = redemption.user
 		? `${redemption.user.firstName} ${redemption.user.lastName}`
 		: "Unknown user"
-	const userEmail = redemption.user?.email ?? "—"
+	const userEmail = redemption.user?.email ?? "â€”"
 
 	return (
 		<div className="flex gap-3">
 			{/* Dot + line */}
 			<div className="flex flex-col items-center">
-				<div className="w-2 h-2 rounded-full bg-brand-red mt-1.5 shrink-0" />
-				{!isLast && <div className="w-px flex-1 bg-neutral-200 mt-1" />}
+				<div className="w-2 h-2 rounded-full bg-action-primary mt-1.5 shrink-0" />
+				{!isLast && <div className="w-px flex-1 bg-border-default mt-1" />}
 			</div>
 
 			{/* Content */}
 			<div className="pb-5 flex-1 min-w-0">
 				<div className="flex items-start justify-between gap-2">
 					<div className="min-w-0">
-						<p className="text-xs font-semibold text-foreground truncate">{userName}</p>
-						<p className="text-[11px] text-neutral-light truncate">{userEmail}</p>
+						<p className="text-xs font-semibold text-text-primary truncate">{userName}</p>
+						<p className="text-[11px] text-text-tertiary truncate">{userEmail}</p>
 					</div>
 					<div className="text-right shrink-0">
 						<p className="text-xs font-semibold text-green-700">
 							{fmtRate(redemption.discountedFeeRate)}
 						</p>
-						<p className="text-[11px] text-neutral-light">
+						<p className="text-[11px] text-text-tertiary">
 							from {fmtRate(redemption.originalFeeRate)}
 						</p>
 					</div>
 				</div>
 
-				<div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-neutral-light">
+				<div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-text-tertiary">
 					<Clock size={10} />
 					{formatDateTime(redemption.createdAt)}
 				</div>
@@ -91,7 +91,7 @@ function RedemptionItem({ redemption, isLast }: { redemption: CouponRedemption; 
 	)
 }
 
-// ─── Props ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Props â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type CouponUsageDrawerProps = {
 	open: boolean
@@ -100,7 +100,7 @@ export type CouponUsageDrawerProps = {
 	onDisableSuccess?: (id: string) => void
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function CouponUsageDrawer({ open, onClose, coupon, onDisableSuccess }: CouponUsageDrawerProps) {
 	const [detail, setDetail]               = useState<Coupon | null>(null)
@@ -173,7 +173,7 @@ export function CouponUsageDrawer({ open, onClose, coupon, onDisableSuccess }: C
 				{/* Loading state */}
 				{isLoadingDetail && (
 					<div className="flex items-center justify-center py-12">
-						<Loader2 size={20} className="animate-spin text-neutral-light" />
+						<Loader2 size={20} className="animate-spin text-text-tertiary" />
 					</div>
 				)}
 
@@ -193,7 +193,7 @@ export function CouponUsageDrawer({ open, onClose, coupon, onDisableSuccess }: C
 							className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
 								displayCoupon.isActive
 									? "bg-green-50 text-green-700"
-									: "bg-neutral-100 text-neutral-dark"
+									: "bg-neutral-100 text-text-secondary"
 							}`}
 						>
 							{displayCoupon.isActive ? "Active" : "Inactive"}
@@ -207,7 +207,7 @@ export function CouponUsageDrawer({ open, onClose, coupon, onDisableSuccess }: C
 								value={
 									displayCoupon.discountType === "PERCENTAGE"
 										? `${displayCoupon.discountValue}% off`
-										: `₹${displayCoupon.discountValue} flat`
+										: `â‚¹${displayCoupon.discountValue} flat`
 								}
 							/>
 							<Stat
@@ -221,7 +221,7 @@ export function CouponUsageDrawer({ open, onClose, coupon, onDisableSuccess }: C
 								value={
 									displayCoupon.maxUsages != null
 										? `${usageCount} / ${displayCoupon.maxUsages}`
-										: `${usageCount} / ∞`
+										: `${usageCount} / âˆž`
 								}
 							/>
 							{displayCoupon.maxUsagesPerUser != null && (
@@ -235,12 +235,12 @@ export function CouponUsageDrawer({ open, onClose, coupon, onDisableSuccess }: C
 
 						{/* Redemptions */}
 						<div>
-							<p className="text-[11px] font-semibold tracking-wider uppercase text-neutral-light mb-3">
+							<p className="text-[11px] font-semibold tracking-wider uppercase text-text-tertiary mb-3">
 								Redemption History
 							</p>
 
 							{redemptions.length === 0 ? (
-								<p className="text-xs text-neutral-light py-4 text-center">
+								<p className="text-xs text-text-tertiary py-4 text-center">
 									No redemptions recorded yet.
 								</p>
 							) : (
@@ -265,7 +265,7 @@ export function CouponUsageDrawer({ open, onClose, coupon, onDisableSuccess }: C
 					)}
 					<button
 						onClick={onClose}
-						className="rounded-lg border border-neutral-200 px-4 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
+						className="rounded-lg border border-border-default px-4 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors"
 					>
 						Close
 					</button>

@@ -39,9 +39,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
 				position="top-right"
 				toastOptions={{
 					style: {
-						background: "#fafafa",
-						color: "#171717",
-						border: "1px solid #bcbcbc",
+						background: "var(--surface-canvas)",
+						color: "#171717",       /* TODO: confirm — close to --text-primary (#111111) but not exact old token */
+						border: "1px solid #bcbcbc", /* TODO: confirm — not a defined old token; candidate: var(--border-default) */
 					},
 				}}
 			/>

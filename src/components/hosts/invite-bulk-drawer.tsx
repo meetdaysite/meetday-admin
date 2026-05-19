@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useCallback } from "react"
 import { useDropzone } from "react-dropzone"
@@ -18,10 +18,11 @@ import {
 import { cn } from "@/lib/utils"
 import { Drawer } from "@/components/ui/drawer"
 import { DataTable } from "@/components/ui/data-table"
+import { Button } from "@/components/ui/Button"
 import { parseHostFile, downloadErrorReport, downloadTemplate } from "@/lib/parse-host-file"
 import type { BulkHostRow } from "@/types"
 
-// ─── Step indicator ───────────────────────────────────────────────────────────
+// ─── Step indicator ──────────────────────────────────────────────────────────
 
 const STEPS = ["Upload", "Preview", "Done"] as const
 
@@ -34,7 +35,7 @@ function StepIndicator({ current }: { current: number }) {
 						<div
 							className={cn(
 								"h-px flex-1 transition-colors",
-								i <= current ? "bg-brand-red" : "bg-neutral-200",
+								i <= current ? "bg-action-primary" : "bg-neutral-200",
 							)}
 						/>
 					)}
@@ -43,10 +44,10 @@ function StepIndicator({ current }: { current: number }) {
 							className={cn(
 								"flex h-7 w-7 items-center justify-center rounded-full border-2 text-[11px] font-bold transition-colors",
 								i < current
-									? "border-brand-red bg-brand-red text-white"
+									? "border-border-focus bg-action-primary text-white"
 									: i === current
-										? "border-brand-red bg-white text-brand-red"
-										: "border-neutral-200 bg-white text-neutral-light",
+										? "border-border-focus bg-surface-canvas text-text-brand"
+										: "border-border-default bg-surface-canvas text-text-tertiary",
 							)}
 						>
 							{i < current ? <Check size={12} /> : i + 1}
@@ -55,10 +56,10 @@ function StepIndicator({ current }: { current: number }) {
 							className={cn(
 								"text-[10px] font-medium tracking-wide",
 								i === current
-									? "text-brand-red"
+									? "text-text-brand"
 									: i < current
-										? "text-neutral-dark"
-										: "text-neutral-light",
+										? "text-text-secondary"
+										: "text-text-tertiary",
 							)}
 						>
 							{label}
@@ -116,45 +117,45 @@ function UploadStep({ onContinue }: { onContinue: (rows: BulkHostRow[]) => void 
 				className={cn(
 					"flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-12 transition-colors",
 					isDragActive
-						? "border-brand-red bg-brand-red/5"
+						? "border-border-focus bg-surface-brand-soft"
 						: rows
 							? "border-green-300 bg-green-50 hover:bg-green-50/70"
-							: "border-neutral-200 bg-neutral-50 hover:border-neutral-300 hover:bg-white",
+							: "border-border-default bg-neutral-50 hover:border-neutral-300 hover:bg-surface-canvas",
 				)}
 			>
 				<input {...getInputProps()} />
 				<div
 					className={cn(
 						"flex h-12 w-12 items-center justify-center rounded-xl transition-colors",
-						rows ? "bg-green-100" : isDragActive ? "bg-brand-red/15" : "bg-brand-red/10",
+						rows ? "bg-green-100" : isDragActive ? "bg-surface-brand-soft" : "bg-surface-brand-soft",
 					)}
 				>
 					{rows ? (
 						<FileText size={22} className="text-green-600" />
 					) : (
-						<Upload size={22} className="text-brand-red" />
+						<Upload size={22} className="text-text-brand" />
 					)}
 				</div>
 
 				{isParsing ? (
-					<div className="flex items-center gap-2 text-sm text-neutral-dark">
-						<Loader2 size={15} className="animate-spin text-brand-red" />
+					<div className="flex items-center gap-2 text-sm text-text-secondary">
+						<Loader2 size={15} className="animate-spin text-text-brand" />
 						Parsing file…
 					</div>
 				) : file ? (
 					<div className="text-center">
-						<p className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-							<FileText size={14} className="text-neutral-light" />
+						<p className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
+							<FileText size={14} className="text-text-tertiary" />
 							{file.name}
 						</p>
-						<p className="mt-0.5 text-[11px] text-neutral-light">Drop a new file to replace</p>
+						<p className="mt-0.5 text-[11px] text-text-tertiary">Drop a new file to replace</p>
 					</div>
 				) : (
 					<div className="text-center">
-						<p className="text-sm font-medium text-foreground">
+						<p className="text-sm font-medium text-text-primary">
 							{isDragActive ? "Drop it here" : "Drop your file here"}
 						</p>
-						<p className="mt-0.5 text-[11px] text-neutral-light">CSV or XLSX · max 5 MB</p>
+						<p className="mt-0.5 text-[11px] text-text-tertiary">CSV or XLSX · max 5 MB</p>
 					</div>
 				)}
 			</div>
@@ -162,7 +163,7 @@ function UploadStep({ onContinue }: { onContinue: (rows: BulkHostRow[]) => void 
 			{/* Parse summary */}
 			{rows && (
 				<div className="flex flex-wrap items-center gap-2">
-					<span className="rounded-lg bg-neutral-100 px-3 py-1.5 text-xs font-semibold text-neutral-dark">
+					<span className="rounded-lg bg-neutral-100 px-3 py-1.5 text-xs font-semibold text-text-secondary">
 						{rows.length} row{rows.length !== 1 ? "s" : ""} found
 					</span>
 					<span className="rounded-lg bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
@@ -185,12 +186,12 @@ function UploadStep({ onContinue }: { onContinue: (rows: BulkHostRow[]) => void 
 			)}
 
 			{/* Template download */}
-			<p className="text-xs text-neutral-light">
+			<p className="text-xs text-text-tertiary">
 				Need a template?{" "}
 				<button
 					type="button"
 					onClick={downloadTemplate}
-					className="font-medium text-brand-red hover:underline"
+					className="font-medium text-text-brand hover:underline"
 				>
 					Download sample CSV
 				</button>
@@ -198,14 +199,13 @@ function UploadStep({ onContinue }: { onContinue: (rows: BulkHostRow[]) => void 
 
 			{/* Continue */}
 			{rows && validCount > 0 && (
-				<button
+				<Button
 					type="button"
 					onClick={() => onContinue(rows)}
-					className="flex items-center gap-1.5 rounded-lg bg-brand-red px-4 py-2 text-xs font-semibold text-white hover:bg-brand-red-deep transition-colors"
+					rightIcon={<ChevronRight size={13} />}
 				>
 					Preview {validCount} row{validCount !== 1 ? "s" : ""}
-					<ChevronRight size={13} />
-				</button>
+				</Button>
 			)}
 		</div>
 	)
@@ -232,14 +232,14 @@ function PreviewStep({
 			id: "index",
 			header: "#",
 			cell: ({ row }) => (
-				<span className="text-xs text-neutral-light tabular-nums">{row.original._index}</span>
+				<span className="text-xs text-text-tertiary tabular-nums">{row.original._index}</span>
 			),
 		},
 		{
 			id: "name",
 			header: "Name",
 			cell: ({ row }) => (
-				<span className={cn("text-xs", !row.original.name && "italic text-neutral-light")}>
+				<span className={cn("text-xs", !row.original.name && "italic text-text-tertiary")}>
 					{row.original.name || "—"}
 				</span>
 			),
@@ -248,7 +248,7 @@ function PreviewStep({
 			id: "email",
 			header: "Email",
 			cell: ({ row }) => (
-				<span className={cn("text-xs", !row.original.email && "italic text-neutral-light")}>
+				<span className={cn("text-xs", !row.original.email && "italic text-text-tertiary")}>
 					{row.original.email || "—"}
 				</span>
 			),
@@ -257,7 +257,7 @@ function PreviewStep({
 			id: "city",
 			header: "City",
 			cell: ({ row }) => (
-				<span className={cn("text-xs", !row.original.city && "italic text-neutral-light")}>
+				<span className={cn("text-xs", !row.original.city && "italic text-text-tertiary")}>
 					{row.original.city || "—"}
 				</span>
 			),
@@ -300,7 +300,7 @@ function PreviewStep({
 		<div className="space-y-5">
 			{/* Summary bar */}
 			<div className="flex flex-wrap items-center gap-2">
-				<span className="rounded-lg bg-neutral-100 px-3 py-1.5 text-xs font-semibold text-neutral-dark">
+				<span className="rounded-lg bg-neutral-100 px-3 py-1.5 text-xs font-semibold text-text-secondary">
 					{rows.length} rows total
 				</span>
 				<span className="rounded-lg bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
@@ -321,7 +321,7 @@ function PreviewStep({
 					<button
 						type="button"
 						onClick={() => downloadErrorReport(rows)}
-						className="ml-auto flex items-center gap-1.5 text-xs text-neutral-dark hover:text-foreground transition-colors"
+						className="ml-auto flex items-center gap-1.5 text-xs text-text-secondary hover:text-text-primary transition-colors"
 					>
 						<Download size={13} />
 						Download errors
@@ -334,29 +334,28 @@ function PreviewStep({
 				columns={columns}
 				data={rows}
 				emptyState={
-					<p className="py-8 text-center text-sm text-neutral-light">No rows found.</p>
+					<p className="py-8 text-center text-sm text-text-tertiary">No rows found.</p>
 				}
 			/>
 
 			{/* Footer actions */}
 			<div className="flex items-center justify-between pt-1">
-				<button
+				<Button
 					type="button"
+					variant="secondary"
 					onClick={onBack}
-					className="flex items-center gap-1.5 rounded-lg border border-neutral-200 px-4 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
+					leftIcon={<ArrowLeft size={13} />}
 				>
-					<ArrowLeft size={13} />
 					Back
-				</button>
-				<button
+				</Button>
+				<Button
 					type="button"
 					onClick={onSend}
 					disabled={validCount === 0 || isSending}
-					className="flex items-center gap-1.5 rounded-lg bg-brand-red px-4 py-2 text-xs font-semibold text-white hover:bg-brand-red-deep transition-colors disabled:opacity-60"
+					leftIcon={isSending ? <Loader2 size={13} className="animate-spin" /> : undefined}
 				>
-					{isSending && <Loader2 size={13} className="animate-spin" />}
 					Send {validCount} invitation{validCount !== 1 ? "s" : ""}
-				</button>
+				</Button>
 			</div>
 		</div>
 	)
@@ -382,10 +381,10 @@ function DoneStep({
 			<div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
 				<CheckCircle2 size={32} className="text-green-600" />
 			</div>
-			<h2 className="text-base font-semibold text-foreground">
+			<h2 className="text-base font-semibold text-text-primary">
 				{sentCount} invitation{sentCount !== 1 ? "s" : ""} sent
 			</h2>
-			<p className="mt-1 text-sm text-neutral-light">
+			<p className="mt-1 text-sm text-text-tertiary">
 				Hosts will receive an email to complete their profile.
 			</p>
 
@@ -407,23 +406,19 @@ function DoneStep({
 			)}
 
 			<div className="mt-6 flex items-center gap-3">
-				<button
-					type="button"
-					onClick={onReset}
-					className="rounded-lg bg-brand-red px-4 py-2 text-xs font-semibold text-white hover:bg-brand-red-deep transition-colors"
-				>
+				<Button type="button" onClick={onReset}>
 					Upload another file
-				</button>
-				<button
+				</Button>
+				<Button
 					type="button"
+					variant="secondary"
 					onClick={() => {
 						onClose()
 						onOpenSingle()
 					}}
-					className="rounded-lg border border-neutral-200 px-4 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
 				>
 					Single invite
-				</button>
+				</Button>
 			</div>
 		</div>
 	)

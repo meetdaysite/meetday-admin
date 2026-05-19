@@ -54,10 +54,10 @@ export function DataTable<TData, TValue>({
 	const tableRows = !isLoading ? (table.getRowModel()?.rows ?? []) : []
 
 	return (
-		<div className="overflow-hidden rounded-xl border border-neutral-200">
+		<div className="overflow-hidden rounded-xl border border-border-default">
 			<table className="w-full">
 				{/* Head */}
-				<thead className="bg-neutral-50 border-b border-neutral-200">
+				<thead className="bg-surface-card-muted border-b border-border-default">
 					{table.getHeaderGroups().map((headerGroup) => (
 						<tr key={headerGroup.id}>
 							{headerGroup.headers.map((header) => {
@@ -72,9 +72,9 @@ export function DataTable<TData, TValue>({
 												: undefined
 										}
 										className={cn(
-											"px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-neutral-dark",
+											"px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-text-secondary",
 											canSort &&
-												"cursor-pointer select-none hover:text-foreground transition-colors",
+												"cursor-pointer select-none hover:text-text-primary transition-colors",
 										)}
 									>
 										<span className="inline-flex items-center gap-1.5">
@@ -85,7 +85,7 @@ export function DataTable<TData, TValue>({
 														header.getContext(),
 													)}
 											{canSort && (
-												<span className="text-neutral-light">
+												<span className="text-text-muted">
 													{sorted === "asc" ? (
 														<ChevronUp size={13} />
 													) : sorted === "desc" ? (
@@ -104,7 +104,7 @@ export function DataTable<TData, TValue>({
 				</thead>
 
 				{/* Body */}
-				<tbody className="divide-y divide-neutral-100 bg-white">
+				<tbody className="divide-y divide-border-subtle bg-surface-canvas">
 					{isLoading ? (
 						Array.from({ length: skeletonRows }).map((_, i) => (
 							<SkeletonTableRow key={i} cells={columns.length} />
@@ -127,14 +127,14 @@ export function DataTable<TData, TValue>({
 								onClick={() => onRowClick?.(row.original)}
 								className={cn(
 									"transition-colors",
-									onRowClick && "cursor-pointer hover:bg-neutral-50",
+									onRowClick && "cursor-pointer hover:bg-surface-card-muted",
 									getRowClassName?.(row.original),
 								)}
 							>
 								{row.getVisibleCells().map((cell) => (
 									<td
 										key={cell.id}
-										className="px-4 py-3 text-sm text-foreground"
+										className="px-4 py-3 text-sm text-text-primary"
 									>
 										{flexRender(cell.column.columnDef.cell, cell.getContext())}
 									</td>

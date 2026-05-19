@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { getOrderById } from "@/lib/api/orders"
 import type { Order, OrderDetail } from "@/types"
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type OrderDetailDrawerProps = {
 	open: boolean
@@ -20,7 +20,7 @@ type OrderDetailDrawerProps = {
 	order: Order | null
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function formatDate(iso: string): string {
 	return new Date(iso).toLocaleDateString("en-IN", {
@@ -30,14 +30,14 @@ function formatDate(iso: string): string {
 }
 
 function formatCurrency(amount: number): string {
-	return `₹${amount.toLocaleString("en-IN")}`
+	return `â‚¹${amount.toLocaleString("en-IN")}`
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function SectionLabel({ children }: { children: string }) {
 	return (
-		<p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-light mb-3">
+		<p className="text-[10px] font-semibold uppercase tracking-wider text-text-tertiary mb-3">
 			{children}
 		</p>
 	)
@@ -55,17 +55,17 @@ function DetailRow({
 	return (
 		<div className="flex items-start gap-3">
 			<div className="mt-0.5 w-7 h-7 rounded-md bg-neutral-100 flex items-center justify-center shrink-0">
-				<Icon size={13} className="text-neutral-dark" />
+				<Icon size={13} className="text-text-secondary" />
 			</div>
 			<div className="min-w-0">
-				<p className="text-[11px] text-neutral-light">{label}</p>
-				<div className="text-sm text-foreground">{value}</div>
+				<p className="text-[11px] text-text-tertiary">{label}</p>
+				<div className="text-sm text-text-primary">{value}</div>
 			</div>
 		</div>
 	)
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function DrawerSkeleton() {
 	return (
@@ -80,12 +80,12 @@ function DrawerSkeleton() {
 				<Skeleton className="h-4 w-40" />
 				<Skeleton className="h-4 w-48" />
 			</div>
-			<div className="border-t border-neutral-100" />
+			<div className="border-t border-border-subtle" />
 			<div className="space-y-3">
 				<Skeleton className="h-3 w-20" />
 				<Skeleton className="h-16 w-full rounded-xl" />
 			</div>
-			<div className="border-t border-neutral-100" />
+			<div className="border-t border-border-subtle" />
 			<div className="space-y-2">
 				<Skeleton className="h-3 w-24" />
 				<Skeleton className="h-4 w-full" />
@@ -95,7 +95,7 @@ function DrawerSkeleton() {
 	)
 }
 
-// ─── Detail content ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Detail content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function OrderDetailContent({ detail }: { detail: OrderDetail }) {
 	const attendeeName = `${detail.user.firstName} ${detail.user.lastName}`
@@ -105,7 +105,7 @@ function OrderDetailContent({ detail }: { detail: OrderDetail }) {
 			{/* Status */}
 			<div className="flex items-center gap-2 flex-wrap">
 				<StatusBadge status={detail.status} />
-				<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-dark font-mono">
+				<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary font-mono">
 					{detail.bookingId}
 				</span>
 			</div>
@@ -120,7 +120,7 @@ function OrderDetailContent({ detail }: { detail: OrderDetail }) {
 						value={
 							<span>
 								<span className="block">{attendeeName}</span>
-								<span className="text-[11px] text-neutral-light">{detail.user.email}</span>
+								<span className="text-[11px] text-text-tertiary">{detail.user.email}</span>
 							</span>
 						}
 					/>
@@ -130,7 +130,7 @@ function OrderDetailContent({ detail }: { detail: OrderDetail }) {
 						value={
 							<span>
 								<span className="block">{detail.event.title}</span>
-								<span className="text-[11px] text-neutral-light">{detail.event.city}</span>
+								<span className="text-[11px] text-text-tertiary">{detail.event.city}</span>
 							</span>
 						}
 					/>
@@ -142,37 +142,37 @@ function OrderDetailContent({ detail }: { detail: OrderDetail }) {
 			</div>
 
 			{/* Financials */}
-			<div className="border-t border-neutral-100" />
+			<div className="border-t border-border-subtle" />
 			<div>
 				<SectionLabel>Financials</SectionLabel>
-				<div className="rounded-xl border border-neutral-200 divide-y divide-neutral-100 overflow-hidden">
+				<div className="rounded-xl border border-border-default divide-y divide-border-subtle overflow-hidden">
 					<div className="flex items-center justify-between px-3.5 py-2.5">
-						<span className="text-xs text-neutral-dark">Total amount</span>
-						<span className="text-xs font-semibold text-foreground">
-							{detail.totalAmount !== undefined ? formatCurrency(detail.totalAmount) : "—"}
+						<span className="text-xs text-text-secondary">Total amount</span>
+						<span className="text-xs font-semibold text-text-primary">
+							{detail.totalAmount !== undefined ? formatCurrency(detail.totalAmount) : "â€”"}
 						</span>
 					</div>
 					{detail.couponCode && (
 						<div className="flex items-center justify-between px-3.5 py-2.5">
-							<span className="text-xs text-neutral-dark flex items-center gap-1.5">
-								<Tag size={11} className="text-neutral-light" />
+							<span className="text-xs text-text-secondary flex items-center gap-1.5">
+								<Tag size={11} className="text-text-tertiary" />
 								Coupon ({detail.couponCode})
 							</span>
 							<span className="text-xs font-semibold text-green-600">
-								-{detail.discountAmount !== undefined ? formatCurrency(detail.discountAmount) : "—"}
+								-{detail.discountAmount !== undefined ? formatCurrency(detail.discountAmount) : "â€”"}
 							</span>
 						</div>
 					)}
 					{detail.platformFee !== undefined && (
 						<div className="flex items-center justify-between px-3.5 py-2.5">
-							<span className="text-xs text-neutral-dark">Platform fee</span>
-							<span className="text-xs text-foreground">{formatCurrency(detail.platformFee)}</span>
+							<span className="text-xs text-text-secondary">Platform fee</span>
+							<span className="text-xs text-text-primary">{formatCurrency(detail.platformFee)}</span>
 						</div>
 					)}
 					{detail.hostPayout !== undefined && (
 						<div className="flex items-center justify-between px-3.5 py-2.5">
-							<span className="text-xs text-neutral-dark">Host payout</span>
-							<span className="text-xs text-foreground">{formatCurrency(detail.hostPayout)}</span>
+							<span className="text-xs text-text-secondary">Host payout</span>
+							<span className="text-xs text-text-primary">{formatCurrency(detail.hostPayout)}</span>
 						</div>
 					)}
 				</div>
@@ -181,20 +181,20 @@ function OrderDetailContent({ detail }: { detail: OrderDetail }) {
 			{/* Attendees / tickets */}
 			{detail.attendees && detail.attendees.length > 0 && (
 				<>
-					<div className="border-t border-neutral-100" />
+					<div className="border-t border-border-subtle" />
 					<div>
 						<SectionLabel>{`Tickets (${detail.attendees.length})`}</SectionLabel>
-						<div className="rounded-xl border border-neutral-200 overflow-hidden">
+						<div className="rounded-xl border border-border-default overflow-hidden">
 							<table className="w-full text-xs">
 								<thead>
-									<tr className="bg-neutral-50 border-b border-neutral-100">
-										<th className="px-3 py-2 text-left text-[11px] font-semibold text-neutral-dark">
+									<tr className="bg-neutral-50 border-b border-border-subtle">
+										<th className="px-3 py-2 text-left text-[11px] font-semibold text-text-secondary">
 											<span className="flex items-center gap-1">
 												<Users size={11} />Attendee
 											</span>
 										</th>
-										<th className="px-3 py-2 text-left text-[11px] font-semibold text-neutral-dark">Tier</th>
-										<th className="px-3 py-2 text-left text-[11px] font-semibold text-neutral-dark">
+										<th className="px-3 py-2 text-left text-[11px] font-semibold text-text-secondary">Tier</th>
+										<th className="px-3 py-2 text-left text-[11px] font-semibold text-text-secondary">
 											<span className="flex items-center gap-1">
 												<Ticket size={11} />Code
 											</span>
@@ -203,13 +203,13 @@ function OrderDetailContent({ detail }: { detail: OrderDetail }) {
 								</thead>
 								<tbody>
 									{detail.attendees.map((a, i) => (
-										<tr key={a.id} className={i < detail.attendees.length - 1 ? "border-b border-neutral-100" : ""}>
+										<tr key={a.id} className={i < detail.attendees.length - 1 ? "border-b border-border-subtle" : ""}>
 											<td className="px-3 py-2.5">
-												<p className="font-medium text-foreground">{a.firstName} {a.lastName}</p>
-												<p className="text-[11px] text-neutral-light">{a.email}</p>
+												<p className="font-medium text-text-primary">{a.firstName} {a.lastName}</p>
+												<p className="text-[11px] text-text-tertiary">{a.email}</p>
 											</td>
-											<td className="px-3 py-2.5 text-neutral-dark">{a.tierName}</td>
-											<td className="px-3 py-2.5 font-mono text-neutral-dark text-[11px]">{a.ticketCode}</td>
+											<td className="px-3 py-2.5 text-text-secondary">{a.tierName}</td>
+											<td className="px-3 py-2.5 font-mono text-text-secondary text-[11px]">{a.ticketCode}</td>
 										</tr>
 									))}
 								</tbody>
@@ -222,7 +222,7 @@ function OrderDetailContent({ detail }: { detail: OrderDetail }) {
 	)
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function OrderDetailDrawer({ open, onClose, order }: OrderDetailDrawerProps) {
 	const router = useRouter()
@@ -274,8 +274,8 @@ export function OrderDetailDrawer({ open, onClose, order }: OrderDetailDrawerPro
 			{fetchState === "error" && (
 				<div className="flex flex-col items-center justify-center py-16 text-center">
 					<AlertTriangle size={28} className="mb-3 text-neutral-300" />
-					<p className="text-sm font-medium text-foreground">Something went wrong</p>
-					<p className="mt-1 text-xs text-neutral-light max-w-xs">{errorMessage}</p>
+					<p className="text-sm font-medium text-text-primary">Something went wrong</p>
+					<p className="mt-1 text-xs text-text-tertiary max-w-xs">{errorMessage}</p>
 				</div>
 			)}
 
@@ -284,7 +284,7 @@ export function OrderDetailDrawer({ open, onClose, order }: OrderDetailDrawerPro
 			<DrawerFooter className="justify-end">
 				<button
 					onClick={handleClose}
-					className="rounded-lg border border-neutral-200 px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
+					className="rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors"
 				>
 					Close
 				</button>

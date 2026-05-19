@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { Clock, CalendarDays, ShieldCheck, Tag } from "lucide-react"
@@ -8,7 +8,7 @@ import { SlaBanner } from "@/components/dashboard/sla-banner"
 import { ActivityFeed, type ActivityItem } from "@/components/dashboard/activity-feed"
 import { SkeletonDashboardPage } from "@/components/ui/skeleton"
 
-// ─── Mock data (replace with API queries) ────────────────────────────────────
+// â”€â”€â”€ Mock data (replace with API queries) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const MOCK_STATS = {
 	hostsPending: 7,
@@ -74,7 +74,7 @@ const MOCK_ACTIVITY: ActivityItem[] = [
 	},
 ]
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function DashboardPage() {
 	const { hasPermission } = useAuthStore()
@@ -101,7 +101,7 @@ export default function DashboardPage() {
 
 			{/* Stat cards */}
 			<section>
-				<h2 className="mb-3 text-xs font-semibold tracking-[0.12em] uppercase text-neutral-light">
+				<h2 className="mb-3 text-xs font-semibold tracking-[0.12em] uppercase text-text-tertiary">
 					Overview
 				</h2>
 				<div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -110,21 +110,21 @@ export default function DashboardPage() {
 						label="Hosts pending review"
 						value={MOCK_STATS.hostsPending}
 						href={showHostQueue ? "/hosts/queue" : undefined}
-						sub={showHostQueue ? "View queue →" : undefined}
+						sub={showHostQueue ? "View queue â†’" : undefined}
 					/>
 					<StatCard
 						icon={CalendarDays}
 						label="Events pending review"
 						value={MOCK_STATS.eventsPending}
 						href={showEventQueue ? "/events/queue" : undefined}
-						sub={showEventQueue ? "View queue →" : undefined}
+						sub={showEventQueue ? "View queue â†’" : undefined}
 					/>
 					<StatCard
 						icon={ShieldCheck}
 						label="Active admins"
 						value={MOCK_STATS.activeAdmins}
 						href="/admins"
-						sub="Manage →"
+						sub="Manage â†’"
 					/>
 					{showCoupons && (
 						<StatCard
@@ -132,17 +132,17 @@ export default function DashboardPage() {
 							label="Active coupons"
 							value={MOCK_STATS.activeCoupons}
 							href="/coupons"
-							sub="Manage →"
+							sub="Manage â†’"
 						/>
 					)}
 				</div>
 			</section>
 
 			{/* Activity feed */}
-			<section className="rounded-xl border border-neutral-200 bg-white">
+			<section className="rounded-xl border border-border-default bg-surface-canvas">
 				<div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100">
-					<h2 className="text-sm font-semibold text-foreground">Recent activity</h2>
-					<span className="text-[11px] text-neutral-light">Last 24 hours</span>
+					<h2 className="text-sm font-semibold text-text-primary">Recent activity</h2>
+					<span className="text-[11px] text-text-tertiary">Last 24 hours</span>
 				</div>
 				<div className="px-5">
 					<ActivityFeed items={MOCK_ACTIVITY} />

@@ -1,7 +1,7 @@
-import { formatDistanceToNow } from "date-fns"
+﻿import { formatDistanceToNow } from "date-fns"
 import { cn } from "@/lib/utils"
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type ActivityEventType =
 	| "host_approved"
@@ -22,7 +22,7 @@ export type ActivityItem = {
 	createdAt: Date
 }
 
-// ─── Config ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const EVENT_CONFIG: Record<
 	ActivityEventType,
@@ -39,7 +39,7 @@ const EVENT_CONFIG: Record<
 	coupon_created:      { label: "created coupon",             dotClass: "bg-purple-500" },
 }
 
-// ─── Components ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function FeedRow({ item }: { item: ActivityItem }) {
 	const cfg = EVENT_CONFIG[item.type]
@@ -54,7 +54,7 @@ function FeedRow({ item }: { item: ActivityItem }) {
 		<li className="flex items-start gap-3 py-3">
 			{/* Avatar */}
 			<div className="relative shrink-0">
-				<div className="h-8 w-8 rounded-full bg-brand-red/10 text-brand-red text-[11px] font-semibold flex items-center justify-center">
+				<div className="h-8 w-8 rounded-full bg-surface-brand-soft text-icon-brand text-[11px] font-semibold flex items-center justify-center">
 					{initials}
 				</div>
 				<span
@@ -68,12 +68,12 @@ function FeedRow({ item }: { item: ActivityItem }) {
 
 			{/* Text */}
 			<div className="flex-1 min-w-0">
-				<p className="text-sm leading-snug text-foreground">
+				<p className="text-sm leading-snug text-text-primary">
 					<span className="font-medium">{item.actorName}</span>{" "}
-					<span className="text-neutral-dark">{cfg.label}</span>{" "}
+					<span className="text-text-secondary">{cfg.label}</span>{" "}
 					<span className="font-medium">{item.targetName}</span>
 				</p>
-				<p className="mt-0.5 text-[11px] text-neutral-light" suppressHydrationWarning>
+				<p className="mt-0.5 text-[11px] text-text-tertiary" suppressHydrationWarning>
 					{formatDistanceToNow(item.createdAt, { addSuffix: true })}
 				</p>
 			</div>
@@ -81,7 +81,7 @@ function FeedRow({ item }: { item: ActivityItem }) {
 	)
 }
 
-// ─── Activity feed ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Activity feed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type ActivityFeedProps = {
 	items: ActivityItem[]
@@ -95,14 +95,14 @@ export function ActivityFeed({ items, limit = 10 }: ActivityFeedProps) {
 	if (visible.length === 0) {
 		return (
 			<div className="flex flex-col items-center justify-center py-12 text-center">
-				<p className="text-sm font-medium text-neutral-dark">No recent activity</p>
-				<p className="mt-1 text-xs text-neutral-light">Actions taken by admins will appear here.</p>
+				<p className="text-sm font-medium text-text-secondary">No recent activity</p>
+				<p className="mt-1 text-xs text-text-tertiary">Actions taken by admins will appear here.</p>
 			</div>
 		)
 	}
 
 	return (
-		<ul className="divide-y divide-neutral-100">
+		<ul className="divide-y divide-border-subtle">
 			{visible.map(item => (
 				<FeedRow key={item.id} item={item} />
 			))}

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -11,11 +11,11 @@ import { EventReviewDrawer, type EventAction } from "@/components/events/event-r
 import { getPendingEvents, approveEvent, rejectEvent, forceCancelEvent } from "@/lib/api/events"
 import type { Event } from "@/types"
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const PAGE_LIMIT = 20
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function getDaysSince(iso: string): number {
 	return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24))
@@ -37,7 +37,7 @@ function getRowTint(event: Event): string {
 	return ""
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function EventQueuePage() {
 	const router = useRouter()
@@ -133,8 +133,8 @@ export default function EventQueuePage() {
 					const e = row.original
 					return (
 						<div>
-							<p className="text-xs font-semibold text-foreground leading-none mb-0.5">{e.title}</p>
-							<p className="text-[11px] text-neutral-light">{e.hostProfile.displayName}</p>
+							<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">{e.title}</p>
+							<p className="text-[11px] text-text-tertiary">{e.hostProfile.displayName}</p>
 						</div>
 					)
 				},
@@ -143,7 +143,7 @@ export default function EventQueuePage() {
 				id: "type",
 				header: "Type",
 				cell: ({ row }) => (
-					<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-dark">
+					<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
 						{row.original.eventType}
 					</span>
 				),
@@ -152,14 +152,14 @@ export default function EventQueuePage() {
 				id: "city",
 				header: "City",
 				cell: ({ row }) => (
-					<span className="text-xs text-foreground">{row.original.city}</span>
+					<span className="text-xs text-text-primary">{row.original.city}</span>
 				),
 			},
 			{
 				id: "eventDate",
 				header: "Event Date",
 				cell: ({ row }) => (
-					<span className="text-xs text-foreground">{formatEventDate(row.original.eventDate)}</span>
+					<span className="text-xs text-text-primary">{formatEventDate(row.original.eventDate)}</span>
 				),
 			},
 			{
@@ -168,10 +168,10 @@ export default function EventQueuePage() {
 				cell: ({ row }) => {
 					const days = row.original.updatedAt ? getDaysSince(row.original.updatedAt) : 0
 					const ageColor =
-						days >= 14 ? "text-orange-600" : days >= 7 ? "text-amber-600" : "text-neutral-light"
+						days >= 14 ? "text-orange-600" : days >= 7 ? "text-amber-600" : "text-text-tertiary"
 					return (
 						<div>
-							<p className="text-xs text-neutral-dark">{row.original.updatedAt ? formatDate(row.original.updatedAt) : "—"}</p>
+							<p className="text-xs text-text-secondary">{row.original.updatedAt ? formatDate(row.original.updatedAt) : "â€”"}</p>
 							<p className={`text-[11px] font-medium ${ageColor}`}>
 								{days === 0 ? "Today" : days === 1 ? "Yesterday" : `${days} days ago`}
 							</p>
@@ -186,7 +186,7 @@ export default function EventQueuePage() {
 	if (!canApprove) {
 		return (
 			<div className="p-6 max-w-7xl mx-auto">
-				<p className="text-sm text-neutral-light">
+				<p className="text-sm text-text-tertiary">
 					You don&apos;t have permission to view the event queue.
 				</p>
 			</div>
@@ -197,7 +197,7 @@ export default function EventQueuePage() {
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
 			<div className="flex items-center gap-3">
-				<h1 className="text-base font-semibold text-foreground">Event Queue</h1>
+				<h1 className="text-base font-semibold text-text-primary">Event Queue</h1>
 				{total > 0 && (
 					<span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700">
 						{total} pending
@@ -209,14 +209,14 @@ export default function EventQueuePage() {
 			<div className="relative max-w-xs">
 				<Search
 					size={13}
-					className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-light pointer-events-none"
+					className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
 				/>
 				<input
 					type="text"
 					value={search}
 					onChange={(e) => setSearch(e.target.value)}
 					placeholder="Search by title or host…"
-					className="w-full rounded-lg border border-neutral-200 bg-white pl-8 pr-3 py-2 text-xs placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+					className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 				/>
 			</div>
 
@@ -234,7 +234,7 @@ export default function EventQueuePage() {
 						onRowClick={openDrawer}
 						getRowClassName={getRowTint}
 						emptyState={
-							<div className="py-12 text-center text-sm text-neutral-light">
+							<div className="py-12 text-center text-sm text-text-tertiary">
 								No events pending review.
 							</div>
 						}
@@ -242,11 +242,11 @@ export default function EventQueuePage() {
 
 					{/* Age tint legend */}
 					{!isLoading && filtered.length > 0 && (
-						<div className="flex items-center gap-4 text-[11px] text-neutral-light">
+						<div className="flex items-center gap-4 text-[11px] text-text-tertiary">
 							<span className="font-medium">Row colour:</span>
 							<span className="flex items-center gap-1.5">
 								<span className="w-3 h-3 rounded-sm bg-amber-100 border border-amber-200" />
-								7–13 days pending
+								7â€“13 days pending
 							</span>
 							<span className="flex items-center gap-1.5">
 								<span className="w-3 h-3 rounded-sm bg-orange-100 border border-orange-200" />

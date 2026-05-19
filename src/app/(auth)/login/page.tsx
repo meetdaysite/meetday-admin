@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { useForm } from "react-hook-form"
@@ -11,8 +11,9 @@ import { signInWithEmailAndPassword, signOut } from "firebase/auth"
 import { firebaseAuth } from "@/lib/firebase/config"
 import { apiClient } from "@/lib/api/client"
 import { useAuthStore } from "@/stores/auth.store"
-import { cn } from "@/lib/utils"
 import type { Role } from "@/types"
+import { TextField } from "@/components/ui/TextField"
+import { Button } from "@/components/ui/Button"
 
 type MeResponse = {
 	id: string
@@ -77,98 +78,67 @@ export default function LoginPage() {
 	return (
 		<div className="space-y-8">
 			<div className="space-y-1.5">
-				<h1 className="font-hagrid text-[2rem] font-extrabold text-foreground leading-tight">
+				<h1 className="text-[2rem] font-extrabold text-text-primary leading-tight">
 					Welcome back
 				</h1>
-				<p className="text-neutral-dark text-sm">Sign in to the Meetday Admin Panel.</p>
+				<p className="text-text-secondary text-sm">Sign in to the Meetday Admin Panel.</p>
 			</div>
 
 			<form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
-				{/* Email */}
-				<div className="space-y-1.5">
-					<label htmlFor="email" className="block text-sm font-medium text-foreground">
-						Email address
-					</label>
-					<input
-						id="email"
-						type="email"
-						autoComplete="email"
-						placeholder="you@meetday.com"
-						className={cn(
-							"w-full h-11 px-4 rounded-md border bg-white text-sm text-foreground",
-							"placeholder:text-neutral-light",
-							"focus:outline-none focus:ring-2 focus:ring-brand-red/25 focus:border-brand-red",
-							"transition-colors",
-							errors.email ? "border-red-400" : "border-neutral-light",
-						)}
-						{...register("email")}
-					/>
-					{errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
-				</div>
+				<TextField
+					label="Email address"
+					type="email"
+					autoComplete="email"
+					placeholder="you@meetday.com"
+					error={!!errors.email}
+					helperText={errors.email?.message}
+					{...register("email")}
+				/>
 
-				{/* Password */}
 				<div className="space-y-1.5">
 					<div className="flex items-center justify-between">
-						<label htmlFor="password" className="block text-sm font-medium text-foreground">
+						<label htmlFor="password" className="text-label-sm font-semibold text-text-primary">
 							Password
 						</label>
 						<a
 							href="#"
-							className="text-xs text-brand-red hover:text-brand-red-deep transition-colors"
+							className="text-xs text-text-brand hover:text-action-primary-hover transition-colors"
 						>
 							Forgot password?
 						</a>
 					</div>
-					<div className="relative">
-						<input
-							id="password"
-							type={showPassword ? "text" : "password"}
-							autoComplete="current-password"
-							placeholder="••••••••"
-							className={cn(
-								"w-full h-11 pl-4 pr-11 rounded-md border bg-white text-sm text-foreground",
-								"placeholder:text-neutral-light",
-								"focus:outline-none focus:ring-2 focus:ring-brand-red/25 focus:border-brand-red",
-								"transition-colors",
-								errors.password ? "border-red-400" : "border-neutral-light",
-							)}
-							{...register("password")}
-						/>
-						<button
-							type="button"
-							onClick={() => setShowPassword(v => !v)}
-							className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-light hover:text-neutral-dark transition-colors"
-							tabIndex={-1}
-						>
-							{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-						</button>
-					</div>
-					{errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
+					<TextField
+						id="password"
+						type={showPassword ? "text" : "password"}
+						autoComplete="current-password"
+						placeholder="••••••••"
+						error={!!errors.password}
+						helperText={errors.password?.message}
+						rightIcon={
+							<button
+								type="button"
+								onClick={() => setShowPassword(v => !v)}
+								className="text-text-tertiary hover:text-text-secondary transition-colors"
+								tabIndex={-1}
+							>
+								{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+							</button>
+						}
+						{...register("password")}
+					/>
 				</div>
 
-				{/* Submit */}
-				<button
+				<Button
 					type="submit"
 					disabled={isSubmitting}
-					className={cn(
-						"w-full h-11 rounded-md bg-brand-red text-white text-sm font-semibold",
-						"hover:bg-brand-red-deep active:scale-[0.99] transition-all",
-						"flex items-center justify-center gap-2",
-						"disabled:opacity-60 disabled:cursor-not-allowed",
-					)}
+					className="w-full"
+					leftIcon={isSubmitting ? <Loader2 size={15} className="animate-spin" /> : undefined}
 				>
-					{isSubmitting ? (
-						<>
-							<Loader2 size={15} className="animate-spin" />
-							Signing in…
-						</>
-					) : (
-						"Sign in"
-					)}
-				</button>
+					{isSubmitting ? "Signing in…" : "Sign in"}
+				</Button>
 			</form>
 
-			<p className="text-center text-xs text-neutral-light">
+			<p className="text-center text-xs text-text-tertiary">
 				Access is restricted to authorized personnel only.
 			</p>
 		</div>

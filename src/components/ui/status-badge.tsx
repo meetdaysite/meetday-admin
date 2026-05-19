@@ -19,15 +19,15 @@ const BADGE_CONFIG: Partial<Record<string, { label: string; className: string }>
 	EDIT_REQUESTED:       { label: "Edit Requested",     className: "bg-sky-50 text-sky-700" },
 	UNDER_REVIEW:         { label: "Under Review",       className: "bg-amber-50 text-amber-700" },
 	PUBLISHED:            { label: "Published",          className: "bg-green-50 text-green-700" },
-	DRAFT:                { label: "Draft",              className: "bg-neutral-100 text-neutral-dark" },
-	EXPIRED:              { label: "Expired",            className: "bg-neutral-100 text-neutral-dark" },
-	DISABLED:             { label: "Disabled",           className: "bg-neutral-100 text-neutral-dark" },
+	DRAFT:                { label: "Draft",              className: "bg-neutral-100 text-text-secondary" },
+	EXPIRED:             { label: "Expired",            className: "bg-neutral-100 text-text-secondary" },
+	DISABLED:            { label: "Disabled",           className: "bg-neutral-100 text-text-secondary" },
 	VERIFIED:             { label: "Verified",           className: "bg-green-50 text-green-700" },
 	FAILED:               { label: "Failed",             className: "bg-red-50 text-red-600" },
-	NOT_SUBMITTED:        { label: "Not Submitted",      className: "bg-neutral-100 text-neutral-dark" },
+	NOT_SUBMITTED:        { label: "Not Submitted",      className: "bg-neutral-100 text-text-secondary" },
 	CANCELLED:            { label: "Cancelled",          className: "bg-red-50 text-red-600" },
 	PENDING_ADMIN_REVIEW: { label: "Pending Review",     className: "bg-amber-50 text-amber-700" },
-	DEACTIVATED:          { label: "Deactivated",        className: "bg-neutral-100 text-neutral-dark" },
+	DEACTIVATED:          { label: "Deactivated",        className: "bg-neutral-100 text-text-secondary" },
 	PENDING_PAYMENT:      { label: "Pending Payment",    className: "bg-amber-50 text-amber-700" },
 	CONFIRMED:            { label: "Confirmed",          className: "bg-green-50 text-green-700" },
 	REFUNDED:             { label: "Refunded",           className: "bg-sky-50 text-sky-700" },
@@ -43,7 +43,7 @@ export type StatusBadgeProps = {
 export function StatusBadge({ status, className }: StatusBadgeProps) {
 	const cfg = (status != null && BADGE_CONFIG[status]) ? BADGE_CONFIG[status]! : {
 		label: (status ?? "").replace(/_/g, " "),
-		className: "bg-neutral-100 text-neutral-dark",
+		className: "bg-neutral-100 text-text-secondary",
 	}
 	return (
 		<span

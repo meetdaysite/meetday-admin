@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { HostReviewDrawer, type HostAction } from "@/components/hosts/host-review-drawer"
 import { InviteBulkDrawer } from "@/components/hosts/invite-bulk-drawer"
@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const PAGE_LIMIT = 20
 
@@ -28,14 +28,14 @@ const STATUS_TABS: { label: string; value: StatusFilter }[] = [
 	{ label: "Suspended", value: "SUSPENDED" },
 ]
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function getRowTint(host: Host): string {
 	if (host.approvalStatus === "PENDING") return "bg-amber-50"
 	return ""
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function HostQueuePage() {
 	const router = useRouter()
@@ -173,10 +173,10 @@ export default function HostQueuePage() {
 					const h = row.original
 					return (
 						<div>
-							<p className="text-xs font-semibold text-foreground leading-none mb-0.5">
+							<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
 								{h.displayName}
 							</p>
-							<p className="text-[11px] text-neutral-light">
+							<p className="text-[11px] text-text-tertiary">
 								{h.user.firstName} {h.user.lastName} · {h.user.email}
 							</p>
 						</div>
@@ -188,12 +188,12 @@ export default function HostQueuePage() {
 				header: "Cities",
 				cell: ({ row }) => {
 					const cities = row.original.operatingCities
-					if (!cities?.length) return <span className="text-[11px] text-neutral-light">—</span>
+					if (!cities?.length) return <span className="text-[11px] text-text-tertiary">â€”</span>
 					return (
-						<span className="text-xs text-foreground">
+						<span className="text-xs text-text-primary">
 							{cities.slice(0, 2).join(", ")}
 							{cities.length > 2 && (
-								<span className="text-neutral-light"> +{cities.length - 2}</span>
+								<span className="text-text-tertiary"> +{cities.length - 2}</span>
 							)}
 						</span>
 					)
@@ -203,7 +203,7 @@ export default function HostQueuePage() {
 				id: "plan",
 				header: "Plan",
 				cell: ({ row }) => (
-					<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-dark">
+					<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
 						{row.original.currentPlan}
 					</span>
 				),
@@ -228,7 +228,7 @@ export default function HostQueuePage() {
 	if (!canApprove) {
 		return (
 			<div className="p-6 max-w-7xl mx-auto">
-				<p className="text-sm text-neutral-light">
+				<p className="text-sm text-text-tertiary">
 					You don&apos;t have permission to view the host queue.
 				</p>
 			</div>
@@ -239,7 +239,7 @@ export default function HostQueuePage() {
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
 			<div className="flex items-center gap-3">
-				<h1 className="text-base font-semibold text-foreground">Host Queue</h1>
+				<h1 className="text-base font-semibold text-text-primary">Host Queue</h1>
 				{pendingCount !== undefined && pendingCount > 0 && (
 					<span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700">
 						{pendingCount} pending
@@ -249,14 +249,14 @@ export default function HostQueuePage() {
 					<div className="ml-auto flex items-center gap-2">
 						<button
 							onClick={() => setSingleOpen(true)}
-							className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
+							className="flex items-center gap-1.5 rounded-lg border border-border-default bg-surface-canvas px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors"
 						>
 							<UserPlus size={13} />
 							Invite Host
 						</button>
 						<button
 							onClick={() => setBulkOpen(true)}
-							className="flex items-center gap-1.5 rounded-lg bg-brand-red px-3.5 py-2 text-xs font-semibold text-white hover:bg-brand-red-deep transition-colors"
+							className="flex items-center gap-1.5 rounded-lg bg-action-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors"
 						>
 							<Upload size={13} />
 							Bulk Upload
@@ -278,15 +278,15 @@ export default function HostQueuePage() {
 								onClick={() => { setStatusFilter(tab.value); setPage(1) }}
 								className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
 									active
-										? "bg-brand-red text-white"
-										: "bg-neutral-100 text-neutral-dark hover:bg-neutral-200"
+										? "bg-action-primary text-white"
+										: "bg-neutral-100 text-text-secondary hover:bg-neutral-200"
 								}`}
 							>
 								{tab.label}
 								{count !== null && (
 									<span
 										className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
-											active ? "bg-white/20 text-white" : "bg-white text-neutral-dark"
+											active ? "bg-surface-canvas/20 text-white" : "bg-surface-canvas text-text-secondary"
 										}`}
 									>
 										{count}
@@ -302,21 +302,21 @@ export default function HostQueuePage() {
 					<div className="relative flex-1 min-w-48 max-w-xs">
 						<Search
 							size={13}
-							className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-light pointer-events-none"
+							className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
 						/>
 						<input
 							type="text"
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
 							placeholder="Search by name or email…"
-							className="w-full rounded-lg border border-neutral-200 bg-white pl-8 pr-3 py-2 text-xs placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+							className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 						/>
 					</div>
 
 					<select
 						value={kycFilter}
 						onChange={(e) => { setKycFilter(e.target.value as KycStatus | "ALL"); setPage(1) }}
-						className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-foreground focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 					>
 						<option value="ALL">KYC: All</option>
 						<option value="NOT_SUBMITTED">Not Submitted</option>
@@ -328,7 +328,7 @@ export default function HostQueuePage() {
 					<select
 						value={planFilter}
 						onChange={(e) => { setPlanFilter(e.target.value as HostPlan | "ALL"); setPage(1) }}
-						className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-foreground focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 					>
 						<option value="ALL">Plan: All</option>
 						<option value="DISCOVER">Discover</option>
@@ -342,13 +342,13 @@ export default function HostQueuePage() {
 							value={cityInput}
 							onChange={(e) => setCityInput(e.target.value)}
 							placeholder="Filter by city…"
-							className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors w-36"
+							className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors w-36"
 						/>
 						{cityFilter && (
 							<button
 								type="button"
 								onClick={() => { setCityInput(""); setCityFilter(""); setPage(1) }}
-								className="rounded-lg border border-neutral-200 px-2.5 py-2 text-xs text-neutral-dark hover:bg-neutral-50 transition-colors"
+								className="rounded-lg border border-border-default px-2.5 py-2 text-xs text-text-secondary hover:bg-neutral-50 transition-colors"
 							>
 								Clear
 							</button>
@@ -372,7 +372,7 @@ export default function HostQueuePage() {
 						onRowClick={openDrawer}
 						getRowClassName={getRowTint}
 						emptyState={
-							<div className="py-12 text-center text-sm text-neutral-light">
+							<div className="py-12 text-center text-sm text-text-tertiary">
 								No hosts match the current filters.
 							</div>
 						}
@@ -380,25 +380,25 @@ export default function HostQueuePage() {
 
 					{/* Pagination */}
 					{totalPages > 1 && (
-						<div className="flex items-center justify-between text-xs text-neutral-light">
+						<div className="flex items-center justify-between text-xs text-text-tertiary">
 							<span>
-								Showing {(page - 1) * PAGE_LIMIT + 1}–{Math.min(page * PAGE_LIMIT, total)} of {total}
+								Showing {(page - 1) * PAGE_LIMIT + 1}â€“{Math.min(page * PAGE_LIMIT, total)} of {total}
 							</span>
 							<div className="flex items-center gap-2">
 								<button
 									disabled={page === 1}
 									onClick={() => setPage((p) => p - 1)}
-									className="rounded-md px-2.5 py-1 text-xs font-medium border border-neutral-200 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 								>
 									Previous
 								</button>
-								<span className="font-medium text-foreground">
+								<span className="font-medium text-text-primary">
 									{page} / {totalPages}
 								</span>
 								<button
 									disabled={page >= totalPages}
 									onClick={() => setPage((p) => p + 1)}
-									className="rounded-md px-2.5 py-1 text-xs font-medium border border-neutral-200 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 								>
 									Next
 								</button>

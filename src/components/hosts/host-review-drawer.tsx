@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -15,7 +15,7 @@ import { RejectHostDialog } from "@/components/hosts/reject-host-dialog"
 import { getHostById } from "@/lib/api/hosts"
 import type { Host, HostDetail } from "@/types"
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type HostAction = "approve" | "reject" | "suspend" | "restore"
 
@@ -26,7 +26,7 @@ export type HostReviewDrawerProps = {
 	onAction: (hostId: string, action: HostAction, reason?: string) => Promise<void>
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function formatDate(iso: string): string {
 	return new Date(iso).toLocaleDateString("en-IN", {
@@ -36,11 +36,11 @@ function formatDate(iso: string): string {
 	})
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function SectionLabel({ children }: { children: string }) {
 	return (
-		<p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-light mb-3">
+		<p className="text-[10px] font-semibold uppercase tracking-wider text-text-tertiary mb-3">
 			{children}
 		</p>
 	)
@@ -58,11 +58,11 @@ function DetailRow({
 	return (
 		<div className="flex items-start gap-3">
 			<div className="mt-0.5 w-7 h-7 rounded-md bg-neutral-100 flex items-center justify-center shrink-0">
-				<Icon size={13} className="text-neutral-dark" />
+				<Icon size={13} className="text-text-secondary" />
 			</div>
 			<div className="min-w-0">
-				<p className="text-[11px] text-neutral-light">{label}</p>
-				<div className="text-sm text-foreground wrap-break-word">{value}</div>
+				<p className="text-[11px] text-text-tertiary">{label}</p>
+				<div className="text-sm text-text-primary wrap-break-word">{value}</div>
 			</div>
 		</div>
 	)
@@ -71,13 +71,13 @@ function DetailRow({
 function VerificationRow({ label, status }: { label: string; status: string }) {
 	return (
 		<div className="flex items-center justify-between py-1.5">
-			<span className="text-xs text-neutral-dark">{label}</span>
+			<span className="text-xs text-text-secondary">{label}</span>
 			<StatusBadge status={status as Parameters<typeof StatusBadge>[0]["status"]} />
 		</div>
 	)
 }
 
-// ─── Loading skeleton ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Loading skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function DrawerSkeleton() {
 	return (
@@ -96,7 +96,7 @@ function DrawerSkeleton() {
 				<Skeleton className="h-4 w-36" />
 			</div>
 
-			<div className="border-t border-neutral-100" />
+			<div className="border-t border-border-subtle" />
 
 			{/* Section 2 */}
 			<div className="space-y-3">
@@ -108,7 +108,7 @@ function DrawerSkeleton() {
 				</div>
 			</div>
 
-			<div className="border-t border-neutral-100" />
+			<div className="border-t border-border-subtle" />
 
 			{/* Section 3 */}
 			<div className="space-y-3">
@@ -117,7 +117,7 @@ function DrawerSkeleton() {
 				<Skeleton className="h-4 w-44" />
 			</div>
 
-			<div className="border-t border-neutral-100" />
+			<div className="border-t border-border-subtle" />
 
 			{/* Section 4 */}
 			<div className="space-y-2">
@@ -130,7 +130,7 @@ function DrawerSkeleton() {
 	)
 }
 
-// ─── Detail content ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Detail content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function HostDetailContent({ detail }: { detail: HostDetail }) {
 	const fullName = `${detail.user.firstName} ${detail.user.lastName}`
@@ -144,20 +144,20 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 
 	return (
 		<div className="space-y-6">
-			{/* ── Status row ─────────────────────────────────────────────── */}
+			{/* â”€â”€ Status row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 			<div className="flex items-center gap-2 flex-wrap">
 				<div className="flex items-center gap-1.5">
-					<span className="text-[11px] text-neutral-light">Approval</span>
+					<span className="text-[11px] text-text-tertiary">Approval</span>
 					<StatusBadge status={detail.approvalStatus} />
 				</div>
 				<div className="flex items-center gap-1.5">
-					<span className="text-[11px] text-neutral-light">KYC</span>
+					<span className="text-[11px] text-text-tertiary">KYC</span>
 					<StatusBadge status={detail.kycStatus} />
 				</div>
-				<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-dark">
+				<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
 					{detail.hostType}
 				</span>
-				<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-dark">
+				<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
 					{detail.currentPlan}
 				</span>
 			</div>
@@ -174,14 +174,14 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 			)}
 
 			{detail.approvedAt && (
-				<p className="text-[11px] text-neutral-light">
+				<p className="text-[11px] text-text-tertiary">
 					Approved on {formatDate(detail.approvedAt)}
 				</p>
 			)}
 
-			<div className="border-t border-neutral-100" />
+			<div className="border-t border-border-subtle" />
 
-			{/* ── Profile ─────────────────────────────────────────────────── */}
+			{/* â”€â”€ Profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 			<div>
 				<SectionLabel>Profile</SectionLabel>
 				<div className="space-y-3.5">
@@ -195,16 +195,16 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 							<span className="space-y-0.5">
 								<span className="block">{fullName}</span>
 								{detail.user.email && (
-									<span className="block text-neutral-light">{detail.user.email}</span>
+									<span className="block text-text-tertiary">{detail.user.email}</span>
 								)}
 								{detail.user.phone && (
-									<span className="block text-neutral-light">{detail.user.phone}</span>
+									<span className="block text-text-tertiary">{detail.user.phone}</span>
 								)}
 							</span>
 						}
 					/>
 					<div className="flex items-center gap-3 pl-10">
-						<span className="text-xs text-neutral-light">Account status</span>
+						<span className="text-xs text-text-tertiary">Account status</span>
 						<StatusBadge status={detail.user.isActive ? "ACTIVE" : "DISABLED"} />
 					</div>
 					{detail.tagline && (
@@ -223,10 +223,10 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 				</div>
 			</div>
 
-			{/* ── Links ───────────────────────────────────────────────────── */}
+			{/* â”€â”€ Links â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 			{(detail.socialLinks?.website || detail.socialLinks?.instagram || detail.portfolioLinks.length > 0) && (
 				<>
-					<div className="border-t border-neutral-100" />
+					<div className="border-t border-border-subtle" />
 					<div>
 						<SectionLabel>Links</SectionLabel>
 						<div className="space-y-3.5">
@@ -235,7 +235,7 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 									icon={Globe}
 									label="Website"
 									value={
-										<a href={detail.socialLinks.website} target="_blank" rel="noopener noreferrer" className="text-brand-red hover:underline break-all">
+										<a href={detail.socialLinks.website} target="_blank" rel="noopener noreferrer" className="text-text-brand hover:underline break-all">
 											{detail.socialLinks.website}
 										</a>
 									}
@@ -246,7 +246,7 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 									icon={Globe}
 									label="Instagram"
 									value={
-										<a href={detail.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-brand-red hover:underline break-all">
+										<a href={detail.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-text-brand hover:underline break-all">
 											{detail.socialLinks.instagram}
 										</a>
 									}
@@ -258,7 +258,7 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 									icon={Link}
 									label={`Portfolio ${detail.portfolioLinks.length > 1 ? i + 1 : ""}`.trim()}
 									value={
-										<a href={link} target="_blank" rel="noopener noreferrer" className="text-brand-red hover:underline break-all">
+										<a href={link} target="_blank" rel="noopener noreferrer" className="text-text-brand hover:underline break-all">
 											{link}
 										</a>
 									}
@@ -269,9 +269,9 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 				</>
 			)}
 
-			<div className="border-t border-neutral-100" />
+			<div className="border-t border-border-subtle" />
 
-			{/* ── Address ─────────────────────────────────────────────────── */}
+			{/* â”€â”€ Address â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 			{addressParts.length > 0 && (
 				<div>
 					<SectionLabel>Address</SectionLabel>
@@ -283,20 +283,20 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 				</div>
 			)}
 
-			{addressParts.length > 0 && <div className="border-t border-neutral-100" />}
+			{addressParts.length > 0 && <div className="border-t border-border-subtle" />}
 
-			{/* ── Verification ────────────────────────────────────────────── */}
+			{/* â”€â”€ Verification â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 			<div>
 				<SectionLabel>Verification</SectionLabel>
-				<div className="rounded-xl border border-neutral-200 divide-y divide-neutral-100 px-3.5">
+				<div className="rounded-xl border border-border-default divide-y divide-border-subtle px-3.5">
 					<VerificationRow label="PAN" status={detail.panVerificationStatus} />
 					<VerificationRow label="Bank account" status={detail.bankVerificationStatus} />
 				</div>
 			</div>
 
-			<div className="border-t border-neutral-100" />
+			<div className="border-t border-border-subtle" />
 
-			{/* ── Experience & operations ──────────────────────────────────── */}
+			{/* â”€â”€ Experience & operations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 			<div>
 				<SectionLabel>Experience & Operations</SectionLabel>
 				<div className="space-y-3.5">
@@ -328,17 +328,17 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 				</div>
 			</div>
 
-			{/* ── Categories ──────────────────────────────────────────────── */}
+			{/* â”€â”€ Categories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 			{detail.categories.length > 0 && (
 				<>
-					<div className="border-t border-neutral-100" />
+					<div className="border-t border-border-subtle" />
 					<div>
 						<SectionLabel>Categories</SectionLabel>
 						<div className="flex flex-wrap gap-1.5">
 							{detail.categories.map((cat) => (
 								<span
 									key={cat.categoryId}
-									className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-medium text-neutral-dark"
+									className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-medium text-text-secondary"
 								>
 									{cat.category.name}
 								</span>
@@ -348,20 +348,20 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 				</>
 			)}
 
-			<div className="border-t border-neutral-100" />
+			<div className="border-t border-border-subtle" />
 
-			{/* ── Subscriptions ────────────────────────────────────────────── */}
+			{/* â”€â”€ Subscriptions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 			<div>
 				<SectionLabel>Recent Subscriptions</SectionLabel>
 				{detail.subscriptions.length === 0 ? (
-					<p className="text-xs text-neutral-light">No subscriptions yet.</p>
+					<p className="text-xs text-text-tertiary">No subscriptions yet.</p>
 				) : (
-					<div className="rounded-xl border border-neutral-200 divide-y divide-neutral-100 overflow-hidden">
+					<div className="rounded-xl border border-border-default divide-y divide-border-subtle overflow-hidden">
 						{detail.subscriptions.slice(0, 5).map((sub, i) => (
 							<div key={i} className="flex items-center justify-between px-3.5 py-2.5">
 								<div>
-									<p className="text-xs font-semibold text-foreground">{sub.plan}</p>
-									<p className="text-[11px] text-neutral-light">
+									<p className="text-xs font-semibold text-text-primary">{sub.plan}</p>
+									<p className="text-[11px] text-text-tertiary">
 										{sub.billingCycle.charAt(0) + sub.billingCycle.slice(1).toLowerCase()}
 										{" · "}
 										Ends {formatDate(sub.currentPeriodEnd)}
@@ -374,15 +374,15 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 				)}
 			</div>
 
-			<div className="border-t border-neutral-100" />
+			<div className="border-t border-border-subtle" />
 
-			{/* ── Payout account ───────────────────────────────────────────── */}
+			{/* â”€â”€ Payout account â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 			<div>
 				<SectionLabel>Payout Account</SectionLabel>
 				{detail.payoutAccount === null ? (
-					<div className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-3">
-						<CreditCard size={13} className="text-neutral-light shrink-0" />
-						<p className="text-xs text-neutral-light">No payout account configured.</p>
+					<div className="flex items-center gap-2 rounded-xl border border-border-default bg-neutral-50 px-3.5 py-3">
+						<CreditCard size={13} className="text-text-tertiary shrink-0" />
+						<p className="text-xs text-text-tertiary">No payout account configured.</p>
 					</div>
 				) : (
 					<div className="space-y-3.5">
@@ -402,7 +402,7 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 							value={detail.payoutAccount.maskedAccountNumber}
 						/>
 						<div className="flex items-center gap-3 pl-10">
-							<span className="text-xs text-neutral-light">Verification</span>
+							<span className="text-xs text-text-tertiary">Verification</span>
 							<StatusBadge status={detail.payoutAccount.isVerified ? "VERIFIED" : detail.payoutAccount.status} />
 						</div>
 					</div>
@@ -412,7 +412,7 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 	)
 }
 
-// ─── Suspend dialog ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Suspend dialog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function SuspendHostDialog({
 	open,
@@ -450,19 +450,19 @@ function SuspendHostDialog({
 		<Dialog.Root open={open} onOpenChange={(v) => !v && handleClose()}>
 			<Dialog.Portal>
 				<Dialog.Overlay className="fixed inset-0 z-60 bg-black/40" />
-				<Dialog.Content className="fixed left-1/2 top-1/2 z-60 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-xl focus:outline-none">
-					<Dialog.Title className="text-sm font-semibold text-foreground">
+				<Dialog.Content className="fixed left-1/2 top-1/2 z-60 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl bg-surface-canvas p-6 shadow-xl focus:outline-none">
+					<Dialog.Title className="text-sm font-semibold text-text-primary">
 						Suspend Host
 					</Dialog.Title>
-					<Dialog.Description className="mt-1.5 text-xs text-neutral-dark leading-relaxed">
+					<Dialog.Description className="mt-1.5 text-xs text-text-secondary leading-relaxed">
 						Provide a reason for suspending{" "}
-						<span className="font-medium text-foreground">{hostName}</span>. The host will be
+						<span className="font-medium text-text-primary">{hostName}</span>. The host will be
 						notified and can no longer submit or accept new orders.
 					</Dialog.Description>
 
 					<form onSubmit={handleSubmit} className="mt-4 space-y-4">
 						<div>
-							<label className="block text-[11px] font-semibold text-neutral-dark mb-1.5">
+							<label className="block text-[11px] font-semibold text-text-secondary mb-1.5">
 								Suspension reason{" "}
 								<span className="text-red-500" aria-hidden>*</span>
 							</label>
@@ -473,7 +473,7 @@ function SuspendHostDialog({
 								rows={4}
 								disabled={isLoading}
 								autoFocus
-								className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-xs text-foreground placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors resize-none disabled:opacity-50"
+								className="w-full rounded-lg border border-border-default bg-surface-canvas px-3 py-2.5 text-xs text-text-primary placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors resize-none disabled:opacity-50"
 							/>
 						</div>
 
@@ -482,7 +482,7 @@ function SuspendHostDialog({
 								type="button"
 								onClick={handleClose}
 								disabled={isLoading}
-								className="rounded-lg border border-neutral-200 px-4 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors disabled:opacity-50"
+								className="rounded-lg border border-border-default px-4 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors disabled:opacity-50"
 							>
 								Cancel
 							</button>
@@ -502,7 +502,7 @@ function SuspendHostDialog({
 	)
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDrawerProps) {
 	const router = useRouter()
@@ -621,8 +621,8 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 			{fetchState === "error" && (
 				<div className="flex flex-col items-center justify-center py-16 text-center">
 					<AlertTriangle size={28} className="mb-3 text-neutral-300" />
-					<p className="text-sm font-medium text-foreground">Something went wrong</p>
-					<p className="mt-1 text-xs text-neutral-light max-w-xs">{errorMessage}</p>
+					<p className="text-sm font-medium text-text-primary">Something went wrong</p>
+					<p className="mt-1 text-xs text-text-tertiary max-w-xs">{errorMessage}</p>
 				</div>
 			)}
 
@@ -643,7 +643,7 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 							onClick={handleApprove}
 							disabled={isBusy || fetchState !== "done" || !canApprove}
 							title={!canApprove ? "KYC must be verified before approving" : undefined}
-							className="flex items-center gap-1.5 rounded-lg bg-brand-red px-3.5 py-2 text-xs font-semibold text-white hover:bg-brand-red-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+							className="flex items-center gap-1.5 rounded-lg bg-action-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
 						>
 							{actionLoading === "approve" && <Loader2 size={12} className="animate-spin" />}
 							Approve
@@ -654,7 +654,7 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 					<>
 						<button
 							onClick={handleClose}
-							className="rounded-lg border border-neutral-200 px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
+							className="rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors"
 						>
 							Close
 						</button>
@@ -671,14 +671,14 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 					<>
 						<button
 							onClick={handleClose}
-							className="rounded-lg border border-neutral-200 px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
+							className="rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors"
 						>
 							Close
 						</button>
 						<button
 							onClick={handleRestore}
 							disabled={isBusy || fetchState !== "done"}
-							className="flex items-center gap-1.5 rounded-lg bg-brand-red px-3.5 py-2 text-xs font-semibold text-white hover:bg-brand-red-deep transition-colors disabled:opacity-50"
+							className="flex items-center gap-1.5 rounded-lg bg-action-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors disabled:opacity-50"
 						>
 							{actionLoading === "restore" && <Loader2 size={12} className="animate-spin" />}
 							Restore
@@ -688,7 +688,7 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 				{!isPending && !isApproved && !isSuspended && (
 					<button
 						onClick={handleClose}
-						className="rounded-lg border border-neutral-200 px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
+						className="rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors"
 					>
 						Close
 					</button>
