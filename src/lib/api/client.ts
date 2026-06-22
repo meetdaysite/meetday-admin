@@ -10,9 +10,12 @@ export const apiClient = axios.create({
 })
 
 // Attach a fresh Firebase ID token before every request.
-// Firebase SDK caches the token and silently refreshes it ~5 min before expiry,
-// so getIdToken() is cheap on the hot path.
+// authStateReady() resolves once Firebase has restored its session from IndexedDB.
+// After the first resolution it is effectively free (already settled promise).
+// Without this wait, currentUser is null during the first few hundred ms after a
+// page refresh, causing requests to go out with the stale persisted token → 401.
 apiClient.interceptors.request.use(async (config) => {
+	await firebaseAuth.authStateReady()
 	const user = firebaseAuth.currentUser
 	if (user) {
 		const token = await user.getIdToken()

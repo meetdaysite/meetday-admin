@@ -1,6 +1,14 @@
 // TODO: Replace all mock data and simulated delays with real API calls via apiClient
 // import { apiClient } from "./client"
-import type { Community, CommunityStatus, CommunityVisibility } from "@/types"
+import { apiClient } from "./client"
+import type {
+	Community,
+	CommunityStatus,
+	CommunityVisibility,
+	CreateCommunityDraftRequest,
+	UpdateCommunitySettingsRequest,
+	AssignCommunityMemberRequest,
+} from "@/types"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1356,4 +1364,64 @@ export async function getCommunityManagers(communityId: string): Promise<Manager
 		activities:      MOCK_MANAGER_ACTIVITIES,
 		accessSummary:   MOCK_ACCESS_SUMMARY,
 	}
+}
+
+// ─── Create Community workflow ────────────────────────────────────────────────
+
+export async function createCommunityDraft(
+	payload: CreateCommunityDraftRequest,
+): Promise<{ id: string }> {
+	const { data } = await apiClient.post<{ id: string }>("/admin/communities", payload)
+	return data
+}
+
+export async function updateCommunityDraft(
+	id: string,
+	payload: CreateCommunityDraftRequest,
+): Promise<void> {
+	await apiClient.patch(`/admin/communities/${id}`, payload)
+}
+
+
+export async function updateCommunitySettings(
+	id: string,
+	payload: UpdateCommunitySettingsRequest,
+): Promise<void> {
+	await apiClient.put(`/admin/communities/${id}/settings`, payload)
+}
+
+export async function replaceCommunityInterests(
+	id: string,
+	interestIds: string[],
+): Promise<void> {
+	await apiClient.put(`/admin/communities/${id}/interests`, { interestIds })
+}
+
+export async function setCommunityCities(
+	id: string,
+	payload: { primaryCity: string; communityCities: string[] },
+): Promise<void> {
+	await apiClient.put(`/admin/communities/${id}/cities`, payload)
+}
+
+export async function attachCommunityEvent(
+	id: string,
+	eventId: string,
+): Promise<void> {
+	await apiClient.post(`/admin/communities/${id}/events`, { eventId })
+}
+
+export async function resyncCommunityEvents(id: string): Promise<void> {
+	await apiClient.post(`/admin/communities/${id}/events/resync`)
+}
+
+export async function assignCommunityMember(
+	id: string,
+	payload: AssignCommunityMemberRequest,
+): Promise<void> {
+	await apiClient.post(`/admin/communities/${id}/members`, payload)
+}
+
+export async function publishCommunity(id: string): Promise<void> {
+	await apiClient.post(`/admin/communities/${id}/publish`)
 }

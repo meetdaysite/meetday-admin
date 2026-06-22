@@ -419,6 +419,52 @@ export type CommunityQueueItem = {
 	status: CommunityStatus
 }
 
+// ─── Community Create ─────────────────────────────────────────────────────────
+
+export type CommunityType = "MEETDAY_MANAGED_PUBLIC" | "HOST_LED" | "PRIVATE_INVITE_ONLY"
+export type CommunityAccess = "PUBLIC" | "APPROVAL_REQUIRED" | "INVITE_ONLY"
+export type CommunityMemberVisibility = "ALL_MEMBERS" | "AFTER_ATTENDING" | "HIDDEN"
+export type CommunityFeedPosting = "ALL_MEMBERS" | "ATTENDED_MEMBERS_ONLY" | "ADMINS_ONLY"
+export type CommunityChatPermission = "ALL_MEMBERS" | "ATTENDED_MEMBERS_ONLY" | "ADMIN_APPROVAL_REQUIRED"
+export type CommunityDmPolicy = "EVERYONE" | "MUTUAL_ATTENDEES_ONLY" | "DISABLED"
+export type CommunityPhotoSharing = "REQUIRE_CONSENT_REMINDER" | "OPEN" | "DISABLED"
+export type AssignableCommunityRole = "MANAGER" | "HOST" | "MODERATOR"
+
+export interface CreateCommunityDraftRequest {
+	name: string
+	slug: string
+	type: CommunityType
+	description: string
+	categoryId: string
+	primaryCity: string
+	coverImageKey: string
+	iconKey: string
+	interestTags: string[]
+}
+
+export interface UpdateCommunitySettingsRequest {
+	chatEnabled: boolean
+	feedEnabled: boolean
+	announcementsEnabled: boolean
+	memberDirectoryEnabled: boolean
+	experiencesTabEnabled: boolean
+	feedPosting: CommunityFeedPosting
+	chat: CommunityChatPermission
+	spamDetection: boolean
+	toxicContentDetection: boolean
+	linkFiltering: boolean
+	duplicateContentDetection: boolean
+	reportThreshold: number
+	dmPolicy: CommunityDmPolicy
+	photoSharing: CommunityPhotoSharing
+}
+
+
+export interface AssignCommunityMemberRequest {
+	userId: string
+	role: AssignableCommunityRole
+}
+
 // ─── Reviews ─────────────────────────────────────────────────────────────────
 
 export type Review = {
