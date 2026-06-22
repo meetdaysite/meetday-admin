@@ -28,6 +28,7 @@ const BADGE_CONFIG: Partial<Record<string, { label: string; className: string }>
 	CANCELLED:            { label: "Cancelled",          className: "bg-red-50 text-red-600" },
 	PENDING_ADMIN_REVIEW: { label: "Pending Review",     className: "bg-amber-50 text-amber-700" },
 	DEACTIVATED:          { label: "Deactivated",        className: "bg-neutral-100 text-text-secondary" },
+	PAUSED:               { label: "Paused",             className: "bg-neutral-100 text-text-secondary" },
 	PENDING_PAYMENT:      { label: "Pending Payment",    className: "bg-amber-50 text-amber-700" },
 	CONFIRMED:            { label: "Confirmed",          className: "bg-green-50 text-green-700" },
 	REFUNDED:             { label: "Refunded",           className: "bg-sky-50 text-sky-700" },

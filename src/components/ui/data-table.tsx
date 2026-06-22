@@ -55,6 +55,7 @@ export function DataTable<TData, TValue>({
 
 	return (
 		<div className="overflow-hidden rounded-xl border border-border-default">
+		<div className="overflow-x-auto">
 			<table className="w-full">
 				{/* Head */}
 				<thead className="bg-surface-card-muted border-b border-border-default">
@@ -144,6 +145,7 @@ export function DataTable<TData, TValue>({
 					)}
 				</tbody>
 			</table>
+		</div>
 		</div>
 	)
 }

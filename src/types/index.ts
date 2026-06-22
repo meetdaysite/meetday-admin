@@ -26,6 +26,7 @@ export type Permission =
 	| "interest.manage"
 	| "order.view"
 	| "audit.read"
+	| "community.manage"
 
 export type InviteStatus = "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED"
 
@@ -375,6 +376,47 @@ export type InterestCategory = {
 
 export type InterestDetail = Interest & {
 	categories: InterestCategory[]
+}
+
+// ─── Communities ─────────────────────────────────────────────────────────────
+
+export type CommunityStatus =
+	| "ACTIVE"
+	| "PAUSED"
+	| "PENDING_ADMIN_REVIEW"
+	| "SUSPENDED"
+	| "REJECTED"
+	| "DRAFT"
+
+export type CommunityVisibility = "PUBLIC" | "PRIVATE" | "INVITE_ONLY"
+
+export type Community = {
+	id: string
+	name: string
+	description: string | null
+	thumbnailUrl: string | null
+	isVerified: boolean
+	category: { id: string; name: string } | null
+	visibility: CommunityVisibility
+	memberCount: number
+	memberGrowth: number
+	eventCount: number
+	upcomingEventCount: number
+	engagementRate: number
+	status: CommunityStatus
+	createdAt: string
+}
+
+export type CommunityQueueItem = {
+	id: string
+	name: string
+	thumbnailUrl: string | null
+	category: { id: string; name: string } | null
+	visibility: CommunityVisibility
+	memberCount: number
+	submittedBy: { id: string; name: string }
+	submittedAt: string
+	status: CommunityStatus
 }
 
 // ─── Reviews ─────────────────────────────────────────────────────────────────

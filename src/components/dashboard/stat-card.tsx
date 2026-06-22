@@ -2,6 +2,17 @@
 import { TrendingUp, TrendingDown, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+type Accent = "brand" | "green" | "amber" | "sky" | "purple" | "rose"
+
+const ACCENT_CLASSES: Record<Accent, { box: string; icon: string }> = {
+	brand:  { box: "bg-surface-brand-soft",  icon: "text-icon-brand" },
+	green:  { box: "bg-green-50",             icon: "text-green-600" },
+	amber:  { box: "bg-amber-50",             icon: "text-amber-600" },
+	sky:    { box: "bg-sky-50",               icon: "text-sky-600" },
+	purple: { box: "bg-purple-50",            icon: "text-purple-600" },
+	rose:   { box: "bg-rose-50",              icon: "text-rose-600" },
+}
+
 export type StatCardProps = {
 	icon: LucideIcon
 	label: string
@@ -9,11 +20,13 @@ export type StatCardProps = {
 	sub?: string
 	href?: string
 	trend?: { value: number; direction: "up" | "down"; label?: string }
+	accent?: Accent
 	/** When true, the card is rendered in a muted / empty-state style */
 	empty?: boolean
 }
 
-export function StatCard({ icon: Icon, label, value, sub, href, trend, empty }: StatCardProps) {
+export function StatCard({ icon: Icon, label, value, sub, href, trend, accent = "brand", empty }: StatCardProps) {
+	const ac = ACCENT_CLASSES[accent]
 	const content = (
 		<div
 			className={cn(
@@ -25,8 +38,8 @@ export function StatCard({ icon: Icon, label, value, sub, href, trend, empty }: 
 		>
 			{/* Header row */}
 			<div className="flex items-start justify-between gap-2">
-				<div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-brand-soft shrink-0">
-					<Icon size={16} className="text-icon-brand" />
+				<div className={cn("flex h-9 w-9 items-center justify-center rounded-lg shrink-0", ac.box)}>
+					<Icon size={16} className={ac.icon} />
 				</div>
 
 				{trend && (
@@ -45,7 +58,7 @@ export function StatCard({ icon: Icon, label, value, sub, href, trend, empty }: 
 						)}
 						{trend.value > 0 ? "+" : ""}
 						{trend.value}
-						{trend.label ? ` ${trend.label}` : ""}
+						{trend.label ?? ""}
 					</span>
 				)}
 			</div>

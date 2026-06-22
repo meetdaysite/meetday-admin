@@ -17,6 +17,10 @@ import {
 	ScrollText,
 	Star,
 	Sparkles,
+	Users,
+	CirclePlus,
+	Folders,
+	BarChart2,
 	type LucideIcon,
 } from "lucide-react"
 import { useAuthStore } from "@/stores/auth.store"
@@ -24,7 +28,7 @@ import { useUIStore } from "@/stores/ui.store"
 import { cn } from "@/lib/utils"
 import type { Permission } from "@/types"
 
-// â”€â”€â”€ Nav config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Nav config
 
 type NavItem = {
 	label: string
@@ -45,31 +49,71 @@ const NAV: NavSection[] = [
 	},
 	{
 		title: "Hosts",
-		items: [
-			{ label: "Hosts", href: "/hosts/queue", icon: Clock, permission: "host.approve" },
-		],
+		items: [{ label: "Hosts", href: "/hosts/queue", icon: Clock, permission: "host.approve" }],
 	},
 	{
 		title: "Events",
 		items: [
 			{ label: "Event Queue", href: "/events/queue", icon: CalendarDays, permission: "event.approve" },
-			{ label: "All Events",  href: "/events",       icon: CalendarRange, permission: "event.approve", exact: true },
+			{
+				label: "All Events",
+				href: "/events",
+				icon: CalendarRange,
+				permission: "event.approve",
+				exact: true,
+			},
+		],
+	},
+	{
+		title: "Communities",
+		items: [
+			{
+				label: "Community Queue",
+				href: "/communities/queue",
+				icon: Clock,
+				permission: "community.manage",
+			},
+			{
+				label: "All Communities",
+				href: "/communities",
+				icon: Users,
+				permission: "community.manage",
+				exact: true,
+			},
+			{
+				label: "Create Community",
+				href: "/communities/create",
+				icon: CirclePlus,
+				permission: "community.manage",
+			},
+			{
+				label: "Community Categories",
+				href: "/communities/categories",
+				icon: Folders,
+				permission: "community.manage",
+			},
+			{
+				label: "Reports",
+				href: "/communities/reports",
+				icon: BarChart2,
+				permission: "community.manage",
+			},
 		],
 	},
 	{
 		title: "Management",
 		items: [
-			{ label: "Admins",     href: "/admins",     icon: ShieldCheck, permission: "admin.invite" },
-			{ label: "Coupons",    href: "/coupons",    icon: Tag,         permission: "coupon.view" },
-			{ label: "Categories", href: "/categories", icon: LayoutGrid,  permission: "category.manage" },
-			{ label: "Interests",  href: "/interests",  icon: Sparkles,    permission: "interest.manage" },
-			{ label: "Orders",     href: "/orders",     icon: ShoppingBag, permission: "order.view" },
+			{ label: "Admins", href: "/admins", icon: ShieldCheck, permission: "admin.invite" },
+			{ label: "Coupons", href: "/coupons", icon: Tag, permission: "coupon.view" },
+			{ label: "Categories", href: "/categories", icon: LayoutGrid, permission: "category.manage" },
+			{ label: "Interests", href: "/interests", icon: Sparkles, permission: "interest.manage" },
+			{ label: "Orders", href: "/orders", icon: ShoppingBag, permission: "order.view" },
 		],
 	},
 	{
 		title: "Moderation",
 		items: [
-			{ label: "Reviews",    href: "/reviews",    icon: Star,       permission: "moderation.read" },
+			{ label: "Reviews", href: "/reviews", icon: Star, permission: "moderation.read" },
 			{ label: "Audit Logs", href: "/audit-logs", icon: ScrollText, permission: "audit.read" },
 		],
 	},
@@ -79,7 +123,7 @@ const NAV: NavSection[] = [
 	},
 ]
 
-// â”€â”€â”€ Nav link â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Nav link
 
 function NavLink({
 	item,
@@ -103,7 +147,7 @@ function NavLink({
 				collapsed ? "justify-center w-9 h-9 mx-auto" : "px-3 py-2 mx-1",
 				active
 					? "bg-surface-brand-soft text-text-brand"
-					: "text-text-secondary hover:bg-neutral-100 hover:text-text-primary",
+					: "text-text-primary hover:bg-surface-brand-soft hover:text-text-brand",
 			)}
 		>
 			<Icon size={15} className="shrink-0" />
@@ -129,7 +173,7 @@ function NavLink({
 	)
 }
 
-// â”€â”€â”€ Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Sidebar
 
 export function Sidebar() {
 	const pathname = usePathname()
@@ -178,11 +222,23 @@ export function Sidebar() {
 				>
 					{collapsed ? (
 						<Link href="/dashboard" className="shrink-0">
-							<Image src="/brand_logo.svg" alt="Meetday" width={28} height={28} className="object-contain" />
+							<Image
+								src="/brand_logo.svg"
+								alt="Meetday"
+								width={28}
+								height={28}
+								className="object-contain"
+							/>
 						</Link>
 					) : (
 						<Link href="/dashboard" className="min-w-0">
-							<Image src="/brand_logo.svg" alt="Meetday" width={120} height={32} className="object-contain" />
+							<Image
+								src="/brand_logo.svg"
+								alt="Meetday"
+								width={120}
+								height={32}
+								className="object-contain"
+							/>
 						</Link>
 					)}
 				</div>
@@ -196,7 +252,7 @@ export function Sidebar() {
 						return (
 							<div key={si} className={si > 0 ? "mt-3" : undefined}>
 								{!collapsed && section.title && (
-									<p className="px-4 pb-1 text-[10px] font-semibold tracking-[0.12em] uppercase text-text-tertiary">
+									<p className="px-4 pb-1 text-[10px] font-semibold tracking-[0.12em] uppercase text-text-muted">
 										{section.title}
 									</p>
 								)}
