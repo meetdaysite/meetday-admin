@@ -381,30 +381,29 @@ export type InterestDetail = Interest & {
 // ─── Communities ─────────────────────────────────────────────────────────────
 
 export type CommunityStatus =
+	| "DRAFT"
+	| "PUBLISHED"
+	| "ARCHIVED"
 	| "ACTIVE"
 	| "PAUSED"
 	| "PENDING_ADMIN_REVIEW"
 	| "SUSPENDED"
 	| "REJECTED"
-	| "DRAFT"
 
 export type CommunityVisibility = "PUBLIC" | "PRIVATE" | "INVITE_ONLY"
 
 export type Community = {
 	id: string
 	name: string
-	description: string | null
-	thumbnailUrl: string | null
-	isVerified: boolean
-	category: { id: string; name: string } | null
-	visibility: CommunityVisibility
-	memberCount: number
-	memberGrowth: number
-	eventCount: number
-	upcomingEventCount: number
-	engagementRate: number
+	slug: string
+	type: CommunityType
 	status: CommunityStatus
+	primaryCity: string
+	memberCount: number
+	experienceCount: number
 	createdAt: string
+	publishedAt: string | null
+	category: { id: string; name: string } | null
 }
 
 export type CommunityQueueItem = {

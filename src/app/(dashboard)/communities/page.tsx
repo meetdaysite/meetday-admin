@@ -10,7 +10,6 @@ import {
 	Users,
 	CalendarDays,
 	TrendingUp,
-	BadgeCheck,
 	Eye,
 	Pencil,
 	MoreHorizontal,
@@ -30,31 +29,20 @@ import {
 	type CommunityStats,
 	type GetCommunitiesParams,
 } from "@/lib/api/communities"
-import type { Community, CommunityStatus, CommunityVisibility } from "@/types"
+import type { Community, CommunityStatus, CommunityType } from "@/types"
 import { cn } from "@/lib/utils"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const PAGE_LIMIT = 20
 
-type StatusFilter     = CommunityStatus    | "ALL"
-type VisibilityFilter = CommunityVisibility | "ALL"
+type StatusFilter = CommunityStatus | "ALL"
 
 const STATUS_OPTIONS: { label: string; value: StatusFilter }[] = [
-	{ label: "All Status",      value: "ALL" },
-	{ label: "Active",          value: "ACTIVE" },
-	{ label: "Paused",          value: "PAUSED" },
-	{ label: "Pending Review",  value: "PENDING_ADMIN_REVIEW" },
-	{ label: "Suspended",       value: "SUSPENDED" },
-	{ label: "Draft",           value: "DRAFT" },
-	{ label: "Rejected",        value: "REJECTED" },
-]
-
-const VISIBILITY_OPTIONS: { label: string; value: VisibilityFilter }[] = [
-	{ label: "All Visibility", value: "ALL" },
-	{ label: "Public",         value: "PUBLIC" },
-	{ label: "Private",        value: "PRIVATE" },
-	{ label: "Invite Only",    value: "INVITE_ONLY" },
+	{ label: "All Status", value: "ALL" },
+	{ label: "Draft",      value: "DRAFT" },
+	{ label: "Published",  value: "PUBLISHED" },
+	{ label: "Archived",   value: "ARCHIVED" },
 ]
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -70,10 +58,10 @@ const CATEGORY_COLORS: Record<string, string> = {
 	"Lifestyle":       "bg-amber-100 text-amber-700",
 }
 
-const VISIBILITY_BADGE: Record<CommunityVisibility, { label: string; className: string }> = {
-	PUBLIC:      { label: "Public",      className: "bg-green-50 text-green-700" },
-	PRIVATE:     { label: "Private",     className: "bg-sky-50 text-sky-700" },
-	INVITE_ONLY: { label: "Invite Only", className: "bg-purple-50 text-purple-700" },
+const TYPE_BADGE: Record<CommunityType, { label: string; className: string }> = {
+	MEETDAY_MANAGED_PUBLIC: { label: "Managed",  className: "bg-blue-50 text-blue-700" },
+	HOST_LED:               { label: "Host Led", className: "bg-amber-50 text-amber-700" },
+	PRIVATE_INVITE_ONLY:    { label: "Private",  className: "bg-purple-50 text-purple-700" },
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -100,9 +88,8 @@ export default function CommunitiesPage() {
 	const [total,        setTotal]        = useState(0)
 	const [page,         setPage]         = useState(1)
 
-	const [statusFilter,     setStatusFilter]     = useState<StatusFilter>("ALL")
-	const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilter>("ALL")
-	const [search,           setSearch]           = useState("")
+	const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL")
+	const [search,       setSearch]       = useState("")
 
 	// ─── Fetch ────────────────────────────────────────────────────────────────
 
@@ -123,8 +110,8 @@ export default function CommunitiesPage() {
 		setError(null)
 		try {
 			const params: GetCommunitiesParams = { page, limit: PAGE_LIMIT }
-			if (statusFilter     !== "ALL") params.status     = statusFilter
-			if (visibilityFilter !== "ALL") params.visibility = visibilityFilter
+			if (statusFilter !== "ALL") params.status = statusFilter
+			if (search.trim())          params.search = search.trim()
 			const res = await getCommunities(params)
 			setCommunities(res.communities)
 			setTotal(res.total ?? res.communities.length)
@@ -140,29 +127,15 @@ export default function CommunitiesPage() {
 		} finally {
 			setIsLoading(false)
 		}
-	}, [page, statusFilter, visibilityFilter, router])
+	}, [page, statusFilter, search, router])
 
 	useEffect(() => { fetchStats() },       [fetchStats])
 	useEffect(() => { fetchCommunities() }, [fetchCommunities])
 
-	// ─── Client-side search ───────────────────────────────────────────────────
-
-	const filtered = useMemo(() => {
-		const q = search.toLowerCase().trim()
-		if (!q) return communities
-		return communities.filter(
-			c =>
-				c.name.toLowerCase().includes(q) ||
-				(c.description ?? "").toLowerCase().includes(q) ||
-				(c.category?.name ?? "").toLowerCase().includes(q),
-		)
-	}, [communities, search])
-
-	const hasActiveFilters = statusFilter !== "ALL" || visibilityFilter !== "ALL" || search !== ""
+	const hasActiveFilters = statusFilter !== "ALL" || search !== ""
 
 	function resetFilters() {
 		setStatusFilter("ALL")
-		setVisibilityFilter("ALL")
 		setSearch("")
 		setPage(1)
 	}
@@ -184,16 +157,11 @@ export default function CommunitiesPage() {
 								{c.name.charAt(0)}
 							</div>
 							<div className="min-w-0">
-								<div className="flex items-center gap-1">
-									<p className="text-xs font-semibold text-text-primary leading-none truncate">
-										{c.name}
-									</p>
-									{c.isVerified && (
-										<BadgeCheck size={12} className="text-blue-500 shrink-0" />
-									)}
-								</div>
-								<p className="mt-0.5 text-[11px] text-text-tertiary line-clamp-1">
-									{c.description}
+								<p className="text-xs font-semibold text-text-primary leading-none truncate">
+									{c.name}
+								</p>
+								<p className="mt-0.5 text-[11px] text-text-tertiary">
+									{c.primaryCity}
 								</p>
 							</div>
 						</div>
@@ -217,17 +185,15 @@ export default function CommunitiesPage() {
 				},
 			},
 			{
-				id: "visibility",
-				header: "Visibility",
+				id: "type",
+				header: "Type",
 				cell: ({ row }) => {
-					const cfg = VISIBILITY_BADGE[row.original.visibility]
+					const cfg = TYPE_BADGE[row.original.type]
 					return (
-						<span
-							className={cn(
-								"inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-								cfg.className,
-							)}
-						>
+						<span className={cn(
+							"inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+							cfg.className,
+						)}>
 							{cfg.label}
 						</span>
 					)
@@ -236,56 +202,20 @@ export default function CommunitiesPage() {
 			{
 				id: "members",
 				header: "Members",
-				cell: ({ row }) => {
-					const c = row.original
-					return (
-						<div>
-							<p className="text-xs font-semibold text-text-primary leading-none">
-								{formatCount(c.memberCount)}
-							</p>
-							<p className="mt-0.5 text-[11px] text-text-tertiary">
-								+{c.memberGrowth} this month
-							</p>
-						</div>
-					)
-				},
+				cell: ({ row }) => (
+					<p className="text-xs font-semibold text-text-primary">
+						{formatCount(row.original.memberCount)}
+					</p>
+				),
 			},
 			{
-				id: "events",
-				header: "Events",
-				cell: ({ row }) => {
-					const c = row.original
-					return (
-						<div>
-							<p className="text-xs font-semibold text-text-primary leading-none">
-								{c.eventCount}
-							</p>
-							<p className="mt-0.5 text-[11px] text-text-brand">
-								{c.upcomingEventCount} upcoming
-							</p>
-						</div>
-					)
-				},
-			},
-			{
-				id: "engagement",
-				header: "Engagement",
-				cell: ({ row }) => {
-					const rate = row.original.engagementRate
-					return (
-						<div className="flex items-center gap-2 min-w-22">
-							<span className="w-7 text-xs font-medium tabular-nums text-text-primary">
-								{rate}%
-							</span>
-							<div className="h-1.5 flex-1 overflow-hidden rounded-full bg-neutral-100">
-								<div
-									className="h-full rounded-full bg-green-500 transition-all"
-									style={{ width: `${rate}%` }}
-								/>
-							</div>
-						</div>
-					)
-				},
+				id: "experiences",
+				header: "Experiences",
+				cell: ({ row }) => (
+					<p className="text-xs font-semibold text-text-primary">
+						{row.original.experienceCount}
+					</p>
+				),
 			},
 			{
 				id: "status",
@@ -300,7 +230,6 @@ export default function CommunitiesPage() {
 						className="flex items-center gap-0.5"
 						onClick={e => e.stopPropagation()}
 					>
-						{/* TODO: open community detail drawer */}
 						<button
 							className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-neutral-100"
 							title="View"
@@ -308,7 +237,6 @@ export default function CommunitiesPage() {
 						>
 							<Eye size={14} />
 						</button>
-						{/* TODO: open edit community page */}
 						<button
 							className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-neutral-100"
 							title="Edit"
@@ -316,7 +244,6 @@ export default function CommunitiesPage() {
 						>
 							<Pencil size={14} />
 						</button>
-						{/* TODO: add context menu (suspend, delete, etc.) */}
 						<button
 							className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-neutral-100"
 							title="More options"
@@ -453,18 +380,6 @@ export default function CommunitiesPage() {
 					))}
 				</select>
 
-				<select
-					value={visibilityFilter}
-					onChange={e => { setVisibilityFilter(e.target.value as VisibilityFilter); setPage(1) }}
-					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
-				>
-					{VISIBILITY_OPTIONS.map(o => (
-						<option key={o.value} value={o.value}>{o.label}</option>
-					))}
-				</select>
-
-				{/* TODO: add Category filter — requires fetching community categories from API */}
-
 				{hasActiveFilters && (
 					<button
 						onClick={resetFilters}
@@ -485,7 +400,7 @@ export default function CommunitiesPage() {
 				<>
 					<DataTable
 						columns={columns}
-						data={filtered}
+						data={communities}
 						isLoading={isLoading}
 						emptyState={
 							<div className="py-12 text-center text-sm text-text-tertiary">

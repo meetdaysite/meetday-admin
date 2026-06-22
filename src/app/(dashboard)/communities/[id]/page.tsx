@@ -73,29 +73,33 @@ function DetailStatCard({ card }: { card: CommunityDetailStatCard }) {
 			<p className="text-xs text-text-tertiary font-medium">{card.label}</p>
 			<div className="flex items-baseline gap-2">
 				<span className="text-2xl font-bold text-text-primary tabular-nums leading-none">{card.value}</span>
-				<span className={cn(
-					"flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold",
-					card.trend.direction === "up" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600",
-				)}>
-					{card.trend.direction === "up" ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-					{card.trend.value > 0 ? "+" : ""}{card.trend.value}{card.trend.label ?? ""}
-				</span>
+				{card.trend && (
+					<span className={cn(
+						"flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold",
+						card.trend.direction === "up" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600",
+					)}>
+						{card.trend.direction === "up" ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+						{card.trend.value > 0 ? "+" : ""}{card.trend.value}{card.trend.label ?? ""}
+					</span>
+				)}
 			</div>
-			<p className="text-[11px] text-text-tertiary">{card.sub}</p>
-			<div className="h-12 mt-1">
-				<ResponsiveContainer width="100%" height="100%">
-					<LineChart data={card.spark}>
-						<Line
-							type="monotone"
-							dataKey="v"
-							stroke={card.color}
-							strokeWidth={1.5}
-							dot={false}
-							isAnimationActive={false}
-						/>
-					</LineChart>
-				</ResponsiveContainer>
-			</div>
+			{card.sub && <p className="text-[11px] text-text-tertiary">{card.sub}</p>}
+			{card.spark.length > 0 && (
+				<div className="h-12 mt-1">
+					<ResponsiveContainer width="100%" height="100%">
+						<LineChart data={card.spark}>
+							<Line
+								type="monotone"
+								dataKey="v"
+								stroke={card.color}
+								strokeWidth={1.5}
+								dot={false}
+								isAnimationActive={false}
+							/>
+						</LineChart>
+					</ResponsiveContainer>
+				</div>
+			)}
 		</div>
 	)
 }
@@ -166,9 +170,15 @@ export default function CommunityDetailPage() {
 		day: "numeric", month: "short", year: "numeric",
 	})
 
-	const visibilityLabel =
-		community.visibility === "PUBLIC"      ? "Public"      :
-		community.visibility === "PRIVATE"     ? "Private"     : "Invite Only"
+	const publishedDate = community.publishedAt
+		? new Date(community.publishedAt).toLocaleDateString("en-GB", {
+				day: "numeric", month: "short", year: "numeric",
+			})
+		: null
+
+	const accessLabel =
+		community.access === "PUBLIC"            ? "Public"            :
+		community.access === "APPROVAL_REQUIRED" ? "Approval Required" : "Invite Only"
 
 	return (
 		<div className="p-6 max-w-7xl mx-auto">
@@ -176,9 +186,17 @@ export default function CommunityDetailPage() {
 			{/* ── Header ────────────────────────────────────────────────────── */}
 			<div className="flex items-start justify-between gap-4 pb-5">
 				<div className="flex items-start gap-4">
-					<div className="h-16 w-16 shrink-0 rounded-full bg-purple-600 flex items-center justify-center text-white text-xl font-bold select-none">
-						{community.name[0]}
-					</div>
+					{community.iconUrl ? (
+						<img
+							src={community.iconUrl}
+							alt={community.name}
+							className="h-16 w-16 shrink-0 rounded-full object-cover"
+						/>
+					) : (
+						<div className="h-16 w-16 shrink-0 rounded-full bg-purple-600 flex items-center justify-center text-white text-xl font-bold select-none">
+							{community.name[0]}
+						</div>
+					)}
 					<div>
 						<div className="flex items-center gap-2 flex-wrap">
 							<h1 className="text-base font-semibold text-text-primary">{community.name}</h1>
@@ -188,7 +206,7 @@ export default function CommunityDetailPage() {
 								</span>
 							)}
 							<span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold bg-green-100 text-green-700">
-								{visibilityLabel} Community
+								{accessLabel} Community
 							</span>
 						</div>
 						{community.description && (
@@ -263,36 +281,48 @@ export default function CommunityDetailPage() {
 									View All
 								</button>
 							</div>
-							<div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-								{community.upcomingExperiences.map(exp => (
-									<div key={exp.id} className="rounded-lg overflow-hidden border border-border-default">
-										<div
-											className="h-24 flex items-end relative"
-											style={{ backgroundColor: exp.coverColor }}
-										>
-											<span className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-white/10 select-none">
-												{exp.coverInitial}
-											</span>
-											<span className="relative m-2 text-[10px] font-semibold bg-green-500 text-white rounded-full px-1.5 py-0.5">
-												Match {exp.matchPct}%
-											</span>
-										</div>
-										<div className="p-2.5">
-											<p className="text-xs font-semibold text-text-primary truncate">{exp.title}</p>
-											<p className="text-[10px] text-text-tertiary mt-0.5">{exp.date}</p>
-											<p className="text-[10px] text-text-tertiary">{exp.venue}</p>
-											<div className="flex items-center justify-between mt-2">
-												<span className="flex items-center gap-0.5 text-[10px] text-text-secondary">
-													<Users size={9} /> {exp.attendeeCount}
+							{community.upcomingExperiences.length === 0 ? (
+								<p className="text-xs text-text-tertiary">No upcoming experiences.</p>
+							) : (
+								<div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+									{community.upcomingExperiences.map(exp => (
+										<div key={exp.id} className="rounded-lg overflow-hidden border border-border-default">
+											<div
+												className="h-24 flex items-end relative"
+												style={{ backgroundColor: exp.coverColor }}
+											>
+												<span className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-white/10 select-none">
+													{exp.coverInitial}
 												</span>
-												<span className="flex items-center gap-0.5 text-[10px] text-text-secondary">
-													<Star size={9} /> {exp.rating}
-												</span>
+												{exp.matchPct !== null && (
+													<span className="relative m-2 text-[10px] font-semibold bg-green-500 text-white rounded-full px-1.5 py-0.5">
+														Match {exp.matchPct}%
+													</span>
+												)}
+											</div>
+											<div className="p-2.5">
+												<p className="text-xs font-semibold text-text-primary truncate">{exp.title}</p>
+												<p className="text-[10px] text-text-tertiary mt-0.5">{exp.date}</p>
+												<p className="text-[10px] text-text-tertiary">{exp.venue}</p>
+												{(exp.attendeeCount > 0 || exp.rating > 0) && (
+													<div className="flex items-center justify-between mt-2">
+														{exp.attendeeCount > 0 && (
+															<span className="flex items-center gap-0.5 text-[10px] text-text-secondary">
+																<Users size={9} /> {exp.attendeeCount}
+															</span>
+														)}
+														{exp.rating > 0 && (
+															<span className="flex items-center gap-0.5 text-[10px] text-text-secondary">
+																<Star size={9} /> {exp.rating}
+															</span>
+														)}
+													</div>
+												)}
 											</div>
 										</div>
-									</div>
-								))}
-							</div>
+									))}
+								</div>
+							)}
 						</div>
 
 						{/* Recent Activity + Top Engagement */}
@@ -304,24 +334,28 @@ export default function CommunityDetailPage() {
 									<h2 className="text-sm font-semibold text-text-primary">Recent Activity</h2>
 									<button className="text-xs font-medium text-text-brand hover:underline">View All</button>
 								</div>
-								<div className="flex flex-col gap-3.5">
-									{community.recentActivity.map(item => {
-										const cfg = ACTIVITY_ICON[item.type] ?? ACTIVITY_ICON.post
-										const Icon = cfg.icon
-										return (
-											<div key={item.id} className="flex items-start gap-3">
-												<div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", cfg.bg)}>
-													<Icon size={14} className={cfg.color} />
+								{community.recentActivity.length === 0 ? (
+									<p className="text-xs text-text-tertiary">No recent activity.</p>
+								) : (
+									<div className="flex flex-col gap-3.5">
+										{community.recentActivity.map(item => {
+											const cfg = ACTIVITY_ICON[item.type] ?? ACTIVITY_ICON.post
+											const Icon = cfg.icon
+											return (
+												<div key={item.id} className="flex items-start gap-3">
+													<div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", cfg.bg)}>
+														<Icon size={14} className={cfg.color} />
+													</div>
+													<div className="flex-1 min-w-0">
+														<p className="text-xs font-medium text-text-primary">{item.title}</p>
+														<p className="text-[11px] text-text-tertiary truncate">{item.description}</p>
+													</div>
+													<span className="text-[11px] text-text-tertiary shrink-0">{item.timeAgo}</span>
 												</div>
-												<div className="flex-1 min-w-0">
-													<p className="text-xs font-medium text-text-primary">{item.title}</p>
-													<p className="text-[11px] text-text-tertiary truncate">{item.description}</p>
-												</div>
-												<span className="text-[11px] text-text-tertiary shrink-0">{item.timeAgo}</span>
-											</div>
-										)
-									})}
-								</div>
+											)
+										})}
+									</div>
+								)}
 							</div>
 
 							{/* Top Engagement */}
@@ -333,25 +367,29 @@ export default function CommunityDetailPage() {
 									</h2>
 									<button className="text-xs font-medium text-text-brand hover:underline">View All</button>
 								</div>
-								<div className="flex flex-col gap-3">
-									{community.topEngagement.map(item => (
-										<div key={item.label} className="flex items-center gap-3">
-											<span className="text-xs text-text-secondary w-24 shrink-0">{item.label}</span>
-											<div className="flex-1 h-1.5 rounded-full bg-surface-card-muted overflow-hidden">
-												<div
-													className="h-full rounded-full"
-													style={{
-														width: `${Math.round((item.value / item.max) * 100)}%`,
-														backgroundColor: item.color,
-													}}
-												/>
+								{community.topEngagement.length === 0 ? (
+									<p className="text-xs text-text-tertiary">No engagement data yet.</p>
+								) : (
+									<div className="flex flex-col gap-3">
+										{community.topEngagement.map(item => (
+											<div key={item.label} className="flex items-center gap-3">
+												<span className="text-xs text-text-secondary w-24 shrink-0">{item.label}</span>
+												<div className="flex-1 h-1.5 rounded-full bg-surface-card-muted overflow-hidden">
+													<div
+														className="h-full rounded-full"
+														style={{
+															width: `${Math.round((item.value / item.max) * 100)}%`,
+															backgroundColor: item.color,
+														}}
+													/>
+												</div>
+												<span className="text-xs font-semibold text-text-primary w-8 text-right tabular-nums">
+													{item.value}
+												</span>
 											</div>
-											<span className="text-xs font-semibold text-text-primary w-8 text-right tabular-nums">
-												{item.value}
-											</span>
-										</div>
-									))}
-								</div>
+										))}
+									</div>
+								)}
 							</div>
 						</div>
 					</div>
@@ -369,9 +407,19 @@ export default function CommunityDetailPage() {
 									<dt className="text-text-tertiary">Created on</dt>
 									<dd className="text-text-primary font-medium">{createdDate}</dd>
 								</div>
+								{publishedDate && (
+									<div className="flex items-center justify-between gap-2">
+										<dt className="text-text-tertiary">Published on</dt>
+										<dd className="text-text-primary font-medium">{publishedDate}</dd>
+									</div>
+								)}
 								<div className="flex items-center justify-between gap-2">
-									<dt className="text-text-tertiary">Visibility</dt>
-									<dd className="text-text-primary font-medium">{visibilityLabel} Community</dd>
+									<dt className="text-text-tertiary">Access</dt>
+									<dd className="text-text-primary font-medium">{accessLabel}</dd>
+								</div>
+								<div className="flex items-center justify-between gap-2">
+									<dt className="text-text-tertiary">Primary City</dt>
+									<dd className="text-text-primary font-medium">{community.primaryCity}</dd>
 								</div>
 								<div className="flex flex-col gap-1 pt-0.5">
 									<dt className="text-text-tertiary">Community URL</dt>

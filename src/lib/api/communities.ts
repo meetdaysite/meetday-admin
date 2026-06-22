@@ -4,7 +4,6 @@ import { apiClient } from "./client"
 import type {
 	Community,
 	CommunityStatus,
-	CommunityVisibility,
 	CreateCommunityDraftRequest,
 	UpdateCommunitySettingsRequest,
 	AssignCommunityMemberRequest,
@@ -23,8 +22,9 @@ export type CommunityStats = {
 
 export type GetCommunitiesParams = {
 	status?: CommunityStatus
-	visibility?: CommunityVisibility
+	city?: string
 	categoryId?: string
+	search?: string
 	page?: number
 	limit?: number
 }
@@ -46,105 +46,6 @@ const MOCK_STATS: CommunityStats = {
 	avgEngagementRate: 72,
 }
 
-const MOCK_COMMUNITIES: Community[] = [
-	{
-		id: "comm-1",
-		name: "Meetday Music Nights",
-		description: "For music lovers, creators and vibe chasers.",
-		thumbnailUrl: null,
-		isVerified: true,
-		category: { id: "cat-music", name: "Music" },
-		visibility: "PUBLIC",
-		memberCount: 1600,
-		memberGrowth: 120,
-		eventCount: 12,
-		upcomingEventCount: 3,
-		engagementRate: 78,
-		status: "ACTIVE",
-		createdAt: "2024-01-15T10:00:00Z",
-	},
-	{
-		id: "comm-2",
-		name: "Rooftop Social Club",
-		description: "Rooftop events, sunset vibes and good conversations.",
-		thumbnailUrl: null,
-		isVerified: false,
-		category: { id: "cat-lifestyle", name: "Lifestyle" },
-		visibility: "PUBLIC",
-		memberCount: 2300,
-		memberGrowth: 210,
-		eventCount: 14,
-		upcomingEventCount: 4,
-		engagementRate: 74,
-		status: "ACTIVE",
-		createdAt: "2024-02-20T10:00:00Z",
-	},
-	{
-		id: "comm-3",
-		name: "Startup & Tech Connect",
-		description: "Where founders, builders and innovators meet.",
-		thumbnailUrl: null,
-		isVerified: false,
-		category: { id: "cat-business", name: "Business" },
-		visibility: "PRIVATE",
-		memberCount: 980,
-		memberGrowth: 65,
-		eventCount: 6,
-		upcomingEventCount: 1,
-		engagementRate: 64,
-		status: "ACTIVE",
-		createdAt: "2024-03-05T10:00:00Z",
-	},
-	{
-		id: "comm-4",
-		name: "Wellness Circle",
-		description: "Yoga, mindfulness and holistic living community.",
-		thumbnailUrl: null,
-		isVerified: false,
-		category: { id: "cat-wellness", name: "Wellness" },
-		visibility: "PUBLIC",
-		memberCount: 720,
-		memberGrowth: 40,
-		eventCount: 8,
-		upcomingEventCount: 2,
-		engagementRate: 68,
-		status: "ACTIVE",
-		createdAt: "2024-03-18T10:00:00Z",
-	},
-	{
-		id: "comm-5",
-		name: "Art After Dark",
-		description: "Art, creativity and late night conversations.",
-		thumbnailUrl: null,
-		isVerified: false,
-		category: { id: "cat-arts", name: "Arts" },
-		visibility: "PUBLIC",
-		memberCount: 540,
-		memberGrowth: 38,
-		eventCount: 5,
-		upcomingEventCount: 1,
-		engagementRate: 60,
-		status: "PENDING_ADMIN_REVIEW",
-		createdAt: "2024-04-01T10:00:00Z",
-	},
-	{
-		id: "comm-6",
-		name: "Coffee & Conversations",
-		description: "Meaningful conversations over coffee and great people.",
-		thumbnailUrl: null,
-		isVerified: false,
-		category: { id: "cat-lifestyle", name: "Lifestyle" },
-		visibility: "PUBLIC",
-		memberCount: 1200,
-		memberGrowth: 90,
-		eventCount: 9,
-		upcomingEventCount: 2,
-		engagementRate: 71,
-		status: "PAUSED",
-		createdAt: "2024-04-10T10:00:00Z",
-	},
-]
-
 // ─── API functions ────────────────────────────────────────────────────────────
 
 export async function getCommunityStats(): Promise<CommunityStats> {
@@ -155,24 +56,15 @@ export async function getCommunityStats(): Promise<CommunityStats> {
 }
 
 export async function getCommunities(params?: GetCommunitiesParams): Promise<CommunitiesListResponse> {
-	// TODO: const { data } = await apiClient.get<CommunitiesListResponse>("/admin/communities", { params })
-	// TODO: return data
-	await new Promise(r => setTimeout(r, 600))
-
-	let filtered = [...MOCK_COMMUNITIES]
-	if (params?.status)     filtered = filtered.filter(c => c.status === params.status)
-	if (params?.visibility) filtered = filtered.filter(c => c.visibility === params.visibility)
-	if (params?.categoryId) filtered = filtered.filter(c => c.category?.id === params.categoryId)
-
-	const limit = params?.limit ?? 20
-	const page  = params?.page  ?? 1
-	const start = (page - 1) * limit
-
+	const { data } = await apiClient.get<{ data: Community[]; total: number; page: number; limit: number }>(
+		"/admin/communities",
+		{ params },
+	)
 	return {
-		communities: filtered.slice(start, start + limit),
-		total: filtered.length,
-		page,
-		limit,
+		communities: data.data,
+		total: data.total,
+		page: data.page,
+		limit: data.limit,
 	}
 }
 
@@ -327,12 +219,105 @@ export async function bulkRejectCommunities(ids: string[], reason: string): Prom
 	await new Promise(r => setTimeout(r, 700))
 }
 
-// ─── Community Detail types ────────────────────────────────────────────────────
+// ─── Community Detail — API response types ────────────────────────────────────
+
+import type {
+	CommunityFeedPosting,
+	CommunityChatPermission,
+	CommunityDmPolicy,
+	CommunityPhotoSharing,
+	CommunityAccess,
+	CommunityMemberVisibility,
+} from "@/types"
+
+export type ApiCommunitySettings = {
+	id: string
+	communityId: string
+	chatEnabled: boolean
+	feedEnabled: boolean
+	announcementsEnabled: boolean
+	memberDirectoryEnabled: boolean
+	experiencesTabEnabled: boolean
+	feedPosting: CommunityFeedPosting
+	chat: CommunityChatPermission
+	spamDetection: boolean
+	toxicContentDetection: boolean
+	linkFiltering: boolean
+	duplicateContentDetection: boolean
+	reportThreshold: number
+	dmPolicy: CommunityDmPolicy
+	photoSharing: CommunityPhotoSharing
+	createdAt: string
+	updatedAt: string
+}
+
+export type ApiCommunityInterest = {
+	communityId: string
+	interestId: string
+	interest: { id: string; name: string; slug: string }
+}
+
+export type ApiCommunityMemberEntry = {
+	id: string
+	communityId: string
+	userId: string
+	role: "OWNER" | "MANAGER" | "MODERATOR" | "MEMBER"
+	status: string
+	invitedBy: string | null
+	joinedAt: string
+	createdAt: string
+	updatedAt: string
+	user: { id: string; firstName: string; lastName: string; email: string; avatarUrl: string | null }
+}
+
+export type ApiCommunityEventEntry = {
+	id: string
+	communityId: string
+	eventId: string
+	source: "AUTO" | "MANUAL"
+	addedBy: string | null
+	addedAt: string
+	event: { id: string; title: string; city: string; eventDate: string; status: string }
+}
+
+export type ApiCommunityDetail = {
+	id: string
+	slug: string
+	name: string
+	description: string | null
+	type: CommunityType
+	status: CommunityStatus
+	access: CommunityAccess
+	memberVisibility: CommunityMemberVisibility
+	categoryId: string
+	primaryCity: string
+	communityCities: string[]
+	interestTags: string[]
+	coverImageKey: string
+	iconKey: string
+	autoAddMatchingEvents: boolean
+	memberCount: number
+	experienceCount: number
+	createdBy: string
+	publishedAt: string | null
+	deletedAt: string | null
+	createdAt: string
+	updatedAt: string
+	settings: ApiCommunitySettings
+	category: { id: string; name: string } | null
+	interests: ApiCommunityInterest[]
+	members: ApiCommunityMemberEntry[]
+	events: ApiCommunityEventEntry[]
+	coverImageUrl: string | null
+	iconUrl: string | null
+}
+
+// ─── Community Detail — UI model types ───────────────────────────────────────
 
 export type CommunityDetailStatCard = {
 	label: string
 	value: string | number
-	trend: { value: number; direction: "up" | "down"; label?: string }
+	trend?: { value: number; direction: "up" | "down"; label?: string }
 	sub: string
 	color: string
 	spark: { v: number }[]
@@ -353,7 +338,7 @@ export type CommunityDetailExperience = {
 	venue: string
 	attendeeCount: number
 	rating: number
-	matchPct: number
+	matchPct: number | null
 	coverInitial: string
 	coverColor: string
 }
@@ -375,16 +360,21 @@ export type CommunityDetailEngagement = {
 
 export type CommunityDetailData = {
 	id: string
+	slug: string
 	name: string
 	description: string | null
 	thumbnailUrl: string | null
-	isVerified: boolean
+	iconUrl: string | null
 	isMeetdayManaged: boolean
 	category: { id: string; name: string } | null
-	visibility: CommunityVisibility
+	access: CommunityAccess
+	primaryCity: string
+	communityCities: string[]
 	communityUrl: string
 	status: CommunityStatus
 	createdAt: string
+	publishedAt: string | null
+	settings: ApiCommunitySettings | null
 	statCards: CommunityDetailStatCard[]
 	managers: CommunityDetailManager[]
 	upcomingExperiences: CommunityDetailExperience[]
@@ -392,89 +382,79 @@ export type CommunityDetailData = {
 	topEngagement: CommunityDetailEngagement[]
 }
 
-// ─── Community Detail mock data ────────────────────────────────────────────────
+// ─── Community Detail API ──────────────────────────────────────────────────────
 
-const MOCK_COMMUNITY_DETAIL: CommunityDetailData = {
-	id: "comm-1",
-	name: "Meetday Music Nights",
-	description: "A community for music lovers, live performance regulars, and people who enjoy real-world experiences.",
-	thumbnailUrl: null,
-	isVerified: true,
-	isMeetdayManaged: true,
-	category: { id: "cat-music", name: "Music" },
-	visibility: "PUBLIC",
-	communityUrl: "meetday.ai/communities/meetday-music-nights",
-	status: "ACTIVE",
-	createdAt: "2024-05-25T10:00:00Z",
-	statCards: [
+const COVER_COLORS = ["#1a0533", "#0c1a2e", "#0a1628", "#1f0a10", "#0d1f14", "#1a1000"]
+
+export async function getCommunityById(id: string): Promise<CommunityDetailData> {
+	const { data } = await apiClient.get<ApiCommunityDetail>(`/admin/communities/${id}`)
+
+	const managers: CommunityDetailManager[] = data.members
+		.filter(m => m.role === "OWNER" || m.role === "MANAGER" || m.role === "MODERATOR")
+		.map(m => ({
+			id: m.id,
+			name: `${m.user.firstName} ${m.user.lastName}`,
+			initial: m.user.firstName[0].toUpperCase(),
+			avatarUrl: m.user.avatarUrl,
+			role: (m.role === "OWNER" ? "Owner" : m.role === "MANAGER" ? "Manager" : "Moderator") as "Owner" | "Manager" | "Moderator",
+		}))
+
+	const upcomingExperiences: CommunityDetailExperience[] = data.events
+		.filter(e => e.event.status === "PUBLISHED")
+		.map((e, i) => ({
+			id: e.event.id,
+			title: e.event.title,
+			date: new Date(e.event.eventDate).toLocaleDateString("en-GB", {
+				weekday: "short", day: "numeric", month: "short",
+			}),
+			venue: e.event.city,
+			attendeeCount: 0,
+			rating: 0,
+			matchPct: null,
+			coverInitial: e.event.title[0].toUpperCase(),
+			coverColor: COVER_COLORS[i % COVER_COLORS.length],
+		}))
+
+	const statCards: CommunityDetailStatCard[] = [
 		{
 			label: "Total Members",
-			value: "1,248",
-			trend: { value: 18, direction: "up", label: "%" },
-			sub: "vs last 7 days",
+			value: data.memberCount,
+			sub: "",
 			color: "#9333ea",
-			spark: [800, 900, 850, 950, 1000, 1100, 1050, 1150, 1200, 1248].map(v => ({ v })),
+			spark: [],
 		},
 		{
 			label: "Active Experiences",
-			value: 12,
-			trend: { value: 2, direction: "up" },
-			sub: "vs last 7 days",
+			value: data.experienceCount,
+			sub: "",
 			color: "#3b82f6",
-			spark: [5, 6, 8, 7, 9, 10, 9, 11, 10, 12].map(v => ({ v })),
+			spark: [],
 		},
-		{
-			label: "Post Reach (7 Days)",
-			value: "18.6K",
-			trend: { value: 24, direction: "up", label: "%" },
-			sub: "vs last 7 days",
-			color: "#22c55e",
-			spark: [12000, 13000, 14000, 13500, 15000, 16000, 15500, 17000, 17500, 18600].map(v => ({ v })),
-		},
-		{
-			label: "Messages (7 Days)",
-			value: 342,
-			trend: { value: 12, direction: "up", label: "%" },
-			sub: "vs last 7 days",
-			color: "#f59e0b",
-			spark: [200, 220, 240, 230, 260, 280, 270, 300, 320, 342].map(v => ({ v })),
-		},
-	],
-	managers: [
-		{ id: "m-1", name: "Arjun Mehta",   initial: "A", avatarUrl: null, role: "Owner" },
-		{ id: "m-2", name: "Riya Banerjee", initial: "R", avatarUrl: null, role: "Manager" },
-		{ id: "m-3", name: "Kabir Shah",    initial: "K", avatarUrl: null, role: "Manager" },
-		{ id: "m-4", name: "Ishita Dey",    initial: "I", avatarUrl: null, role: "Moderator" },
-		{ id: "m-5", name: "Manav Sinha",   initial: "M", avatarUrl: null, role: "Moderator" },
-	],
-	upcomingExperiences: [
-		{ id: "exp-1", title: "Night Rituals",   date: "Sat, 25 May • 8:00 PM", venue: "Kolkata", attendeeCount: 320, rating: 4.8, matchPct: 98, coverInitial: "N", coverColor: "#1a0533" },
-		{ id: "exp-2", title: "After Hours",     date: "Fri, 31 May • 9:00 PM", venue: "Kolkata", attendeeCount: 280, rating: 4.7, matchPct: 95, coverInitial: "A", coverColor: "#0c1a2e" },
-		{ id: "exp-3", title: "Neon Nights",     date: "Sat, 8 Jun • 8:30 PM",  venue: "Kolkata", attendeeCount: 410, rating: 4.9, matchPct: 92, coverInitial: "N", coverColor: "#0a1628" },
-		{ id: "exp-4", title: "Sunset Sessions", date: "Sat, 1 Jun • 6:00 PM",  venue: "Kolkata", attendeeCount: 260, rating: 4.6, matchPct: 90, coverInitial: "S", coverColor: "#1f0a10" },
-	],
-	recentActivity: [
-		{ id: "ra-1", type: "member",       title: "New member joined",       description: "Rohit Sharma joined the community",                          timeAgo: "2m ago" },
-		{ id: "ra-2", type: "experience",   title: "New experience matched",   description: "Tech House Night – Kolkata was added automatically",         timeAgo: "15m ago" },
-		{ id: "ra-3", type: "post",         title: "New post in community",    description: "Vivek Rao posted in the community feed",                     timeAgo: "1h ago" },
-		{ id: "ra-4", type: "announcement", title: "Announcement created",     description: `You created an announcement: "Weekend Lineup Released!"`,    timeAgo: "3h ago" },
-	],
-	topEngagement: [
-		{ label: "Posts",       value: 128, max: 450, color: "#9333ea" },
-		{ label: "Comments",    value: 96,  max: 450, color: "#3b82f6" },
-		{ label: "Reactions",   value: 412, max: 450, color: "#22c55e" },
-		{ label: "Shares",      value: 54,  max: 450, color: "#f59e0b" },
-		{ label: "New Members", value: 231, max: 450, color: "#9333ea" },
-	],
-}
+	]
 
-// ─── Community Detail API ──────────────────────────────────────────────────────
-
-export async function getCommunityById(id: string): Promise<CommunityDetailData> {
-	// TODO: const { data } = await apiClient.get<CommunityDetailData>(`/admin/communities/${id}`)
-	// TODO: return data
-	await new Promise(r => setTimeout(r, 600))
-	return { ...MOCK_COMMUNITY_DETAIL, id }
+	return {
+		id: data.id,
+		slug: data.slug,
+		name: data.name,
+		description: data.description,
+		thumbnailUrl: data.coverImageUrl,
+		iconUrl: data.iconUrl,
+		isMeetdayManaged: data.type === "MEETDAY_MANAGED_PUBLIC",
+		category: data.category,
+		access: data.access,
+		primaryCity: data.primaryCity,
+		communityCities: data.communityCities,
+		communityUrl: `meetday.ai/communities/${data.slug}`,
+		status: data.status,
+		createdAt: data.createdAt,
+		publishedAt: data.publishedAt,
+		settings: data.settings,
+		statCards,
+		managers,
+		upcomingExperiences,
+		recentActivity: [],
+		topEngagement: [],
+	}
 }
 
 // ─── Experiences Tab types ─────────────────────────────────────────────────────
