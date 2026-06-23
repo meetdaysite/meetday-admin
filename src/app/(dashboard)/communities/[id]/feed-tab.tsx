@@ -71,7 +71,7 @@ function OverviewRow({ item }: { item: CommunityFeedOverviewItem }) {
 				</div>
 			</div>
 			<div className="w-20 h-8 shrink-0">
-				<ResponsiveContainer width="100%" height="100%">
+				<ResponsiveContainer width="100%" height={32}>
 					<LineChart data={chartData}>
 						<Line
 							type="monotone" dataKey="v" stroke={item.color}

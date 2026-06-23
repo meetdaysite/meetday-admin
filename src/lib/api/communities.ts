@@ -4,6 +4,7 @@ import { apiClient } from "./client"
 import type {
 	Community,
 	CommunityStatus,
+	AssignableCommunityRole,
 	CreateCommunityDraftRequest,
 	UpdateCommunitySettingsRequest,
 	AssignCommunityMemberRequest,
@@ -261,7 +262,7 @@ export type ApiCommunityMemberEntry = {
 	id: string
 	communityId: string
 	userId: string
-	role: "OWNER" | "MANAGER" | "MODERATOR" | "MEMBER"
+	role: AssignableCommunityRole
 	status: string
 	invitedBy: string | null
 	joinedAt: string
@@ -389,14 +390,18 @@ const COVER_COLORS = ["#1a0533", "#0c1a2e", "#0a1628", "#1f0a10", "#0d1f14", "#1
 export async function getCommunityById(id: string): Promise<CommunityDetailData> {
 	const { data } = await apiClient.get<ApiCommunityDetail>(`/admin/communities/${id}`)
 
+	const DISPLAY_ROLES: Record<string, "Owner" | "Manager" | "Moderator"> = {
+		OWNER: "Owner", MANAGER: "Manager", MODERATOR: "Moderator",
+	}
+
 	const managers: CommunityDetailManager[] = data.members
-		.filter(m => m.role === "OWNER" || m.role === "MANAGER" || m.role === "MODERATOR")
+		.filter(m => m.role in DISPLAY_ROLES)
 		.map(m => ({
 			id: m.id,
 			name: `${m.user.firstName} ${m.user.lastName}`,
 			initial: m.user.firstName[0].toUpperCase(),
 			avatarUrl: m.user.avatarUrl,
-			role: (m.role === "OWNER" ? "Owner" : m.role === "MANAGER" ? "Manager" : "Moderator") as "Owner" | "Manager" | "Moderator",
+			role: DISPLAY_ROLES[m.role],
 		}))
 
 	const upcomingExperiences: CommunityDetailExperience[] = data.events
@@ -1400,6 +1405,20 @@ export async function assignCommunityMember(
 	payload: AssignCommunityMemberRequest,
 ): Promise<void> {
 	await apiClient.post(`/admin/communities/${id}/members`, payload)
+}
+
+export async function removeCommunityMember(
+	communityId: string,
+	memberId: string,
+): Promise<void> {
+	await apiClient.delete(`/admin/communities/${communityId}/members/${memberId}`)
+}
+
+export async function detachCommunityEvent(
+	communityId: string,
+	eventId: string,
+): Promise<void> {
+	await apiClient.delete(`/admin/communities/${communityId}/events/${eventId}`)
 }
 
 export async function publishCommunity(id: string): Promise<void> {

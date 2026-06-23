@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
-	Search, SlidersHorizontal, Plus, Eye, Pencil, MoreHorizontal,
+	Search, SlidersHorizontal, Plus, Eye, Pencil,
 	Users, Calendar, CheckCircle, LayoutGrid, Banknote,
 	PlusCircle, Copy, Tag, Settings, Lightbulb,
-	ChevronLeft, ChevronRight,
+	ChevronLeft, ChevronRight, Unlink,
 	type LucideIcon,
 } from "lucide-react"
 import { LineChart, Line, ResponsiveContainer } from "recharts"
@@ -16,6 +16,7 @@ import { StatCard } from "@/components/dashboard/stat-card"
 import { Button } from "@/components/ui/Button"
 import {
 	getCommunityExperiencesTab,
+	detachCommunityEvent,
 	type CommunityExperienceTabData,
 	type CommunityExperienceItem,
 } from "@/lib/api/communities"
@@ -67,6 +68,7 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 	const [search, setSearch]           = useState("")
 	const [sort, setSort]               = useState("newest")
 	const [page, setPage]               = useState(1)
+	const [detachingId, setDetachingId] = useState<string | null>(null)
 
 	const load = useCallback(async () => {
 		setIsLoading(true)
@@ -82,6 +84,22 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 
 	useEffect(() => { load() }, [load])
 	useEffect(() => { setPage(1) }, [activeFilter, search, sort])
+
+	const handleDetach = useCallback(async (eventId: string) => {
+		setDetachingId(eventId)
+		try {
+			await detachCommunityEvent(communityId, eventId)
+			toast.success("Experience detached from community")
+			setData(prev => prev
+				? { ...prev, experiences: prev.experiences.filter(e => e.id !== eventId) }
+				: prev,
+			)
+		} catch {
+			toast.error("Failed to detach experience")
+		} finally {
+			setDetachingId(null)
+		}
+	}, [communityId])
 
 	const filtered = useMemo(() => {
 		if (!data) return []
@@ -195,21 +213,29 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 		{
 			id: "actions",
 			header: "",
-			cell: () => (
-				<div className="flex items-center gap-1">
-					<button className="rounded-md p-1.5 text-text-secondary hover:bg-neutral-100 transition-colors" title="View">
-						<Eye size={14} />
-					</button>
-					<button className="rounded-md p-1.5 text-text-secondary hover:bg-neutral-100 transition-colors" title="Edit">
-						<Pencil size={14} />
-					</button>
-					<button className="rounded-md p-1.5 text-text-secondary hover:bg-neutral-100 transition-colors" title="More">
-						<MoreHorizontal size={14} />
-					</button>
-				</div>
-			),
+			cell: ({ row }) => {
+				const e = row.original
+				return (
+					<div className="flex items-center gap-1" onClick={ev => ev.stopPropagation()}>
+						<button className="rounded-md p-1.5 text-text-secondary hover:bg-neutral-100 transition-colors" title="View">
+							<Eye size={14} />
+						</button>
+						<button className="rounded-md p-1.5 text-text-secondary hover:bg-neutral-100 transition-colors" title="Edit">
+							<Pencil size={14} />
+						</button>
+						<button
+							disabled={detachingId === e.id}
+							onClick={() => handleDetach(e.id)}
+							className="rounded-md p-1.5 text-text-tertiary transition-colors hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-40"
+							title="Detach from community"
+						>
+							<Unlink size={14} />
+						</button>
+					</div>
+				)
+			},
 		},
-	], [])
+	], [detachingId, handleDetach])
 
 	if (error) {
 		return (
@@ -391,7 +417,7 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 									</div>
 								</div>
 								<div className="w-20 h-8 shrink-0">
-									<ResponsiveContainer width="100%" height="100%">
+									<ResponsiveContainer width="100%" height={32}>
 										<LineChart data={metric.spark}>
 											<Line type="monotone" dataKey="v" stroke={metric.color} strokeWidth={1.5} dot={false} isAnimationActive={false} />
 										</LineChart>

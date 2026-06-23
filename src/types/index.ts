@@ -427,7 +427,7 @@ export type CommunityFeedPosting = "ALL_MEMBERS" | "ATTENDED_MEMBERS_ONLY" | "AD
 export type CommunityChatPermission = "ALL_MEMBERS" | "ATTENDED_MEMBERS_ONLY" | "ADMIN_APPROVAL_REQUIRED"
 export type CommunityDmPolicy = "EVERYONE" | "MUTUAL_ATTENDEES_ONLY" | "DISABLED"
 export type CommunityPhotoSharing = "REQUIRE_CONSENT_REMINDER" | "OPEN" | "DISABLED"
-export type AssignableCommunityRole = "MANAGER" | "HOST" | "MODERATOR"
+export type AssignableCommunityRole = "OWNER" | "MANAGER" | "HOST" | "MODERATOR" | "MEMBER"
 
 export interface CreateCommunityDraftRequest {
 	name: string

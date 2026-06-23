@@ -86,7 +86,7 @@ function DetailStatCard({ card }: { card: CommunityDetailStatCard }) {
 			{card.sub && <p className="text-[11px] text-text-tertiary">{card.sub}</p>}
 			{card.spark.length > 0 && (
 				<div className="h-12 mt-1">
-					<ResponsiveContainer width="100%" height="100%">
+					<ResponsiveContainer width="100%" height={48}>
 						<LineChart data={card.spark}>
 							<Line
 								type="monotone"
