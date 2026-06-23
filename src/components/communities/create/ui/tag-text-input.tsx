@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback } from "react"
-import { X, MapPin } from "lucide-react"
+import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface TagTextInputProps {
@@ -40,10 +40,7 @@ export function TagTextInput({
 		[value, onChange, maxItems],
 	)
 
-	const remove = useCallback(
-		(item: string) => onChange(value.filter((v) => v !== item)),
-		[value, onChange],
-	)
+	const remove = useCallback((item: string) => onChange(value.filter(v => v !== item)), [value, onChange])
 
 	const onKeyDown = useCallback(
 		(e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -74,12 +71,12 @@ export function TagTextInput({
 
 			<div
 				className={cn(
-					"flex min-h-[var(--size-input-md)] flex-wrap items-center gap-1.5 rounded-input border bg-surface-canvas px-3 py-2 transition-colors duration-(--duration-120) cursor-text",
+					"flex min-h-(--size-input-md) flex-wrap items-center gap-1.5 rounded-input border bg-surface-canvas px-3 py-2 transition-colors duration-(--duration-120) cursor-text",
 					focused ? "border-border-focused" : "border-border-default hover:border-border-strong",
 				)}
 				onClick={() => inputRef.current?.focus()}
 			>
-				{value.map((tag) => (
+				{value.map(tag => (
 					<span
 						key={tag}
 						className="flex items-center gap-1 rounded-badge bg-surface-card border border-border-subtle px-2 py-0.5 text-caption font-medium text-text-secondary"
@@ -88,7 +85,10 @@ export function TagTextInput({
 						{tag}
 						<button
 							type="button"
-							onClick={(e) => { e.stopPropagation(); remove(tag) }}
+							onClick={e => {
+								e.stopPropagation()
+								remove(tag)
+							}}
 							className="text-icon-secondary hover:text-text-danger transition-colors"
 						>
 							<X size={10} />
@@ -100,12 +100,15 @@ export function TagTextInput({
 					ref={inputRef}
 					type="text"
 					value={input}
-					onChange={(e) => setInput(e.target.value)}
+					onChange={e => setInput(e.target.value)}
 					onKeyDown={onKeyDown}
 					onFocus={() => setFocused(true)}
-					onBlur={() => { setFocused(false); if (input.trim()) add(input) }}
+					onBlur={() => {
+						setFocused(false)
+						if (input.trim()) add(input)
+					}}
 					placeholder={value.length === 0 ? placeholder : ""}
-					className="min-w-[120px] flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
+					className="min-w-30 flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
 				/>
 			</div>
 		</div>

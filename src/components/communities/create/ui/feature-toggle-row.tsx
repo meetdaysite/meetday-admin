@@ -25,7 +25,9 @@ export function FeatureToggleRow({
 	return (
 		<div className="flex items-center justify-between gap-4 rounded-card border border-border-subtle bg-surface-canvas p-3">
 			<div className="flex items-center gap-3">
-				<div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-badge", iconBg)}>
+				<div
+					className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-badge", iconBg)}
+				>
 					{icon}
 				</div>
 				<div>

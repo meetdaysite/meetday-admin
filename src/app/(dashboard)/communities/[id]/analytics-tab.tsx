@@ -2,31 +2,72 @@
 
 import { useCallback, useEffect, useState } from "react"
 import {
-	Users, Activity, Ticket, IndianRupee, Heart,
-	Star, ChevronRight, Clock, Download, Share2,
-	Calendar, FileDown, type LucideIcon,
+	Users,
+	Activity,
+	Ticket,
+	IndianRupee,
+	Heart,
+	Star,
+	ChevronRight,
+	Clock,
+	Download,
+	Share2,
+	Calendar,
+	FileDown,
+	type LucideIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 import {
-	AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-	LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-	ResponsiveContainer, Legend,
+	AreaChart,
+	Area,
+	BarChart,
+	Bar,
+	PieChart,
+	Pie,
+	Cell,
+	Line,
+	XAxis,
+	YAxis,
+	CartesianGrid,
+	Tooltip,
+	ResponsiveContainer,
 } from "recharts"
 import { Button } from "@/components/ui/Button"
 import { StatCard } from "@/components/dashboard/stat-card"
-import {
-	getCommunityAnalytics,
-	type AnalyticsTabData,
-} from "@/lib/api/communities"
+import { getCommunityAnalytics, type AnalyticsTabData } from "@/lib/api/communities"
 import { cn } from "@/lib/utils"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const QUICK_ACTIONS: { label: string; description: string; icon: LucideIcon; bg: string; color: string }[] = [
-	{ label: "Export Analytics", description: "Download detailed analytics report", icon: Download,  bg: "bg-green-50",  color: "text-green-500" },
-	{ label: "Download CSV",     description: "Export raw data in CSV format",      icon: FileDown,  bg: "bg-blue-50",   color: "text-blue-500" },
-	{ label: "Share Report",     description: "Share analytics with your team",     icon: Share2,    bg: "bg-purple-50", color: "text-purple-500" },
-	{ label: "Schedule Report",  description: "Automate email reports",             icon: Calendar,  bg: "bg-amber-50",  color: "text-amber-500" },
+	{
+		label: "Export Analytics",
+		description: "Download detailed analytics report",
+		icon: Download,
+		bg: "bg-green-50",
+		color: "text-green-500",
+	},
+	{
+		label: "Download CSV",
+		description: "Export raw data in CSV format",
+		icon: FileDown,
+		bg: "bg-blue-50",
+		color: "text-blue-500",
+	},
+	{
+		label: "Share Report",
+		description: "Share analytics with your team",
+		icon: Share2,
+		bg: "bg-purple-50",
+		color: "text-purple-500",
+	},
+	{
+		label: "Schedule Report",
+		description: "Automate email reports",
+		icon: Calendar,
+		bg: "bg-amber-50",
+		color: "text-amber-500",
+	},
 ]
 
 const RANK_COLORS = ["#f59e0b", "#9ca3af", "#b45309", "#6366f1", "#6366f1"]
@@ -34,16 +75,23 @@ const RANK_COLORS = ["#f59e0b", "#9ca3af", "#b45309", "#6366f1", "#6366f1"]
 // ─── Health Score Donut ───────────────────────────────────────────────────────
 
 function HealthDonut({ score, maxScore, label }: { score: number; maxScore: number; label: string }) {
-	const pct    = score / maxScore
+	const pct = score / maxScore
 	const filled = pct * 100
-	const data   = [{ v: filled }, { v: 100 - filled }]
+	const data = [{ v: filled }, { v: 100 - filled }]
 	return (
 		<div className="relative flex items-center justify-center">
 			<PieChart width={140} height={140}>
 				<Pie
-					data={data} cx={70} cy={70} innerRadius={48} outerRadius={62}
-					startAngle={90} endAngle={-270} dataKey="v"
-					strokeWidth={0} paddingAngle={0}
+					data={data}
+					cx={70}
+					cy={70}
+					innerRadius={48}
+					outerRadius={62}
+					startAngle={90}
+					endAngle={-270}
+					dataKey="v"
+					strokeWidth={0}
+					paddingAngle={0}
 				>
 					<Cell fill="#22c55e" />
 					<Cell fill="#f0fdf4" />
@@ -68,18 +116,35 @@ function InterestsDonut({ segments }: { segments: { label: string; pct: number; 
 	return (
 		<div className="flex items-center gap-4">
 			<PieChart width={88} height={88}>
-				<Pie data={data} cx={44} cy={44} innerRadius={26} outerRadius={40}
-					startAngle={90} endAngle={-270} dataKey="value"
-					strokeWidth={2} stroke="#fff" paddingAngle={1}>
-					{data.map((d, i) => <Cell key={i} fill={d.color} />)}
+				<Pie
+					data={data}
+					cx={44}
+					cy={44}
+					innerRadius={26}
+					outerRadius={40}
+					startAngle={90}
+					endAngle={-270}
+					dataKey="value"
+					strokeWidth={2}
+					stroke="#fff"
+					paddingAngle={1}
+				>
+					{data.map((d, i) => (
+						<Cell key={i} fill={d.color} />
+					))}
 				</Pie>
 			</PieChart>
 			<div className="flex flex-col gap-1.5">
 				{segments.map(s => (
 					<div key={s.label} className="flex items-center gap-2">
-						<span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+						<span
+							className="h-2 w-2 rounded-full shrink-0"
+							style={{ backgroundColor: s.color }}
+						/>
 						<span className="text-[11px] text-text-secondary">{s.label}</span>
-						<span className="text-[11px] font-semibold text-text-primary ml-auto pl-2">{s.pct}%</span>
+						<span className="text-[11px] font-semibold text-text-primary ml-auto pl-2">
+							{s.pct}%
+						</span>
 					</div>
 				))}
 			</div>
@@ -90,41 +155,56 @@ function InterestsDonut({ segments }: { segments: { label: string; pct: number; 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function AnalyticsTab({ communityId }: { communityId: string }) {
-	const [data, setData]           = useState<AnalyticsTabData | null>(null)
+	const [data, setData] = useState<AnalyticsTabData | null>(null)
 	const [isLoading, setIsLoading] = useState(true)
-	const [error, setError]         = useState<string | null>(null)
+	const [error, setError] = useState<string | null>(null)
 	const [growthRange, setGrowthRange] = useState("Last 30 Days")
 
 	const load = useCallback(async () => {
 		setIsLoading(true)
 		setError(null)
-		try { setData(await getCommunityAnalytics(communityId)) }
-		catch { setError("Failed to load analytics.") }
-		finally { setIsLoading(false) }
+		try {
+			setData(await getCommunityAnalytics(communityId))
+		} catch {
+			setError("Failed to load analytics.")
+		} finally {
+			setIsLoading(false)
+		}
 	}, [communityId])
 
-	useEffect(() => { load() }, [load])
+	useEffect(() => {
+		load()
+	}, [load])
 
 	if (error) {
-		return <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+		return (
+			<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+				{error}
+			</div>
+		)
 	}
 
 	const stats = data?.stats
 
 	return (
 		<div className="flex items-start gap-5">
-
 			{/* ── Main ──────────────────────────────────────────────────────── */}
 			<div className="flex-1 min-w-0 flex flex-col gap-5">
-
 				{/* Header */}
 				<div className="flex items-start justify-between gap-4">
 					<div>
 						<h2 className="text-base font-semibold text-text-primary">Community Analytics</h2>
-						<p className="mt-0.5 text-xs text-text-tertiary">Deep insights into your community's growth, engagement and performance.</p>
+						<p className="mt-0.5 text-xs text-text-tertiary">
+							Deep insights into your community&apos;s growth, engagement and performance.
+						</p>
 					</div>
-					<Button variant="secondary" size="sm" radius="md" leftIcon={<Download size={13} />}
-						onClick={() => toast.info("Export analytics coming soon")}>
+					<Button
+						variant="secondary"
+						size="sm"
+						radius="md"
+						leftIcon={<Download size={13} />}
+						onClick={() => toast.info("Export analytics coming soon")}
+					>
 						Export Report
 					</Button>
 				</div>
@@ -132,16 +212,66 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 				{/* Stat cards */}
 				{/* TODO: wire growth values from getCommunityAnalytics API response */}
 				<div className="grid grid-cols-3 gap-3 lg:grid-cols-5">
-					<StatCard icon={Users}        label="Members"             value={isLoading ? "—" : (stats?.members            ?? 0)} trend={stats ? { value: stats.membersGrowth,            direction: "up", label: "%" } : undefined} sub="vs last 30 days" accent="purple" />
-					<StatCard icon={Activity}     label="Active Members"      value={isLoading ? "—" : (stats?.activeMembers      ?? 0)} trend={stats ? { value: stats.activeMembersGrowth,      direction: "up", label: "%" } : undefined} sub="vs last 30 days" accent="green" />
-					<StatCard icon={Ticket}       label="Experiences Booked"  value={isLoading ? "—" : (stats?.experiencesBooked  ?? 0)} trend={stats ? { value: stats.experiencesBookedGrowth,  direction: "up", label: "%" } : undefined} sub="vs last 30 days" accent="sky" />
-					<StatCard icon={IndianRupee}  label="Community Revenue"   value={isLoading ? "—" : (stats?.communityRevenue   ?? "—")} trend={stats ? { value: stats.communityRevenueGrowth, direction: "up", label: "%" } : undefined} sub="vs last 30 days" accent="amber" />
-					<StatCard icon={Heart}        label="Retention"           value={isLoading ? "—" : `${stats?.retention ?? 0}%`}     trend={stats ? { value: stats.retentionGrowth,          direction: "up", label: "%" } : undefined} sub="vs last 30 days" accent="rose" />
+					<StatCard
+						icon={Users}
+						label="Members"
+						value={isLoading ? "—" : (stats?.members ?? 0)}
+						trend={
+							stats ? { value: stats.membersGrowth, direction: "up", label: "%" } : undefined
+						}
+						sub="vs last 30 days"
+						accent="purple"
+					/>
+					<StatCard
+						icon={Activity}
+						label="Active Members"
+						value={isLoading ? "—" : (stats?.activeMembers ?? 0)}
+						trend={
+							stats
+								? { value: stats.activeMembersGrowth, direction: "up", label: "%" }
+								: undefined
+						}
+						sub="vs last 30 days"
+						accent="green"
+					/>
+					<StatCard
+						icon={Ticket}
+						label="Experiences Booked"
+						value={isLoading ? "—" : (stats?.experiencesBooked ?? 0)}
+						trend={
+							stats
+								? { value: stats.experiencesBookedGrowth, direction: "up", label: "%" }
+								: undefined
+						}
+						sub="vs last 30 days"
+						accent="sky"
+					/>
+					<StatCard
+						icon={IndianRupee}
+						label="Community Revenue"
+						value={isLoading ? "—" : (stats?.communityRevenue ?? "—")}
+						trend={
+							stats
+								? { value: stats.communityRevenueGrowth, direction: "up", label: "%" }
+								: undefined
+						}
+						sub="vs last 30 days"
+						accent="amber"
+					/>
+					<StatCard
+						icon={Heart}
+						label="Retention"
+						value={isLoading ? "—" : `${stats?.retention ?? 0}%`}
+						trend={
+							stats ? { value: stats.retentionGrowth, direction: "up", label: "%" } : undefined
+						}
+						sub="vs last 30 days"
+						accent="rose"
+					/>
 				</div>
 
 				{/* Row 1: Community Growth + Summary + Engagement Breakdown */}
 				<div className="grid grid-cols-[1fr_auto_1fr] gap-4">
-
 					{/* Community Growth chart */}
 					<div className="rounded-xl border border-border-default bg-surface-card p-4">
 						<div className="flex items-center justify-between mb-3">
@@ -151,32 +281,85 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 							</div>
 						</div>
 						<div className="flex items-center gap-4 mb-2 text-[10px] text-text-tertiary">
-							<span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-500" />Members Joined</span>
-							<span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-400" />Members Left</span>
-							<span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-purple-500" />Net Growth</span>
+							<span className="flex items-center gap-1">
+								<span className="h-2 w-2 rounded-full bg-green-500" />
+								Members Joined
+							</span>
+							<span className="flex items-center gap-1">
+								<span className="h-2 w-2 rounded-full bg-red-400" />
+								Members Left
+							</span>
+							<span className="flex items-center gap-1">
+								<span className="h-2 w-2 rounded-full bg-purple-500" />
+								Net Growth
+							</span>
 						</div>
 						{isLoading ? (
-							<div className="h-44 flex items-center justify-center text-xs text-text-tertiary">Loading…</div>
+							<div className="h-44 flex items-center justify-center text-xs text-text-tertiary">
+								Loading…
+							</div>
 						) : (
 							<ResponsiveContainer width="100%" height={176}>
-								<AreaChart data={data?.growthData ?? []} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+								<AreaChart
+									data={data?.growthData ?? []}
+									margin={{ top: 4, right: 4, left: -24, bottom: 0 }}
+								>
 									<defs>
 										<linearGradient id="gradJoined" x1="0" y1="0" x2="0" y2="1">
-											<stop offset="5%"  stopColor="#22c55e" stopOpacity={0.2} />
+											<stop offset="5%" stopColor="#22c55e" stopOpacity={0.2} />
 											<stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
 										</linearGradient>
 										<linearGradient id="gradNet" x1="0" y1="0" x2="0" y2="1">
-											<stop offset="5%"  stopColor="#a855f7" stopOpacity={0.15} />
+											<stop offset="5%" stopColor="#a855f7" stopOpacity={0.15} />
 											<stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
 										</linearGradient>
 									</defs>
 									<CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-									<XAxis dataKey="label" tick={{ fontSize: 9, fill: "#9ca3af" }} tickLine={false} axisLine={false} />
-									<YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} tickLine={false} axisLine={false} />
-									<Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, border: "1px solid #e5e7eb", padding: "6px 10px" }} />
-									<Area type="monotone" dataKey="membersJoined" stroke="#22c55e" strokeWidth={2} fill="url(#gradJoined)" dot={false} name="Members Joined" />
-									<Area type="monotone" dataKey="netGrowth"     stroke="#a855f7" strokeWidth={2} fill="url(#gradNet)"    dot={false} name="Net Growth" />
-									<Line type="monotone" dataKey="membersLeft"   stroke="#f87171" strokeWidth={2} dot={false} name="Members Left" />
+									<XAxis
+										dataKey="label"
+										tick={{ fontSize: 9, fill: "#9ca3af" }}
+										tickLine={false}
+										axisLine={false}
+									/>
+									<YAxis
+										tick={{ fontSize: 9, fill: "#9ca3af" }}
+										tickLine={false}
+										axisLine={false}
+									/>
+									<Tooltip
+										contentStyle={{
+											fontSize: 11,
+											borderRadius: 8,
+											border: "1px solid #e5e7eb",
+											padding: "6px 10px",
+										}}
+									/>
+									<Area
+										type="monotone"
+										dataKey="membersJoined"
+										stroke="#22c55e"
+										strokeWidth={2}
+										fill="url(#gradJoined)"
+										dot={false}
+										name="Members Joined"
+									/>
+									<Area
+										type="monotone"
+										dataKey="netGrowth"
+										stroke="#a855f7"
+										strokeWidth={2}
+										fill="url(#gradNet)"
+										dot={false}
+										name="Net Growth"
+									/>
+									<Line
+										type="monotone"
+										dataKey="membersLeft"
+										stroke="#f87171"
+										strokeWidth={2}
+										dot={false}
+										name="Members Left"
+									/>
 								</AreaChart>
 							</ResponsiveContainer>
 						)}
@@ -190,25 +373,38 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 								onChange={e => setGrowthRange(e.target.value)}
 								className="h-7 w-full appearance-none rounded-lg border border-border-default bg-surface-card pl-2 pr-6 text-[11px] text-text-primary focus:outline-none"
 							>
-								{["Last 30 Days", "Last 7 Days", "Last 90 Days"].map(o => <option key={o}>{o}</option>)}
+								{["Last 30 Days", "Last 7 Days", "Last 90 Days"].map(o => (
+									<option key={o}>{o}</option>
+								))}
 							</select>
-							<ChevronRight size={10} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rotate-90 text-text-tertiary" />
+							<ChevronRight
+								size={10}
+								className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rotate-90 text-text-tertiary"
+							/>
 						</div>
 						<div>
 							<p className="text-[10px] text-text-tertiary mb-0.5">Members Joined</p>
-							<p className="text-xl font-bold text-green-500">{data?.growthSummary.membersJoined ?? "—"}</p>
+							<p className="text-xl font-bold text-green-500">
+								{data?.growthSummary.membersJoined ?? "—"}
+							</p>
 						</div>
 						<div>
 							<p className="text-[10px] text-text-tertiary mb-0.5">Members Left</p>
-							<p className="text-xl font-bold text-red-500">{data?.growthSummary.membersLeft ?? "—"}</p>
+							<p className="text-xl font-bold text-red-500">
+								{data?.growthSummary.membersLeft ?? "—"}
+							</p>
 						</div>
 						<div>
 							<p className="text-[10px] text-text-tertiary mb-0.5">Net Growth</p>
-							<p className="text-xl font-bold text-purple-500">{data?.growthSummary.netGrowth ?? "—"}</p>
+							<p className="text-xl font-bold text-purple-500">
+								{data?.growthSummary.netGrowth ?? "—"}
+							</p>
 						</div>
 						<div className="border-t border-border-subtle pt-2">
 							<p className="text-[10px] text-text-tertiary mb-0.5">Growth Rate</p>
-							<p className="text-sm font-bold text-green-500">+{data?.growthSummary.growthRate ?? 0}%</p>
+							<p className="text-sm font-bold text-green-500">
+								+{data?.growthSummary.growthRate ?? 0}%
+							</p>
 							<p className="text-[9px] text-text-tertiary">vs last 30 days</p>
 						</div>
 					</div>
@@ -225,14 +421,26 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 								const barPct = (item.value / max) * 100
 								return (
 									<div key={item.label} className="flex items-center gap-2">
-										<span className="text-[11px] text-text-secondary w-32 shrink-0">{item.label}</span>
+										<span className="text-[11px] text-text-secondary w-32 shrink-0">
+											{item.label}
+										</span>
 										<div className="flex-1 h-2 rounded-full bg-neutral-100 overflow-hidden">
-											<div className="h-full rounded-full transition-all" style={{ width: `${barPct}%`, backgroundColor: item.barColor }} />
+											<div
+												className="h-full rounded-full transition-all"
+												style={{
+													width: `${barPct}%`,
+													backgroundColor: item.barColor,
+												}}
+											/>
 										</div>
 										<span className="text-[11px] font-semibold text-text-primary w-10 text-right tabular-nums shrink-0">
-											{item.value >= 1000 ? `${(item.value / 1000).toFixed(1)}K` : item.value}
+											{item.value >= 1000
+												? `${(item.value / 1000).toFixed(1)}K`
+												: item.value}
 										</span>
-										<span className="text-[10px] font-semibold text-green-500 w-8 text-right shrink-0">↑{item.growth}%</span>
+										<span className="text-[10px] font-semibold text-green-500 w-8 text-right shrink-0">
+											↑{item.growth}%
+										</span>
 									</div>
 								)
 							})}
@@ -242,14 +450,15 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 
 				{/* Row 2: Experiences Impact + Community Health */}
 				<div className="grid grid-cols-2 gap-4">
-
 					{/* Experiences Impact */}
 					<div className="rounded-xl border border-border-default bg-surface-card p-4">
 						<h3 className="text-sm font-semibold text-text-primary mb-3">Experiences Impact</h3>
 						<div className="flex gap-4 mb-4">
 							{/* Impact highlight */}
 							<div className="rounded-xl bg-purple-50 border border-purple-100 p-3 w-36 shrink-0">
-								<p className="text-[10px] text-purple-600 leading-tight mb-2">Experiences discovered from community</p>
+								<p className="text-[10px] text-purple-600 leading-tight mb-2">
+									Experiences discovered from community
+								</p>
 								<p className="text-2xl font-bold text-purple-600">
 									{data?.experiencesImpact.totalBookings ?? "—"}
 									<span className="text-sm font-semibold ml-1">bookings</span>
@@ -266,13 +475,25 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 									<span className="text-right">Revenue</span>
 								</div>
 								{(data?.topExperiences ?? []).map(exp => (
-									<div key={exp.id} className="grid grid-cols-4 items-center py-1.5 border-b border-border-subtle last:border-0">
+									<div
+										key={exp.id}
+										className="grid grid-cols-4 items-center py-1.5 border-b border-border-subtle last:border-0"
+									>
 										<div className="col-span-2 flex items-center gap-2 min-w-0">
-											<div className="h-7 w-7 shrink-0 rounded-lg" style={{ background: exp.imageGradient }} />
-											<span className="text-[11px] font-medium text-text-primary truncate">{exp.name}</span>
+											<div
+												className="h-7 w-7 shrink-0 rounded-lg"
+												style={{ background: exp.imageGradient }}
+											/>
+											<span className="text-[11px] font-medium text-text-primary truncate">
+												{exp.name}
+											</span>
 										</div>
-										<span className="text-[11px] text-text-primary text-right tabular-nums">{exp.bookings}</span>
-										<span className="text-[11px] font-semibold text-text-primary text-right tabular-nums">{exp.revenue}</span>
+										<span className="text-[11px] text-text-primary text-right tabular-nums">
+											{exp.bookings}
+										</span>
+										<span className="text-[11px] font-semibold text-text-primary text-right tabular-nums">
+											{exp.revenue}
+										</span>
 									</div>
 								))}
 							</div>
@@ -291,28 +512,46 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 						<div className="flex items-start gap-4">
 							<div className="flex flex-col items-center gap-1 shrink-0">
 								{data ? (
-									<HealthDonut score={data.communityHealth.score} maxScore={data.communityHealth.maxScore} label={data.communityHealth.label} />
+									<HealthDonut
+										score={data.communityHealth.score}
+										maxScore={data.communityHealth.maxScore}
+										label={data.communityHealth.label}
+									/>
 								) : (
 									<div className="h-36 w-36 rounded-full border-4 border-neutral-100 flex items-center justify-center">
 										<span className="text-xs text-text-tertiary">—</span>
 									</div>
 								)}
 								<p className="text-[10px] text-text-tertiary text-center leading-tight">
-									Your community is<br />thriving! Keep it up.
+									Your community is
+									<br />
+									thriving! Keep it up.
 								</p>
 							</div>
 							<div className="flex-1 min-w-0">
-								<p className="text-[11px] font-semibold text-text-secondary mb-2">Health Factors</p>
+								<p className="text-[11px] font-semibold text-text-secondary mb-2">
+									Health Factors
+								</p>
 								<div className="flex flex-col gap-2">
 									{(data?.communityHealth.factors ?? []).map(f => (
 										<div key={f.label} className="flex items-center gap-2">
 											<div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-green-100">
 												<svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-													<path d="M1.5 4L3 5.5L6.5 2" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+													<path
+														d="M1.5 4L3 5.5L6.5 2"
+														stroke="#22c55e"
+														strokeWidth="1.5"
+														strokeLinecap="round"
+														strokeLinejoin="round"
+													/>
 												</svg>
 											</div>
-											<span className="flex-1 text-[11px] text-text-primary">{f.label}</span>
-											<span className="text-[11px] font-semibold text-text-primary tabular-nums">{f.score} / {f.max}</span>
+											<span className="flex-1 text-[11px] text-text-primary">
+												{f.label}
+											</span>
+											<span className="text-[11px] font-semibold text-text-primary tabular-nums">
+												{f.score} / {f.max}
+											</span>
 										</div>
 									))}
 								</div>
@@ -331,28 +570,43 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 				<div className="rounded-xl border border-border-default bg-surface-card p-4">
 					<h3 className="text-sm font-semibold text-text-primary mb-4">Member Insights</h3>
 					<div className="grid grid-cols-3 gap-6">
-
 						{/* Interests donut */}
 						<div>
-							<p className="text-[10px] font-semibold text-text-tertiary uppercase tracking-wide mb-3">Interests</p>
+							<p className="text-[10px] font-semibold text-text-tertiary uppercase tracking-wide mb-3">
+								Interests
+							</p>
 							{data ? (
 								<InterestsDonut segments={data.interests} />
 							) : (
-								<div className="h-20 flex items-center justify-center text-xs text-text-tertiary">—</div>
+								<div className="h-20 flex items-center justify-center text-xs text-text-tertiary">
+									—
+								</div>
 							)}
 						</div>
 
 						{/* Top Cities */}
 						<div>
-							<p className="text-[10px] font-semibold text-text-tertiary uppercase tracking-wide mb-3">Top Cities</p>
+							<p className="text-[10px] font-semibold text-text-tertiary uppercase tracking-wide mb-3">
+								Top Cities
+							</p>
 							<div className="flex flex-col gap-2">
 								{(data?.topCities ?? []).map(c => (
 									<div key={c.city} className="flex items-center gap-2">
-										<span className="text-[11px] text-text-secondary w-20 shrink-0">{c.city}</span>
+										<span className="text-[11px] text-text-secondary w-20 shrink-0">
+											{c.city}
+										</span>
 										<div className="flex-1 h-1.5 rounded-full bg-neutral-100 overflow-hidden">
-											<div className="h-full rounded-full" style={{ width: `${(c.pct / 30) * 100}%`, backgroundColor: c.color }} />
+											<div
+												className="h-full rounded-full"
+												style={{
+													width: `${(c.pct / 30) * 100}%`,
+													backgroundColor: c.color,
+												}}
+											/>
 										</div>
-										<span className="text-[11px] font-semibold text-text-primary w-8 text-right tabular-nums">{c.pct}%</span>
+										<span className="text-[11px] font-semibold text-text-primary w-8 text-right tabular-nums">
+											{c.pct}%
+										</span>
 									</div>
 								))}
 							</div>
@@ -360,18 +614,45 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 
 						{/* Age Distribution bar chart */}
 						<div>
-							<p className="text-[10px] font-semibold text-text-tertiary uppercase tracking-wide mb-3">Age Distribution</p>
+							<p className="text-[10px] font-semibold text-text-tertiary uppercase tracking-wide mb-3">
+								Age Distribution
+							</p>
 							{isLoading ? (
-								<div className="h-28 flex items-center justify-center text-xs text-text-tertiary">—</div>
+								<div className="h-28 flex items-center justify-center text-xs text-text-tertiary">
+									—
+								</div>
 							) : (
 								<ResponsiveContainer width="100%" height={112}>
-									<BarChart data={data?.ageDistribution ?? []} margin={{ top: 16, right: 0, left: -28, bottom: 0 }} barSize={18}>
-										<CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-										<XAxis dataKey="range" tick={{ fontSize: 9, fill: "#9ca3af" }} tickLine={false} axisLine={false} />
-										<YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} />
+									<BarChart
+										data={data?.ageDistribution ?? []}
+										margin={{ top: 16, right: 0, left: -28, bottom: 0 }}
+										barSize={18}
+									>
+										<CartesianGrid
+											strokeDasharray="3 3"
+											stroke="#f0f0f0"
+											vertical={false}
+										/>
+										<XAxis
+											dataKey="range"
+											tick={{ fontSize: 9, fill: "#9ca3af" }}
+											tickLine={false}
+											axisLine={false}
+										/>
+										<YAxis
+											tick={{ fontSize: 9, fill: "#9ca3af" }}
+											tickLine={false}
+											axisLine={false}
+											tickFormatter={v => `${v}%`}
+										/>
 										<Tooltip
-											formatter={(v) => [`${v}%`, "Share"]}
-											contentStyle={{ fontSize: 11, borderRadius: 8, border: "1px solid #e5e7eb", padding: "4px 8px" }}
+											formatter={v => [`${v}%`, "Share"]}
+											contentStyle={{
+												fontSize: 11,
+												borderRadius: 8,
+												border: "1px solid #e5e7eb",
+												padding: "4px 8px",
+											}}
 										/>
 										<Bar dataKey="pct" fill="#a855f7" radius={[3, 3, 0, 0]}>
 											{(data?.ageDistribution ?? []).map((_, i) => (
@@ -388,7 +669,6 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 
 			{/* ── Sidebar ───────────────────────────────────────────────────── */}
 			<div className="hidden lg:flex w-72 shrink-0 flex-col gap-4">
-
 				{/* Top Contributors */}
 				<div className="rounded-xl border border-border-default bg-surface-card p-4">
 					<div className="flex items-center justify-between mb-3">
@@ -396,15 +676,19 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 							<h3 className="text-sm font-semibold text-text-primary">Top Contributors</h3>
 							<p className="text-[10px] text-text-tertiary">Last 30 Days</p>
 						</div>
-						<button className="text-xs font-medium text-text-brand hover:underline"
-							onClick={() => toast.info("View all contributors coming soon")}>
+						<button
+							className="text-xs font-medium text-text-brand hover:underline"
+							onClick={() => toast.info("View all contributors coming soon")}
+						>
 							View All
 						</button>
 					</div>
 					<div className="flex flex-col gap-2.5">
 						{(data?.topContributors ?? []).map((c, i) => (
 							<div key={c.rank} className="flex items-center gap-2.5">
-								<span className="text-[11px] font-bold text-text-tertiary w-4 text-center shrink-0">{c.rank}</span>
+								<span className="text-[11px] font-bold text-text-tertiary w-4 text-center shrink-0">
+									{c.rank}
+								</span>
 								<div
 									className="h-7 w-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
 									style={{ backgroundColor: c.avatarColor }}
@@ -416,8 +700,14 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 									<p className="text-[10px] text-text-tertiary">{c.handle}</p>
 								</div>
 								<div className="flex items-center gap-0.5 shrink-0">
-									<Star size={10} className="fill-amber-400 text-amber-400" style={{ color: RANK_COLORS[i] }} />
-									<span className="text-[11px] font-semibold text-text-secondary tabular-nums">{c.points} pts</span>
+									<Star
+										size={10}
+										className="fill-amber-400 text-amber-400"
+										style={{ color: RANK_COLORS[i] }}
+									/>
+									<span className="text-[11px] font-semibold text-text-secondary tabular-nums">
+										{c.points} pts
+									</span>
 								</div>
 							</div>
 						))}
@@ -428,8 +718,10 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 				<div className="rounded-xl border border-border-default bg-surface-card p-4">
 					<div className="flex items-center justify-between mb-3">
 						<h3 className="text-sm font-semibold text-text-primary">Top Hosts</h3>
-						<button className="text-xs font-medium text-text-brand hover:underline"
-							onClick={() => toast.info("View all hosts coming soon")}>
+						<button
+							className="text-xs font-medium text-text-brand hover:underline"
+							onClick={() => toast.info("View all hosts coming soon")}
+						>
 							View All
 						</button>
 					</div>
@@ -464,12 +756,19 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 								className="flex items-center gap-3 rounded-lg p-2.5 hover:bg-surface-card-muted transition-colors text-left"
 								onClick={() => toast.info(`${action.label} coming soon`)}
 							>
-								<div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", action.bg)}>
+								<div
+									className={cn(
+										"flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+										action.bg,
+									)}
+								>
 									<action.icon size={14} className={action.color} />
 								</div>
 								<div className="flex-1 min-w-0">
 									<p className="text-xs font-medium text-text-primary">{action.label}</p>
-									<p className="text-[10px] text-text-tertiary truncate">{action.description}</p>
+									<p className="text-[10px] text-text-tertiary truncate">
+										{action.description}
+									</p>
 								</div>
 								<ChevronRight size={12} className="text-text-tertiary shrink-0" />
 							</button>
@@ -481,8 +780,12 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 				<div className="rounded-xl border border-border-default bg-surface-card-muted px-4 py-3 flex items-start gap-2.5">
 					<Clock size={13} className="text-text-tertiary shrink-0 mt-0.5" />
 					<div>
-						<p className="text-[11px] font-medium text-text-primary">All data is updated in real-time.</p>
-						<p className="text-[10px] text-text-tertiary">Last updated: {data?.lastUpdated ?? "—"}</p>
+						<p className="text-[11px] font-medium text-text-primary">
+							All data is updated in real-time.
+						</p>
+						<p className="text-[10px] text-text-tertiary">
+							Last updated: {data?.lastUpdated ?? "—"}
+						</p>
 					</div>
 				</div>
 			</div>

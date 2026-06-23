@@ -31,7 +31,9 @@ const schema = z.object({
 	categoryId: z.string().min(1, "Please select a category"),
 	primaryCity: z.string().min(1, "Primary city is required"),
 	type: z.enum(["MEETDAY_MANAGED_PUBLIC", "HOST_LED", "PRIVATE_INVITE_ONLY"] as const),
-	interestTags: z.array(z.object({ id: z.string(), label: z.string() })).min(1, "Select at least one interest tag"),
+	interestTags: z
+		.array(z.object({ id: z.string(), label: z.string() }))
+		.min(1, "Select at least one interest tag"),
 	// TODO: make coverImageKey and iconKey .min(1, "...required") once image upload API is fixed
 	coverImageKey: z.string(),
 	iconKey: z.string(),
@@ -40,7 +42,6 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 // ─── Community type options ───────────────────────────────────────────────────
-
 
 const TYPE_OPTIONS: CommunityTypeOption[] = [
 	{
@@ -88,7 +89,14 @@ export function Step1BasicDetails() {
 
 	const defaults = store.step1Data
 
-	const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
+	const {
+		register,
+		control,
+		handleSubmit,
+		watch,
+		setValue,
+		formState: { errors },
+	} = useForm<FormValues>({
 		resolver: zodResolver(schema),
 		defaultValues: {
 			name: defaults?.name ?? "",
@@ -127,7 +135,7 @@ export function Step1BasicDetails() {
 			description: watchedDesc,
 			type: watchedType as CommunityType,
 			primaryCity: watchedCity || null,
-			interestTags: watchedTags.map((t) => t.label),
+			interestTags: watchedTags.map(t => t.label),
 		})
 	}, [watchedName, watchedSlug, watchedDesc, watchedType, watchedCity, watchedTags])
 
@@ -140,25 +148,25 @@ export function Step1BasicDetails() {
 
 	useEffect(() => {
 		getInterests()
-			.then((data) => {
-				const opts = data.map((i) => ({ id: i.id, label: i.name }))
+			.then(data => {
+				const opts = data.map(i => ({ id: i.id, label: i.name }))
 				setInterestOptions(opts)
 				// Restore selections if navigating back
 				if (defaults?.interestTags?.length) {
-					const restored = opts.filter((o) => defaults.interestTags.includes(o.label))
+					const restored = opts.filter(o => defaults.interestTags.includes(o.label))
 					if (restored.length) setValue("interestTags", restored)
 				}
 			})
 			.catch(() => toast.error("Failed to load interests"))
 			.finally(() => setInterestsLoading(false))
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
 	const onSubmit = async (data: FormValues) => {
 		setSubmitting(true)
 		try {
-			const categoryName = categories.find((c) => c.id === data.categoryId)?.name ?? ""
-			const tagNames = data.interestTags.map((t) => t.label)
+			const categoryName = categories.find(c => c.id === data.categoryId)?.name ?? ""
+			const tagNames = data.interestTags.map(t => t.label)
 			const payload = {
 				name: data.name,
 				slug: data.slug,
@@ -209,7 +217,6 @@ export function Step1BasicDetails() {
 	return (
 		<form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
 			<div className="rounded-panel border border-border-subtle bg-surface-canvas p-6 shadow-card flex flex-col gap-5">
-
 				{/* Name */}
 				<div className="flex flex-col gap-1.5">
 					<TextField
@@ -234,7 +241,9 @@ export function Step1BasicDetails() {
 							<TextField
 								placeholder="meetday-music-nights"
 								error={!!errors.slug}
-								helperText={errors.slug?.message ?? "Use lowercase letters, numbers and hyphens only."}
+								helperText={
+									errors.slug?.message ?? "Use lowercase letters, numbers and hyphens only."
+								}
 								{...register("slug", {
 									onChange: () => setSlugManual(true),
 								})}
@@ -246,8 +255,16 @@ export function Step1BasicDetails() {
 							<span className="text-caption text-text-secondary flex-1 truncate">
 								meetday.ai/communities/{watchedSlug}
 							</span>
-							<button type="button" onClick={copySlug} className="shrink-0 text-icon-secondary hover:text-icon-primary transition-colors">
-								{slugCopied ? <Check size={13} className="text-[#16a34a]" /> : <Copy size={13} />}
+							<button
+								type="button"
+								onClick={copySlug}
+								className="shrink-0 text-icon-secondary hover:text-icon-primary transition-colors"
+							>
+								{slugCopied ? (
+									<Check size={13} className="text-[#16a34a]" />
+								) : (
+									<Copy size={13} />
+								)}
 							</button>
 						</div>
 					)}
@@ -303,8 +320,10 @@ export function Step1BasicDetails() {
 									)}
 								>
 									<option value="">{catLoading ? "Loading..." : "Select category"}</option>
-									{categories.map((c) => (
-										<option key={c.id} value={c.id}>{c.name}</option>
+									{categories.map(c => (
+										<option key={c.id} value={c.id}>
+											{c.name}
+										</option>
 									))}
 								</select>
 							)}
@@ -336,7 +355,7 @@ export function Step1BasicDetails() {
 						control={control}
 						render={({ field }) => (
 							<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-								{TYPE_OPTIONS.map((opt) => (
+								{TYPE_OPTIONS.map(opt => (
 									<CommunityTypeCard
 										key={opt.value}
 										option={opt}
@@ -381,8 +400,16 @@ export function Step1BasicDetails() {
 							<ImageUploadZone
 								value={field.value || null}
 								previewUrl={coverPreview}
-								onChange={(key, url) => { field.onChange(key); setCoverPreview(url); store.updatePreview({ coverImageUrl: url }) }}
-								onClear={() => { field.onChange(""); setCoverPreview(null); store.updatePreview({ coverImageUrl: null }) }}
+								onChange={(key, url) => {
+									field.onChange(key)
+									setCoverPreview(url)
+									store.updatePreview({ coverImageUrl: url })
+								}}
+								onClear={() => {
+									field.onChange("")
+									setCoverPreview(null)
+									store.updatePreview({ coverImageUrl: null })
+								}}
 								mediaType="COVER"
 								label="Upload Cover Image"
 								hint="Recommended: 1920×720 px"
@@ -403,8 +430,16 @@ export function Step1BasicDetails() {
 							<ImageUploadZone
 								value={field.value || null}
 								previewUrl={iconPreview}
-								onChange={(key, url) => { field.onChange(key); setIconPreview(url); store.updatePreview({ iconUrl: url }) }}
-								onClear={() => { field.onChange(""); setIconPreview(null); store.updatePreview({ iconUrl: null }) }}
+								onChange={(key, url) => {
+									field.onChange(key)
+									setIconPreview(url)
+									store.updatePreview({ iconUrl: url })
+								}}
+								onClear={() => {
+									field.onChange("")
+									setIconPreview(null)
+									store.updatePreview({ iconUrl: null })
+								}}
 								mediaType="ICON"
 								label="Upload Community Icon"
 								hint="Recommended: 512×512 px"
@@ -422,7 +457,13 @@ export function Step1BasicDetails() {
 
 			{/* Footer */}
 			<div className="flex items-center justify-between">
-				<Button type="button" variant="secondary" size="md" radius="md" onClick={() => useCreateCommunityStore.getState().reset()}>
+				<Button
+					type="button"
+					variant="secondary"
+					size="md"
+					radius="md"
+					onClick={() => useCreateCommunityStore.getState().reset()}
+				>
 					Cancel
 				</Button>
 				<Button

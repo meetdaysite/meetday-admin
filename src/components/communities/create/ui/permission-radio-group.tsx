@@ -28,11 +28,8 @@ export function PermissionRadioGroup<T extends string>({
 		<div className="flex flex-col gap-2">
 			<p className="text-label-sm font-semibold text-text-primary">{label}</p>
 			<div className="flex flex-col gap-1.5">
-				{options.map((opt) => (
-					<label
-						key={opt.value}
-						className="flex cursor-pointer items-start gap-3"
-					>
+				{options.map(opt => (
+					<label key={opt.value} className="flex cursor-pointer items-start gap-3">
 						<input
 							type="radio"
 							name={name}

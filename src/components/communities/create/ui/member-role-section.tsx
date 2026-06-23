@@ -44,7 +44,7 @@ export function MemberRoleSection({
 	const [loading, setLoading] = useState(false)
 	const debounceRef = useRef<ReturnType<typeof setTimeout>>(null)
 	const inputRef = useRef<HTMLInputElement>(null)
-	const assigned = new Set(members.map((m) => m.userId))
+	const assigned = new Set(members.map(m => m.userId))
 
 	useEffect(() => {
 		if (!open) return
@@ -64,7 +64,14 @@ export function MemberRoleSection({
 
 	const add = useCallback(
 		(user: SearchableUser) => {
-			onAdd({ userId: user.id, name: user.name, email: user.email, role, avatarInitial: user.avatarInitial, avatarColor: user.avatarColor })
+			onAdd({
+				userId: user.id,
+				name: user.name,
+				email: user.email,
+				role,
+				avatarInitial: user.avatarInitial,
+				avatarColor: user.avatarColor,
+			})
 			setOpen(false)
 			setQuery("")
 		},
@@ -75,12 +82,17 @@ export function MemberRoleSection({
 		<div className="flex flex-col gap-3">
 			<div className="flex items-center justify-between">
 				<div>
-					<p className="text-label-sm font-semibold text-text-primary">{members.length > 0 ? `${roleLabel}s (${members.length})` : `${roleLabel}s`}</p>
+					<p className="text-label-sm font-semibold text-text-primary">
+						{members.length > 0 ? `${roleLabel}s (${members.length})` : `${roleLabel}s`}
+					</p>
 					<p className="text-caption text-text-secondary">{permissionLabel}</p>
 				</div>
 				<button
 					type="button"
-					onClick={() => { setOpen((o) => !o); setTimeout(() => inputRef.current?.focus(), 100) }}
+					onClick={() => {
+						setOpen(o => !o)
+						setTimeout(() => inputRef.current?.focus(), 100)
+					}}
 					className="flex items-center gap-1.5 rounded-action border border-border-default bg-surface-canvas px-3 h-(--size-action-sm) text-label-sm text-text-secondary hover:bg-surface-card hover:border-border-strong transition-colors"
 				>
 					<Plus size={13} />
@@ -91,12 +103,15 @@ export function MemberRoleSection({
 			{open && (
 				<div className="relative rounded-card border border-border-default bg-surface-canvas p-3">
 					<div className="relative">
-						<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-icon-secondary" />
+						<Search
+							size={14}
+							className="absolute left-3 top-1/2 -translate-y-1/2 text-icon-secondary"
+						/>
 						<input
 							ref={inputRef}
 							type="text"
 							value={query}
-							onChange={(e) => setQuery(e.target.value)}
+							onChange={e => setQuery(e.target.value)}
 							placeholder={`Search ${roleLabel.toLowerCase()}s by name or email...`}
 							className="h-(--size-action-sm) w-full rounded-input border border-border-default bg-surface-canvas pl-9 pr-4 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-border-focused"
 						/>
@@ -113,8 +128,8 @@ export function MemberRoleSection({
 							</p>
 						) : (
 							results
-								.filter((u) => !assigned.has(u.id))
-								.map((user) => (
+								.filter(u => !assigned.has(u.id))
+								.map(user => (
 									<button
 										key={user.id}
 										type="button"
@@ -128,8 +143,12 @@ export function MemberRoleSection({
 											{user.avatarInitial}
 										</div>
 										<div className="min-w-0 flex-1">
-											<p className="text-label-sm text-text-primary truncate">{user.name}</p>
-											<p className="text-caption text-text-secondary truncate">{user.email}</p>
+											<p className="text-label-sm text-text-primary truncate">
+												{user.name}
+											</p>
+											<p className="text-caption text-text-secondary truncate">
+												{user.email}
+											</p>
 										</div>
 										<Plus size={14} className="shrink-0 text-icon-brand" />
 									</button>
@@ -141,7 +160,7 @@ export function MemberRoleSection({
 
 			{members.length > 0 && (
 				<div className="flex flex-col gap-2">
-					{members.map((member) => (
+					{members.map(member => (
 						<div
 							key={member.userId}
 							className="flex items-center gap-3 rounded-card border border-border-subtle bg-surface-canvas px-4 py-3"
@@ -156,10 +175,17 @@ export function MemberRoleSection({
 								<p className="text-label-sm font-medium text-text-primary">{member.name}</p>
 								<p className="text-caption text-text-secondary">{member.email}</p>
 							</div>
-							<span className={cn("rounded-badge px-1.5 py-0.5 text-[11px] font-semibold leading-none", roleBadgeClass)}>
+							<span
+								className={cn(
+									"rounded-badge px-1.5 py-0.5 text-[11px] font-semibold leading-none",
+									roleBadgeClass,
+								)}
+							>
 								{roleLabel}
 							</span>
-							<span className="text-caption text-text-secondary hidden sm:block">{permissionLabel}</span>
+							<span className="text-caption text-text-secondary hidden sm:block">
+								{permissionLabel}
+							</span>
 							<button
 								type="button"
 								onClick={() => onRemove(member.userId)}

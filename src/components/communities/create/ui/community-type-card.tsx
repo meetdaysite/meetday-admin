@@ -31,14 +31,21 @@ export function CommunityTypeCard({ option, selected, onSelect }: CommunityTypeC
 				<div
 					className={cn(
 						"flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-						selected ? "border-action-primary bg-action-primary" : "border-border-default bg-surface-canvas",
+						selected
+							? "border-action-primary bg-action-primary"
+							: "border-border-default bg-surface-canvas",
 					)}
 				>
 					{selected && <div className="h-2 w-2 rounded-full bg-white" />}
 				</div>
 			</div>
 			<div className="min-w-0 text-label-sm">
-				<p className={cn("text-label-sm font-semibold", selected ? "text-text-brand" : "text-text-primary")}>
+				<p
+					className={cn(
+						"text-label-sm font-semibold",
+						selected ? "text-text-brand" : "text-text-primary",
+					)}
+				>
 					{option.label}
 				</p>
 				<p className="mt-0.5 text-[11px] text-text-tertiary">{option.description}</p>

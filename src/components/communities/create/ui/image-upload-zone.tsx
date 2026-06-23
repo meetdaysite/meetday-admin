@@ -91,8 +91,15 @@ export function ImageUploadZone({
 			</div>
 
 			<div
-				className={cn("relative overflow-hidden", shape === "circle" ? "rounded-full" : "rounded-card", aspectClass)}
-				onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+				className={cn(
+					"relative overflow-hidden",
+					shape === "circle" ? "rounded-full" : "rounded-card",
+					aspectClass,
+				)}
+				onDragOver={e => {
+					e.preventDefault()
+					setDragOver(true)
+				}}
 				onDragLeave={() => setDragOver(false)}
 				onDrop={onDrop}
 			>
@@ -171,9 +178,7 @@ export function ImageUploadZone({
 				onChange={onInputChange}
 			/>
 
-			{value && !uploading && (
-				<p className="text-caption text-text-tertiary truncate">Key: {value}</p>
-			)}
+			{value && !uploading && <p className="text-caption text-text-tertiary truncate">Key: {value}</p>}
 		</div>
 	)
 }

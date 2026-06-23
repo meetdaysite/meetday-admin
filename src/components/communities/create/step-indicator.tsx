@@ -33,7 +33,7 @@ export function StepIndicator({ onStepClick }: StepIndicatorProps) {
 						{i > 0 && (
 							<div
 								className={cn(
-									"h-px flex-1 min-w-[24px] transition-colors duration-(--duration-120)",
+									"h-px flex-1 min-w-6 transition-colors duration-(--duration-120)",
 									isCompleted ? "bg-action-primary" : "bg-border-subtle",
 								)}
 							/>

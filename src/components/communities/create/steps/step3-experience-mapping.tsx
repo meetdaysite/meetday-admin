@@ -36,7 +36,7 @@ export function Step3ExperienceMapping() {
 
 	const { control, handleSubmit, watch, setValue } = useForm<FormValues>({
 		defaultValues: {
-			interestIds: snap?.interests.map((i) => ({ id: i.id, label: i.name })) ?? [],
+			interestIds: snap?.interests.map(i => ({ id: i.id, label: i.name })) ?? [],
 			cities: snap?.cities ?? (step1?.primaryCity ? [step1.primaryCity] : []),
 			primaryCity: snap?.primaryCity ?? step1?.primaryCity ?? "",
 			manualEvents: snap?.manualEvents ?? [],
@@ -59,7 +59,7 @@ export function Step3ExperienceMapping() {
 
 	useEffect(() => {
 		getInterests()
-			.then((data) => setInterestOptions(data.map((i) => ({ id: i.id, label: i.name }))))
+			.then(data => setInterestOptions(data.map(i => ({ id: i.id, label: i.name }))))
 			.catch(() => toast.error("Failed to load interests"))
 			.finally(() => setInterestsLoading(false))
 	}, [])
@@ -79,7 +79,10 @@ export function Step3ExperienceMapping() {
 		try {
 			// Step 3.1 + 3.2 in parallel
 			await Promise.all([
-				replaceCommunityInterests(store.communityId, data.interestIds.map((i) => i.id)),
+				replaceCommunityInterests(
+					store.communityId,
+					data.interestIds.map(i => i.id),
+				),
 				setCommunityCities(store.communityId, {
 					primaryCity: data.primaryCity || data.cities[0],
 					communityCities: data.cities,
@@ -89,9 +92,9 @@ export function Step3ExperienceMapping() {
 			// Step 3.4 — attach manual events (parallel, best-effort)
 			if (data.manualEvents.length > 0) {
 				const results = await Promise.allSettled(
-					data.manualEvents.map((e) => attachCommunityEvent(store.communityId!, e.id)),
+					data.manualEvents.map(e => attachCommunityEvent(store.communityId!, e.id)),
 				)
-				const failed = results.filter((r) => r.status === "rejected").length
+				const failed = results.filter(r => r.status === "rejected").length
 				if (failed > 0) toast.warning(`${failed} event(s) could not be attached — they were skipped.`)
 			}
 
@@ -99,7 +102,7 @@ export function Step3ExperienceMapping() {
 			await resyncCommunityEvents(store.communityId)
 
 			const interests = await getInterests()
-			const selectedInterests = interests.filter((i) => data.interestIds.some((t) => t.id === i.id))
+			const selectedInterests = interests.filter(i => data.interestIds.some(t => t.id === i.id))
 
 			store.setStep3Snapshot({
 				interests: selectedInterests,
@@ -120,7 +123,9 @@ export function Step3ExperienceMapping() {
 			{/* 1. Community Interests */}
 			<div className="rounded-panel border border-border-subtle bg-surface-canvas p-6 shadow-card">
 				<h2 className="text-label-md font-semibold text-text-primary mb-1">1. Community Interests</h2>
-				<p className="text-caption text-text-secondary mb-4">Select the interests that best describe this community.</p>
+				<p className="text-caption text-text-secondary mb-4">
+					Select the interests that best describe this community.
+				</p>
 				<Controller
 					name="interestIds"
 					control={control}
@@ -143,7 +148,9 @@ export function Step3ExperienceMapping() {
 			{/* 2. Community Cities */}
 			<div className="rounded-panel border border-border-subtle bg-surface-canvas p-6 shadow-card">
 				<h2 className="text-label-md font-semibold text-text-primary mb-1">2. Community Cities</h2>
-				<p className="text-caption text-text-secondary mb-4">Choose the cities where this community is relevant.</p>
+				<p className="text-caption text-text-secondary mb-4">
+					Choose the cities where this community is relevant.
+				</p>
 
 				<Controller
 					name="cities"
@@ -166,7 +173,7 @@ export function Step3ExperienceMapping() {
 							control={control}
 							render={({ field }) => (
 								<div className="flex flex-wrap gap-2">
-									{watchedCities.map((city) => (
+									{watchedCities.map(city => (
 										<button
 											key={city}
 											type="button"
@@ -202,9 +209,14 @@ export function Step3ExperienceMapping() {
 						<Sparkles size={14} className="text-[#16a34a]" />
 					</div>
 					<div>
-						<p className="text-label-sm font-semibold text-[#16a34a]">Auto-matching is always on</p>
+						<p className="text-label-sm font-semibold text-[#16a34a]">
+							Auto-matching is always on
+						</p>
 						<p className="text-caption text-[#166534] mt-0.5">
-							After saving this step, Meetday will automatically compute matching events based on the interests and cities you selected above. Any event with at least one matching interest happening in one of the selected cities will appear in this community.
+							After saving this step, Meetday will automatically compute matching events based
+							on the interests and cities you selected above. Any event with at least one
+							matching interest happening in one of the selected cities will appear in this
+							community.
 						</p>
 					</div>
 				</div>
@@ -213,9 +225,14 @@ export function Step3ExperienceMapping() {
 			{/* 4. Manually Added Events */}
 			<div className="rounded-panel border border-border-subtle bg-surface-canvas p-6 shadow-card">
 				<div className="flex items-center justify-between mb-1">
-					<h2 className="text-label-md font-semibold text-text-primary">3. Manually Added Events <span className="text-text-secondary font-normal">(Optional)</span></h2>
+					<h2 className="text-label-md font-semibold text-text-primary">
+						3. Manually Added Events{" "}
+						<span className="text-text-secondary font-normal">(Optional)</span>
+					</h2>
 				</div>
-				<p className="text-caption text-text-secondary mb-4">Add specific events that should always be part of this community.</p>
+				<p className="text-caption text-text-secondary mb-4">
+					Add specific events that should always be part of this community.
+				</p>
 				<Controller
 					name="manualEvents"
 					control={control}
@@ -225,14 +242,21 @@ export function Step3ExperienceMapping() {
 				/>
 				{watchedEvents.length > 0 && (
 					<p className="mt-2 text-caption text-text-secondary">
-						These events will always be shown in this community, even if they don&apos;t match the rules above.
+						These events will always be shown in this community, even if they don&apos;t match the
+						rules above.
 					</p>
 				)}
 			</div>
 
 			{/* Footer */}
 			<div className="flex items-center justify-between">
-				<Button type="button" variant="secondary" size="md" radius="md" onClick={() => store.prevStep()}>
+				<Button
+					type="button"
+					variant="secondary"
+					size="md"
+					radius="md"
+					onClick={() => store.prevStep()}
+				>
 					← Back
 				</Button>
 				<Button

@@ -75,7 +75,12 @@ export function CommunityPreviewPanel() {
 					</h3>
 					{typeInfo && (
 						<div className="mt-1.5 flex flex-wrap gap-1.5">
-							<span className={cn("rounded-badge px-1.5 py-0.5 text-[11px] font-semibold leading-none", typeInfo.badge)}>
+							<span
+								className={cn(
+									"rounded-badge px-1.5 py-0.5 text-[11px] font-semibold leading-none",
+									typeInfo.badge,
+								)}
+							>
 								{typeInfo.label}
 							</span>
 							{accessInfo && (
@@ -117,9 +122,11 @@ export function CommunityPreviewPanel() {
 				{/* Step 1: Highlights; Steps 2+: feature summary */}
 				{currentStep === 1 && (
 					<div className="border-t border-border-subtle pt-3">
-						<p className="text-caption font-semibold text-text-secondary mb-2">Highlights (preview)</p>
+						<p className="text-caption font-semibold text-text-secondary mb-2">
+							Highlights (preview)
+						</p>
 						<div className="flex flex-col gap-1.5">
-							{HIGHLIGHTS.map((h) => (
+							{HIGHLIGHTS.map(h => (
 								<div key={h.label} className="flex items-center gap-2 text-text-secondary">
 									<span className="text-icon-secondary">{h.icon}</span>
 									<span className="text-caption">{h.label}</span>
@@ -131,10 +138,15 @@ export function CommunityPreviewPanel() {
 
 				{currentStep >= 2 && step2Snapshot && enabledFeatures && (
 					<div className="border-t border-border-subtle pt-3">
-						<p className="text-caption font-semibold text-text-secondary mb-2">Features Enabled</p>
+						<p className="text-caption font-semibold text-text-secondary mb-2">
+							Features Enabled
+						</p>
 						<div className="flex flex-col gap-1">
-							{enabledFeatures.map((f) => (
-								<div key={String(f)} className="flex items-center gap-1.5 text-caption text-text-secondary">
+							{enabledFeatures.map(f => (
+								<div
+									key={String(f)}
+									className="flex items-center gap-1.5 text-caption text-text-secondary"
+								>
 									<div className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
 									{f}
 								</div>
@@ -148,7 +160,8 @@ export function CommunityPreviewPanel() {
 						<div className="flex items-center justify-between">
 							<span className="text-caption text-text-secondary">Access</span>
 							<span className="text-caption font-medium text-text-secondary flex items-center gap-1">
-								{accessInfo?.icon}{accessInfo?.label ?? "—"}
+								{accessInfo?.icon}
+								{accessInfo?.label ?? "—"}
 							</span>
 						</div>
 						<div className="flex items-center justify-between">

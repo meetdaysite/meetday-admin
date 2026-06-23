@@ -37,10 +37,10 @@ export function TagMultiSelect({
 	const inputRef = useRef<HTMLInputElement>(null)
 	const containerRef = useRef<HTMLDivElement>(null)
 
-	const selected = new Set(value.map((v) => v.id))
+	const selected = new Set(value.map(v => v.id))
 
 	const filtered = options.filter(
-		(o) => !selected.has(o.id) && o.label.toLowerCase().includes(query.toLowerCase()),
+		o => !selected.has(o.id) && o.label.toLowerCase().includes(query.toLowerCase()),
 	)
 
 	const add = useCallback(
@@ -53,10 +53,7 @@ export function TagMultiSelect({
 		[value, onChange, maxItems],
 	)
 
-	const remove = useCallback(
-		(id: string) => onChange(value.filter((v) => v.id !== id)),
-		[value, onChange],
-	)
+	const remove = useCallback((id: string) => onChange(value.filter(v => v.id !== id)), [value, onChange])
 
 	const onKeyDown = useCallback(
 		(e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -87,12 +84,15 @@ export function TagMultiSelect({
 
 			<div
 				className={cn(
-					"relative flex min-h-[var(--size-input-md)] flex-wrap items-center gap-1.5 rounded-input border bg-surface-canvas px-3 py-2 transition-colors duration-(--duration-120)",
+					"relative flex min-h-(--size-input-md) flex-wrap items-center gap-1.5 rounded-input border bg-surface-canvas px-3 py-2 transition-colors duration-(--duration-120)",
 					open ? "border-border-focused" : "border-border-default hover:border-border-strong",
 				)}
-				onClick={() => { inputRef.current?.focus(); setOpen(true) }}
+				onClick={() => {
+					inputRef.current?.focus()
+					setOpen(true)
+				}}
 			>
-				{value.map((tag) => (
+				{value.map(tag => (
 					<span
 						key={tag.id}
 						className="flex items-center gap-1 rounded-badge bg-surface-brand-soft px-2 py-0.5 text-caption font-medium text-text-brand"
@@ -100,7 +100,10 @@ export function TagMultiSelect({
 						{tag.label}
 						<button
 							type="button"
-							onClick={(e) => { e.stopPropagation(); remove(tag.id) }}
+							onClick={e => {
+								e.stopPropagation()
+								remove(tag.id)
+							}}
 							className="text-icon-brand hover:text-text-danger transition-colors"
 						>
 							<X size={10} />
@@ -108,13 +111,16 @@ export function TagMultiSelect({
 					</span>
 				))}
 
-				<div className="flex flex-1 items-center gap-1.5 min-w-[100px]">
+				<div className="flex flex-1 items-center gap-1.5 min-w-25">
 					<Search size={14} className="shrink-0 text-icon-secondary" />
 					<input
 						ref={inputRef}
 						type="text"
 						value={query}
-						onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
+						onChange={e => {
+							setQuery(e.target.value)
+							setOpen(true)
+						}}
 						onFocus={() => setOpen(true)}
 						onBlur={() => setTimeout(() => setOpen(false), 150)}
 						onKeyDown={onKeyDown}
@@ -137,11 +143,11 @@ export function TagMultiSelect({
 							<p className="px-3 py-2 text-caption text-text-secondary">Loading...</p>
 						) : (
 							<ul className="max-h-48 overflow-y-auto py-1">
-								{filtered.map((opt) => (
+								{filtered.map(opt => (
 									<li key={opt.id}>
 										<button
 											type="button"
-											onMouseDown={(e) => e.preventDefault()}
+											onMouseDown={e => e.preventDefault()}
 											onClick={() => add(opt)}
 											className="flex w-full items-center px-3 py-2 text-sm text-text-primary hover:bg-surface-card transition-colors"
 										>

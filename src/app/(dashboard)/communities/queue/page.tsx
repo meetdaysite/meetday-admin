@@ -44,42 +44,42 @@ import { cn } from "@/lib/utils"
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const PAGE_SIZES = [10, 20, 50] as const
-type PageSize = typeof PAGE_SIZES[number]
+type PageSize = (typeof PAGE_SIZES)[number]
 
-type StatusFilter     = CommunityStatus    | "ALL"
+type StatusFilter = CommunityStatus | "ALL"
 type VisibilityFilter = CommunityVisibility | "ALL"
 
 const STATUS_OPTIONS: { label: string; value: StatusFilter }[] = [
-	{ label: "All Status",      value: "ALL" },
-	{ label: "Pending Review",  value: "PENDING_ADMIN_REVIEW" },
-	{ label: "Under Review",    value: "DRAFT" }, // TODO: add UNDER_REVIEW status
-	{ label: "Approved",        value: "ACTIVE" },
-	{ label: "Rejected",        value: "REJECTED" },
+	{ label: "All Status", value: "ALL" },
+	{ label: "Pending Review", value: "PENDING_ADMIN_REVIEW" },
+	{ label: "Under Review", value: "DRAFT" }, // TODO: add UNDER_REVIEW status
+	{ label: "Approved", value: "ACTIVE" },
+	{ label: "Rejected", value: "REJECTED" },
 ]
 
 const VISIBILITY_OPTIONS: { label: string; value: VisibilityFilter }[] = [
 	{ label: "All Visibility", value: "ALL" },
-	{ label: "Public",         value: "PUBLIC" },
-	{ label: "Private",        value: "PRIVATE" },
-	{ label: "Invite Only",    value: "INVITE_ONLY" },
+	{ label: "Public", value: "PUBLIC" },
+	{ label: "Private", value: "PRIVATE" },
+	{ label: "Invite Only", value: "INVITE_ONLY" },
 ]
 
 const CATEGORY_COLORS: Record<string, string> = {
-	"Music":           "bg-purple-100 text-purple-700",
-	"Networking":      "bg-blue-100 text-blue-700",
-	"Wellness":        "bg-green-100 text-green-700",
-	"Creative":        "bg-orange-100 text-orange-700",
-	"Tech":            "bg-indigo-100 text-indigo-700",
+	Music: "bg-purple-100 text-purple-700",
+	Networking: "bg-blue-100 text-blue-700",
+	Wellness: "bg-green-100 text-green-700",
+	Creative: "bg-orange-100 text-orange-700",
+	Tech: "bg-indigo-100 text-indigo-700",
 	"Personal Growth": "bg-pink-100 text-pink-700",
-	"Travel":          "bg-teal-100 text-teal-700",
-	"Business":        "bg-sky-100 text-sky-700",
-	"Arts":            "bg-rose-100 text-rose-700",
-	"Lifestyle":       "bg-amber-100 text-amber-700",
+	Travel: "bg-teal-100 text-teal-700",
+	Business: "bg-sky-100 text-sky-700",
+	Arts: "bg-rose-100 text-rose-700",
+	Lifestyle: "bg-amber-100 text-amber-700",
 }
 
 const VISIBILITY_BADGE: Record<CommunityVisibility, { label: string; className: string }> = {
-	PUBLIC:      { label: "Public",      className: "bg-green-50 text-green-700" },
-	PRIVATE:     { label: "Private",     className: "bg-sky-50 text-sky-700" },
+	PUBLIC: { label: "Public", className: "bg-green-50 text-green-700" },
+	PRIVATE: { label: "Private", className: "bg-sky-50 text-sky-700" },
 	INVITE_ONLY: { label: "Invite Only", className: "bg-purple-50 text-purple-700" },
 }
 
@@ -95,11 +95,11 @@ function formatCount(n: number): string {
 
 function formatRelativeTime(iso: string): string {
 	const diff = Date.now() - new Date(iso).getTime()
-	const mins  = Math.floor(diff / 60_000)
-	if (mins < 60)  return `${mins} min${mins !== 1 ? "s" : ""} ago`
+	const mins = Math.floor(diff / 60_000)
+	if (mins < 60) return `${mins} min${mins !== 1 ? "s" : ""} ago`
 	const hours = Math.floor(mins / 60)
 	if (hours < 24) return `${hours} hour${hours !== 1 ? "s" : ""} ago`
-	const days  = Math.floor(hours / 24)
+	const days = Math.floor(hours / 24)
 	return `${days} day${days !== 1 ? "s" : ""} ago`
 }
 
@@ -230,33 +230,33 @@ function NumberedPagination({
 type ConfirmAction = { type: "approve" | "reject"; ids: string[] }
 
 export default function CommunityQueuePage() {
-	const router    = useRouter()
+	const router = useRouter()
 	const canManage = usePermission("community.manage")
 
 	// Data
-	const [isLoading,    setIsLoading]    = useState(true)
+	const [isLoading, setIsLoading] = useState(true)
 	const [statsLoading, setStatsLoading] = useState(true)
-	const [error,        setError]        = useState<string | null>(null)
-	const [items,        setItems]        = useState<CommunityQueueItem[]>([])
-	const [stats,        setStats]        = useState<CommunityQueueStats | null>(null)
-	const [total,        setTotal]        = useState(0)
+	const [error, setError] = useState<string | null>(null)
+	const [items, setItems] = useState<CommunityQueueItem[]>([])
+	const [stats, setStats] = useState<CommunityQueueStats | null>(null)
+	const [total, setTotal] = useState(0)
 
 	// Pagination
-	const [page,     setPage]     = useState(1)
+	const [page, setPage] = useState(1)
 	const [pageSize, setPageSize] = useState<PageSize>(10)
 
 	// Filters
-	const [search,          setSearch]          = useState("")
-	const [statusFilter,    setStatusFilter]    = useState<StatusFilter>("PENDING_ADMIN_REVIEW")
-	const [visibilityFilter,setVisibilityFilter]= useState<VisibilityFilter>("ALL")
+	const [search, setSearch] = useState("")
+	const [statusFilter, setStatusFilter] = useState<StatusFilter>("PENDING_ADMIN_REVIEW")
+	const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilter>("ALL")
 	// TODO: add categoryId, city, createdBy, dateSubmitted filters
 
 	// Selection
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
 	// Actions
-	const [confirmAction,  setConfirmAction]  = useState<ConfirmAction | null>(null)
-	const [isProcessing,   setIsProcessing]   = useState(false)
+	const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
+	const [isProcessing, setIsProcessing] = useState(false)
 
 	// ─── Fetch ──────────────────────────────────────────────────────────────────
 
@@ -276,23 +276,34 @@ export default function CommunityQueuePage() {
 		setError(null)
 		try {
 			const params: GetCommunityQueueParams = { page, limit: pageSize }
-			if (statusFilter     !== "ALL") params.status     = statusFilter
+			if (statusFilter !== "ALL") params.status = statusFilter
 			if (visibilityFilter !== "ALL") params.visibility = visibilityFilter
 			const res = await getCommunityQueue(params)
 			setItems(res.items)
 			setTotal(res.total ?? res.items.length)
 		} catch (err: unknown) {
 			const status = (err as { response?: { status?: number } })?.response?.status
-			if (status === 401) { router.replace("/login"); return }
-			if (status === 403) { setError("You don't have permission to view the community queue.") }
-			else { toast.error("Failed to load queue"); setError("Something went wrong. Please try again.") }
+			if (status === 401) {
+				router.replace("/login")
+				return
+			}
+			if (status === 403) {
+				setError("You don't have permission to view the community queue.")
+			} else {
+				toast.error("Failed to load queue")
+				setError("Something went wrong. Please try again.")
+			}
 		} finally {
 			setIsLoading(false)
 		}
 	}, [page, pageSize, statusFilter, visibilityFilter, router])
 
-	useEffect(() => { fetchStats() },  [fetchStats])
-	useEffect(() => { fetchQueue() }, [fetchQueue])
+	useEffect(() => {
+		fetchStats()
+	}, [fetchStats])
+	useEffect(() => {
+		fetchQueue()
+	}, [fetchQueue])
 
 	// ─── Client-side search ──────────────────────────────────────────────────────
 
@@ -325,7 +336,7 @@ export default function CommunityQueuePage() {
 		}
 	}
 
-	const allSelected  = filtered.length > 0 && filtered.every(c => selectedIds.has(c.id))
+	const allSelected = filtered.length > 0 && filtered.every(c => selectedIds.has(c.id))
 	const someSelected = filtered.some(c => selectedIds.has(c.id)) && !allSelected
 
 	// ─── Actions ─────────────────────────────────────────────────────────────────
@@ -336,13 +347,21 @@ export default function CommunityQueuePage() {
 			if (action.type === "approve") {
 				if (action.ids.length === 1) await approveCommunity(action.ids[0])
 				else await bulkApproveCommunities(action.ids)
-				toast.success(action.ids.length === 1 ? "Community approved" : `${action.ids.length} communities approved`)
+				toast.success(
+					action.ids.length === 1
+						? "Community approved"
+						: `${action.ids.length} communities approved`,
+				)
 			} else {
 				// TODO: collect rejection reason via a proper modal with text input
 				const reason = "Does not meet community guidelines."
 				if (action.ids.length === 1) await rejectCommunity(action.ids[0], reason)
 				else await bulkRejectCommunities(action.ids, reason)
-				toast.success(action.ids.length === 1 ? "Community rejected" : `${action.ids.length} communities rejected`)
+				toast.success(
+					action.ids.length === 1
+						? "Community rejected"
+						: `${action.ids.length} communities rejected`,
+				)
 			}
 			setSelectedIds(new Set())
 			fetchQueue()
@@ -355,7 +374,8 @@ export default function CommunityQueuePage() {
 		}
 	}
 
-	const hasActiveFilters = statusFilter !== "PENDING_ADMIN_REVIEW" || visibilityFilter !== "ALL" || search !== ""
+	const hasActiveFilters =
+		statusFilter !== "PENDING_ADMIN_REVIEW" || visibilityFilter !== "ALL" || search !== ""
 
 	function resetFilters() {
 		setStatusFilter("PENDING_ADMIN_REVIEW")
@@ -401,8 +421,12 @@ export default function CommunityQueuePage() {
 								{c.name.charAt(0)}
 							</div>
 							<div className="min-w-0">
-								<p className="text-xs font-semibold text-text-primary leading-none truncate">{c.name}</p>
-								<p className="mt-0.5 text-[11px] text-text-tertiary">by {c.submittedBy.name}</p>
+								<p className="text-xs font-semibold text-text-primary leading-none truncate">
+									{c.name}
+								</p>
+								<p className="mt-0.5 text-[11px] text-text-tertiary">
+									by {c.submittedBy.name}
+								</p>
 							</div>
 						</div>
 					)
@@ -415,10 +439,12 @@ export default function CommunityQueuePage() {
 					const cat = row.original.category
 					if (!cat) return <span className="text-xs text-text-tertiary">—</span>
 					return (
-						<span className={cn(
-							"inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-							getCategoryClassName(cat.name),
-						)}>
+						<span
+							className={cn(
+								"inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+								getCategoryClassName(cat.name),
+							)}
+						>
 							{cat.name}
 						</span>
 					)
@@ -439,10 +465,12 @@ export default function CommunityQueuePage() {
 				cell: ({ row }) => {
 					const cfg = VISIBILITY_BADGE[row.original.visibility]
 					return (
-						<span className={cn(
-							"inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-							cfg.className,
-						)}>
+						<span
+							className={cn(
+								"inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+								cfg.className,
+							)}
+						>
 							{cfg.label}
 						</span>
 					)
@@ -472,10 +500,7 @@ export default function CommunityQueuePage() {
 				cell: ({ row }) => {
 					const id = row.original.id
 					return (
-						<div
-							className="flex items-center gap-1"
-							onClick={e => e.stopPropagation()}
-						>
+						<div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
 							<button
 								className="shrink-0 rounded-md border border-border-default px-2.5 py-1 text-[11px] font-medium text-text-secondary hover:bg-neutral-50 transition-colors"
 								onClick={() => router.push(`/communities/${id}`)}
@@ -512,7 +537,9 @@ export default function CommunityQueuePage() {
 	if (!canManage) {
 		return (
 			<div className="p-6 max-w-7xl mx-auto">
-				<p className="text-sm text-text-tertiary">You don&apos;t have permission to view the community queue.</p>
+				<p className="text-sm text-text-tertiary">
+					You don&apos;t have permission to view the community queue.
+				</p>
 			</div>
 		)
 	}
@@ -525,11 +552,15 @@ export default function CommunityQueuePage() {
 			<div className="flex items-start justify-between gap-4">
 				<div>
 					<h1 className="text-base font-semibold text-text-primary">Community Queue</h1>
-					<p className="mt-0.5 text-xs text-text-tertiary">Review and approve communities before they go live.</p>
+					<p className="mt-0.5 text-xs text-text-tertiary">
+						Review and approve communities before they go live.
+					</p>
 				</div>
 				<div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
 					<Button
-						variant="primary" size="sm" radius="md"
+						variant="primary"
+						size="sm"
+						radius="md"
 						leftIcon={<Check size={13} />}
 						disabled={selectedCount === 0}
 						onClick={() => setConfirmAction({ type: "approve", ids: [...selectedIds] })}
@@ -537,7 +568,9 @@ export default function CommunityQueuePage() {
 						{selectedCount > 0 ? `Approve Selected (${selectedCount})` : "Approve Selected"}
 					</Button>
 					<Button
-						variant="primary" size="sm" radius="md"
+						variant="primary"
+						size="sm"
+						radius="md"
 						leftIcon={<X size={13} />}
 						disabled={selectedCount === 0}
 						onClick={() => setConfirmAction({ type: "reject", ids: [...selectedIds] })}
@@ -549,7 +582,13 @@ export default function CommunityQueuePage() {
 						Assign Reviewer
 					</Button>
 					{/* TODO: implement queue export */}
-					<Button variant="primary" size="sm" radius="md" leftIcon={<Download size={13} />} disabled>
+					<Button
+						variant="primary"
+						size="sm"
+						radius="md"
+						leftIcon={<Download size={13} />}
+						disabled
+					>
 						Export Queue
 					</Button>
 				</div>
@@ -557,10 +596,8 @@ export default function CommunityQueuePage() {
 
 			{/* Two-column layout */}
 			<div className="flex items-start gap-5">
-
 				{/* ── Main content ── */}
 				<div className="flex-1 min-w-0 space-y-4">
-
 					{/* Stat cards */}
 					{/* TODO: replace hardcoded trend values with fields from getCommunityQueueStats API */}
 					<div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -602,31 +639,47 @@ export default function CommunityQueuePage() {
 					<div className="space-y-2">
 						<div className="flex items-center gap-2 flex-wrap">
 							<div className="relative flex-1 min-w-48 max-w-xs">
-								<Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+								<Search
+									size={13}
+									className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
+								/>
 								<input
 									type="text"
 									value={search}
-									onChange={e => { setSearch(e.target.value); setPage(1) }}
+									onChange={e => {
+										setSearch(e.target.value)
+										setPage(1)
+									}}
 									placeholder="Search community name…"
 									className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 								/>
 							</div>
 							<select
 								value={statusFilter}
-								onChange={e => { setStatusFilter(e.target.value as StatusFilter); setPage(1) }}
+								onChange={e => {
+									setStatusFilter(e.target.value as StatusFilter)
+									setPage(1)
+								}}
 								className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 							>
 								{STATUS_OPTIONS.map(o => (
-									<option key={o.value} value={o.value}>{o.label}</option>
+									<option key={o.value} value={o.value}>
+										{o.label}
+									</option>
 								))}
 							</select>
 							<select
 								value={visibilityFilter}
-								onChange={e => { setVisibilityFilter(e.target.value as VisibilityFilter); setPage(1) }}
+								onChange={e => {
+									setVisibilityFilter(e.target.value as VisibilityFilter)
+									setPage(1)
+								}}
 								className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 							>
 								{VISIBILITY_OPTIONS.map(o => (
-									<option key={o.value} value={o.value}>{o.label}</option>
+									<option key={o.value} value={o.value}>
+										{o.label}
+									</option>
 								))}
 							</select>
 							{/* TODO: category, city, createdBy, dateSubmitted filters */}
@@ -644,7 +697,9 @@ export default function CommunityQueuePage() {
 
 					{/* Error or Table */}
 					{error ? (
-						<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+						<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+							{error}
+						</div>
 					) : (
 						<DataTable
 							columns={columns}
@@ -662,25 +717,35 @@ export default function CommunityQueuePage() {
 					{!error && total > 0 && (
 						<div className="flex items-center justify-between gap-4 text-xs text-text-tertiary">
 							<span>
-								Showing {Math.min((page - 1) * pageSize + 1, total)}–{Math.min(page * pageSize, total)} of {total} communities
+								Showing {Math.min((page - 1) * pageSize + 1, total)}–
+								{Math.min(page * pageSize, total)} of {total} communities
 							</span>
 							<div className="flex items-center gap-4">
 								{totalPages > 1 && (
 									<NumberedPagination
 										page={page}
 										totalPages={totalPages}
-										onPageChange={p => { setPage(p); setSelectedIds(new Set()) }}
+										onPageChange={p => {
+											setPage(p)
+											setSelectedIds(new Set())
+										}}
 									/>
 								)}
 								<div className="flex items-center gap-2">
 									<span>Rows per page</span>
 									<select
 										value={pageSize}
-										onChange={e => { setPageSize(Number(e.target.value) as PageSize); setPage(1); setSelectedIds(new Set()) }}
+										onChange={e => {
+											setPageSize(Number(e.target.value) as PageSize)
+											setPage(1)
+											setSelectedIds(new Set())
+										}}
 										className="rounded-md border border-border-default bg-surface-canvas px-2 py-1 text-xs text-text-primary focus:border-border-focus focus:outline-none transition-colors"
 									>
 										{PAGE_SIZES.map(s => (
-											<option key={s} value={s}>{s}</option>
+											<option key={s} value={s}>
+												{s}
+											</option>
 										))}
 									</select>
 								</div>
@@ -691,7 +756,6 @@ export default function CommunityQueuePage() {
 
 				{/* ── Sidebar ── */}
 				<div className="hidden lg:flex w-72 shrink-0 flex-col gap-4">
-
 					{/* Queue Insights */}
 					<SidebarCard
 						title="Queue Insights"
@@ -708,10 +772,17 @@ export default function CommunityQueuePage() {
 								{MOCK_QUEUE_INSIGHTS.map(seg => (
 									<div key={seg.label} className="flex items-center justify-between gap-2">
 										<div className="flex items-center gap-1.5 min-w-0">
-											<span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: seg.color }} />
-											<span className="text-[11px] text-text-secondary truncate">{seg.label}</span>
+											<span
+												className="h-2 w-2 shrink-0 rounded-full"
+												style={{ backgroundColor: seg.color }}
+											/>
+											<span className="text-[11px] text-text-secondary truncate">
+												{seg.label}
+											</span>
 										</div>
-										<span className="text-[11px] font-semibold text-text-primary shrink-0">{seg.pct}%</span>
+										<span className="text-[11px] font-semibold text-text-primary shrink-0">
+											{seg.pct}%
+										</span>
 									</div>
 								))}
 							</div>
@@ -736,7 +807,9 @@ export default function CommunityQueuePage() {
 											{reviewer.initial}
 										</div>
 										<div className="flex-1 min-w-0">
-											<p className="text-[11px] font-semibold text-text-primary leading-none truncate">{reviewer.name}</p>
+											<p className="text-[11px] font-semibold text-text-primary leading-none truncate">
+												{reviewer.name}
+											</p>
 											<p className="text-[10px] text-text-tertiary">{reviewer.role}</p>
 										</div>
 										<span className="text-[11px] font-medium text-text-secondary shrink-0">
@@ -746,7 +819,9 @@ export default function CommunityQueuePage() {
 									<div className="h-1 rounded-full bg-neutral-100 overflow-hidden">
 										<div
 											className="h-full rounded-full bg-rose-500 transition-all"
-											style={{ width: `${(reviewer.reviewed / reviewer.quota) * 100}%` }}
+											style={{
+												width: `${(reviewer.reviewed / reviewer.quota) * 100}%`,
+											}}
 										/>
 									</div>
 								</div>
@@ -772,16 +847,21 @@ export default function CommunityQueuePage() {
 									</div>
 									<div className="flex-1 min-w-0">
 										<p className="text-[11px] text-text-primary leading-snug">
-											<span className="font-semibold">{act.actorName}</span>
-											{" "}{act.action}{" "}
-											<span className="font-medium">{act.targetName}</span>
+											<span className="font-semibold">{act.actorName}</span>{" "}
+											{act.action} <span className="font-medium">{act.targetName}</span>
 										</p>
 										<p className="text-[10px] text-text-tertiary mt-0.5">{act.timeAgo}</p>
 									</div>
 									<div className="shrink-0 mt-0.5">
-										{act.type === "approve" && <CheckCircle size={14} className="text-green-500" />}
-										{act.type === "reject"  && <XCircle     size={14} className="text-red-500" />}
-										{act.type === "changes" && <UserCog     size={14} className="text-amber-500" />}
+										{act.type === "approve" && (
+											<CheckCircle size={14} className="text-green-500" />
+										)}
+										{act.type === "reject" && (
+											<XCircle size={14} className="text-red-500" />
+										)}
+										{act.type === "changes" && (
+											<UserCog size={14} className="text-amber-500" />
+										)}
 									</div>
 								</div>
 							))}
@@ -806,7 +886,6 @@ export default function CommunityQueuePage() {
 							</div>
 						</div>
 					</div>
-
 				</div>
 			</div>
 

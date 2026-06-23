@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect, useRef } from "react"
-import { Search, Plus, X, CalendarDays, MapPin, Loader2 } from "lucide-react"
+import { Search, Plus, X, MapPin, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getEvents } from "@/lib/api/events"
 import type { Event } from "@/types"
@@ -20,7 +20,7 @@ export function EventSearchAttach({ value, onChange }: EventSearchAttachProps) {
 	const [searching, setSearching] = useState(false)
 	const [open, setOpen] = useState(false)
 	const debounceRef = useRef<ReturnType<typeof setTimeout>>(null)
-	const attached = new Set(value.map((e) => e.id))
+	const attached = new Set(value.map(e => e.id))
 
 	useEffect(() => {
 		if (!query.trim()) {
@@ -32,11 +32,7 @@ export function EventSearchAttach({ value, onChange }: EventSearchAttachProps) {
 			setSearching(true)
 			try {
 				const res = await getEvents({ limit: 10 })
-				setResults(
-					res.events.filter((e) =>
-						e.title.toLowerCase().includes(query.toLowerCase()),
-					),
-				)
+				setResults(res.events.filter(e => e.title.toLowerCase().includes(query.toLowerCase())))
 			} catch {
 				toast.error("Failed to search events")
 			} finally {
@@ -48,32 +44,38 @@ export function EventSearchAttach({ value, onChange }: EventSearchAttachProps) {
 	const attach = useCallback(
 		(event: Event) => {
 			if (attached.has(event.id)) return
-			onChange([...value, { id: event.id, title: event.title, eventDate: event.eventDate, city: event.city }])
+			onChange([
+				...value,
+				{ id: event.id, title: event.title, eventDate: event.eventDate, city: event.city },
+			])
 			setQuery("")
 			setOpen(false)
 		},
 		[value, onChange, attached],
 	)
 
-	const detach = useCallback(
-		(id: string) => onChange(value.filter((e) => e.id !== id)),
-		[value, onChange],
-	)
+	const detach = useCallback((id: string) => onChange(value.filter(e => e.id !== id)), [value, onChange])
 
 	return (
 		<div className="flex flex-col gap-3">
 			<div className="flex items-center gap-3">
 				<div className="relative flex-1">
-					<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-icon-secondary" />
+					<Search
+						size={14}
+						className="absolute left-3 top-1/2 -translate-y-1/2 text-icon-secondary"
+					/>
 					<input
 						type="text"
 						value={query}
-						onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
+						onChange={e => {
+							setQuery(e.target.value)
+							setOpen(true)
+						}}
 						onFocus={() => setOpen(true)}
 						onBlur={() => setTimeout(() => setOpen(false), 150)}
 						placeholder="Search events by name..."
 						className={cn(
-							"h-[var(--size-input-md)] w-full rounded-input border border-border-default bg-surface-canvas pl-9 pr-4 text-sm text-text-primary outline-none placeholder:text-text-muted",
+							"h-(--size-input-md) w-full rounded-input border border-border-default bg-surface-canvas pl-9 pr-4 text-sm text-text-primary outline-none placeholder:text-text-muted",
 							"hover:border-border-strong focus:border-border-focused transition-colors",
 						)}
 					/>
@@ -87,11 +89,11 @@ export function EventSearchAttach({ value, onChange }: EventSearchAttachProps) {
 								<p className="px-3 py-2 text-caption text-text-secondary">No events found</p>
 							) : (
 								<ul className="max-h-48 overflow-y-auto py-1">
-									{results.map((event) => (
+									{results.map(event => (
 										<li key={event.id}>
 											<button
 												type="button"
-												onMouseDown={(e) => e.preventDefault()}
+												onMouseDown={e => e.preventDefault()}
 												onClick={() => attach(event)}
 												disabled={attached.has(event.id)}
 												className={cn(
@@ -105,8 +107,12 @@ export function EventSearchAttach({ value, onChange }: EventSearchAttachProps) {
 													{event.title.charAt(0)}
 												</div>
 												<div className="min-w-0 flex-1">
-													<p className="text-label-sm text-text-primary truncate">{event.title}</p>
-													<p className="text-caption text-text-secondary">{event.city}</p>
+													<p className="text-label-sm text-text-primary truncate">
+														{event.title}
+													</p>
+													<p className="text-caption text-text-secondary">
+														{event.city}
+													</p>
 												</div>
 												{!attached.has(event.id) && (
 													<Plus size={14} className="shrink-0 text-icon-brand" />
@@ -123,7 +129,7 @@ export function EventSearchAttach({ value, onChange }: EventSearchAttachProps) {
 
 			{value.length > 0 && (
 				<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-					{value.map((event) => (
+					{value.map(event => (
 						<div
 							key={event.id}
 							className="flex items-center gap-3 rounded-card border border-border-subtle bg-surface-canvas p-3"
@@ -132,7 +138,9 @@ export function EventSearchAttach({ value, onChange }: EventSearchAttachProps) {
 								{event.title.charAt(0)}
 							</div>
 							<div className="min-w-0 flex-1">
-								<p className="text-label-sm font-medium text-text-primary truncate">{event.title}</p>
+								<p className="text-label-sm font-medium text-text-primary truncate">
+									{event.title}
+								</p>
 								<div className="flex items-center gap-1 mt-0.5">
 									<MapPin size={10} className="text-icon-secondary" />
 									<span className="text-caption text-text-secondary">{event.city}</span>

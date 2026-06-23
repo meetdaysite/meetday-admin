@@ -3,9 +3,21 @@
 import { useCallback, useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import {
-	ExternalLink, Settings, ChevronDown, Copy, Share2,
-	Megaphone, CalendarPlus, MessageSquare, Download,
-	Users, Calendar, Bell, Star, TrendingUp, TrendingDown,
+	ExternalLink,
+	Settings,
+	ChevronDown,
+	Copy,
+	Share2,
+	Megaphone,
+	CalendarPlus,
+	MessageSquare,
+	Download,
+	Users,
+	Calendar,
+	Bell,
+	Star,
+	TrendingUp,
+	TrendingDown,
 	type LucideIcon,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -29,40 +41,49 @@ import { ManagersTab } from "./managers-tab"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Tab = "overview" | "experiences" | "members" | "feed" | "announcements" | "chat" | "analytics" | "managers" | "settings"
+type Tab =
+	| "overview"
+	| "experiences"
+	| "members"
+	| "feed"
+	| "announcements"
+	| "chat"
+	| "analytics"
+	| "managers"
+	| "settings"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const TABS: { id: Tab; label: string }[] = [
-	{ id: "overview",      label: "Overview" },
-	{ id: "experiences",   label: "Experiences" },
-	{ id: "members",       label: "Members" },
-	{ id: "feed",          label: "Feed" },
+	{ id: "overview", label: "Overview" },
+	{ id: "experiences", label: "Experiences" },
+	{ id: "members", label: "Members" },
+	{ id: "feed", label: "Feed" },
 	{ id: "announcements", label: "Announcements" },
-	{ id: "chat",          label: "Chat" },
-	{ id: "analytics",     label: "Analytics" },
-	{ id: "managers",      label: "Managers" },
-	{ id: "settings",      label: "Settings" },
+	{ id: "chat", label: "Chat" },
+	{ id: "analytics", label: "Analytics" },
+	{ id: "managers", label: "Managers" },
+	{ id: "settings", label: "Settings" },
 ]
 
 const ROLE_BADGE: Record<string, string> = {
-	Owner:     "bg-green-100 text-green-700",
-	Manager:   "bg-blue-100 text-blue-700",
+	Owner: "bg-green-100 text-green-700",
+	Manager: "bg-blue-100 text-blue-700",
 	Moderator: "bg-purple-100 text-purple-700",
 }
 
 const ACTIVITY_ICON: Record<string, { icon: LucideIcon; bg: string; color: string }> = {
-	member:       { icon: Users,          bg: "bg-blue-50",   color: "text-blue-500" },
-	experience:   { icon: Calendar,       bg: "bg-green-50",  color: "text-green-500" },
-	post:         { icon: MessageSquare,  bg: "bg-purple-50", color: "text-purple-500" },
-	announcement: { icon: Bell,           bg: "bg-amber-50",  color: "text-amber-500" },
+	member: { icon: Users, bg: "bg-blue-50", color: "text-blue-500" },
+	experience: { icon: Calendar, bg: "bg-green-50", color: "text-green-500" },
+	post: { icon: MessageSquare, bg: "bg-purple-50", color: "text-purple-500" },
+	announcement: { icon: Bell, bg: "bg-amber-50", color: "text-amber-500" },
 }
 
 const QUICK_ACTIONS = [
-	{ label: "Create Announcement", icon: Megaphone,    bg: "bg-rose-50",   color: "text-rose-500" },
-	{ label: "Schedule Event",       icon: CalendarPlus, bg: "bg-sky-50",    color: "text-sky-500" },
-	{ label: "Post in Community",    icon: MessageSquare, bg: "bg-purple-50", color: "text-purple-500" },
-	{ label: "Export Members",       icon: Download,     bg: "bg-green-50",  color: "text-green-500" },
+	{ label: "Create Announcement", icon: Megaphone, bg: "bg-rose-50", color: "text-rose-500" },
+	{ label: "Schedule Event", icon: CalendarPlus, bg: "bg-sky-50", color: "text-sky-500" },
+	{ label: "Post in Community", icon: MessageSquare, bg: "bg-purple-50", color: "text-purple-500" },
+	{ label: "Export Members", icon: Download, bg: "bg-green-50", color: "text-green-500" },
 ] as const
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -72,14 +93,26 @@ function DetailStatCard({ card }: { card: CommunityDetailStatCard }) {
 		<div className="rounded-xl border border-border-default bg-surface-card p-4 flex flex-col gap-1.5">
 			<p className="text-xs text-text-tertiary font-medium">{card.label}</p>
 			<div className="flex items-baseline gap-2">
-				<span className="text-2xl font-bold text-text-primary tabular-nums leading-none">{card.value}</span>
+				<span className="text-2xl font-bold text-text-primary tabular-nums leading-none">
+					{card.value}
+				</span>
 				{card.trend && (
-					<span className={cn(
-						"flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold",
-						card.trend.direction === "up" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600",
-					)}>
-						{card.trend.direction === "up" ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-						{card.trend.value > 0 ? "+" : ""}{card.trend.value}{card.trend.label ?? ""}
+					<span
+						className={cn(
+							"flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold",
+							card.trend.direction === "up"
+								? "bg-green-50 text-green-700"
+								: "bg-red-50 text-red-600",
+						)}
+					>
+						{card.trend.direction === "up" ? (
+							<TrendingUp size={10} />
+						) : (
+							<TrendingDown size={10} />
+						)}
+						{card.trend.value > 0 ? "+" : ""}
+						{card.trend.value}
+						{card.trend.label ?? ""}
 					</span>
 				)}
 			</div>
@@ -104,7 +137,11 @@ function DetailStatCard({ card }: { card: CommunityDetailStatCard }) {
 	)
 }
 
-function SidebarCard({ title, children, action }: {
+function SidebarCard({
+	title,
+	children,
+	action,
+}: {
 	title: string
 	children: React.ReactNode
 	action?: React.ReactNode
@@ -123,14 +160,14 @@ function SidebarCard({ title, children, action }: {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CommunityDetailPage() {
-	const params    = useParams()
-	const id        = params.id as string
-	const router    = useRouter()
-	const canView   = usePermission("community.manage")
+	const params = useParams()
+	const id = params.id as string
+	const router = useRouter()
+	const canView = usePermission("community.manage")
 
 	const [community, setCommunity] = useState<CommunityDetailData | null>(null)
 	const [isLoading, setIsLoading] = useState(true)
-	const [error, setError]         = useState<string | null>(null)
+	const [error, setError] = useState<string | null>(null)
 	const [activeTab, setActiveTab] = useState<Tab>("overview")
 
 	const load = useCallback(async () => {
@@ -146,7 +183,9 @@ export default function CommunityDetailPage() {
 		}
 	}, [id])
 
-	useEffect(() => { load() }, [load])
+	useEffect(() => {
+		load()
+	}, [load])
 
 	if (!canView) return null
 
@@ -167,22 +206,28 @@ export default function CommunityDetailPage() {
 	}
 
 	const createdDate = new Date(community.createdAt).toLocaleDateString("en-GB", {
-		day: "numeric", month: "short", year: "numeric",
+		day: "numeric",
+		month: "short",
+		year: "numeric",
 	})
 
 	const publishedDate = community.publishedAt
 		? new Date(community.publishedAt).toLocaleDateString("en-GB", {
-				day: "numeric", month: "short", year: "numeric",
+				day: "numeric",
+				month: "short",
+				year: "numeric",
 			})
 		: null
 
 	const accessLabel =
-		community.access === "PUBLIC"            ? "Public"            :
-		community.access === "APPROVAL_REQUIRED" ? "Approval Required" : "Invite Only"
+		community.access === "PUBLIC"
+			? "Public"
+			: community.access === "APPROVAL_REQUIRED"
+				? "Approval Required"
+				: "Invite Only"
 
 	return (
 		<div className="p-6 max-w-7xl mx-auto">
-
 			{/* ── Header ────────────────────────────────────────────────────── */}
 			<div className="flex items-start justify-between gap-4 pb-5">
 				<div className="flex items-start gap-4">
@@ -210,20 +255,26 @@ export default function CommunityDetailPage() {
 							</span>
 						</div>
 						{community.description && (
-							<p className="mt-1 text-xs text-text-tertiary max-w-lg">{community.description}</p>
+							<p className="mt-1 text-xs text-text-tertiary max-w-lg">
+								{community.description}
+							</p>
 						)}
 					</div>
 				</div>
 				<div className="flex items-center gap-2 shrink-0">
 					<Button
-						variant="secondary" size="sm" radius="md"
+						variant="secondary"
+						size="sm"
+						radius="md"
 						leftIcon={<ExternalLink size={13} />}
 						onClick={() => toast.info("Opens the community on meetday.ai")}
 					>
 						View Community
 					</Button>
 					<Button
-						variant="secondary" size="sm" radius="md"
+						variant="secondary"
+						size="sm"
+						radius="md"
 						leftIcon={<Settings size={13} />}
 						rightIcon={<ChevronDown size={13} />}
 						onClick={() => toast.info("Community settings coming soon")}
@@ -256,10 +307,8 @@ export default function CommunityDetailPage() {
 			{/* ── Tab Content ───────────────────────────────────────────────── */}
 			{activeTab === "overview" ? (
 				<div className="flex items-start gap-5">
-
 					{/* ── Main ──────────────────────────────────────────────── */}
 					<div className="flex-1 min-w-0 flex flex-col gap-5">
-
 						{/* Stat cards */}
 						<div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
 							{community.statCards.map(card => (
@@ -271,7 +320,9 @@ export default function CommunityDetailPage() {
 						<div className="rounded-xl border border-border-default bg-surface-card p-4">
 							<div className="flex items-center justify-between mb-4">
 								<div>
-									<h2 className="text-sm font-semibold text-text-primary">Upcoming Experiences</h2>
+									<h2 className="text-sm font-semibold text-text-primary">
+										Upcoming Experiences
+									</h2>
 									<p className="text-[11px] text-text-tertiary">Auto-matched</p>
 								</div>
 								<button
@@ -286,7 +337,10 @@ export default function CommunityDetailPage() {
 							) : (
 								<div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
 									{community.upcomingExperiences.map(exp => (
-										<div key={exp.id} className="rounded-lg overflow-hidden border border-border-default">
+										<div
+											key={exp.id}
+											className="rounded-lg overflow-hidden border border-border-default"
+										>
 											<div
 												className="h-24 flex items-end relative"
 												style={{ backgroundColor: exp.coverColor }}
@@ -301,8 +355,12 @@ export default function CommunityDetailPage() {
 												)}
 											</div>
 											<div className="p-2.5">
-												<p className="text-xs font-semibold text-text-primary truncate">{exp.title}</p>
-												<p className="text-[10px] text-text-tertiary mt-0.5">{exp.date}</p>
+												<p className="text-xs font-semibold text-text-primary truncate">
+													{exp.title}
+												</p>
+												<p className="text-[10px] text-text-tertiary mt-0.5">
+													{exp.date}
+												</p>
 												<p className="text-[10px] text-text-tertiary">{exp.venue}</p>
 												{(exp.attendeeCount > 0 || exp.rating > 0) && (
 													<div className="flex items-center justify-between mt-2">
@@ -327,12 +385,15 @@ export default function CommunityDetailPage() {
 
 						{/* Recent Activity + Top Engagement */}
 						<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-
 							{/* Recent Activity */}
 							<div className="rounded-xl border border-border-default bg-surface-card p-4">
 								<div className="flex items-center justify-between mb-3">
-									<h2 className="text-sm font-semibold text-text-primary">Recent Activity</h2>
-									<button className="text-xs font-medium text-text-brand hover:underline">View All</button>
+									<h2 className="text-sm font-semibold text-text-primary">
+										Recent Activity
+									</h2>
+									<button className="text-xs font-medium text-text-brand hover:underline">
+										View All
+									</button>
 								</div>
 								{community.recentActivity.length === 0 ? (
 									<p className="text-xs text-text-tertiary">No recent activity.</p>
@@ -343,14 +404,25 @@ export default function CommunityDetailPage() {
 											const Icon = cfg.icon
 											return (
 												<div key={item.id} className="flex items-start gap-3">
-													<div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", cfg.bg)}>
+													<div
+														className={cn(
+															"flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+															cfg.bg,
+														)}
+													>
 														<Icon size={14} className={cfg.color} />
 													</div>
 													<div className="flex-1 min-w-0">
-														<p className="text-xs font-medium text-text-primary">{item.title}</p>
-														<p className="text-[11px] text-text-tertiary truncate">{item.description}</p>
+														<p className="text-xs font-medium text-text-primary">
+															{item.title}
+														</p>
+														<p className="text-[11px] text-text-tertiary truncate">
+															{item.description}
+														</p>
 													</div>
-													<span className="text-[11px] text-text-tertiary shrink-0">{item.timeAgo}</span>
+													<span className="text-[11px] text-text-tertiary shrink-0">
+														{item.timeAgo}
+													</span>
 												</div>
 											)
 										})}
@@ -365,7 +437,9 @@ export default function CommunityDetailPage() {
 										Top Engagement{" "}
 										<span className="font-normal text-text-tertiary">(7 Days)</span>
 									</h2>
-									<button className="text-xs font-medium text-text-brand hover:underline">View All</button>
+									<button className="text-xs font-medium text-text-brand hover:underline">
+										View All
+									</button>
 								</div>
 								{community.topEngagement.length === 0 ? (
 									<p className="text-xs text-text-tertiary">No engagement data yet.</p>
@@ -373,7 +447,9 @@ export default function CommunityDetailPage() {
 									<div className="flex flex-col gap-3">
 										{community.topEngagement.map(item => (
 											<div key={item.label} className="flex items-center gap-3">
-												<span className="text-xs text-text-secondary w-24 shrink-0">{item.label}</span>
+												<span className="text-xs text-text-secondary w-24 shrink-0">
+													{item.label}
+												</span>
 												<div className="flex-1 h-1.5 rounded-full bg-surface-card-muted overflow-hidden">
 													<div
 														className="h-full rounded-full"
@@ -396,7 +472,6 @@ export default function CommunityDetailPage() {
 
 					{/* ── Sidebar ───────────────────────────────────────────── */}
 					<div className="hidden lg:flex w-72 shrink-0 flex-col gap-4">
-
 						{/* Community Status */}
 						<SidebarCard
 							title="Community Status"
@@ -424,7 +499,9 @@ export default function CommunityDetailPage() {
 								<div className="flex flex-col gap-1 pt-0.5">
 									<dt className="text-text-tertiary">Community URL</dt>
 									<dd className="flex items-center gap-1.5">
-										<span className="text-text-brand text-[11px] truncate">{community.communityUrl}</span>
+										<span className="text-text-brand text-[11px] truncate">
+											{community.communityUrl}
+										</span>
 										<button
 											className="shrink-0 text-text-tertiary hover:text-text-primary transition-colors"
 											onClick={() => {
@@ -438,7 +515,9 @@ export default function CommunityDetailPage() {
 								</div>
 							</dl>
 							<Button
-								variant="primary" size="sm" radius="md"
+								variant="primary"
+								size="sm"
+								radius="md"
 								leftIcon={<Share2 size={13} />}
 								className="w-full mt-4"
 								onClick={() => toast.info("Share community coming soon")}
@@ -468,17 +547,21 @@ export default function CommunityDetailPage() {
 											</div>
 											<span className="text-xs text-text-primary">{mgr.name}</span>
 										</div>
-										<span className={cn(
-											"inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold",
-											ROLE_BADGE[mgr.role] ?? "bg-neutral-100 text-text-secondary",
-										)}>
+										<span
+											className={cn(
+												"inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold",
+												ROLE_BADGE[mgr.role] ?? "bg-neutral-100 text-text-secondary",
+											)}
+										>
 											{mgr.role}
 										</span>
 									</div>
 								))}
 							</div>
 							<Button
-								variant="secondary" size="sm" radius="md"
+								variant="secondary"
+								size="sm"
+								radius="md"
 								className="w-full mt-3"
 								onClick={() => setActiveTab("managers")}
 							>
@@ -496,10 +579,17 @@ export default function CommunityDetailPage() {
 										className="flex flex-col items-center gap-1.5 rounded-lg border border-border-default p-3 text-center hover:bg-surface-card-muted transition-colors"
 										onClick={() => toast.info(`${action.label} coming soon`)}
 									>
-										<div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", action.bg)}>
+										<div
+											className={cn(
+												"flex h-8 w-8 items-center justify-center rounded-lg",
+												action.bg,
+											)}
+										>
 											<action.icon size={15} className={action.color} />
 										</div>
-										<span className="text-[10px] font-medium text-text-secondary leading-tight">{action.label}</span>
+										<span className="text-[10px] font-medium text-text-secondary leading-tight">
+											{action.label}
+										</span>
 									</button>
 								))}
 							</div>
