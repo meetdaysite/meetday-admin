@@ -1075,6 +1075,47 @@ const MOCK_CHAT_MOD_TOOLS: ChatModerationTool[] = [
 	{ label: "Content Warnings",         description: "3 active warnings",        iconKey: "warning", color: "text-amber-500",  bg: "bg-amber-50" },
 ]
 
+// ─── Channel management ───────────────────────────────────────────────────────
+
+export type CreateChannelRequest = {
+	name: string
+	description?: string
+	welcomeTitle?: string
+	welcomeBody?: string
+	quickReplies?: string[]
+}
+
+export type UpdateChannelRequest = Partial<CreateChannelRequest>
+
+export async function createCommunityChannel(
+	communityId: string,
+	body: CreateChannelRequest,
+): Promise<void> {
+	await apiClient.post(`/communities/${communityId}/channels`, body)
+}
+
+export async function updateCommunityChannel(
+	communityId: string,
+	channelId: string,
+	body: UpdateChannelRequest,
+): Promise<void> {
+	await apiClient.patch(`/communities/${communityId}/channels/${channelId}`, body)
+}
+
+export async function deleteCommunityChannel(
+	communityId: string,
+	channelId: string,
+): Promise<void> {
+	await apiClient.delete(`/communities/${communityId}/channels/${channelId}`)
+}
+
+export async function reorderCommunityChannels(
+	communityId: string,
+	orderedIds: string[],
+): Promise<void> {
+	await apiClient.patch(`/communities/${communityId}/channels/order`, { orderedIds })
+}
+
 export async function getCommunityChat(communityId: string): Promise<ChatTabData> {
 	// TODO: const { data } = await apiClient.get<ChatTabData>(`/admin/communities/${communityId}/chat/tab`)
 	// TODO: return data
