@@ -11,7 +11,8 @@ import {
 	MousePointer,
 	Pencil,
 	Copy,
-	MoreHorizontal,
+	Trash2,
+	Pin,
 	ChevronLeft,
 	ChevronRight,
 	ClipboardCopy,
@@ -46,6 +47,10 @@ import { Button } from "@/components/ui/Button"
 import { StatCard } from "@/components/dashboard/stat-card"
 import {
 	getCommunityAnnouncementsTab,
+	createCommunityAnnouncement,
+	deleteCommunityAnnouncement,
+	pinCommunityAnnouncement,
+	unpinCommunityAnnouncement,
 	type AnnouncementsTabData,
 	type AnnouncementItem,
 	type AnnouncementStatus,
@@ -91,7 +96,17 @@ const PAGE_SIZE = 10
 
 // ─── Announcement Row ─────────────────────────────────────────────────────────
 
-function AnnouncementRow({ item }: { item: AnnouncementItem }) {
+function AnnouncementRow({
+	item,
+	onPin,
+	onUnpin,
+	onDelete,
+}: {
+	item: AnnouncementItem
+	onPin: (id: string) => void
+	onUnpin: (id: string) => void
+	onDelete: (id: string) => void
+}) {
 	const isPublished = item.status === "Published"
 	const isScheduled = item.status === "Scheduled"
 
@@ -99,7 +114,14 @@ function AnnouncementRow({ item }: { item: AnnouncementItem }) {
 		<div className="flex items-start gap-4 rounded-xl border border-border-default bg-surface-card p-4">
 			<div className="h-24 w-20 shrink-0 rounded-lg" style={{ background: item.imageGradient }} />
 			<div className="flex-1 min-w-0">
-				<h4 className="text-sm font-semibold text-text-primary mb-1">{item.title}</h4>
+				<div className="flex items-center gap-1.5 mb-1">
+					<h4 className="text-sm font-semibold text-text-primary">{item.title}</h4>
+					{item.isPinned && (
+						<span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold text-amber-700">
+							<Pin size={8} /> Pinned
+						</span>
+					)}
+				</div>
 				<div className="flex items-center gap-2 mb-2">
 					<span
 						className={cn(
@@ -192,6 +214,23 @@ function AnnouncementRow({ item }: { item: AnnouncementItem }) {
 				</div>
 			)}
 			<div className="flex items-center gap-1.5 shrink-0">
+				{item.isPinned ? (
+					<button
+						onClick={() => onUnpin(item.id)}
+						className="rounded-lg border border-amber-200 bg-amber-50 p-1.5 text-amber-500 hover:bg-amber-100 transition-colors"
+						title="Unpin announcement"
+					>
+						<Pin size={13} />
+					</button>
+				) : (
+					<button
+						onClick={() => onPin(item.id)}
+						className="rounded-lg border border-border-default bg-surface-card p-1.5 text-text-secondary hover:bg-amber-50 hover:border-amber-200 hover:text-amber-500 transition-colors"
+						title="Pin announcement"
+					>
+						<Pin size={13} />
+					</button>
+				)}
 				<button
 					onClick={() => toast.info("Edit coming soon")}
 					className="flex items-center gap-1 rounded-lg border border-border-default bg-surface-card px-3 py-1.5 text-[11px] font-medium text-text-secondary hover:bg-neutral-50 transition-colors"
@@ -204,8 +243,12 @@ function AnnouncementRow({ item }: { item: AnnouncementItem }) {
 				>
 					<Copy size={11} /> Duplicate
 				</button>
-				<button className="rounded-lg border border-border-default bg-surface-card p-1.5 text-text-secondary hover:bg-neutral-50 transition-colors">
-					<MoreHorizontal size={13} />
+				<button
+					onClick={() => onDelete(item.id)}
+					className="rounded-lg border border-border-default bg-surface-card p-1.5 text-text-secondary hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-colors"
+					title="Delete announcement"
+				>
+					<Trash2 size={13} />
 				</button>
 			</div>
 		</div>
@@ -214,12 +257,30 @@ function AnnouncementRow({ item }: { item: AnnouncementItem }) {
 
 // ─── Create View ──────────────────────────────────────────────────────────────
 
-function CreateView({ onPublish, onBack }: { onPublish: (title: string) => void; onBack: () => void }) {
+const ANN_TYPE_CATEGORY: Record<string, string> = {
+	"General Announcement": "COMMUNITY_UPDATE",
+	"Event Announcement":   "EVENT_ANNOUNCEMENT",
+	"Alert":                "ALERT",
+	"Update":               "COMMUNITY_UPDATE",
+	"Promotion":            "PROMOTION",
+}
+
+function CreateView({
+	communityId,
+	onPublish,
+	onBack,
+}: {
+	communityId: string
+	onPublish: (title: string) => void
+	onBack: () => void
+}) {
 	const [title, setTitle] = useState("")
 	const [annType, setAnnType] = useState("General Announcement")
 	const [audience, setAudience] = useState("All Members (1,248)")
 	const [message, setMessage] = useState("")
 	const [publishMode, setPublishMode] = useState<"now" | "later">("now")
+	const [isPublishing, setIsPublishing] = useState(false)
+	const [publishError, setPublishError] = useState<string | null>(null)
 
 	const TOOLBAR_ITEMS = [
 		{ icon: Bold, label: "Bold" },
@@ -237,7 +298,7 @@ function CreateView({ onPublish, onBack }: { onPublish: (title: string) => void;
 		{ icon: Redo, label: "Redo" },
 	]
 
-	function handlePublish() {
+	async function handlePublish() {
 		if (!title.trim()) {
 			toast.error("Please enter an announcement title")
 			return
@@ -246,7 +307,21 @@ function CreateView({ onPublish, onBack }: { onPublish: (title: string) => void;
 			toast.error("Please write a message")
 			return
 		}
-		onPublish(title.trim())
+		setIsPublishing(true)
+		setPublishError(null)
+		try {
+			await createCommunityAnnouncement(communityId, {
+				category: ANN_TYPE_CATEGORY[annType] ?? "COMMUNITY_UPDATE",
+				title: title.trim(),
+				body: message.trim(),
+			})
+			onPublish(title.trim())
+		} catch (err: unknown) {
+			const axiosErr = err as { response?: { data?: { message?: string } } }
+			setPublishError(axiosErr?.response?.data?.message ?? "Failed to publish. Please try again.")
+		} finally {
+			setIsPublishing(false)
+		}
 	}
 
 	const previewTitle = title.trim() || "Announcement Title"
@@ -537,14 +612,18 @@ function CreateView({ onPublish, onBack }: { onPublish: (title: string) => void;
 							Save Draft
 						</Button>
 					</div>
+					{publishError && (
+						<p className="text-xs text-red-500">{publishError}</p>
+					)}
 					<Button
 						variant="primary"
 						size="sm"
 						radius="md"
 						leftIcon={<Send size={13} />}
 						onClick={handlePublish}
+						disabled={isPublishing}
 					>
-						Publish Announcement
+						{isPublishing ? "Publishing…" : "Publish Announcement"}
 					</Button>
 				</div>
 			</div>
@@ -1094,7 +1173,50 @@ export function AnnouncementsTab({ communityId }: { communityId: string }) {
 		setView("success")
 	}
 
-	if (view === "create") return <CreateView onPublish={handlePublish} onBack={() => setView("list")} />
+	async function handlePin(announcementId: string) {
+		try {
+			await pinCommunityAnnouncement(communityId, announcementId)
+			setData(prev =>
+				prev
+					? { ...prev, announcements: prev.announcements.map(a => a.id === announcementId ? { ...a, isPinned: true } : a) }
+					: prev,
+			)
+			toast.success("Announcement pinned.")
+		} catch {
+			toast.error("Failed to pin announcement.")
+		}
+	}
+
+	async function handleUnpin(announcementId: string) {
+		try {
+			await unpinCommunityAnnouncement(communityId, announcementId)
+			setData(prev =>
+				prev
+					? { ...prev, announcements: prev.announcements.map(a => a.id === announcementId ? { ...a, isPinned: false } : a) }
+					: prev,
+			)
+			toast.success("Announcement unpinned.")
+		} catch {
+			toast.error("Failed to unpin announcement.")
+		}
+	}
+
+	async function handleDelete(announcementId: string) {
+		if (!window.confirm("Delete this announcement? This cannot be undone.")) return
+		try {
+			await deleteCommunityAnnouncement(communityId, announcementId)
+			setData(prev =>
+				prev
+					? { ...prev, announcements: prev.announcements.filter(a => a.id !== announcementId) }
+					: prev,
+			)
+			toast.success("Announcement deleted.")
+		} catch {
+			toast.error("Failed to delete announcement.")
+		}
+	}
+
+	if (view === "create") return <CreateView communityId={communityId} onPublish={handlePublish} onBack={() => setView("list")} />
 	if (view === "success")
 		return <SuccessView publishedTitle={publishedTitle} onBack={() => setView("list")} />
 
@@ -1232,7 +1354,7 @@ export function AnnouncementsTab({ communityId }: { communityId: string }) {
 				) : (
 					<div className="flex flex-col gap-3">
 						{paginated.map(item => (
-							<AnnouncementRow key={item.id} item={item} />
+							<AnnouncementRow key={item.id} item={item} onPin={handlePin} onUnpin={handleUnpin} onDelete={handleDelete} />
 						))}
 					</div>
 				)}

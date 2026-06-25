@@ -40,9 +40,9 @@ export function ChannelDrawer({ open, onClose, onSuccess, communityId, channel }
 		if (open) {
 			setName(channel?.name ?? "")
 			setDescription(channel?.description ?? "")
-			setWelcomeTitle("")
-			setWelcomeBody("")
-			setQuickReplies([])
+			setWelcomeTitle(channel?.welcomeTitle ?? "")
+			setWelcomeBody(channel?.welcomeBody ?? "")
+			setQuickReplies(channel?.quickReplies ?? [])
 			setReplyInput("")
 			setError(null)
 		}

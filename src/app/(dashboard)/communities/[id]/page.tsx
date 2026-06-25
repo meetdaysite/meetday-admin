@@ -342,12 +342,16 @@ export default function CommunityDetailPage() {
 											className="rounded-lg overflow-hidden border border-border-default"
 										>
 											<div
-												className="h-24 flex items-end relative"
-												style={{ backgroundColor: exp.coverColor }}
+												className="h-24 flex items-end relative bg-surface-secondary"
+												style={exp.coverUrl ? undefined : { backgroundColor: "#1a0533" }}
 											>
-												<span className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-white/10 select-none">
-													{exp.coverInitial}
-												</span>
+												{exp.coverUrl ? (
+													<img src={exp.coverUrl} alt={exp.title} className="absolute inset-0 w-full h-full object-cover" />
+												) : (
+													<span className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-white/10 select-none">
+														{exp.coverInitial}
+													</span>
+												)}
 												{exp.matchPct !== null && (
 													<span className="relative m-2 text-[10px] font-semibold bg-green-500 text-white rounded-full px-1.5 py-0.5">
 														Match {exp.matchPct}%
@@ -362,14 +366,14 @@ export default function CommunityDetailPage() {
 													{exp.date}
 												</p>
 												<p className="text-[10px] text-text-tertiary">{exp.venue}</p>
-												{(exp.attendeeCount > 0 || exp.rating > 0) && (
+												{(exp.attendeeCount > 0 || (exp.rating != null && exp.rating > 0)) && (
 													<div className="flex items-center justify-between mt-2">
 														{exp.attendeeCount > 0 && (
 															<span className="flex items-center gap-0.5 text-[10px] text-text-secondary">
 																<Users size={9} /> {exp.attendeeCount}
 															</span>
 														)}
-														{exp.rating > 0 && (
+														{exp.rating != null && exp.rating > 0 && (
 															<span className="flex items-center gap-0.5 text-[10px] text-text-secondary">
 																<Star size={9} /> {exp.rating}
 															</span>

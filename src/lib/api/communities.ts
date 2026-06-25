@@ -252,65 +252,62 @@ export type ApiCommunitySettings = {
 	updatedAt: string
 }
 
-export type ApiCommunityInterest = {
-	communityId: string
-	interestId: string
-	interest: { id: string; name: string; slug: string }
+type OverviewStatField = {
+	value: number
+	delta7d: number
+	deltaPct: number
+	sparkline: number[]
 }
 
-export type ApiCommunityMemberEntry = {
-	id: string
-	communityId: string
-	userId: string
-	role: AssignableCommunityRole
-	status: string
-	invitedBy: string | null
-	joinedAt: string
-	createdAt: string
-	updatedAt: string
-	user: { id: string; firstName: string; lastName: string; email: string; avatarUrl: string | null }
-}
-
-export type ApiCommunityEventEntry = {
-	id: string
-	communityId: string
-	eventId: string
-	source: "AUTO" | "MANUAL"
-	addedBy: string | null
-	addedAt: string
-	event: { id: string; title: string; city: string; eventDate: string; status: string }
-}
-
-export type ApiCommunityDetail = {
-	id: string
-	slug: string
-	name: string
-	description: string | null
-	type: CommunityType
-	status: CommunityStatus
-	access: CommunityAccess
-	memberVisibility: CommunityMemberVisibility
-	categoryId: string
-	primaryCity: string
-	communityCities: string[]
-	interestTags: string[]
-	coverImageKey: string
-	iconKey: string
-	autoAddMatchingEvents: boolean
-	memberCount: number
-	experienceCount: number
-	createdBy: string
-	publishedAt: string | null
-	deletedAt: string | null
-	createdAt: string
-	updatedAt: string
-	settings: ApiCommunitySettings
-	category: { id: string; name: string } | null
-	interests: ApiCommunityInterest[]
-	members: ApiCommunityMemberEntry[]
-	events: ApiCommunityEventEntry[]
-	coverImageUrl: string | null
-	iconUrl: string | null
+export type ApiOverviewResponse = {
+	community: {
+		id: string
+		name: string
+		slug: string
+		type: string
+		status: CommunityStatus
+		access: CommunityAccess
+		description: string | null
+		iconUrl: string | null
+		coverUrl: string | null
+		createdAt: string
+		url: string
+	}
+	stats: {
+		totalMembers: OverviewStatField
+		activeExperiences: OverviewStatField
+		postReach7d: OverviewStatField
+		messages7d: OverviewStatField
+	}
+	upcomingExperiences: {
+		id: string
+		title: string
+		eventDate: string
+		city: string
+		coverUrl: string | null
+		attendeeCount: number
+		avgRating: number | null
+	}[]
+	managers: {
+		userId: string
+		firstName: string
+		lastName: string
+		avatarUrl: string | null
+		role: string
+	}[]
+	recentActivity: {
+		type: string
+		title: string
+		actor: string | null
+		at: string
+	}[]
+	topEngagement7d: {
+		posts: number
+		comments: number
+		reactions: number
+		shares: number
+		newMembers: number
+	}
 }
 
 // ─── Community Detail — UI model types ───────────────────────────────────────
@@ -338,10 +335,10 @@ export type CommunityDetailExperience = {
 	date: string
 	venue: string
 	attendeeCount: number
-	rating: number
+	rating: number | null
 	matchPct: number | null
+	coverUrl: string | null
 	coverInitial: string
-	coverColor: string
 }
 
 export type CommunityDetailActivity = {
@@ -385,80 +382,148 @@ export type CommunityDetailData = {
 
 // ─── Community Detail API ──────────────────────────────────────────────────────
 
-const COVER_COLORS = ["#1a0533", "#0c1a2e", "#0a1628", "#1f0a10", "#0d1f14", "#1a1000"]
+function toTimeAgo(iso: string): string {
+	const diff = Date.now() - new Date(iso).getTime()
+	const m = Math.floor(diff / 60000)
+	if (m < 1)  return "just now"
+	if (m < 60) return `${m}m ago`
+	const h = Math.floor(m / 60)
+	if (h < 24) return `${h}h ago`
+	const d = Math.floor(h / 24)
+	return `${d}d ago`
+}
+
+const ACTIVITY_TYPE_MAP: Record<string, CommunityDetailActivity["type"]> = {
+	NEW_POST:             "post",
+	MEMBER_JOINED:        "member",
+	ANNOUNCEMENT_CREATED: "announcement",
+	NEW_EXPERIENCE:       "experience",
+}
+
+const DISPLAY_ROLES: Record<string, "Owner" | "Manager" | "Moderator"> = {
+	OWNER: "Owner", MANAGER: "Manager", MODERATOR: "Moderator",
+}
 
 export async function getCommunityById(id: string): Promise<CommunityDetailData> {
-	const { data } = await apiClient.get<ApiCommunityDetail>(`/admin/communities/${id}`)
-
-	const DISPLAY_ROLES: Record<string, "Owner" | "Manager" | "Moderator"> = {
-		OWNER: "Owner", MANAGER: "Manager", MODERATOR: "Moderator",
-	}
-
-	const managers: CommunityDetailManager[] = data.members
-		.filter(m => m.role in DISPLAY_ROLES)
-		.map(m => ({
-			id: m.id,
-			name: `${m.user.firstName} ${m.user.lastName}`,
-			initial: m.user.firstName[0].toUpperCase(),
-			avatarUrl: m.user.avatarUrl,
-			role: DISPLAY_ROLES[m.role],
-		}))
-
-	const upcomingExperiences: CommunityDetailExperience[] = data.events
-		.filter(e => e.event.status === "PUBLISHED")
-		.map((e, i) => ({
-			id: e.event.id,
-			title: e.event.title,
-			date: new Date(e.event.eventDate).toLocaleDateString("en-GB", {
-				weekday: "short", day: "numeric", month: "short",
-			}),
-			venue: e.event.city,
-			attendeeCount: 0,
-			rating: 0,
-			matchPct: null,
-			coverInitial: e.event.title[0].toUpperCase(),
-			coverColor: COVER_COLORS[i % COVER_COLORS.length],
-		}))
+	const { data: o } = await apiClient.get<ApiOverviewResponse>(
+		`/admin/communities/${id}/overview`,
+	)
 
 	const statCards: CommunityDetailStatCard[] = [
 		{
 			label: "Total Members",
-			value: data.memberCount,
-			sub: "",
+			value: o.stats.totalMembers.value,
+			trend: {
+				value: Math.abs(o.stats.totalMembers.deltaPct),
+				direction: o.stats.totalMembers.delta7d >= 0 ? "up" : "down",
+				label: "% vs last 7d",
+			},
+			sub: `${o.stats.totalMembers.delta7d >= 0 ? "+" : ""}${o.stats.totalMembers.delta7d} this week`,
 			color: "#9333ea",
-			spark: [],
+			spark: o.stats.totalMembers.sparkline.map(v => ({ v })),
 		},
 		{
 			label: "Active Experiences",
-			value: data.experienceCount,
-			sub: "",
+			value: o.stats.activeExperiences.value,
+			trend: {
+				value: Math.abs(o.stats.activeExperiences.deltaPct),
+				direction: o.stats.activeExperiences.delta7d >= 0 ? "up" : "down",
+				label: "% vs last 7d",
+			},
+			sub: `${o.stats.activeExperiences.delta7d >= 0 ? "+" : ""}${o.stats.activeExperiences.delta7d} this week`,
 			color: "#3b82f6",
-			spark: [],
+			spark: o.stats.activeExperiences.sparkline.map(v => ({ v })),
+		},
+		{
+			label: "Post Reach (7d)",
+			value: o.stats.postReach7d.value,
+			trend: {
+				value: Math.abs(o.stats.postReach7d.deltaPct),
+				direction: o.stats.postReach7d.delta7d >= 0 ? "up" : "down",
+				label: "% vs last 7d",
+			},
+			sub: `${o.stats.postReach7d.delta7d >= 0 ? "+" : ""}${o.stats.postReach7d.delta7d} this week`,
+			color: "#22c55e",
+			spark: o.stats.postReach7d.sparkline.map(v => ({ v })),
+		},
+		{
+			label: "Messages (7d)",
+			value: o.stats.messages7d.value,
+			trend: {
+				value: Math.abs(o.stats.messages7d.deltaPct),
+				direction: o.stats.messages7d.delta7d >= 0 ? "up" : "down",
+				label: "% vs last 7d",
+			},
+			sub: `${o.stats.messages7d.delta7d >= 0 ? "+" : ""}${o.stats.messages7d.delta7d} this week`,
+			color: "#f59e0b",
+			spark: o.stats.messages7d.sparkline.map(v => ({ v })),
 		},
 	]
 
+	const managers: CommunityDetailManager[] = o.managers
+		.filter(m => m.role in DISPLAY_ROLES)
+		.map(m => ({
+			id: m.userId,
+			name: `${m.firstName} ${m.lastName}`,
+			initial: m.firstName[0].toUpperCase(),
+			avatarUrl: m.avatarUrl,
+			role: DISPLAY_ROLES[m.role],
+		}))
+
+	const upcomingExperiences: CommunityDetailExperience[] = o.upcomingExperiences.map(e => ({
+		id: e.id,
+		title: e.title,
+		date: new Date(e.eventDate).toLocaleDateString("en-GB", {
+			weekday: "short", day: "numeric", month: "short",
+		}),
+		venue: e.city,
+		attendeeCount: e.attendeeCount,
+		rating: e.avgRating,
+		matchPct: null,
+		coverUrl: e.coverUrl,
+		coverInitial: e.title[0].toUpperCase(),
+	}))
+
+	const recentActivity: CommunityDetailActivity[] = o.recentActivity.map((a, i) => ({
+		id: `${a.type}-${i}`,
+		type: ACTIVITY_TYPE_MAP[a.type] ?? "post",
+		title: a.title,
+		description: a.actor ?? "",
+		timeAgo: toTimeAgo(a.at),
+	}))
+
+	const eng = o.topEngagement7d
+	const engMax = Math.max(eng.posts, eng.comments, eng.reactions, eng.shares, eng.newMembers, 1)
+	const topEngagement: CommunityDetailEngagement[] = [
+		{ label: "Posts",       value: eng.posts,       max: engMax, color: "#a855f7" },
+		{ label: "Comments",    value: eng.comments,    max: engMax, color: "#3b82f6" },
+		{ label: "Reactions",   value: eng.reactions,   max: engMax, color: "#ef4444" },
+		{ label: "Shares",      value: eng.shares,      max: engMax, color: "#f59e0b" },
+		{ label: "New Members", value: eng.newMembers,  max: engMax, color: "#22c55e" },
+	]
+
 	return {
-		id: data.id,
-		slug: data.slug,
-		name: data.name,
-		description: data.description,
-		thumbnailUrl: data.coverImageUrl,
-		iconUrl: data.iconUrl,
-		isMeetdayManaged: data.type === "MEETDAY_MANAGED_PUBLIC",
-		category: data.category,
-		access: data.access,
-		primaryCity: data.primaryCity,
-		communityCities: data.communityCities,
-		communityUrl: `meetday.ai/communities/${data.slug}`,
-		status: data.status,
-		createdAt: data.createdAt,
-		publishedAt: data.publishedAt,
-		settings: data.settings,
+		id: o.community.id,
+		slug: o.community.slug,
+		name: o.community.name,
+		description: o.community.description,
+		thumbnailUrl: o.community.coverUrl,
+		iconUrl: o.community.iconUrl,
+		isMeetdayManaged: o.community.type === "MEETDAY_MANAGED_PUBLIC",
+		category: null,
+		access: o.community.access,
+		primaryCity: "",
+		communityCities: [],
+		communityUrl: o.community.url,
+		status: o.community.status,
+		createdAt: o.community.createdAt,
+		publishedAt: null,
+		settings: null,
 		statCards,
 		managers,
 		upcomingExperiences,
-		recentActivity: [],
-		topEngagement: [],
+		recentActivity,
+		topEngagement,
 	}
 }
 
@@ -840,6 +905,7 @@ export type AnnouncementItem = {
 	audience:        AnnouncementAudience
 	content:         string
 	imageGradient:   string
+	isPinned:        boolean
 	// Published
 	authorName:      string
 	authorInitial:   string
@@ -892,7 +958,7 @@ const MOCK_ANNOUNCEMENTS_STATS: AnnouncementsTabStats = {
 const MOCK_ANNOUNCEMENTS: AnnouncementItem[] = [
 	{
 		id: "ann-1", title: "Welcome to Meetday Music Nights! 🎉",
-		status: "Published", audience: "All Members",
+		status: "Published", audience: "All Members", isPinned: true,
 		content: "Welcome to the official community for music lovers and nightlife enthusiasts. We're excited to have you here!",
 		imageGradient: "linear-gradient(135deg,#4c1d95,#7c3aed,#db2777)",
 		authorName: "Super Admin", authorInitial: "SA", authorAvatarColor: "#6366f1",
@@ -901,7 +967,7 @@ const MOCK_ANNOUNCEMENTS: AnnouncementItem[] = [
 	},
 	{
 		id: "ann-2", title: "Night Rituals Early Access 🔥",
-		status: "Scheduled", audience: "Community Members",
+		status: "Scheduled", audience: "Community Members", isPinned: false,
 		content: "Get early access to Night Rituals before anyone else. Limited passes. Don't miss out!",
 		imageGradient: "linear-gradient(135deg,#1e1b4b,#312e81,#ec4899)",
 		authorName: "Super Admin", authorInitial: "SA", authorAvatarColor: "#6366f1",
@@ -910,7 +976,7 @@ const MOCK_ANNOUNCEMENTS: AnnouncementItem[] = [
 	},
 	{
 		id: "ann-3", title: "Sunset Sessions This Weekend 🌅",
-		status: "Published", audience: "All Members",
+		status: "Published", audience: "All Members", isPinned: false,
 		content: "We're back with another amazing sunset session. See you there!",
 		imageGradient: "linear-gradient(135deg,#92400e,#b45309,#f59e0b)",
 		authorName: "Super Admin", authorInitial: "SA", authorAvatarColor: "#6366f1",
@@ -919,7 +985,7 @@ const MOCK_ANNOUNCEMENTS: AnnouncementItem[] = [
 	},
 	{
 		id: "ann-4", title: "Community Guidelines Reminder",
-		status: "Published", audience: "All Members",
+		status: "Published", audience: "All Members", isPinned: false,
 		content: "A quick reminder to keep our community safe, respectful and positive for everyone.",
 		imageGradient: "linear-gradient(135deg,#1e3a5f,#1d4ed8,#0ea5e9)",
 		authorName: "Super Admin", authorInitial: "SA", authorAvatarColor: "#6366f1",
@@ -928,7 +994,7 @@ const MOCK_ANNOUNCEMENTS: AnnouncementItem[] = [
 	},
 	{
 		id: "ann-5", title: "New Experience Drop: Rooftop Jazz 🎷",
-		status: "Draft", audience: "All Members",
+		status: "Draft", audience: "All Members", isPinned: false,
 		content: "We're planning something special for jazz lovers. Stay tuned for the big reveal!",
 		imageGradient: "linear-gradient(135deg,#064e3b,#065f46,#10b981)",
 		authorName: "Super Admin", authorInitial: "SA", authorAvatarColor: "#6366f1",
@@ -979,8 +1045,20 @@ export async function getCommunityFeedTab(communityId: string): Promise<Communit
 // ─── Chat Tab ─────────────────────────────────────────────────────────────────
 
 export type ChatChannel = {
-	id: string; name: string; description: string
-	iconColor: string; members: number; online: number; isPrivate: boolean
+	id: string
+	name: string
+	description: string
+	slug: string
+	isDefault: boolean
+	position: number
+	welcomeTitle: string
+	welcomeBody: string
+	quickReplies: string[]
+	// UI-only fields (not returned by API)
+	iconColor: string
+	members: number
+	online: number
+	isPrivate: boolean
 }
 
 export type ReportedChatMessage = {
@@ -1090,8 +1168,9 @@ export type UpdateChannelRequest = Partial<CreateChannelRequest>
 export async function createCommunityChannel(
 	communityId: string,
 	body: CreateChannelRequest,
-): Promise<void> {
-	await apiClient.post(`/communities/${communityId}/channels`, body)
+): Promise<ApiChannelEntry> {
+	const { data } = await apiClient.post<ApiChannelEntry>(`/communities/${communityId}/channels`, body)
+	return data
 }
 
 export async function updateCommunityChannel(
@@ -1116,20 +1195,48 @@ export async function reorderCommunityChannels(
 	await apiClient.patch(`/communities/${communityId}/channels/order`, { orderedIds })
 }
 
+type ApiChannelEntry = {
+	id: string
+	name: string
+	slug: string
+	description: string
+	isDefault: boolean
+	position: number
+	welcomeTitle: string
+	welcomeBody: string
+	quickReplies: string[]
+}
+
+const CHANNEL_ICON_COLORS = ["#6366f1", "#f59e0b", "#ec4899", "#ef4444", "#a855f7", "#22c55e", "#3b82f6", "#f97316"]
+
 export async function getCommunityChat(communityId: string): Promise<ChatTabData> {
-	// TODO: const { data } = await apiClient.get<ChatTabData>(`/admin/communities/${communityId}/chat/tab`)
-	// TODO: return data
-	void communityId
-	await new Promise(r => setTimeout(r, 600))
+	const { data } = await apiClient.get<ApiChannelEntry[]>(`/communities/${communityId}/channels`)
+
+	const channels: ChatChannel[] = data.map((ch, i) => ({
+		id:           ch.id,
+		name:         ch.name,
+		description:  ch.description ?? "",
+		slug:         ch.slug,
+		isDefault:    ch.isDefault,
+		position:     ch.position,
+		welcomeTitle: ch.welcomeTitle ?? "",
+		welcomeBody:  ch.welcomeBody ?? "",
+		quickReplies: ch.quickReplies ?? [],
+		iconColor:    CHANNEL_ICON_COLORS[i % CHANNEL_ICON_COLORS.length],
+		members:      0,
+		online:       0,
+		isPrivate:    false,
+	}))
+
 	return {
-		stats:           MOCK_CHAT_STATS,
-		channels:        MOCK_CHAT_CHANNELS,
+		stats:            { ...MOCK_CHAT_STATS, totalChannels: channels.length },
+		channels,
 		reportedMessages: MOCK_REPORTED_MESSAGES,
-		pinnedMessages:  MOCK_PINNED_MESSAGES,
-		mutedUsers:      MOCK_MUTED_USERS,
-		autoModFilters:  MOCK_AUTO_MOD_FILTERS,
-		overview:        MOCK_CHAT_OVERVIEW,
-		moderationTools: MOCK_CHAT_MOD_TOOLS,
+		pinnedMessages:   MOCK_PINNED_MESSAGES,
+		mutedUsers:       MOCK_MUTED_USERS,
+		autoModFilters:   MOCK_AUTO_MOD_FILTERS,
+		overview:         MOCK_CHAT_OVERVIEW,
+		moderationTools:  MOCK_CHAT_MOD_TOOLS,
 	}
 }
 
@@ -1377,18 +1484,76 @@ const MOCK_ACCESS_SUMMARY: ManagersAccessSummary[] = [
 	{ label: "View Only",  count: 7,  pct: 22, color: "#f97316" },
 ]
 
+type ApiManagerEntry = {
+	userId: string
+	firstName: string
+	lastName: string
+	avatarUrl: string | null
+	role: string
+}
+
+const MANAGER_ROLE_MAP: Record<string, ManagerRoleType> = {
+	OWNER:    "Owner",
+	MANAGER:  "Manager",
+	MODERATOR: "Moderator",
+	HOST:     "View Only",
+}
+
+const MANAGER_PERMISSIONS: Record<ManagerRoleType, { label: string; count: number }> = {
+	"Owner":     { label: "Full Access",        count: 12 },
+	"Manager":   { label: "Content + Members",  count: 6  },
+	"Moderator": { label: "Content Moderation", count: 4  },
+	"View Only": { label: "View Only",          count: 2  },
+}
+
+const AVATAR_COLORS = ["#f59e0b", "#ec4899", "#6366f1", "#f43f5e", "#22c55e", "#3b82f6", "#a855f7", "#f97316"]
+
 export async function getCommunityManagers(communityId: string): Promise<ManagersTabData> {
-	// TODO: const { data } = await apiClient.get<ManagersTabData>(`/admin/communities/${communityId}/managers/tab`)
-	// TODO: return data
-	void communityId
-	await new Promise(r => setTimeout(r, 600))
+	const { data } = await apiClient.get<ApiManagerEntry[]>(`/admin/communities/${communityId}/managers`)
+
+	const teamMembers: ManagerTeamMember[] = data.map((m, i) => {
+		const role = MANAGER_ROLE_MAP[m.role] ?? "View Only"
+		const perms = MANAGER_PERMISSIONS[role]
+		return {
+			id:               m.userId,
+			name:             `${m.firstName} ${m.lastName}`,
+			email:            "",
+			avatarColor:      AVATAR_COLORS[i % AVATAR_COLORS.length],
+			avatarInitial:    m.firstName[0].toUpperCase(),
+			role,
+			permissionsLabel: perms.label,
+			permissionsCount: perms.count,
+			joinedDate:       "",
+			status:           "Active" as const,
+		}
+	})
+
+	const counts = { Owner: 0, Manager: 0, Moderator: 0, "View Only": 0 }
+	for (const m of teamMembers) counts[m.role]++
+
+	const stats: ManagersTabStats = {
+		owners:     counts.Owner,
+		managers:   counts.Manager,
+		moderators: counts.Moderator,
+		viewOnly:   counts["View Only"],
+		totalUsers: data.length,
+	}
+
+	const total = data.length || 1
+	const accessSummary: ManagersAccessSummary[] = [
+		{ label: "Owners",     count: counts.Owner,         pct: Math.round(counts.Owner / total * 100),         color: "#a855f7" },
+		{ label: "Managers",   count: counts.Manager,       pct: Math.round(counts.Manager / total * 100),       color: "#3b82f6" },
+		{ label: "Moderators", count: counts.Moderator,     pct: Math.round(counts.Moderator / total * 100),     color: "#22c55e" },
+		{ label: "View Only",  count: counts["View Only"],  pct: Math.round(counts["View Only"] / total * 100),  color: "#f97316" },
+	].filter(s => s.count > 0)
+
 	return {
-		stats:           MOCK_MANAGERS_STATS,
-		teamMembers:     MOCK_TEAM_MEMBERS,
+		stats,
+		teamMembers,
 		permissionMatrix: MOCK_PERMISSION_MATRIX,
-		roleOverview:    MOCK_ROLE_OVERVIEW,
-		activities:      MOCK_MANAGER_ACTIVITIES,
-		accessSummary:   MOCK_ACCESS_SUMMARY,
+		roleOverview:     MOCK_ROLE_OVERVIEW,
+		activities:       MOCK_MANAGER_ACTIVITIES,
+		accessSummary,
 	}
 }
 
@@ -1464,4 +1629,54 @@ export async function detachCommunityEvent(
 
 export async function publishCommunity(id: string): Promise<void> {
 	await apiClient.post(`/admin/communities/${id}/publish`)
+}
+
+// ─── Announcements ────────────────────────────────────────────────────────────
+
+export type CreateAnnouncementRequest = {
+	category: string
+	title: string
+	body: string
+	imageKey?: string
+}
+
+export type AnnouncementCreatedResponse = {
+	id: string
+	communityId: string
+	category: string
+	title: string
+	body: string
+	publishedAt: string
+}
+
+export async function deleteCommunityAnnouncement(
+	communityId: string,
+	announcementId: string,
+): Promise<void> {
+	await apiClient.delete(`/admin/communities/${communityId}/announcements/${announcementId}`)
+}
+
+export async function pinCommunityAnnouncement(
+	communityId: string,
+	announcementId: string,
+): Promise<void> {
+	await apiClient.post(`/admin/communities/${communityId}/announcements/${announcementId}/pin`)
+}
+
+export async function unpinCommunityAnnouncement(
+	communityId: string,
+	announcementId: string,
+): Promise<void> {
+	await apiClient.delete(`/admin/communities/${communityId}/announcements/${announcementId}/pin`)
+}
+
+export async function createCommunityAnnouncement(
+	communityId: string,
+	payload: CreateAnnouncementRequest,
+): Promise<AnnouncementCreatedResponse> {
+	const { data } = await apiClient.post<AnnouncementCreatedResponse>(
+		`/admin/communities/${communityId}/announcements`,
+		payload,
+	)
+	return data
 }
