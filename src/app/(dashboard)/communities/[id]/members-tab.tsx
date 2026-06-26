@@ -722,12 +722,7 @@ export function MembersTab({ communityId }: { communityId: string }) {
 			<div className="hidden lg:flex w-72 shrink-0 flex-col gap-4">
 				{/* Member Insights */}
 				<div className="rounded-xl border border-border-default bg-surface-card p-4">
-					<div className="flex items-center justify-between mb-3">
-						<h3 className="text-sm font-semibold text-text-primary">Member Insights</h3>
-						<button className="text-xs font-medium text-text-brand hover:underline" onClick={() => toast.info("Coming soon")}>
-							View All
-						</button>
-					</div>
+					<h3 className="text-sm font-semibold text-text-primary mb-3">Member Insights</h3>
 
 					{/* Top Cities */}
 					<p className="text-[11px] font-semibold text-text-secondary uppercase tracking-wide mb-2">
@@ -769,14 +764,9 @@ export function MembersTab({ communityId }: { communityId: string }) {
 					</div>
 
 					{/* Member Segments */}
-					<div className="flex items-center justify-between mb-2">
-						<p className="text-[11px] font-semibold text-text-secondary uppercase tracking-wide">
-							Member Segments
-						</p>
-						<button className="text-xs font-medium text-text-brand hover:underline" onClick={() => toast.info("Coming soon")}>
-							View All
-						</button>
-					</div>
+					<p className="text-[11px] font-semibold text-text-secondary uppercase tracking-wide mb-2">
+						Member Segments
+					</p>
 					<div className="flex flex-col gap-2">
 						{isLoading ? (
 							Array.from({ length: 3 }).map((_, i) => (
