@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import {
 	Plus,
 	Megaphone,
@@ -40,6 +40,7 @@ import {
 	ThumbsUp,
 	BarChart2,
 	LayoutDashboard,
+	Tag,
 	type LucideIcon,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -54,7 +55,9 @@ import {
 	type AnnouncementsTabData,
 	type AnnouncementItem,
 	type AnnouncementStatus,
+	type AnnouncementCreatedResponse,
 } from "@/lib/api/communities"
+import { uploadAnnouncementCoverImage } from "@/lib/api/storage"
 import { cn } from "@/lib/utils"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -257,30 +260,65 @@ function AnnouncementRow({
 
 // ─── Create View ──────────────────────────────────────────────────────────────
 
-const ANN_TYPE_CATEGORY: Record<string, string> = {
-	"General Announcement": "COMMUNITY_UPDATE",
-	"Event Announcement":   "EVENT_ANNOUNCEMENT",
-	"Alert":                "ALERT",
-	"Update":               "COMMUNITY_UPDATE",
-	"Promotion":            "PROMOTION",
-}
+const ANN_CATEGORIES: { label: string; value: string }[] = [
+	{ label: "Event Drop",          value: "EVENT_DROP" },
+	{ label: "Event Reminder",      value: "EVENT_REMINDER" },
+	{ label: "Community Update",    value: "COMMUNITY_UPDATE" },
+	{ label: "Community Reminder",  value: "COMMUNITY_REMINDER" },
+	{ label: "General",             value: "GENERAL" },
+]
 
 function CreateView({
 	communityId,
+	communityName,
 	onPublish,
 	onBack,
 }: {
 	communityId: string
-	onPublish: (title: string) => void
+	communityName: string
+	onPublish: (result: AnnouncementCreatedResponse, imagePreview: string | null) => void
 	onBack: () => void
 }) {
 	const [title, setTitle] = useState("")
-	const [annType, setAnnType] = useState("General Announcement")
-	const [audience, setAudience] = useState("All Members (1,248)")
+	const [annType, setAnnType] = useState("EVENT_DROP")
 	const [message, setMessage] = useState("")
 	const [publishMode, setPublishMode] = useState<"now" | "later">("now")
+	const [scheduledAt, setScheduledAt] = useState("")
+	const [imageKey, setImageKey] = useState<string | null>(null)
+	const [imagePreview, setImagePreview] = useState<string | null>(null)
+	const [isUploadingImage, setIsUploadingImage] = useState(false)
 	const [isPublishing, setIsPublishing] = useState(false)
 	const [publishError, setPublishError] = useState<string | null>(null)
+	const fileInputRef = useRef<HTMLInputElement>(null)
+
+	useEffect(() => {
+		return () => { if (imagePreview) URL.revokeObjectURL(imagePreview) }
+	}, [imagePreview])
+
+	async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0]
+		if (!file) return
+		if (imagePreview) URL.revokeObjectURL(imagePreview)
+		setImagePreview(URL.createObjectURL(file))
+		setImageKey(null)
+		setIsUploadingImage(true)
+		try {
+			const key = await uploadAnnouncementCoverImage(communityId, file)
+			setImageKey(key)
+		} catch {
+			toast.error("Failed to upload image. Please try again.")
+			setImagePreview(null)
+		} finally {
+			setIsUploadingImage(false)
+			e.target.value = ""
+		}
+	}
+
+	function handleRemoveImage() {
+		if (imagePreview) URL.revokeObjectURL(imagePreview)
+		setImagePreview(null)
+		setImageKey(null)
+	}
 
 	const TOOLBAR_ITEMS = [
 		{ icon: Bold, label: "Bold" },
@@ -307,15 +345,21 @@ function CreateView({
 			toast.error("Please write a message")
 			return
 		}
+		if (publishMode === "later" && !scheduledAt) {
+			toast.error("Please select a date and time to schedule")
+			return
+		}
 		setIsPublishing(true)
 		setPublishError(null)
 		try {
-			await createCommunityAnnouncement(communityId, {
-				category: ANN_TYPE_CATEGORY[annType] ?? "COMMUNITY_UPDATE",
+			const result = await createCommunityAnnouncement(communityId, {
+				category: annType,
 				title: title.trim(),
 				body: message.trim(),
+				...(imageKey && { imageKey }),
+				...(publishMode === "later" && { scheduledAt: new Date(scheduledAt).toISOString() }),
 			})
-			onPublish(title.trim())
+			onPublish(result, imagePreview)
 		} catch (err: unknown) {
 			const axiosErr = err as { response?: { data?: { message?: string } } }
 			setPublishError(axiosErr?.response?.data?.message ?? "Failed to publish. Please try again.")
@@ -339,28 +383,26 @@ function CreateView({
 				</div>
 
 				<div className="rounded-xl border border-border-default bg-surface-card p-5 flex flex-col gap-5">
-					{/* 1. Title */}
-					<div>
-						<label className="text-xs font-semibold text-text-primary mb-1.5 block">
-							1. Announcement Title <span className="text-red-500">*</span>
-						</label>
-						<div className="relative">
-							<input
-								type="text"
-								maxLength={100}
-								value={title}
-								onChange={e => setTitle(e.target.value)}
-								placeholder="Enter a catchy title for your announcement"
-								className="h-9 w-full rounded-lg border border-border-default bg-surface-card px-3 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-border-focus pr-14"
-							/>
-							<span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-text-tertiary tabular-nums">
-								{title.length}/100
-							</span>
-						</div>
-					</div>
-
-					{/* 2 & 3. Type + Audience */}
+					{/* 1 & 2. Title + Type */}
 					<div className="grid grid-cols-2 gap-4">
+						<div>
+							<label className="text-xs font-semibold text-text-primary mb-1.5 block">
+								1. Announcement Title <span className="text-red-500">*</span>
+							</label>
+							<div className="relative">
+								<input
+									type="text"
+									maxLength={100}
+									value={title}
+									onChange={e => setTitle(e.target.value)}
+									placeholder="Enter a catchy title for your announcement"
+									className="h-9 w-full rounded-lg border border-border-default bg-surface-card px-3 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-border-focus pr-14"
+								/>
+								<span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-text-tertiary tabular-nums">
+									{title.length}/100
+								</span>
+							</div>
+						</div>
 						<div>
 							<label className="text-xs font-semibold text-text-primary mb-1.5 block">
 								2. Announcement Type
@@ -374,14 +416,8 @@ function CreateView({
 									onChange={e => setAnnType(e.target.value)}
 									className="h-10 w-full appearance-none rounded-lg border border-border-default bg-surface-card pl-8 pr-8 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-border-focus"
 								>
-									{[
-										"General Announcement",
-										"Event Announcement",
-										"Alert",
-										"Update",
-										"Promotion",
-									].map(t => (
-										<option key={t}>{t}</option>
+									{ANN_CATEGORIES.map(c => (
+										<option key={c.value} value={c.value}>{c.label}</option>
 									))}
 								</select>
 								<ChevronRight
@@ -389,44 +425,13 @@ function CreateView({
 									className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-text-tertiary"
 								/>
 							</div>
-						</div>
-						<div>
-							<label className="text-xs font-semibold text-text-primary mb-1.5 block">
-								3. Audience <span className="text-red-500">*</span>
-							</label>
-							<div className="relative">
-								<div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-									<Users size={13} className="text-blue-500" />
-								</div>
-								<select
-									value={audience}
-									onChange={e => setAudience(e.target.value)}
-									className="h-10 w-full appearance-none rounded-lg border border-border-default bg-surface-card pl-8 pr-8 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-border-focus"
-								>
-									{[
-										"All Members (1,248)",
-										"Active Members (786)",
-										"New Members (142)",
-										"Moderators",
-									].map(t => (
-										<option key={t}>{t}</option>
-									))}
-								</select>
-								<ChevronRight
-									size={11}
-									className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-text-tertiary"
-								/>
-							</div>
-							<p className="text-[10px] text-text-tertiary mt-1">
-								Visible to all members in this community
-							</p>
 						</div>
 					</div>
 
-					{/* 4. Message */}
+					{/* 3. Message */}
 					<div>
 						<label className="text-xs font-semibold text-text-primary mb-1.5 block">
-							4. Message <span className="text-red-500">*</span>
+							3. Message <span className="text-red-500">*</span>
 						</label>
 						<div className="rounded-lg border border-border-default overflow-hidden">
 							{/* Toolbar */}
@@ -474,118 +479,150 @@ function CreateView({
 						</div>
 					</div>
 
-					{/* 5 & 6. Cover Image + Link to Experience */}
-					<div className="grid grid-cols-2 gap-4">
+					{/* 4 & 5. Cover Image + Publish Settings */}
+					<div className="grid grid-cols-2 gap-5 items-start">
 						<div>
 							<label className="text-xs font-semibold text-text-primary mb-1.5 block">
-								5. Add Cover Image{" "}
+								4. Add Cover Image{" "}
 								<span className="text-text-tertiary font-normal">(Optional)</span>
 							</label>
-							<div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border-default bg-surface-card-muted p-5">
-								<Upload size={20} className="text-text-tertiary" />
-								<p className="text-xs font-medium text-text-secondary">Upload image</p>
-								<p className="text-[10px] text-text-tertiary">
-									Recommended size: 1200 x 628 px (JPG, PNG)
-								</p>
-								<button className="rounded-lg border border-border-default bg-surface-card px-3 py-1.5 text-[11px] font-medium text-text-secondary hover:bg-neutral-50 transition-colors">
-									Choose File
-								</button>
-							</div>
-						</div>
-						<div>
-							<label className="text-xs font-semibold text-text-primary mb-1.5 block">
-								6. Link to Experience{" "}
-								<span className="text-text-tertiary font-normal">(Optional)</span>
-							</label>
-							<div className="relative">
-								<div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-									<Calendar size={13} className="text-text-tertiary" />
-								</div>
-								<select className="h-10 w-full appearance-none rounded-lg border border-border-default bg-surface-card pl-8 pr-8 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-border-focus">
-									<option value="">Select an experience to highlight</option>
-									<option>Night Rituals</option>
-									<option>After Hours</option>
-									<option>Sunset Sessions</option>
-								</select>
-								<ChevronRight
-									size={11}
-									className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-text-tertiary"
-								/>
-							</div>
-							<p className="mt-2 text-[11px] text-text-tertiary">
-								Members can view the experience directly from this announcement.
-							</p>
-						</div>
-					</div>
-
-					{/* 7. Publish Settings */}
-					<div>
-						<label className="text-xs font-semibold text-text-primary mb-2 block">
-							7. Publish Settings
-						</label>
-						<div className="grid grid-cols-2 gap-3">
-							{[
-								{
-									id: "now",
-									icon: Send,
-									label: "Publish Now",
-									sub: "Make this announcement live immediately.",
-								},
-								{
-									id: "later",
-									icon: Calendar,
-									label: "Schedule for Later",
-									sub: "Choose a date and time to publish.",
-								},
-							].map(opt => (
-								<label
-									key={opt.id}
-									className={cn(
-										"flex items-start gap-3 rounded-xl border p-4 cursor-pointer transition-colors",
-										publishMode === opt.id
-											? "border-action-primary bg-surface-brand-soft"
-											: "border-border-default bg-surface-card hover:bg-neutral-50",
-									)}
-								>
-									<input
-										type="radio"
-										className="sr-only"
-										name="publish"
-										value={opt.id}
-										checked={publishMode === opt.id}
-										onChange={() => setPublishMode(opt.id as "now" | "later")}
+							<input
+								ref={fileInputRef}
+								type="file"
+								accept="image/jpeg,image/png,image/webp"
+								className="sr-only"
+								onChange={handleFileChange}
+							/>
+							{imagePreview ? (
+								<div className="relative rounded-lg overflow-hidden border border-border-default">
+									<img
+										src={imagePreview}
+										alt="Cover preview"
+										className="w-full h-32 object-cover"
 									/>
-									<div
+									{isUploadingImage ? (
+										<div className="absolute inset-0 flex items-center justify-center bg-black/40">
+											<p className="text-[11px] font-medium text-white">Uploading…</p>
+										</div>
+									) : (
+										<div className="absolute top-2 right-2 flex gap-1">
+											<button
+												type="button"
+												onClick={() => fileInputRef.current?.click()}
+												className="rounded-md bg-black/50 px-2 py-1 text-[10px] font-medium text-white hover:bg-black/70 transition-colors"
+											>
+												Replace
+											</button>
+											<button
+												type="button"
+												onClick={handleRemoveImage}
+												className="rounded-md bg-black/50 p-1 text-white hover:bg-black/70 transition-colors"
+												title="Remove image"
+											>
+												<Trash2 size={11} />
+											</button>
+										</div>
+									)}
+								</div>
+							) : (
+								<div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border-default bg-surface-card-muted p-5">
+									<Upload size={20} className="text-text-tertiary" />
+									<p className="text-xs font-medium text-text-secondary">Upload image</p>
+									<p className="text-[10px] text-text-tertiary">
+										JPG, PNG or WebP — 1200 × 628 px recommended
+									</p>
+									<button
+										type="button"
+										onClick={() => fileInputRef.current?.click()}
+										className="rounded-lg border border-border-default bg-surface-card px-3 py-1.5 text-[11px] font-medium text-text-secondary hover:bg-neutral-50 transition-colors"
+									>
+										Choose File
+									</button>
+								</div>
+							)}
+						</div>
+						<div>
+							<label className="text-xs font-semibold text-text-primary mb-2 block">
+								5. Publish Settings
+							</label>
+							<div className="flex flex-col gap-2">
+								{[
+									{
+										id: "now",
+										icon: Send,
+										label: "Publish Now",
+										sub: "Make this announcement live immediately.",
+									},
+									{
+										id: "later",
+										icon: Calendar,
+										label: "Schedule for Later",
+										sub: "Choose a date and time to publish.",
+									},
+								].map(opt => (
+									<label
+										key={opt.id}
 										className={cn(
-											"mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+											"flex items-center gap-3 rounded-xl border p-3 cursor-pointer transition-colors",
 											publishMode === opt.id
-												? "border-action-primary"
-												: "border-border-default",
+												? "border-action-primary bg-surface-brand-soft"
+												: "border-border-default bg-surface-card hover:bg-neutral-50",
 										)}
 									>
-										{publishMode === opt.id && (
-											<div className="h-2 w-2 rounded-full bg-action-primary" />
-										)}
-									</div>
-									<div
-										className={cn(
-											"flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-											publishMode === opt.id ? "bg-action-primary" : "bg-neutral-100",
-										)}
-									>
-										<opt.icon
-											size={14}
-											className={
-												publishMode === opt.id ? "text-white" : "text-text-secondary"
-											}
+										<input
+											type="radio"
+											className="sr-only"
+											name="publish"
+											value={opt.id}
+											checked={publishMode === opt.id}
+											onChange={() => setPublishMode(opt.id as "now" | "later")}
 										/>
-									</div>
-									<div>
-										<p className="text-xs font-semibold text-text-primary">{opt.label}</p>
-										<p className="text-[11px] text-text-tertiary">{opt.sub}</p>
-									</div>
-								</label>
-							))}
+										<div
+											className={cn(
+												"flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+												publishMode === opt.id
+													? "border-action-primary"
+													: "border-border-default",
+											)}
+										>
+											{publishMode === opt.id && (
+												<div className="h-2 w-2 rounded-full bg-action-primary" />
+											)}
+										</div>
+										<div
+											className={cn(
+												"flex h-7 w-7 shrink-0 items-center justify-center rounded-lg",
+												publishMode === opt.id ? "bg-action-primary" : "bg-neutral-100",
+											)}
+										>
+											<opt.icon
+												size={13}
+												className={
+													publishMode === opt.id ? "text-white" : "text-text-secondary"
+												}
+											/>
+										</div>
+										<div>
+											<p className="text-xs font-semibold text-text-primary">{opt.label}</p>
+											<p className="text-[11px] text-text-tertiary">{opt.sub}</p>
+										</div>
+									</label>
+								))}
+							</div>
+							{publishMode === "later" && (
+								<div className="mt-3">
+									<label className="text-xs font-medium text-text-secondary block mb-1.5">
+										Schedule Date &amp; Time <span className="text-red-500">*</span>
+									</label>
+									<input
+										type="datetime-local"
+										value={scheduledAt}
+										onChange={e => setScheduledAt(e.target.value)}
+										min={new Date().toISOString().slice(0, 16)}
+										className="h-9 w-full rounded-lg border border-border-default bg-surface-card px-3 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-border-focus"
+									/>
+								</div>
+							)}
 						</div>
 					</div>
 				</div>
@@ -623,7 +660,9 @@ function CreateView({
 						onClick={handlePublish}
 						disabled={isPublishing}
 					>
-						{isPublishing ? "Publishing…" : "Publish Announcement"}
+						{isPublishing
+							? (publishMode === "later" ? "Scheduling…" : "Publishing…")
+							: (publishMode === "later" ? "Schedule Announcement" : "Publish Announcement")}
 					</Button>
 				</div>
 			</div>
@@ -649,12 +688,16 @@ function CreateView({
 							</div>
 							<div>
 								<p className="text-[11px] font-semibold text-text-primary">
-									Meetday Music Nights
+									{communityName}
 								</p>
 								<p className="text-[9px] text-text-tertiary">Announcement • Just now</p>
 							</div>
 						</div>
-						<div className="h-20 bg-linear-to-br from-purple-900 via-purple-700 to-pink-600" />
+						{imagePreview ? (
+							<img src={imagePreview} alt="" className="h-20 w-full object-cover" />
+						) : (
+							<div className="h-20 bg-linear-to-br from-purple-900 via-purple-700 to-pink-600" />
+						)}
 						<div className="p-2.5">
 							<p className="text-xs font-semibold text-text-primary mb-1">{previewTitle}</p>
 							<p className="text-[10px] text-text-tertiary leading-relaxed line-clamp-2">
@@ -683,10 +726,8 @@ function CreateView({
 					<h3 className="text-sm font-semibold text-text-primary mb-3">Publish Summary</h3>
 					<div className="flex flex-col gap-2.5">
 						{[
-							{ icon: Users, label: "Audience", value: audience },
-							{ icon: Megaphone, label: "Type", value: annType },
-							{ icon: BarChart2, label: "Reach (Estimated)", value: "1,248 members" },
-							{ icon: Bell, label: "Delivery", value: "In-app, Push Notification, Email" },
+							{ icon: Megaphone, label: "Type", value: ANN_CATEGORIES.find(c => c.value === annType)?.label ?? annType },
+							{ icon: Bell, label: "Delivery", value: "In-app + Push Notification" },
 						].map(row => (
 							<div key={row.label} className="flex items-start gap-2">
 								<row.icon size={12} className="text-text-tertiary shrink-0 mt-0.5" />
@@ -728,7 +769,24 @@ function CreateView({
 
 // ─── Success View ─────────────────────────────────────────────────────────────
 
-function SuccessView({ publishedTitle, onBack }: { publishedTitle: string; onBack: () => void }) {
+function SuccessView({
+	result,
+	imagePreview,
+	onBack,
+}: {
+	result: AnnouncementCreatedResponse
+	imagePreview: string | null
+	onBack: () => void
+}) {
+	const isScheduled = result.publishedAt && new Date(result.publishedAt) > new Date()
+	const categoryLabel =
+		ANN_CATEGORIES.find(c => c.value === result.category)?.label ?? result.category
+	const formattedDate = result.publishedAt
+		? new Date(result.publishedAt).toLocaleString(undefined, {
+			dateStyle: "medium",
+			timeStyle: "short",
+		})
+		: null
 	const WHATS_NEXT = [
 		{
 			icon: Bell,
@@ -790,57 +848,60 @@ function SuccessView({ publishedTitle, onBack }: { publishedTitle: string; onBac
 					<div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mb-1">
 						<CheckCircle2 size={24} className="text-green-500" />
 					</div>
-					<h2 className="text-xl font-bold text-text-primary">🎉 Announcement Published!</h2>
+					<h2 className="text-xl font-bold text-text-primary">
+						{isScheduled ? "⏰ Announcement Scheduled!" : "🎉 Announcement Published!"}
+					</h2>
 					<p className="text-sm text-text-secondary">
-						Your announcement is now live and visible to community members.
+						{isScheduled
+							? `Your announcement is scheduled to go live on ${formattedDate}.`
+							: "Your announcement is now live and visible to community members."}
 					</p>
 					<span className="mt-1 inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-						Published Successfully
+						{isScheduled ? "Scheduled" : "Published Successfully"}
 					</span>
 				</div>
 
 				{/* Published announcement preview */}
 				<div className="rounded-xl border border-border-default bg-surface-card p-4">
 					<div className="flex items-start gap-4">
-						<div className="h-20 w-28 shrink-0 rounded-lg bg-linear-to-br from-purple-900 via-purple-700 to-pink-600" />
+						{imagePreview ? (
+							<img
+								src={imagePreview}
+								alt=""
+								className="h-20 w-28 shrink-0 rounded-lg object-cover"
+							/>
+						) : (
+							<div className="h-20 w-28 shrink-0 rounded-lg bg-linear-to-br from-purple-900 via-purple-700 to-pink-600" />
+						)}
 						<div className="flex-1 min-w-0">
-							<h3 className="text-sm font-semibold text-text-primary mb-1">{publishedTitle}</h3>
+							<h3 className="text-sm font-semibold text-text-primary mb-1">{result.title}</h3>
 							<div className="flex items-center gap-2 mb-2">
-								<span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-green-100 text-green-700">
-									Published
+								<span
+									className={cn(
+										"inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold",
+										isScheduled
+											? "bg-amber-100 text-amber-700"
+											: "bg-green-100 text-green-700",
+									)}
+								>
+									{isScheduled ? "Scheduled" : "Published"}
 								</span>
-								<span className="text-[11px] text-text-tertiary">• Just now</span>
+								<span className="text-[11px] text-text-tertiary">
+									{formattedDate ? `• ${formattedDate}` : "• Just now"}
+								</span>
 							</div>
-							<p className="text-xs text-text-secondary line-clamp-2">
-								Welcome to the official community for music lovers and nightlife enthusiasts.
-								We&apos;re excited to have you here!
-							</p>
+							<p className="text-xs text-text-secondary line-clamp-2">{result.body}</p>
 							<div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-text-tertiary">
-								<Users size={10} /> <span>Audience: All Members (1,248)</span>
+								<Megaphone size={10} /> <span>{categoryLabel}</span>
 							</div>
 						</div>
 						<div className="flex flex-col items-center gap-3 shrink-0">
 							<p className="text-[10px] font-semibold text-text-tertiary">Delivery Channels</p>
 							<div className="flex items-start gap-3">
 								{[
-									{
-										icon: MessageSquare,
-										label: "In-app",
-										bg: "bg-blue-50",
-										color: "text-blue-500",
-									},
-									{
-										icon: Bell,
-										label: "Push\nNotification",
-										bg: "bg-amber-50",
-										color: "text-amber-500",
-									},
-									{
-										icon: Mail,
-										label: "Email",
-										bg: "bg-green-50",
-										color: "text-green-500",
-									},
+									{ icon: MessageSquare, label: "In-app",            bg: "bg-blue-50",  color: "text-blue-500" },
+									{ icon: Bell,          label: "Push\nNotification", bg: "bg-amber-50", color: "text-amber-500" },
+									{ icon: Mail,          label: "Email",              bg: "bg-green-50", color: "text-green-500" },
 								].map(ch => (
 									<div key={ch.label} className="flex flex-col items-center gap-1">
 										<div
@@ -860,50 +921,31 @@ function SuccessView({ publishedTitle, onBack }: { publishedTitle: string; onBac
 						</div>
 					</div>
 
-					{/* Stats strip */}
-					<div className="mt-4 grid grid-cols-4 gap-3 border-t border-border-subtle pt-4">
-						{[
-							{
-								icon: Users,
-								label: "Audience",
-								value: "1,248",
-								sub: "Members",
-								color: "text-blue-500",
-							},
-							{
-								icon: Bell,
-								label: "Push Notifications",
-								value: "Sent",
-								sub: "Delivered successfully",
-								color: "text-green-500",
-							},
-							{
-								icon: Mail,
-								label: "Emails",
-								value: "Sent",
-								sub: "Delivered successfully",
-								color: "text-green-500",
-							},
-							{
-								icon: CheckCircle2,
-								label: "Status",
-								value: "Live",
-								sub: "Announcement is live",
-								color: "text-green-500",
-							},
-						].map(s => (
-							<div
-								key={s.label}
-								className="flex items-center gap-3 rounded-xl border border-border-default bg-surface-card-muted p-3"
-							>
-								<s.icon size={16} className={cn("shrink-0", s.color)} />
-								<div>
-									<p className="text-[9px] text-text-tertiary">{s.label}</p>
-									<p className={cn("text-sm font-bold", s.color)}>{s.value}</p>
-									<p className="text-[9px] text-text-tertiary">{s.sub}</p>
-								</div>
+					{/* Details strip */}
+					<div className="mt-4 grid grid-cols-2 gap-3 border-t border-border-subtle pt-4">
+						<div className="flex items-center gap-3 rounded-xl border border-border-default bg-surface-card-muted p-3">
+							<Tag size={16} className="shrink-0 text-purple-500" />
+							<div>
+								<p className="text-[9px] text-text-tertiary">Type</p>
+								<p className="text-sm font-bold text-purple-500">{categoryLabel}</p>
 							</div>
-						))}
+						</div>
+						<div className="flex items-center gap-3 rounded-xl border border-border-default bg-surface-card-muted p-3">
+							{isScheduled ? (
+								<Calendar size={16} className="shrink-0 text-amber-500" />
+							) : (
+								<CheckCircle2 size={16} className="shrink-0 text-green-500" />
+							)}
+							<div>
+								<p className="text-[9px] text-text-tertiary">Status</p>
+								<p className={cn("text-sm font-bold", isScheduled ? "text-amber-500" : "text-green-500")}>
+									{isScheduled ? "Scheduled" : "Live"}
+								</p>
+								{formattedDate && (
+									<p className="text-[9px] text-text-tertiary">{formattedDate}</p>
+								)}
+							</div>
+						</div>
 					</div>
 				</div>
 
@@ -1139,7 +1181,7 @@ function SuccessView({ publishedTitle, onBack }: { publishedTitle: string; onBac
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
-export function AnnouncementsTab({ communityId }: { communityId: string }) {
+export function AnnouncementsTab({ communityId, communityName = "Your Community" }: { communityId: string; communityName?: string }) {
 	const [data, setData] = useState<AnnouncementsTabData | null>(null)
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
@@ -1147,7 +1189,8 @@ export function AnnouncementsTab({ communityId }: { communityId: string }) {
 	const [sort, setSort] = useState<SortMode>("Newest First")
 	const [page, setPage] = useState(1)
 	const [view, setView] = useState<TabView>("list")
-	const [publishedTitle, setPublishedTitle] = useState("")
+	const [publishedResult, setPublishedResult] = useState<AnnouncementCreatedResponse | null>(null)
+	const [publishedImagePreview, setPublishedImagePreview] = useState<string | null>(null)
 
 	const load = useCallback(async () => {
 		setIsLoading(true)
@@ -1168,8 +1211,9 @@ export function AnnouncementsTab({ communityId }: { communityId: string }) {
 		setPage(1)
 	}, [filter, sort])
 
-	function handlePublish(title: string) {
-		setPublishedTitle(title)
+	function handlePublish(result: AnnouncementCreatedResponse, imagePreview: string | null) {
+		setPublishedResult(result)
+		setPublishedImagePreview(imagePreview)
 		setView("success")
 	}
 
@@ -1216,9 +1260,9 @@ export function AnnouncementsTab({ communityId }: { communityId: string }) {
 		}
 	}
 
-	if (view === "create") return <CreateView communityId={communityId} onPublish={handlePublish} onBack={() => setView("list")} />
-	if (view === "success")
-		return <SuccessView publishedTitle={publishedTitle} onBack={() => setView("list")} />
+	if (view === "create") return <CreateView communityId={communityId} communityName={communityName} onPublish={handlePublish} onBack={() => setView("list")} />
+	if (view === "success" && publishedResult)
+		return <SuccessView result={publishedResult} imagePreview={publishedImagePreview} onBack={() => setView("list")} />
 
 	const filtered = (() => {
 		if (!data) return []

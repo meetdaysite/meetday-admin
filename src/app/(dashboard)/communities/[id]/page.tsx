@@ -607,7 +607,7 @@ export default function CommunityDetailPage() {
 			) : activeTab === "feed" ? (
 				<FeedTab communityId={id} />
 			) : activeTab === "announcements" ? (
-				<AnnouncementsTab communityId={id} />
+				<AnnouncementsTab communityId={id} communityName={community?.name} />
 			) : activeTab === "chat" ? (
 				<ChatTab communityId={id} />
 			) : activeTab === "analytics" ? (

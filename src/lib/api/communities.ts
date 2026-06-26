@@ -948,60 +948,60 @@ export type AnnouncementsTabData = {
 	managers:     AnnouncementsTabSidebarManager[]
 }
 
-const MOCK_ANNOUNCEMENTS_STATS: AnnouncementsTabStats = {
-	published: 24,   publishedGrowth: 20,
-	scheduled: 3,    scheduledGrowth: 50,
-	drafts:    5,    draftsGrowth: -16,
-	totalReach: "18.2K", totalReachGrowth: 24,
+// ─── Announcements Tab — API response type ────────────────────────────────────
+
+type ApiAnnouncementItem = {
+	id: string
+	communityId: string
+	authorId: string
+	authorRole: string
+	category: string
+	title: string
+	body: string
+	imageKey: string | null
+	status: "PUBLISHED" | "SCHEDULED" | "DRAFT"
+	scheduledAt: string | null
+	isPinned: boolean
+	pinnedAt: string | null
+	likeCount: number
+	bookmarkCount: number
+	reachCount: number
+	publishedAt: string | null
+	deletedAt: string | null
+	createdAt: string
+	updatedAt: string
+	author: { id: string; name: string; avatarUrl: string | null; isBrand: boolean }
+	imageUrl: string | null
 }
 
-const MOCK_ANNOUNCEMENTS: AnnouncementItem[] = [
-	{
-		id: "ann-1", title: "Welcome to Meetday Music Nights! 🎉",
-		status: "Published", audience: "All Members", isPinned: true,
-		content: "Welcome to the official community for music lovers and nightlife enthusiasts. We're excited to have you here!",
-		imageGradient: "linear-gradient(135deg,#4c1d95,#7c3aed,#db2777)",
-		authorName: "Super Admin", authorInitial: "SA", authorAvatarColor: "#6366f1",
-		timeAgo: "2 hours ago", views: 1200, opens: 245, clicks: 96,
-		scheduledFor: null, estimatedReach: null,
-	},
-	{
-		id: "ann-2", title: "Night Rituals Early Access 🔥",
-		status: "Scheduled", audience: "Community Members", isPinned: false,
-		content: "Get early access to Night Rituals before anyone else. Limited passes. Don't miss out!",
-		imageGradient: "linear-gradient(135deg,#1e1b4b,#312e81,#ec4899)",
-		authorName: "Super Admin", authorInitial: "SA", authorAvatarColor: "#6366f1",
-		timeAgo: null, views: null, opens: null, clicks: null,
-		scheduledFor: "Tomorrow, 10:00 AM", estimatedReach: "820 members",
-	},
-	{
-		id: "ann-3", title: "Sunset Sessions This Weekend 🌅",
-		status: "Published", audience: "All Members", isPinned: false,
-		content: "We're back with another amazing sunset session. See you there!",
-		imageGradient: "linear-gradient(135deg,#92400e,#b45309,#f59e0b)",
-		authorName: "Super Admin", authorInitial: "SA", authorAvatarColor: "#6366f1",
-		timeAgo: "1 day ago", views: 890, opens: 210, clicks: 75,
-		scheduledFor: null, estimatedReach: null,
-	},
-	{
-		id: "ann-4", title: "Community Guidelines Reminder",
-		status: "Published", audience: "All Members", isPinned: false,
-		content: "A quick reminder to keep our community safe, respectful and positive for everyone.",
-		imageGradient: "linear-gradient(135deg,#1e3a5f,#1d4ed8,#0ea5e9)",
-		authorName: "Super Admin", authorInitial: "SA", authorAvatarColor: "#6366f1",
-		timeAgo: "3 days ago", views: 620, opens: 180, clicks: 38,
-		scheduledFor: null, estimatedReach: null,
-	},
-	{
-		id: "ann-5", title: "New Experience Drop: Rooftop Jazz 🎷",
-		status: "Draft", audience: "All Members", isPinned: false,
-		content: "We're planning something special for jazz lovers. Stay tuned for the big reveal!",
-		imageGradient: "linear-gradient(135deg,#064e3b,#065f46,#10b981)",
-		authorName: "Super Admin", authorInitial: "SA", authorAvatarColor: "#6366f1",
-		timeAgo: null, views: null, opens: null, clicks: null,
-		scheduledFor: null, estimatedReach: null,
-	},
-]
+const ANN_STATUS_MAP: Record<ApiAnnouncementItem["status"], AnnouncementStatus> = {
+	PUBLISHED: "Published",
+	SCHEDULED: "Scheduled",
+	DRAFT:     "Draft",
+}
+
+const ANN_CATEGORY_GRADIENT: Record<string, string> = {
+	COMMUNITY_UPDATE:    "linear-gradient(135deg,#1e3a5f,#1d4ed8,#0ea5e9)",
+	EVENT_REMINDER:      "linear-gradient(135deg,#92400e,#b45309,#f59e0b)",
+	EVENT_DROP:          "linear-gradient(135deg,#064e3b,#065f46,#10b981)",
+	EVENT_ANNOUNCEMENT:  "linear-gradient(135deg,#4c1d95,#7c3aed,#db2777)",
+	ALERT:               "linear-gradient(135deg,#7f1d1d,#991b1b,#ef4444)",
+	PROMOTION:           "linear-gradient(135deg,#1e1b4b,#312e81,#ec4899)",
+	NEWS:                "linear-gradient(135deg,#1e293b,#334155,#475569)",
+	MILESTONE:           "linear-gradient(135deg,#3b0764,#6b21a8,#a855f7)",
+}
+const ANN_DEFAULT_GRADIENT = "linear-gradient(135deg,#1c1917,#292524,#44403c)"
+
+const ANN_AVATAR_COLORS = ["#6366f1","#f59e0b","#ec4899","#22c55e","#3b82f6","#a855f7","#f97316"]
+
+function formatScheduledAt(iso: string): string {
+	const d = new Date(iso)
+	return (
+		d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) +
+		" • " +
+		d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+	)
+}
 
 const MOCK_ANNOUNCEMENTS_MANAGERS: AnnouncementsTabSidebarManager[] = [
 	{ id: "m-1", name: "Arjun Mehta",   initial: "A", avatarColor: "#f59e0b", role: "Owner" },
@@ -1012,13 +1012,60 @@ const MOCK_ANNOUNCEMENTS_MANAGERS: AnnouncementsTabSidebarManager[] = [
 ]
 
 export async function getCommunityAnnouncementsTab(communityId: string): Promise<AnnouncementsTabData> {
-	// TODO: const { data } = await apiClient.get<AnnouncementsTabData>(`/admin/communities/${communityId}/announcements/tab`)
-	// TODO: return data
-	void communityId
-	await new Promise(r => setTimeout(r, 600))
+	const [{ data: listData }, { data: statsData }] = await Promise.all([
+		apiClient.get<{
+			items: ApiAnnouncementItem[]
+			total: number
+			page: number
+			limit: number
+			totalPages: number
+		}>(`/admin/communities/${communityId}/announcements`, { params: { limit: 50 } }),
+		apiClient.get<{
+			published: number
+			scheduled: number
+			drafts: number
+			totalReach: { value: number; changePercent: number | null; windowDays: number }
+		}>(`/admin/communities/${communityId}/announcements/stats`),
+	])
+
+	const items = listData.items
+
+	const announcements: AnnouncementItem[] = items.map((item, i) => {
+		const status      = ANN_STATUS_MAP[item.status] ?? "Draft"
+		const isPublished = status === "Published"
+		const isScheduled = status === "Scheduled"
+		return {
+			id:               item.id,
+			title:            item.title,
+			status,
+			audience:         "All Members",
+			content:          item.body,
+			imageGradient:    ANN_CATEGORY_GRADIENT[item.category] ?? ANN_DEFAULT_GRADIENT,
+			isPinned:         item.isPinned,
+			authorName:       item.author.name,
+			authorInitial:    item.author.name?.[0]?.toUpperCase() ?? "?",
+			authorAvatarColor: ANN_AVATAR_COLORS[i % ANN_AVATAR_COLORS.length],
+			timeAgo:          isPublished && item.publishedAt ? toTimeAgo(item.publishedAt) : null,
+			views:            isPublished ? item.reachCount    : null,
+			opens:            isPublished ? item.likeCount     : null,
+			clicks:           isPublished ? item.bookmarkCount : null,
+			scheduledFor:     isScheduled && item.scheduledAt ? formatScheduledAt(item.scheduledAt) : null,
+			estimatedReach:   null,
+		}
+	})
+
+	const reachVal   = statsData.totalReach.value
+	const totalReach = reachVal >= 1000 ? `${(reachVal / 1000).toFixed(1)}K` : String(reachVal)
+	const reachGrowth = statsData.totalReach.changePercent ?? 0
+
 	return {
-		stats:           MOCK_ANNOUNCEMENTS_STATS,
-		announcements:   MOCK_ANNOUNCEMENTS,
+		stats: {
+			published:        statsData.published, publishedGrowth: 0,
+			scheduled:        statsData.scheduled, scheduledGrowth: 0,
+			drafts:           statsData.drafts,    draftsGrowth: 0,
+			totalReach,                            totalReachGrowth: reachGrowth,
+		},
+		announcements,
 		communityUrl:    "meetday.ai/communities/meetday-music-nights",
 		communityStatus: "Active",
 		createdOn:       "25 May 2024",
@@ -1638,6 +1685,7 @@ export type CreateAnnouncementRequest = {
 	title: string
 	body: string
 	imageKey?: string
+	scheduledAt?: string
 }
 
 export type AnnouncementCreatedResponse = {
