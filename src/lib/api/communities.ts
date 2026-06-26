@@ -744,26 +744,44 @@ export async function getCommunityMembersTab(communityId: string): Promise<Commu
 
 // ─── Feed Tab ─────────────────────────────────────────────────────────────────
 
-export type CommunityPostType    = "Photo" | "Text" | "Gallery" | "Video" | "Poll"
-export type CommunityPostStatus  = "Queue" | "Published" | "Rejected" | "Pinned"
-export type CommunityPostBadge   = "New Member" | "Top Contributor" | "Moderator" | "Owner"
+export type CommunityPostType   = "Photo" | "Text" | "Poll"
+export type CommunityPostStatus = "Queue" | "Published" | "Rejected" | "Pinned" | "Reported"
 
 export type CommunityFeedPost = {
-	id:           string
-	authorName:   string
-	authorHandle: string
-	authorAvatarColor: string
+	id:                  string
+	authorName:          string
+	authorAvatarUrl:     string | null
+	authorAvatarColor:   string
 	authorAvatarInitial: string
-	authorBadge:  CommunityPostBadge | null
-	timeAgo:      string
-	postType:     CommunityPostType
-	content:      string
-	hashtags:     string[]
-	imageColor:   string | null  // gradient/color for placeholder image
-	comments:     number
-	likes:        number
-	views:        number
-	status:       CommunityPostStatus
+	authorBadge:         null
+	timeAgo:             string
+	postType:            CommunityPostType
+	content:             string
+	hashtags:            string[]
+	mediaThumbnail:      string | null
+	comments:            number
+	reactions:           number
+	views:               number
+	status:              CommunityPostStatus
+	pendingReportCount:  number
+}
+
+export type FeedPostsParams = {
+	status?:   string
+	postType?: string
+	search?:   string
+	sort?:     string
+	from?:     string
+	to?:       string
+	page?:     number
+	limit?:    number
+}
+
+export type CommunityFeedPostsData = {
+	posts:      CommunityFeedPost[]
+	total:      number
+	page:       number
+	totalPages: number
 }
 
 export type CommunityFeedOverviewItem = {
@@ -784,12 +802,16 @@ export type CommunityModerationTool = {
 }
 
 export type CommunityRecentReport = {
-	id:          string
-	type:        string
-	reporterName: string
-	reporterAvatarColor: string
+	id:                    string
+	postId:                string
+	postSnippet:           string | null
+	type:                  string
+	reporterName:          string
+	reporterAvatarUrl:     string | null
+	reporterAvatarColor:   string
 	reporterAvatarInitial: string
-	timeAgo:     string
+	severityColor:         "red" | "yellow" | "green"
+	timeAgo:               string
 }
 
 export type CommunityFeedStats = {
@@ -804,39 +826,32 @@ export type CommunityFeedTabData = {
 	overview:        CommunityFeedOverviewItem[]
 	moderationTools: CommunityModerationTool[]
 	recentReports:   CommunityRecentReport[]
-	posts:           CommunityFeedPost[]
 	tip:             string
 }
 
-const MOCK_FEED_STATS: CommunityFeedStats = {
-	postQueue: 12,
-	published: 156,
-	reported:  8,
-	pinned:    3,
+// ─── Feed Overview API ────────────────────────────────────────────────────────
+
+type ApiFeedOverviewMetric = { value: number; deltaPct: number; sparkline: number[] }
+type ApiFeedOverviewData = {
+	totalPosts:       ApiFeedOverviewMetric
+	engagement:       ApiFeedOverviewMetric
+	reportsReceived:  ApiFeedOverviewMetric
+	postsApproved:    ApiFeedOverviewMetric
 }
 
-const MOCK_FEED_OVERVIEW: CommunityFeedOverviewItem[] = [
-	{
-		label: "Total Posts",  value: "156",  growth: 18, direction: "up",
-		color: "#a855f7",
-		sparkline: [60, 70, 65, 80, 90, 85, 100, 110, 105, 120, 130, 156],
-	},
-	{
-		label: "Engagement",   value: "2.4K", growth: 22, direction: "up",
-		color: "#22c55e",
-		sparkline: [900, 1100, 1000, 1300, 1400, 1350, 1600, 1800, 1750, 2000, 2200, 2400],
-	},
-	{
-		label: "Reports Received", value: "18", growth: 10, direction: "down",
-		color: "#ef4444",
-		sparkline: [30, 28, 25, 22, 26, 24, 20, 18, 22, 19, 17, 18],
-	},
-	{
-		label: "Posts Approved", value: "142", growth: 16, direction: "up",
-		color: "#3b82f6",
-		sparkline: [50, 60, 58, 72, 80, 78, 90, 100, 98, 115, 130, 142],
-	},
+const FEED_OVERVIEW_CONFIG: {
+	key: keyof ApiFeedOverviewData; label: string; color: string
+}[] = [
+	{ key: "totalPosts",      label: "Total Posts",      color: "#a855f7" },
+	{ key: "engagement",      label: "Engagement",       color: "#22c55e" },
+	{ key: "reportsReceived", label: "Reports Received", color: "#ef4444" },
+	{ key: "postsApproved",   label: "Posts Approved",   color: "#3b82f6" },
 ]
+
+function formatOverviewValue(v: number): string {
+	if (v >= 1000) return `${(v / 1000).toFixed(1)}K`
+	return String(v)
+}
 
 const MOCK_MODERATION_TOOLS: CommunityModerationTool[] = [
 	{ label: "Auto-moderation",  description: "Manage keywords and filters",     iconKey: "shield",  color: "text-green-500",  bg: "bg-green-50" },
@@ -845,54 +860,162 @@ const MOCK_MODERATION_TOOLS: CommunityModerationTool[] = [
 	{ label: "Content Alerts",   description: "Real-time monitoring active",     iconKey: "bell",    color: "text-indigo-500", bg: "bg-indigo-50" },
 ]
 
-const MOCK_RECENT_REPORTS: CommunityRecentReport[] = [
-	{ id: "rr-1", type: "Spam or Promotion",   reporterName: "Neha Patel",   reporterAvatarColor: "#f43f5e", reporterAvatarInitial: "N", timeAgo: "10m ago" },
-	{ id: "rr-2", type: "Inappropriate Content", reporterName: "Rohan Verma", reporterAvatarColor: "#22c55e", reporterAvatarInitial: "R", timeAgo: "45m ago" },
-	{ id: "rr-3", type: "Harassment / Abuse",  reporterName: "Simran Kaur",  reporterAvatarColor: "#a855f7", reporterAvatarInitial: "S", timeAgo: "2h ago" },
-]
+// ─── Recent Reports API ───────────────────────────────────────────────────────
 
-const MOCK_FEED_POSTS: CommunityFeedPost[] = [
-	{
-		id: "post-1",
-		authorName: "Arjun Mehta", authorHandle: "@arjun_m", authorAvatarColor: "#f59e0b", authorAvatarInitial: "A",
-		authorBadge: "New Member", timeAgo: "2 hours ago", postType: "Photo",
-		content: "That sunset set was unreal! 🌅🔥\nWho else was there? What a vibe!",
-		hashtags: ["#SunsetSessions"], imageColor: "linear-gradient(135deg,#4c1d95,#db2777)",
-		comments: 24, likes: 89, views: 420, status: "Queue",
-	},
-	{
-		id: "post-2",
-		authorName: "Riya Banerjee", authorHandle: "@riya_b", authorAvatarColor: "#ec4899", authorAvatarInitial: "R",
-		authorBadge: "New Member", timeAgo: "3 hours ago", postType: "Text",
-		content: "Anyone going to the Night Rituals event this Friday?\nLooking for company! 🎶",
-		hashtags: [], imageColor: "linear-gradient(135deg,#1e3a5f,#312e81)",
-		comments: 18, likes: 35, views: 210, status: "Queue",
-	},
-	{
-		id: "post-3",
-		authorName: "Kabir Shah", authorHandle: "@kabir_s", authorAvatarColor: "#6366f1", authorAvatarInitial: "K",
-		authorBadge: "Top Contributor", timeAgo: "5 hours ago", postType: "Gallery",
-		content: "Few shots from last night's after party! 📸\nThe energy was next level.",
-		hashtags: [], imageColor: "linear-gradient(135deg,#7f1d1d,#1c1917)",
-		comments: 32, likes: 112, views: 560, status: "Queue",
-	},
-	{
-		id: "post-4",
-		authorName: "Priya Sharma", authorHandle: "@priya_s", authorAvatarColor: "#3b82f6", authorAvatarInitial: "P",
-		authorBadge: null, timeAgo: "1 day ago", postType: "Photo",
-		content: "Incredible night at the rooftop mixer! Already counting down to the next one. 🌆",
-		hashtags: ["#MeetdayVibes", "#Rooftop"], imageColor: "linear-gradient(135deg,#0c4a6e,#134e4a)",
-		comments: 41, likes: 156, views: 780, status: "Published",
-	},
-	{
-		id: "post-5",
-		authorName: "Dev Nair", authorHandle: "@dev_n", authorAvatarColor: "#22c55e", authorAvatarInitial: "D",
-		authorBadge: "Top Contributor", timeAgo: "2 days ago", postType: "Text",
-		content: "What's everyone's favourite Meetday moment so far? Drop it below! 👇",
-		hashtags: ["#Community"], imageColor: null,
-		comments: 67, likes: 203, views: 1100, status: "Published",
-	},
-]
+type ApiRecentReport = {
+	reportId:      string
+	postId:        string
+	postSnippet:   string | null
+	reporter:      { name: string; avatarUrl: string | null }
+	reason:        string
+	body:          string | null
+	label:         string
+	severityColor: string
+	reportedAt:    string
+}
+
+const REPORT_AVATAR_COLORS = ["#3b82f6","#ec4899","#f59e0b","#6366f1","#22c55e","#f43f5e","#a855f7"]
+function reporterAvatarColor(name: string): string {
+	let h = 0
+	for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0x7fffffff
+	return REPORT_AVATAR_COLORS[h % REPORT_AVATAR_COLORS.length]
+}
+
+function toSeverityColor(s: string): CommunityRecentReport["severityColor"] {
+	if (s === "red" || s === "green") return s
+	return "yellow"
+}
+
+// ─── Feed Posts API ───────────────────────────────────────────────────────────
+
+type ApiFeedPost = {
+	id: string
+	postType: "TEXT" | "PHOTO" | "POLL"
+	status: "PENDING" | "PUBLISHED" | "REJECTED" | "DELETED"
+	content: string
+	mediaUrls: string[]
+	author: { id: string; name: string; avatarUrl: string | null }
+	pendingReportCount: number
+	counts: { reactions: number; comments: number; shares: number; views: number }
+	isPinned: boolean
+	deletedAt: string | null
+	createdAt: string
+}
+
+type ApiFeedPostsResponse = {
+	items: ApiFeedPost[]
+	total: number
+	page: number
+	limit: number
+	totalPages: number
+}
+
+const FEED_POST_AUTHOR_COLORS = ["#3b82f6","#ec4899","#f59e0b","#6366f1","#22c55e","#f43f5e","#a855f7"]
+function feedAuthorColor(id: string): string {
+	let h = 0
+	for (const c of id) h = (h * 31 + c.charCodeAt(0)) & 0x7fffffff
+	return FEED_POST_AUTHOR_COLORS[h % FEED_POST_AUTHOR_COLORS.length]
+}
+
+function mapFeedPostStatus(apiStatus: string, isPinned: boolean): CommunityPostStatus {
+	if (isPinned && apiStatus === "PUBLISHED") return "Pinned"
+	const m: Record<string, CommunityPostStatus> = {
+		PENDING: "Queue", PUBLISHED: "Published", REJECTED: "Rejected",
+	}
+	return m[apiStatus] ?? "Published"
+}
+
+const FEED_POST_TYPE_MAP: Record<string, CommunityPostType> = {
+	TEXT: "Text", PHOTO: "Photo", POLL: "Poll",
+}
+
+export async function getCommunityFeedPosts(
+	communityId: string,
+	params: FeedPostsParams = {},
+): Promise<CommunityFeedPostsData> {
+	const qs = new URLSearchParams()
+	if (params.status)   qs.set("status",   params.status)
+	if (params.postType) qs.set("postType",  params.postType)
+	if (params.search)   qs.set("search",    params.search)
+	if (params.sort)     qs.set("sort",      params.sort)
+	if (params.from)     qs.set("from",      params.from)
+	if (params.to)       qs.set("to",        params.to)
+	if (params.page)     qs.set("page",      String(params.page))
+	if (params.limit)    qs.set("limit",     String(params.limit))
+	const { data: o } = await apiClient.get<ApiFeedPostsResponse>(
+		`/admin/communities/${communityId}/feed/posts?${qs}`,
+	)
+	return {
+		posts: o.items.map(item => ({
+			id:                  item.id,
+			authorName:          item.author.name,
+			authorAvatarUrl:     item.author.avatarUrl,
+			authorAvatarColor:   feedAuthorColor(item.author.id),
+			authorAvatarInitial: item.author.name[0]?.toUpperCase() ?? "?",
+			authorBadge:         null,
+			timeAgo:             toTimeAgo(item.createdAt),
+			postType:            FEED_POST_TYPE_MAP[item.postType] ?? "Text",
+			content:             item.content,
+			hashtags:            item.content.match(/#\w+/g) ?? [],
+			mediaThumbnail:      item.mediaUrls[0] ?? null,
+			comments:            item.counts.comments,
+			reactions:           item.counts.reactions,
+			views:               item.counts.views,
+			status:              mapFeedPostStatus(item.status, item.isPinned),
+			pendingReportCount:  item.pendingReportCount,
+		})),
+		total:      o.total,
+		page:       o.page,
+		totalPages: o.totalPages,
+	}
+}
+
+export async function approveFeedPost(communityId: string, postId: string): Promise<void> {
+	await apiClient.post(`/admin/communities/${communityId}/feed/posts/${postId}/approve`)
+}
+
+export async function rejectFeedPost(communityId: string, postId: string): Promise<void> {
+	await apiClient.post(`/admin/communities/${communityId}/feed/posts/${postId}/reject`)
+}
+
+export async function deleteFeedPost(communityId: string, postId: string): Promise<void> {
+	await apiClient.delete(`/admin/communities/${communityId}/feed/posts/${postId}`)
+}
+
+export async function pinFeedPost(communityId: string, postId: string): Promise<void> {
+	await apiClient.post(`/admin/communities/${communityId}/feed/posts/${postId}/pin`)
+}
+
+export async function unpinFeedPost(communityId: string, postId: string): Promise<void> {
+	await apiClient.delete(`/admin/communities/${communityId}/feed/posts/${postId}/pin`)
+}
+
+export async function resolveFeedReport(communityId: string, reportId: string): Promise<void> {
+	await apiClient.patch(`/admin/communities/${communityId}/feed/reports/${reportId}/resolve`)
+}
+
+export async function dismissFeedReport(communityId: string, reportId: string): Promise<void> {
+	await apiClient.patch(`/admin/communities/${communityId}/feed/reports/${reportId}/dismiss`)
+}
+
+export type CreateFeedPostRequest = {
+	postType: "TEXT" | "PHOTO" | "POLL"
+	category: "GENERAL" | "MEMORIES" | "RECOMMENDATION" | "QUESTION" | "POLL"
+	content: string
+	mediaKeys?: string[]
+	pollOptions?: string[]
+}
+
+export async function createFeedPost(
+	communityId: string,
+	payload: CreateFeedPostRequest,
+): Promise<{ id: string; status: string; createdAt: string }> {
+	const { data } = await apiClient.post<{ id: string; status: string; createdAt: string }>(
+		`/admin/communities/${communityId}/feed/posts`,
+		payload,
+	)
+	return data
+}
 
 // ─── Announcements Tab ────────────────────────────────────────────────────────
 
@@ -1046,16 +1169,39 @@ export async function getCommunityAnnouncementsTab(communityId: string): Promise
 }
 
 export async function getCommunityFeedTab(communityId: string): Promise<CommunityFeedTabData> {
-	// TODO: const { data } = await apiClient.get<CommunityFeedTabData>(`/admin/communities/${communityId}/feed/tab`)
-	// TODO: return data
-	void communityId
-	await new Promise(r => setTimeout(r, 600))
+	const [{ data: statsData }, { data: overviewData }, { data: reportsData }] = await Promise.all([
+		apiClient.get<CommunityFeedStats>(`/admin/communities/${communityId}/feed/stats`),
+		apiClient.get<ApiFeedOverviewData>(`/admin/communities/${communityId}/feed/overview`),
+		apiClient.get<ApiRecentReport[]>(`/admin/communities/${communityId}/feed/reports/recent`),
+	])
+	const overview: CommunityFeedOverviewItem[] = FEED_OVERVIEW_CONFIG.map(cfg => {
+		const m = overviewData[cfg.key]
+		return {
+			label:     cfg.label,
+			value:     formatOverviewValue(m.value),
+			growth:    Math.abs(m.deltaPct),
+			direction: m.deltaPct >= 0 ? "up" : "down",
+			color:     cfg.color,
+			sparkline: m.sparkline,
+		}
+	})
+	const recentReports: CommunityRecentReport[] = reportsData.map(r => ({
+		id:                    r.reportId,
+		postId:                r.postId,
+		postSnippet:           r.postSnippet,
+		type:                  r.label,
+		reporterName:          r.reporter.name,
+		reporterAvatarUrl:     r.reporter.avatarUrl,
+		reporterAvatarColor:   reporterAvatarColor(r.reporter.name),
+		reporterAvatarInitial: r.reporter.name[0]?.toUpperCase() ?? "?",
+		severityColor:         toSeverityColor(r.severityColor),
+		timeAgo:               toTimeAgo(r.reportedAt),
+	}))
 	return {
-		stats:           MOCK_FEED_STATS,
-		overview:        MOCK_FEED_OVERVIEW,
+		stats:           statsData,
+		overview,
 		moderationTools: MOCK_MODERATION_TOOLS,
-		recentReports:   MOCK_RECENT_REPORTS,
-		posts:           MOCK_FEED_POSTS,
+		recentReports,
 		tip:             "Use pinned posts to highlight important updates or community guidelines.",
 	}
 }

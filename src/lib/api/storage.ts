@@ -64,3 +64,16 @@ export async function uploadAnnouncementCoverImage(
 	await uploadToStorage(uploadUrl, file)
 	return key
 }
+
+export async function uploadFeedMedia(
+	communityId: string,
+	file: File,
+): Promise<string> {
+	const { uploadUrl, key } = await getPresignedUploadUrl({
+		context: "COMMUNITY_FEED_MEDIA",
+		contentType: file.type as ImageContentType | "video/mp4",
+		resourceId: communityId,
+	})
+	await uploadToStorage(uploadUrl, file)
+	return key
+}
