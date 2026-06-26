@@ -21,9 +21,9 @@ build:preview:
               --build-arg NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="$NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET" \
               --build-arg NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="$NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID" \
               --build-arg NEXT_PUBLIC_FIREBASE_APP_ID="$NEXT_PUBLIC_FIREBASE_APP_ID" \
-              -t "$REGISTRY/meetday-admin:preview" \
+              -t "$CI_REGISTRY_IMAGE:preview" \
               .
-        - docker push "$REGISTRY/meetday-admin:preview"
+        - docker push "$CI_REGISTRY_IMAGE:preview"
     rules:
         - if: $CI_COMMIT_BRANCH == "main_preview"
 
@@ -40,10 +40,10 @@ build:production:
               --build-arg NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="$NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET" \
               --build-arg NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="$NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID" \
               --build-arg NEXT_PUBLIC_FIREBASE_APP_ID="$NEXT_PUBLIC_FIREBASE_APP_ID" \
-              -t "$REGISTRY/meetday-admin:$CI_COMMIT_SHA" \
-              -t "$REGISTRY/meetday-admin:stable" \
+              -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" \
+              -t "$CI_REGISTRY_IMAGE:stable" \
               .
-        - docker push "$REGISTRY/meetday-admin:$CI_COMMIT_SHA"
-        - docker push "$REGISTRY/meetday-admin:stable"
+        - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+        - docker push "$CI_REGISTRY_IMAGE:stable"
     rules:
         - if: $CI_COMMIT_BRANCH == "main"
