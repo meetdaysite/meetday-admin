@@ -9,7 +9,6 @@ import {
 	Heart,
 	Star,
 } from "lucide-react"
-import { toast } from "sonner"
 import {
 	AreaChart,
 	Area,
@@ -27,7 +26,6 @@ import {
 } from "recharts"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { getCommunityAnalytics, type AnalyticsTabData } from "@/lib/api/communities"
-import { cn } from "@/lib/utils"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -644,6 +642,7 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 									{c.rank}
 								</span>
 								{c.avatarUrl ? (
+									// eslint-disable-next-line @next/next/no-img-element
 									<img src={c.avatarUrl} alt={c.name} className="h-7 w-7 shrink-0 rounded-full object-cover" />
 								) : (
 									<div
@@ -680,6 +679,7 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 						{(data?.topHosts ?? []).map(h => (
 							<div key={h.id} className="flex items-center gap-2.5">
 								{h.avatarUrl ? (
+									// eslint-disable-next-line @next/next/no-img-element
 									<img src={h.avatarUrl} alt={h.name} className="h-9 w-9 shrink-0 rounded-xl object-cover" />
 								) : (
 									<div

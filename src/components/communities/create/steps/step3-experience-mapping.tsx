@@ -16,7 +16,6 @@ import { useCreateCommunityStore } from "@/stores/create-community.store"
 import { TagMultiSelect, type TagOption } from "../ui/tag-multi-select"
 import { TagTextInput } from "../ui/tag-text-input"
 import { EventSearchAttach, type AttachedEvent } from "../ui/event-search-attach"
-import type { Step3Snapshot } from "@/stores/create-community.store"
 
 type FormValues = {
 	interestIds: TagOption[]

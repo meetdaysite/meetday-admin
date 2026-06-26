@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect, useRef } from "react"
+import { useState, useCallback, useEffect, useMemo, useRef } from "react"
 import { Search, Plus, X, MapPin, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getEvents } from "@/lib/api/events"
@@ -20,7 +20,7 @@ export function EventSearchAttach({ value, onChange }: EventSearchAttachProps) {
 	const [searching, setSearching] = useState(false)
 	const [open, setOpen] = useState(false)
 	const debounceRef = useRef<ReturnType<typeof setTimeout>>(null)
-	const attached = new Set(value.map(e => e.id))
+	const attached = useMemo(() => new Set(value.map(e => e.id)), [value])
 
 	useEffect(() => {
 		if (!query.trim()) {

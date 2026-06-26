@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useCallback, useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import {
 	ExternalLink,
 	Copy,
@@ -156,7 +156,6 @@ function SidebarCard({
 export default function CommunityDetailPage() {
 	const params = useParams()
 	const id = params.id as string
-	const router = useRouter()
 	const canView = usePermission("community.manage")
 
 	const [community, setCommunity] = useState<CommunityDetailData | null>(null)
@@ -218,6 +217,7 @@ export default function CommunityDetailPage() {
 			<div className="flex items-start justify-between gap-4 pb-5">
 				<div className="flex items-start gap-4">
 					{community.iconUrl ? (
+						// eslint-disable-next-line @next/next/no-img-element
 						<img
 							src={community.iconUrl}
 							alt={community.name}
@@ -321,6 +321,7 @@ export default function CommunityDetailPage() {
 												style={exp.coverUrl ? undefined : { backgroundColor: "#1a0533" }}
 											>
 												{exp.coverUrl ? (
+													// eslint-disable-next-line @next/next/no-img-element
 													<img src={exp.coverUrl} alt={exp.title} className="absolute inset-0 w-full h-full object-cover" />
 												) : (
 													<span className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-white/10 select-none">

@@ -48,5 +48,6 @@ export function useAuthInit() {
 			))
 			.catch(() => clearAuth())
 			.finally(() => setInitialized())
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [token])
 }

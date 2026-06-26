@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
 	AlertTriangle, User, Calendar, Hash, Ticket,
-	CreditCard, Tag, Users,
+	Tag, Users,
 } from "lucide-react"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { StatusBadge } from "@/components/ui/status-badge"
@@ -233,7 +233,6 @@ export function OrderDetailDrawer({ open, onClose, order }: OrderDetailDrawerPro
 	useEffect(() => {
 		if (!open || !order) return
 		let cancelled = false
-		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setDetail(null)
 		setFetchState("loading")
 		setErrorMessage(null)
@@ -252,6 +251,7 @@ export function OrderDetailDrawer({ open, onClose, order }: OrderDetailDrawerPro
 			})
 
 		return () => { cancelled = true }
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [open, order?.id, router])
 
 	function handleClose() {

@@ -89,7 +89,7 @@ export default function CouponsPage() {
 			})
 			setCoupons(res.coupons)
 			setTotal(res.total)
-		} catch (err) {
+		} catch {
 			setError("Failed to load coupons")
 			toast.error("Failed to load coupons")
 		} finally {

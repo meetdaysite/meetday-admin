@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
 	Loader2, MapPin, Mail, Calendar, Clock, AlertTriangle,
-	Users, Ticket, Image, Tag, Globe, Languages, Info, ShieldAlert,
+	Users, Ticket, Image as ImageIcon, Tag, Globe, Languages, Info, ShieldAlert,
 	RotateCcw, Star,
 } from "lucide-react"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
@@ -445,7 +445,7 @@ function EventDetailContent({ detail }: { detail: EventDetail }) {
 								<div className="rounded-lg border border-border-subtle aspect-square bg-neutral-50 flex items-center justify-center">
 									<span className="text-xs text-text-tertiary font-medium flex items-center gap-1">
 										+{galleryImages.length - 6}
-										<Image size={12} />
+										<ImageIcon size={12} />
 									</span>
 								</div>
 							)}
@@ -613,6 +613,7 @@ export function EventReviewDrawer({ open, onClose, event, onAction }: EventRevie
 			})
 
 		return () => { cancelled = true }
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [open, event?.id, router])
 
 	function handleClose() {

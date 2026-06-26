@@ -110,6 +110,7 @@ function ExperienceDetailModal({
 					{/* Cover */}
 					<div className="relative aspect-video w-full bg-surface-card-muted overflow-hidden">
 						{exp.coverUrl ? (
+							// eslint-disable-next-line @next/next/no-img-element
 							<img src={exp.coverUrl} alt={exp.name} className="h-full w-full object-cover" />
 						) : (
 							<div
@@ -230,7 +231,7 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 	const [page, setPage]             = useState(1)
 	const [detachingId, setDetachingId] = useState<string | null>(null)
 	const [selectedExp, setSelectedExp] = useState<CommunityExperienceItem | null>(null)
-	const searchTimerRef = useRef<ReturnType<typeof setTimeout>>()
+	const searchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
 	function handleSearchChange(v: string) {
 		setSearchInput(v)
@@ -288,6 +289,7 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 					return (
 						<div className="flex items-center gap-3 max-w-55">
 							{e.coverUrl ? (
+								// eslint-disable-next-line @next/next/no-img-element
 								<img
 									src={e.coverUrl}
 									alt={e.name}
@@ -656,6 +658,7 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 										{i + 1}
 									</span>
 									{item.coverUrl ? (
+										// eslint-disable-next-line @next/next/no-img-element
 										<img
 											src={item.coverUrl}
 											alt={item.name}
