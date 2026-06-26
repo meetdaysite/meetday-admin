@@ -115,7 +115,11 @@ function AnnouncementRow({
 
 	return (
 		<div className="flex items-start gap-4 rounded-xl border border-border-default bg-surface-card p-4">
-			<div className="h-24 w-20 shrink-0 rounded-lg" style={{ background: item.imageGradient }} />
+			{item.imageUrl ? (
+				<img src={item.imageUrl} alt="" className="h-24 w-20 shrink-0 rounded-lg object-cover" />
+			) : (
+				<div className="h-24 w-20 shrink-0 rounded-lg" style={{ background: item.imageGradient }} />
+			)}
 			<div className="flex-1 min-w-0">
 				<div className="flex items-center gap-1.5 mb-1">
 					<h4 className="text-sm font-semibold text-text-primary">{item.title}</h4>
@@ -658,11 +662,13 @@ function CreateView({
 						radius="md"
 						leftIcon={<Send size={13} />}
 						onClick={handlePublish}
-						disabled={isPublishing}
+						disabled={isPublishing || isUploadingImage}
 					>
-						{isPublishing
-							? (publishMode === "later" ? "Scheduling…" : "Publishing…")
-							: (publishMode === "later" ? "Schedule Announcement" : "Publish Announcement")}
+						{isUploadingImage
+							? "Uploading image…"
+							: isPublishing
+								? (publishMode === "later" ? "Scheduling…" : "Publishing…")
+								: (publishMode === "later" ? "Schedule Announcement" : "Publish Announcement")}
 					</Button>
 				</div>
 			</div>

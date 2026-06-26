@@ -904,6 +904,7 @@ export type AnnouncementItem = {
 	status:          AnnouncementStatus
 	audience:        AnnouncementAudience
 	content:         string
+	imageUrl:        string | null
 	imageGradient:   string
 	isPinned:        boolean
 	// Published
@@ -1040,6 +1041,7 @@ export async function getCommunityAnnouncementsTab(communityId: string): Promise
 			status,
 			audience:         "All Members",
 			content:          item.body,
+			imageUrl:         item.imageUrl ?? null,
 			imageGradient:    ANN_CATEGORY_GRADIENT[item.category] ?? ANN_DEFAULT_GRADIENT,
 			isPinned:         item.isPinned,
 			authorName:       item.author.name,

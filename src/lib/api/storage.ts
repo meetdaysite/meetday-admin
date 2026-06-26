@@ -18,7 +18,7 @@ type PresignRequest =
 	| { context: "COMMUNITY_FEED_MEDIA";  contentType: ImageContentType | "video/mp4"; resourceId: string }
 
 interface PresignResponse {
-	url: string
+	uploadUrl: string
 	key: string
 }
 
@@ -43,12 +43,12 @@ export async function uploadCommunityImage(
 	communityId?: string,
 ): Promise<string> {
 	const context = mediaType === "COVER" ? "COMMUNITY_COVER" : "COMMUNITY_ICON"
-	const { url, key } = await getPresignedUploadUrl({
+	const { uploadUrl, key } = await getPresignedUploadUrl({
 		context,
 		contentType: file.type as ImageContentType,
 		...(communityId && { resourceId: communityId }),
 	})
-	await uploadToStorage(url, file)
+	await uploadToStorage(uploadUrl, file)
 	return key
 }
 
@@ -56,11 +56,11 @@ export async function uploadAnnouncementCoverImage(
 	communityId: string,
 	file: File,
 ): Promise<string> {
-	const { url, key } = await getPresignedUploadUrl({
+	const { uploadUrl, key } = await getPresignedUploadUrl({
 		context: "COMMUNITY_ANNOUNCEMENT",
 		contentType: file.type as ImageContentType,
 		resourceId: communityId,
 	})
-	await uploadToStorage(url, file)
+	await uploadToStorage(uploadUrl, file)
 	return key
 }
