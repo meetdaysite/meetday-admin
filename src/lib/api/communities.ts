@@ -336,7 +336,6 @@ export type CommunityDetailExperience = {
 	venue: string
 	attendeeCount: number
 	rating: number | null
-	matchPct: number | null
 	coverUrl: string | null
 	coverInitial: string
 }
@@ -364,15 +363,10 @@ export type CommunityDetailData = {
 	thumbnailUrl: string | null
 	iconUrl: string | null
 	isMeetdayManaged: boolean
-	category: { id: string; name: string } | null
 	access: CommunityAccess
-	primaryCity: string
-	communityCities: string[]
 	communityUrl: string
 	status: CommunityStatus
 	createdAt: string
-	publishedAt: string | null
-	settings: ApiCommunitySettings | null
 	statCards: CommunityDetailStatCard[]
 	managers: CommunityDetailManager[]
 	upcomingExperiences: CommunityDetailExperience[]
@@ -479,18 +473,19 @@ export async function getCommunityById(id: string): Promise<CommunityDetailData>
 		venue: e.city,
 		attendeeCount: e.attendeeCount,
 		rating: e.avgRating,
-		matchPct: null,
 		coverUrl: e.coverUrl,
 		coverInitial: e.title[0].toUpperCase(),
 	}))
 
-	const recentActivity: CommunityDetailActivity[] = o.recentActivity.map((a, i) => ({
-		id: `${a.type}-${i}`,
-		type: ACTIVITY_TYPE_MAP[a.type] ?? "post",
-		title: a.title,
-		description: a.actor ?? "",
-		timeAgo: toTimeAgo(a.at),
-	}))
+	const recentActivity: CommunityDetailActivity[] = o.recentActivity
+		.filter(a => a.type in ACTIVITY_TYPE_MAP)
+		.map((a, i) => ({
+			id: `${a.type}-${i}`,
+			type: ACTIVITY_TYPE_MAP[a.type],
+			title: a.title,
+			description: a.actor ?? "",
+			timeAgo: toTimeAgo(a.at),
+		}))
 
 	const eng = o.topEngagement7d
 	const engMax = Math.max(eng.posts, eng.comments, eng.reactions, eng.shares, eng.newMembers, 1)
@@ -510,15 +505,10 @@ export async function getCommunityById(id: string): Promise<CommunityDetailData>
 		thumbnailUrl: o.community.coverUrl,
 		iconUrl: o.community.iconUrl,
 		isMeetdayManaged: o.community.type === "MEETDAY_MANAGED_PUBLIC",
-		category: null,
 		access: o.community.access,
-		primaryCity: "",
-		communityCities: [],
 		communityUrl: o.community.url,
 		status: o.community.status,
 		createdAt: o.community.createdAt,
-		publishedAt: null,
-		settings: null,
 		statCards,
 		managers,
 		upcomingExperiences,
@@ -895,14 +885,12 @@ const MOCK_FEED_POSTS: CommunityFeedPost[] = [
 
 // ─── Announcements Tab ────────────────────────────────────────────────────────
 
-export type AnnouncementStatus   = "Published" | "Scheduled" | "Draft"
-export type AnnouncementAudience = "All Members" | "Community Members" | "New Members" | "Moderators"
+export type AnnouncementStatus = "Published" | "Scheduled" | "Draft"
 
 export type AnnouncementItem = {
 	id:              string
 	title:           string
 	status:          AnnouncementStatus
-	audience:        AnnouncementAudience
 	content:         string
 	imageUrl:        string | null
 	imageGradient:   string
@@ -913,40 +901,23 @@ export type AnnouncementItem = {
 	authorAvatarColor: string
 	timeAgo:         string | null
 	views:           number | null
-	opens:           number | null
-	clicks:          number | null
+	likes:           number | null
+	bookmarks:       number | null
 	// Scheduled
 	scheduledFor:    string | null
-	estimatedReach:  string | null
 }
 
 export type AnnouncementsTabStats = {
-	published:      number
-	publishedGrowth: number
-	scheduled:      number
-	scheduledGrowth: number
-	drafts:         number
-	draftsGrowth:   number
-	totalReach:     string
+	published:        number
+	scheduled:        number
+	drafts:           number
+	totalReach:       string
 	totalReachGrowth: number
 }
 
-export type AnnouncementsTabSidebarManager = {
-	id:     string
-	name:   string
-	initial: string
-	avatarColor: string
-	role:   "Owner" | "Manager" | "Moderator"
-}
-
 export type AnnouncementsTabData = {
-	stats:        AnnouncementsTabStats
+	stats:         AnnouncementsTabStats
 	announcements: AnnouncementItem[]
-	communityUrl: string
-	communityStatus: "Active" | "Inactive"
-	createdOn:    string
-	visibility:   string
-	managers:     AnnouncementsTabSidebarManager[]
 }
 
 // ─── Announcements Tab — API response type ────────────────────────────────────
@@ -1004,13 +975,6 @@ function formatScheduledAt(iso: string): string {
 	)
 }
 
-const MOCK_ANNOUNCEMENTS_MANAGERS: AnnouncementsTabSidebarManager[] = [
-	{ id: "m-1", name: "Arjun Mehta",   initial: "A", avatarColor: "#f59e0b", role: "Owner" },
-	{ id: "m-2", name: "Riya Banerjee", initial: "R", avatarColor: "#ec4899", role: "Manager" },
-	{ id: "m-3", name: "Kabir Shah",    initial: "K", avatarColor: "#6366f1", role: "Manager" },
-	{ id: "m-4", name: "Ishita Dey",    initial: "I", avatarColor: "#a855f7", role: "Moderator" },
-	{ id: "m-5", name: "Manav Sinha",   initial: "M", avatarColor: "#22c55e", role: "Moderator" },
-]
 
 export async function getCommunityAnnouncementsTab(communityId: string): Promise<AnnouncementsTabData> {
 	const [{ data: listData }, { data: statsData }] = await Promise.all([
@@ -1039,7 +1003,6 @@ export async function getCommunityAnnouncementsTab(communityId: string): Promise
 			id:               item.id,
 			title:            item.title,
 			status,
-			audience:         "All Members",
 			content:          item.body,
 			imageUrl:         item.imageUrl ?? null,
 			imageGradient:    ANN_CATEGORY_GRADIENT[item.category] ?? ANN_DEFAULT_GRADIENT,
@@ -1049,10 +1012,9 @@ export async function getCommunityAnnouncementsTab(communityId: string): Promise
 			authorAvatarColor: ANN_AVATAR_COLORS[i % ANN_AVATAR_COLORS.length],
 			timeAgo:          isPublished && item.publishedAt ? toTimeAgo(item.publishedAt) : null,
 			views:            isPublished ? item.reachCount    : null,
-			opens:            isPublished ? item.likeCount     : null,
-			clicks:           isPublished ? item.bookmarkCount : null,
+			likes:            isPublished ? item.likeCount     : null,
+			bookmarks:        isPublished ? item.bookmarkCount : null,
 			scheduledFor:     isScheduled && item.scheduledAt ? formatScheduledAt(item.scheduledAt) : null,
-			estimatedReach:   null,
 		}
 	})
 
@@ -1062,17 +1024,13 @@ export async function getCommunityAnnouncementsTab(communityId: string): Promise
 
 	return {
 		stats: {
-			published:        statsData.published, publishedGrowth: 0,
-			scheduled:        statsData.scheduled, scheduledGrowth: 0,
-			drafts:           statsData.drafts,    draftsGrowth: 0,
-			totalReach,                            totalReachGrowth: reachGrowth,
+			published:        statsData.published,
+			scheduled:        statsData.scheduled,
+			drafts:           statsData.drafts,
+			totalReach,
+			totalReachGrowth: reachGrowth,
 		},
 		announcements,
-		communityUrl:    "meetday.ai/communities/meetday-music-nights",
-		communityStatus: "Active",
-		createdOn:       "25 May 2024",
-		visibility:      "Public Community",
-		managers:        MOCK_ANNOUNCEMENTS_MANAGERS,
 	}
 }
 
@@ -1103,104 +1061,14 @@ export type ChatChannel = {
 	welcomeTitle: string
 	welcomeBody: string
 	quickReplies: string[]
-	// UI-only fields (not returned by API)
 	iconColor: string
-	members: number
-	online: number
-	isPrivate: boolean
-}
-
-export type ReportedChatMessage = {
-	id: string; authorName: string; authorAvatarColor: string; authorAvatarInitial: string
-	message: string; channel: string; timeAgo: string
-}
-
-export type PinnedChatMessage = {
-	id: string; title: string; channel: string; pinnedBy: string; pinnedByInitial: string; pinnedByColor: string
-}
-
-export type MutedChatUser = {
-	id: string; name: string; avatarColor: string; avatarInitial: string; mutedInChannels: number; timeAgo: string
-}
-
-export type AutoModerationFilter = { label: string; enabled: boolean }
-
-export type ChatOverviewItem = {
-	label: string; value: string; growth: number; direction: "up" | "down"; color: string; sparkline: number[]
-}
-
-export type ChatModerationTool = {
-	label: string; description: string; iconKey: "flag" | "search" | "ban" | "warning"; color: string; bg: string
-}
-
-export type ChatTabStats = {
-	totalChannels: number; activeMembers: number; onlineNow: number
-	reportedMessages: number; mutedUsers: number; pinnedMessages: number
 }
 
 export type ChatTabData = {
-	stats: ChatTabStats
+	totalChannels: number
 	channels: ChatChannel[]
-	reportedMessages: ReportedChatMessage[]
-	pinnedMessages: PinnedChatMessage[]
-	mutedUsers: MutedChatUser[]
-	autoModFilters: AutoModerationFilter[]
-	overview: ChatOverviewItem[]
-	moderationTools: ChatModerationTool[]
 }
 
-const MOCK_CHAT_STATS: ChatTabStats = {
-	totalChannels: 8, activeMembers: 1248, onlineNow: 86,
-	reportedMessages: 12, mutedUsers: 18, pinnedMessages: 24,
-}
-
-const MOCK_CHAT_CHANNELS: ChatChannel[] = [
-	{ id: "ch-1", name: "general",                description: "General discussions for all community members.", iconColor: "#6366f1", members: 1024, online: 42, isPrivate: false },
-	{ id: "ch-2", name: "event-talk",             description: "Talk about events, lineups and experiences.",    iconColor: "#f59e0b", members: 756,  online: 28, isPrivate: false },
-	{ id: "ch-3", name: "music-recommendations",  description: "Share and discover new music.",                  iconColor: "#ec4899", members: 612,  online: 18, isPrivate: false },
-	{ id: "ch-4", name: "after-parties",          description: "Find and plan after parties & hangouts.",        iconColor: "#ef4444", members: 324,  online: 12, isPrivate: false },
-	{ id: "ch-5", name: "vip-lounge",             description: "VIP members only lounge.",                      iconColor: "#a855f7", members: 198,  online: 6,  isPrivate: true },
-]
-
-const MOCK_REPORTED_MESSAGES: ReportedChatMessage[] = [
-	{ id: "rm-1", authorName: "Rohan Verma",  authorAvatarColor: "#22c55e", authorAvatarInitial: "R", message: "Check out this link for free tickets!!! bit.ly/xyz", channel: "general",     timeAgo: "10m ago" },
-	{ id: "rm-2", authorName: "Simran Kaur",  authorAvatarColor: "#a855f7", authorAvatarInitial: "S", message: "This artist is trash 🤮",                           channel: "event-talk",   timeAgo: "25m ago" },
-	{ id: "rm-3", authorName: "Vivek Sharma", authorAvatarColor: "#3b82f6", authorAvatarInitial: "V", message: "Selling passes cheap, DM me 🚨",                    channel: "general",      timeAgo: "1h ago" },
-	{ id: "rm-4", authorName: "Neha Patel",   authorAvatarColor: "#f43f5e", authorAvatarInitial: "N", message: "Anyone up for something after 2 AM?",               channel: "after-parties", timeAgo: "2h ago" },
-]
-
-const MOCK_PINNED_MESSAGES: PinnedChatMessage[] = [
-	{ id: "pm-1", title: "Event Guidelines",      channel: "#general",      pinnedBy: "Arjun Mehta",   pinnedByInitial: "A", pinnedByColor: "#f59e0b" },
-	{ id: "pm-2", title: "Weekend Lineup Thread", channel: "#event-talk",   pinnedBy: "Riya Banerjee", pinnedByInitial: "R", pinnedByColor: "#ec4899" },
-	{ id: "pm-3", title: "After Party Rules",     channel: "#after-parties", pinnedBy: "Kabir Shah",   pinnedByInitial: "K", pinnedByColor: "#6366f1" },
-]
-
-const MOCK_MUTED_USERS: MutedChatUser[] = [
-	{ id: "mu-1", name: "Aditya Singh",   avatarColor: "#3b82f6", avatarInitial: "A", mutedInChannels: 3, timeAgo: "2d ago" },
-	{ id: "mu-2", name: "Karan Malhotra", avatarColor: "#f59e0b", avatarInitial: "K", mutedInChannels: 2, timeAgo: "5d ago" },
-	{ id: "mu-3", name: "Pooja Iyer",     avatarColor: "#ec4899", avatarInitial: "P", mutedInChannels: 1, timeAgo: "1w ago" },
-]
-
-const MOCK_AUTO_MOD_FILTERS: AutoModerationFilter[] = [
-	{ label: "Profanity filter",     enabled: true },
-	{ label: "Spam links filter",    enabled: true },
-	{ label: "Invite links filter",  enabled: true },
-	{ label: "Caps lock filter",     enabled: true },
-]
-
-const MOCK_CHAT_OVERVIEW: ChatOverviewItem[] = [
-	{ label: "Messages Sent",      value: "4.2K", growth: 18, direction: "up",   color: "#a855f7", sparkline: [2800, 3100, 2900, 3400, 3600, 3500, 3800, 4000, 3900, 4100, 4000, 4200] },
-	{ label: "Active Participants", value: "1.1K", growth: 16, direction: "up",   color: "#22c55e", sparkline: [700, 780, 750, 850, 900, 880, 950, 1000, 980, 1050, 1080, 1100] },
-	{ label: "Reports Received",    value: "28",   growth: 12, direction: "down",  color: "#ef4444", sparkline: [40, 38, 35, 32, 36, 34, 30, 28, 32, 29, 27, 28] },
-	{ label: "Messages Approved",   value: "312",  growth: 22, direction: "up",   color: "#3b82f6", sparkline: [180, 200, 195, 230, 250, 245, 270, 285, 280, 300, 308, 312] },
-]
-
-const MOCK_CHAT_MOD_TOOLS: ChatModerationTool[] = [
-	{ label: "Review Reported Messages", description: "12 pending reviews",       iconKey: "flag",    color: "text-red-500",    bg: "bg-red-50" },
-	{ label: "Keyword Alerts",           description: "15 keywords configured",   iconKey: "search",  color: "text-blue-500",   bg: "bg-blue-50" },
-	{ label: "Blocked Links",            description: "8 links blocked",          iconKey: "ban",     color: "text-orange-500", bg: "bg-orange-50" },
-	{ label: "Content Warnings",         description: "3 active warnings",        iconKey: "warning", color: "text-amber-500",  bg: "bg-amber-50" },
-]
 
 // ─── Channel management ───────────────────────────────────────────────────────
 
@@ -1272,20 +1140,11 @@ export async function getCommunityChat(communityId: string): Promise<ChatTabData
 		welcomeBody:  ch.welcomeBody ?? "",
 		quickReplies: ch.quickReplies ?? [],
 		iconColor:    CHANNEL_ICON_COLORS[i % CHANNEL_ICON_COLORS.length],
-		members:      0,
-		online:       0,
-		isPrivate:    false,
 	}))
 
 	return {
-		stats:            { ...MOCK_CHAT_STATS, totalChannels: channels.length },
+		totalChannels: channels.length,
 		channels,
-		reportedMessages: MOCK_REPORTED_MESSAGES,
-		pinnedMessages:   MOCK_PINNED_MESSAGES,
-		mutedUsers:       MOCK_MUTED_USERS,
-		autoModFilters:   MOCK_AUTO_MOD_FILTERS,
-		overview:         MOCK_CHAT_OVERVIEW,
-		moderationTools:  MOCK_CHAT_MOD_TOOLS,
 	}
 }
 
@@ -1453,25 +1312,9 @@ export async function getCommunityAnalytics(communityId: string): Promise<Analyt
 export type ManagerRoleType = "Owner" | "Manager" | "Moderator" | "View Only"
 
 export type ManagerTeamMember = {
-	id: string; name: string; email: string
-	avatarColor: string; avatarInitial: string
+	id: string; name: string
+	avatarUrl: string | null; avatarColor: string; avatarInitial: string
 	role: ManagerRoleType
-	permissionsLabel: string; permissionsCount: number
-	joinedDate: string; status: "Active" | "Inactive"
-}
-
-export type ManagerPermissionRow = {
-	label: string; owner: boolean; manager: boolean; moderator: boolean; viewOnly: boolean
-}
-
-export type ManagerRoleOverview = {
-	role: ManagerRoleType; description: string; permissions: number; maxPermissions: number
-	iconKey: "crown" | "shield" | "users" | "eye"; color: string; bg: string; border: string
-}
-
-export type ManagerActivityItem = {
-	id: string; text: string; timeAgo: string
-	iconKey: "promote" | "join" | "edit"; iconColor: string; iconBg: string
 }
 
 export type ManagersTabStats = {
@@ -1481,57 +1324,11 @@ export type ManagersTabStats = {
 export type ManagersAccessSummary = { label: string; count: number; pct: number; color: string }
 
 export type ManagersTabData = {
-	stats:           ManagersTabStats
-	teamMembers:     ManagerTeamMember[]
-	permissionMatrix: ManagerPermissionRow[]
-	roleOverview:    ManagerRoleOverview[]
-	activities:      ManagerActivityItem[]
-	accessSummary:   ManagersAccessSummary[]
+	stats:         ManagersTabStats
+	teamMembers:   ManagerTeamMember[]
+	accessSummary: ManagersAccessSummary[]
 }
 
-const MOCK_MANAGERS_STATS: ManagersTabStats = {
-	owners: 2, managers: 5, moderators: 18, viewOnly: 7, totalUsers: 32,
-}
-
-const MOCK_TEAM_MEMBERS: ManagerTeamMember[] = [
-	{ id: "tm-1", name: "Arjun Mehta",   email: "arjun@beatcurate.com",  avatarColor: "#f59e0b", avatarInitial: "A", role: "Owner",     permissionsLabel: "Full Access",         permissionsCount: 12, joinedDate: "Apr 20, 2024", status: "Active" },
-	{ id: "tm-2", name: "Riya Banerjee", email: "riya@lunanights.com",   avatarColor: "#ec4899", avatarInitial: "R", role: "Manager",   permissionsLabel: "Content + Members",   permissionsCount: 6,  joinedDate: "Apr 22, 2024", status: "Active" },
-	{ id: "tm-3", name: "Kabir Shah",    email: "kabir@rooftop.co",      avatarColor: "#6366f1", avatarInitial: "K", role: "Manager",   permissionsLabel: "Events + Analytics",  permissionsCount: 5,  joinedDate: "Apr 25, 2024", status: "Active" },
-	{ id: "tm-4", name: "Neha Patel",    email: "neha.vibes@mmn.com",    avatarColor: "#f43f5e", avatarInitial: "N", role: "Moderator", permissionsLabel: "Content Moderation",  permissionsCount: 4,  joinedDate: "May 02, 2024", status: "Active" },
-	{ id: "tm-5", name: "Rohan Verma",   email: "rohan.live@mmn.com",    avatarColor: "#22c55e", avatarInitial: "R", role: "Moderator", permissionsLabel: "Chat + Reports",      permissionsCount: 3,  joinedDate: "May 05, 2024", status: "Active" },
-]
-
-const MOCK_PERMISSION_MATRIX: ManagerPermissionRow[] = [
-	{ label: "Manage Community Settings",         owner: true,  manager: true,  moderator: false, viewOnly: false },
-	{ label: "Manage Members & Roles",            owner: true,  manager: true,  moderator: true,  viewOnly: false },
-	{ label: "Create & Manage Experiences",       owner: true,  manager: true,  moderator: false, viewOnly: false },
-	{ label: "Manage Feed & Announcements",       owner: true,  manager: true,  moderator: true,  viewOnly: false },
-	{ label: "Moderate Content (Posts & Comments)", owner: true, manager: true, moderator: true,  viewOnly: false },
-	{ label: "Manage Chat & Messages",            owner: true,  manager: true,  moderator: true,  viewOnly: false },
-	{ label: "View Analytics & Reports",          owner: true,  manager: true,  moderator: true,  viewOnly: true  },
-	{ label: "Export Data",                       owner: true,  manager: true,  moderator: false, viewOnly: false },
-]
-
-const MOCK_ROLE_OVERVIEW: ManagerRoleOverview[] = [
-	{ role: "Owner",     description: "Full access to all features",        permissions: 12, maxPermissions: 12, iconKey: "crown",  color: "text-red-500",    bg: "bg-red-50",    border: "border-red-100" },
-	{ role: "Manager",   description: "Manage community operations",        permissions: 6,  maxPermissions: 12, iconKey: "shield", color: "text-blue-500",   bg: "bg-blue-50",   border: "border-blue-100" },
-	{ role: "Moderator", description: "Moderate content and users",         permissions: 4,  maxPermissions: 12, iconKey: "users",  color: "text-green-500",  bg: "bg-green-50",  border: "border-green-100" },
-	{ role: "View Only", description: "View data and analytics",            permissions: 2,  maxPermissions: 12, iconKey: "eye",    color: "text-orange-500", bg: "bg-orange-50", border: "border-orange-100" },
-]
-
-const MOCK_MANAGER_ACTIVITIES: ManagerActivityItem[] = [
-	{ id: "a-1", text: "Riya Banerjee was promoted to Manager",   timeAgo: "2 hours ago", iconKey: "promote", iconColor: "text-purple-500", iconBg: "bg-purple-50" },
-	{ id: "a-2", text: "Neha Patel joined as Moderator",          timeAgo: "1 day ago",   iconKey: "join",    iconColor: "text-green-500",  iconBg: "bg-green-50" },
-	{ id: "a-3", text: "Arjun Mehta updated role permissions",    timeAgo: "2 days ago",  iconKey: "edit",    iconColor: "text-amber-500",  iconBg: "bg-amber-50" },
-	{ id: "a-4", text: "Rohan Verma joined as Moderator",         timeAgo: "3 days ago",  iconKey: "join",    iconColor: "text-green-500",  iconBg: "bg-green-50" },
-]
-
-const MOCK_ACCESS_SUMMARY: ManagersAccessSummary[] = [
-	{ label: "Owners",     count: 2,  pct: 6,  color: "#a855f7" },
-	{ label: "Managers",   count: 5,  pct: 16, color: "#3b82f6" },
-	{ label: "Moderators", count: 18, pct: 56, color: "#22c55e" },
-	{ label: "View Only",  count: 7,  pct: 22, color: "#f97316" },
-]
 
 type ApiManagerEntry = {
 	userId: string
@@ -1548,12 +1345,6 @@ const MANAGER_ROLE_MAP: Record<string, ManagerRoleType> = {
 	HOST:     "View Only",
 }
 
-const MANAGER_PERMISSIONS: Record<ManagerRoleType, { label: string; count: number }> = {
-	"Owner":     { label: "Full Access",        count: 12 },
-	"Manager":   { label: "Content + Members",  count: 6  },
-	"Moderator": { label: "Content Moderation", count: 4  },
-	"View Only": { label: "View Only",          count: 2  },
-}
 
 const AVATAR_COLORS = ["#f59e0b", "#ec4899", "#6366f1", "#f43f5e", "#22c55e", "#3b82f6", "#a855f7", "#f97316"]
 
@@ -1562,18 +1353,13 @@ export async function getCommunityManagers(communityId: string): Promise<Manager
 
 	const teamMembers: ManagerTeamMember[] = data.map((m, i) => {
 		const role = MANAGER_ROLE_MAP[m.role] ?? "View Only"
-		const perms = MANAGER_PERMISSIONS[role]
 		return {
-			id:               m.userId,
-			name:             `${m.firstName} ${m.lastName}`,
-			email:            "",
-			avatarColor:      AVATAR_COLORS[i % AVATAR_COLORS.length],
-			avatarInitial:    m.firstName[0].toUpperCase(),
+			id:           m.userId,
+			name:         `${m.firstName} ${m.lastName}`,
+			avatarUrl:    m.avatarUrl,
+			avatarColor:  AVATAR_COLORS[i % AVATAR_COLORS.length],
+			avatarInitial: m.firstName[0].toUpperCase(),
 			role,
-			permissionsLabel: perms.label,
-			permissionsCount: perms.count,
-			joinedDate:       "",
-			status:           "Active" as const,
 		}
 	})
 
@@ -1596,14 +1382,7 @@ export async function getCommunityManagers(communityId: string): Promise<Manager
 		{ label: "View Only",  count: counts["View Only"],  pct: Math.round(counts["View Only"] / total * 100),  color: "#f97316" },
 	].filter(s => s.count > 0)
 
-	return {
-		stats,
-		teamMembers,
-		permissionMatrix: MOCK_PERMISSION_MATRIX,
-		roleOverview:     MOCK_ROLE_OVERVIEW,
-		activities:       MOCK_MANAGER_ACTIVITIES,
-		accessSummary,
-	}
+	return { stats, teamMembers, accessSummary }
 }
 
 // ─── Create Community workflow ────────────────────────────────────────────────

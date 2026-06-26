@@ -1,17 +1,14 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import {
 	ExternalLink,
-	Settings,
-	ChevronDown,
 	Copy,
 	Share2,
 	Megaphone,
 	CalendarPlus,
 	MessageSquare,
-	Download,
 	Users,
 	Calendar,
 	Bell,
@@ -50,7 +47,6 @@ type Tab =
 	| "chat"
 	| "analytics"
 	| "managers"
-	| "settings"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -63,7 +59,6 @@ const TABS: { id: Tab; label: string }[] = [
 	{ id: "chat", label: "Chat" },
 	{ id: "analytics", label: "Analytics" },
 	{ id: "managers", label: "Managers" },
-	{ id: "settings", label: "Settings" },
 ]
 
 const ROLE_BADGE: Record<string, string> = {
@@ -79,12 +74,11 @@ const ACTIVITY_ICON: Record<string, { icon: LucideIcon; bg: string; color: strin
 	announcement: { icon: Bell, bg: "bg-amber-50", color: "text-amber-500" },
 }
 
-const QUICK_ACTIONS = [
-	{ label: "Create Announcement", icon: Megaphone, bg: "bg-rose-50", color: "text-rose-500" },
-	{ label: "Schedule Event", icon: CalendarPlus, bg: "bg-sky-50", color: "text-sky-500" },
-	{ label: "Post in Community", icon: MessageSquare, bg: "bg-purple-50", color: "text-purple-500" },
-	{ label: "Export Members", icon: Download, bg: "bg-green-50", color: "text-green-500" },
-] as const
+const QUICK_ACTIONS: { label: string; icon: React.ElementType; bg: string; border: string; color: string; tab: Tab }[] = [
+	{ label: "Create Announcement", icon: Megaphone,     bg: "bg-rose-50",   border: "border-rose-200",   color: "text-rose-500",   tab: "announcements" },
+	{ label: "Schedule Event",      icon: CalendarPlus,  bg: "bg-sky-50",    border: "border-sky-200",    color: "text-sky-500",    tab: "experiences"   },
+	{ label: "Post in Community",   icon: MessageSquare, bg: "bg-purple-50", border: "border-purple-200", color: "text-purple-500", tab: "feed"          },
+]
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -211,14 +205,6 @@ export default function CommunityDetailPage() {
 		year: "numeric",
 	})
 
-	const publishedDate = community.publishedAt
-		? new Date(community.publishedAt).toLocaleDateString("en-GB", {
-				day: "numeric",
-				month: "short",
-				year: "numeric",
-			})
-		: null
-
 	const accessLabel =
 		community.access === "PUBLIC"
 			? "Public"
@@ -271,16 +257,6 @@ export default function CommunityDetailPage() {
 					>
 						View Community
 					</Button>
-					<Button
-						variant="secondary"
-						size="sm"
-						radius="md"
-						leftIcon={<Settings size={13} />}
-						rightIcon={<ChevronDown size={13} />}
-						onClick={() => toast.info("Community settings coming soon")}
-					>
-						Community Settings
-					</Button>
 				</div>
 			</div>
 
@@ -323,7 +299,6 @@ export default function CommunityDetailPage() {
 									<h2 className="text-sm font-semibold text-text-primary">
 										Upcoming Experiences
 									</h2>
-									<p className="text-[11px] text-text-tertiary">Auto-matched</p>
 								</div>
 								<button
 									className="text-xs font-medium text-text-brand hover:underline"
@@ -350,11 +325,6 @@ export default function CommunityDetailPage() {
 												) : (
 													<span className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-white/10 select-none">
 														{exp.coverInitial}
-													</span>
-												)}
-												{exp.matchPct !== null && (
-													<span className="relative m-2 text-[10px] font-semibold bg-green-500 text-white rounded-full px-1.5 py-0.5">
-														Match {exp.matchPct}%
 													</span>
 												)}
 											</div>
@@ -391,13 +361,10 @@ export default function CommunityDetailPage() {
 						<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 							{/* Recent Activity */}
 							<div className="rounded-xl border border-border-default bg-surface-card p-4">
-								<div className="flex items-center justify-between mb-3">
+								<div className="mb-3">
 									<h2 className="text-sm font-semibold text-text-primary">
 										Recent Activity
 									</h2>
-									<button className="text-xs font-medium text-text-brand hover:underline">
-										View All
-									</button>
 								</div>
 								{community.recentActivity.length === 0 ? (
 									<p className="text-xs text-text-tertiary">No recent activity.</p>
@@ -436,14 +403,11 @@ export default function CommunityDetailPage() {
 
 							{/* Top Engagement */}
 							<div className="rounded-xl border border-border-default bg-surface-card p-4">
-								<div className="flex items-center justify-between mb-3">
+								<div className="mb-3">
 									<h2 className="text-sm font-semibold text-text-primary">
 										Top Engagement{" "}
 										<span className="font-normal text-text-tertiary">(7 Days)</span>
 									</h2>
-									<button className="text-xs font-medium text-text-brand hover:underline">
-										View All
-									</button>
 								</div>
 								{community.topEngagement.length === 0 ? (
 									<p className="text-xs text-text-tertiary">No engagement data yet.</p>
@@ -486,19 +450,9 @@ export default function CommunityDetailPage() {
 									<dt className="text-text-tertiary">Created on</dt>
 									<dd className="text-text-primary font-medium">{createdDate}</dd>
 								</div>
-								{publishedDate && (
-									<div className="flex items-center justify-between gap-2">
-										<dt className="text-text-tertiary">Published on</dt>
-										<dd className="text-text-primary font-medium">{publishedDate}</dd>
-									</div>
-								)}
 								<div className="flex items-center justify-between gap-2">
 									<dt className="text-text-tertiary">Access</dt>
 									<dd className="text-text-primary font-medium">{accessLabel}</dd>
-								</div>
-								<div className="flex items-center justify-between gap-2">
-									<dt className="text-text-tertiary">Primary City</dt>
-									<dd className="text-text-primary font-medium">{community.primaryCity}</dd>
 								</div>
 								<div className="flex flex-col gap-1 pt-0.5">
 									<dt className="text-text-tertiary">Community URL</dt>
@@ -562,36 +516,24 @@ export default function CommunityDetailPage() {
 									</div>
 								))}
 							</div>
-							<Button
-								variant="secondary"
-								size="sm"
-								radius="md"
-								className="w-full mt-3"
-								onClick={() => setActiveTab("managers")}
-							>
-								Manage Roles
-							</Button>
 						</SidebarCard>
 
 						{/* Quick Actions */}
 						<div className="rounded-xl border border-border-default bg-surface-card p-4">
 							<h3 className="text-sm font-semibold text-text-primary mb-3">Quick Actions</h3>
-							<div className="grid grid-cols-2 gap-2">
+							<div className="flex flex-col gap-2">
 								{QUICK_ACTIONS.map(action => (
 									<button
 										key={action.label}
-										className="flex flex-col items-center gap-1.5 rounded-lg border border-border-default p-3 text-center hover:bg-surface-card-muted transition-colors"
-										onClick={() => toast.info(`${action.label} coming soon`)}
+										className={cn(
+											"flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-opacity hover:opacity-80 text-left",
+											action.bg,
+											action.border,
+										)}
+										onClick={() => setActiveTab(action.tab)}
 									>
-										<div
-											className={cn(
-												"flex h-8 w-8 items-center justify-center rounded-lg",
-												action.bg,
-											)}
-										>
-											<action.icon size={15} className={action.color} />
-										</div>
-										<span className="text-[10px] font-medium text-text-secondary leading-tight">
+										<action.icon size={15} className={cn("shrink-0", action.color)} />
+										<span className={cn("text-xs font-medium", action.color)}>
 											{action.label}
 										</span>
 									</button>
@@ -607,13 +549,32 @@ export default function CommunityDetailPage() {
 			) : activeTab === "feed" ? (
 				<FeedTab communityId={id} />
 			) : activeTab === "announcements" ? (
-				<AnnouncementsTab communityId={id} communityName={community?.name} />
+				<AnnouncementsTab
+						communityId={id}
+						communityName={community?.name}
+						managers={community?.managers}
+						communityMeta={community ? {
+							status: community.status,
+							createdAt: community.createdAt,
+							access: community.access,
+							communityUrl: community.communityUrl,
+						} : undefined}
+					/>
 			) : activeTab === "chat" ? (
-				<ChatTab communityId={id} />
+				<ChatTab
+					communityId={id}
+					managers={community?.managers}
+					communityMeta={community ? {
+						status: community.status,
+						createdAt: community.createdAt,
+						access: community.access,
+						communityUrl: community.communityUrl,
+					} : undefined}
+				/>
 			) : activeTab === "analytics" ? (
 				<AnalyticsTab communityId={id} />
 			) : activeTab === "managers" ? (
-				<ManagersTab communityId={id} />
+				<ManagersTab communityId={id} recentActivity={community?.recentActivity ?? []} />
 			) : (
 				<div className="flex h-48 items-center justify-center rounded-xl border border-border-default bg-surface-card">
 					<p className="text-sm text-text-tertiary">

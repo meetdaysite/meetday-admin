@@ -8,19 +8,15 @@ import {
 	FileText,
 	Eye,
 	Mail,
-	MousePointer,
+	Bookmark,
 	Pencil,
 	Copy,
 	Trash2,
 	Pin,
 	ChevronLeft,
 	ChevronRight,
-	ClipboardCopy,
 	Share2,
-	CalendarPlus,
 	MessageSquare,
-	Download,
-	Users,
 	Upload,
 	Bold,
 	Italic,
@@ -36,16 +32,15 @@ import {
 	CheckCircle2,
 	Bell,
 	Send,
-	ArrowRight,
 	ThumbsUp,
 	BarChart2,
-	LayoutDashboard,
 	Tag,
 	type LucideIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
 import { StatCard } from "@/components/dashboard/stat-card"
+import { StatusBadge } from "@/components/ui/status-badge"
 import {
 	getCommunityAnnouncementsTab,
 	createCommunityAnnouncement,
@@ -56,6 +51,9 @@ import {
 	type AnnouncementItem,
 	type AnnouncementStatus,
 	type AnnouncementCreatedResponse,
+	type CommunityDetailManager,
+	type CommunityStatus,
+	type CommunityAccess,
 } from "@/lib/api/communities"
 import { uploadAnnouncementCoverImage } from "@/lib/api/storage"
 import { cn } from "@/lib/utils"
@@ -77,21 +75,6 @@ const ROLE_BADGE: Record<string, string> = {
 	Manager: "bg-purple-100 text-purple-700",
 	Moderator: "bg-green-100 text-green-700",
 }
-
-const SIDEBAR_QUICK_ACTIONS: { label: string; icon: LucideIcon; bg: string; color: string }[] = [
-	{ label: "Create Announcement", icon: Megaphone, bg: "bg-red-50", color: "text-red-500" },
-	{ label: "Schedule Event", icon: CalendarPlus, bg: "bg-purple-50", color: "text-purple-500" },
-	{ label: "Post in Community", icon: MessageSquare, bg: "bg-green-50", color: "text-green-500" },
-	{ label: "Export Members", icon: Download, bg: "bg-blue-50", color: "text-blue-500" },
-]
-
-const MANAGERS_SIDEBAR = [
-	{ name: "Arjun Mehta", initial: "A", color: "#f59e0b", role: "Owner" },
-	{ name: "Riya Banerjee", initial: "R", color: "#ec4899", role: "Manager" },
-	{ name: "Kabir Shah", initial: "K", color: "#6366f1", role: "Manager" },
-	{ name: "Ishita Dey", initial: "I", color: "#a855f7", role: "Moderator" },
-	{ name: "Manav Sinha", initial: "M", color: "#22c55e", role: "Moderator" },
-]
 
 type FilterStatus = "All Announcements" | "Published" | "Scheduled" | "Draft"
 type SortMode = "Newest First" | "Oldest First" | "Most Views"
@@ -138,31 +121,17 @@ function AnnouncementRow({
 					>
 						{item.status}
 					</span>
-					<span className="text-[11px] text-text-tertiary">• {item.audience}</span>
 				</div>
 				<p className="text-xs text-text-secondary leading-relaxed line-clamp-2 mb-2">
 					{item.content}
 				</p>
 				{isScheduled && item.scheduledFor && (
-					<div className="flex flex-col gap-1">
-						<div className="flex items-center gap-1.5 text-[11px] text-text-tertiary">
-							<Calendar size={11} className="shrink-0" />
-							<span>
-								Scheduled for{" "}
-								<span className="font-medium text-text-secondary">{item.scheduledFor}</span>
-							</span>
-						</div>
-						{item.estimatedReach && (
-							<div className="flex items-center gap-1.5 text-[11px] text-text-tertiary">
-								<Eye size={11} className="shrink-0" />
-								<span>
-									Estimated Reach{" "}
-									<span className="font-medium text-text-secondary">
-										{item.estimatedReach}
-									</span>
-								</span>
-							</div>
-						)}
+					<div className="flex items-center gap-1.5 text-[11px] text-text-tertiary">
+						<Calendar size={11} className="shrink-0" />
+						<span>
+							Scheduled for{" "}
+							<span className="font-medium text-text-secondary">{item.scheduledFor}</span>
+						</span>
 					</div>
 				)}
 				{isPublished && item.timeAgo && (
@@ -192,17 +161,17 @@ function AnnouncementRow({
 					</div>
 					<div className="flex flex-col items-center gap-0.5">
 						<div className="flex items-center gap-1 text-text-secondary">
-							<Mail size={13} />
-							<span className="text-sm font-bold text-text-primary">{item.opens}</span>
+							<ThumbsUp size={13} />
+							<span className="text-sm font-bold text-text-primary">{item.likes}</span>
 						</div>
-						<span className="text-[10px] text-text-tertiary">Opens</span>
+						<span className="text-[10px] text-text-tertiary">Likes</span>
 					</div>
 					<div className="flex flex-col items-center gap-0.5">
 						<div className="flex items-center gap-1 text-text-secondary">
-							<MousePointer size={13} />
-							<span className="text-sm font-bold text-text-primary">{item.clicks}</span>
+							<Bookmark size={13} />
+							<span className="text-sm font-bold text-text-primary">{item.bookmarks}</span>
 						</div>
-						<span className="text-[10px] text-text-tertiary">Clicks</span>
+						<span className="text-[10px] text-text-tertiary">Bookmarks</span>
 					</div>
 				</div>
 			)}
@@ -210,14 +179,6 @@ function AnnouncementRow({
 				<div className="hidden md:flex flex-col gap-1.5 shrink-0 pr-2 min-w-35">
 					<div className="text-[11px] text-text-tertiary">Scheduled for</div>
 					<div className="text-xs font-semibold text-text-primary">{item.scheduledFor}</div>
-					{item.estimatedReach && (
-						<>
-							<div className="text-[11px] text-text-tertiary mt-1">Estimated Reach</div>
-							<div className="text-xs font-semibold text-text-primary">
-								{item.estimatedReach}
-							</div>
-						</>
-					)}
 				</div>
 			)}
 			<div className="flex items-center gap-1.5 shrink-0">
@@ -793,7 +754,7 @@ function SuccessView({
 			timeStyle: "short",
 		})
 		: null
-	const WHATS_NEXT = [
+	const WHATS_NEXT: { icon: LucideIcon; label: string; sub: string }[] = [
 		{
 			icon: Bell,
 			label: "Members receive notification",
@@ -805,43 +766,6 @@ function SuccessView({
 			icon: BarChart2,
 			label: "Traffic flows to events",
 			sub: "Drive members to your experiences and events.",
-		},
-	]
-
-	const SUCCESS_QUICK_ACTIONS: {
-		icon: LucideIcon
-		label: string
-		sub: string
-		bg: string
-		color: string
-	}[] = [
-		{
-			icon: Megaphone,
-			label: "Create Another Announcement",
-			sub: "Share another update with your community",
-			bg: "bg-red-50",
-			color: "text-red-500",
-		},
-		{
-			icon: Eye,
-			label: "View Announcement",
-			sub: "See how members will see this announcement",
-			bg: "bg-blue-50",
-			color: "text-blue-500",
-		},
-		{
-			icon: LayoutDashboard,
-			label: "Go to Community Dashboard",
-			sub: "Return to the community management dashboard",
-			bg: "bg-purple-50",
-			color: "text-purple-500",
-		},
-		{
-			icon: BarChart2,
-			label: "View Analytics",
-			sub: "Track reach, opens and engagement",
-			bg: "bg-amber-50",
-			color: "text-amber-500",
 		},
 	]
 
@@ -955,60 +879,23 @@ function SuccessView({
 					</div>
 				</div>
 
-				{/* What's Next + Quick Actions */}
-				<div className="grid grid-cols-2 gap-4">
-					<div className="rounded-xl border border-border-default bg-surface-card p-4">
-						<h3 className="text-sm font-semibold text-text-primary mb-3">What&apos;s Next?</h3>
-						<div className="flex flex-col gap-3">
-							{WHATS_NEXT.map(item => (
-								<div key={item.label} className="flex items-start gap-3">
-									<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-green-200 bg-green-50">
-										<item.icon size={12} className="text-green-500" />
-									</div>
-									<div>
-										<p className="text-xs font-semibold text-text-primary">
-											{item.label}
-										</p>
-										<p className="text-[10px] text-text-tertiary">{item.sub}</p>
-									</div>
+				{/* What's Next */}
+				<div className="rounded-xl border border-border-default bg-surface-card p-4">
+					<h3 className="text-sm font-semibold text-text-primary mb-3">What&apos;s Next?</h3>
+					<div className="grid grid-cols-2 gap-3">
+						{WHATS_NEXT.map(item => (
+							<div key={item.label} className="flex items-start gap-3">
+								<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-green-200 bg-green-50">
+									<item.icon size={12} className="text-green-500" />
 								</div>
-							))}
-						</div>
-					</div>
-
-					<div className="rounded-xl border border-border-default bg-surface-card p-4">
-						<h3 className="text-sm font-semibold text-text-primary mb-3">Quick Actions</h3>
-						<div className="flex flex-col gap-1">
-							{SUCCESS_QUICK_ACTIONS.map(action => (
-								<button
-									key={action.label}
-									className="flex items-center gap-3 rounded-lg p-2.5 hover:bg-surface-card-muted transition-colors text-left"
-									onClick={() =>
-										action.label === "Create Another Announcement"
-											? onBack()
-											: toast.info(`${action.label} coming soon`)
-									}
-								>
-									<div
-										className={cn(
-											"flex h-7 w-7 shrink-0 items-center justify-center rounded-lg",
-											action.bg,
-										)}
-									>
-										<action.icon size={13} className={action.color} />
-									</div>
-									<div className="flex-1 min-w-0">
-										<p className="text-xs font-medium text-text-primary">
-											{action.label}
-										</p>
-										<p className="text-[10px] text-text-tertiary truncate">
-											{action.sub}
-										</p>
-									</div>
-									<ChevronRight size={12} className="text-text-tertiary shrink-0" />
-								</button>
-							))}
-						</div>
+								<div>
+									<p className="text-xs font-semibold text-text-primary">
+										{item.label}
+									</p>
+									<p className="text-[10px] text-text-tertiary">{item.sub}</p>
+								</div>
+							</div>
+						))}
 					</div>
 				</div>
 
@@ -1027,167 +914,34 @@ function SuccessView({
 							</p>
 						</div>
 					</div>
-					<div className="flex items-center gap-2 shrink-0">
-						<Button variant="secondary" size="sm" radius="md" onClick={onBack}>
-							Back to Announcements
-						</Button>
-						<Button
-							variant="primary"
-							size="sm"
-							radius="md"
-							rightIcon={<ArrowRight size={13} />}
-							onClick={() => toast.info("Analytics coming soon")}
-						>
-							View Announcement Analytics
-						</Button>
-					</div>
+					<Button variant="secondary" size="sm" radius="md" onClick={onBack}>
+						Back to Announcements
+					</Button>
 				</div>
 			</div>
 
-			{/* ── Sidebar ───────────────────────────────────────────────────── */}
-			<div className="hidden lg:flex w-72 shrink-0 flex-col gap-4">
-				{/* Community Snapshot */}
-				<div className="rounded-xl border border-border-default bg-surface-card p-4">
-					<div className="flex items-center justify-between mb-3">
-						<h3 className="text-sm font-semibold text-text-primary">Community Snapshot</h3>
-						<span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">
-							<span className="h-1.5 w-1.5 rounded-full bg-green-500" /> Live
-						</span>
-					</div>
-					<div className="flex flex-col gap-2.5">
-						{[
-							{
-								icon: Users,
-								label: "Members",
-								sub: "Total community members",
-								value: "1,248",
-								trend: null,
-							},
-							{
-								icon: Megaphone,
-								label: "Announcements",
-								sub: "Total announcements",
-								value: "25",
-								trend: null,
-							},
-							{
-								icon: Eye,
-								label: "Average Open Rate",
-								sub: "vs last 7 days",
-								value: "68%",
-								trend: "+12%",
-							},
-							{
-								icon: BarChart2,
-								label: "Average Engagement",
-								sub: "vs last 7 days",
-								value: "24%",
-								trend: "+8%",
-							},
-						].map(row => (
-							<div
-								key={row.label}
-								className="flex items-center gap-3 rounded-lg border border-border-subtle p-2.5"
-							>
-								<row.icon size={14} className="text-text-tertiary shrink-0" />
-								<div className="flex-1 min-w-0">
-									<p className="text-xs font-medium text-text-primary">{row.label}</p>
-									<p className="text-[10px] text-text-tertiary">{row.sub}</p>
-								</div>
-								<div className="text-right shrink-0">
-									<p className="text-sm font-bold text-text-primary">{row.value}</p>
-									{row.trend && (
-										<p className="text-[10px] font-semibold text-green-500">
-											↑ {row.trend}
-										</p>
-									)}
-								</div>
-							</div>
-						))}
-					</div>
-					<button
-						className="mt-3 flex items-center gap-1 text-xs font-medium text-red-500 hover:underline"
-						onClick={() => toast.info("View analytics coming soon")}
-					>
-						View all analytics <ArrowRight size={11} />
-					</button>
-				</div>
-
-				{/* Managers & Moderators */}
-				<div className="rounded-xl border border-border-default bg-surface-card p-4">
-					<div className="flex items-center justify-between mb-3">
-						<h3 className="text-sm font-semibold text-text-primary">Managers &amp; Moderators</h3>
-						<button
-							className="text-xs font-medium text-text-brand hover:underline"
-							onClick={() => toast.info("View all coming soon")}
-						>
-							View All
-						</button>
-					</div>
-					<div className="flex flex-col gap-2.5">
-						{MANAGERS_SIDEBAR.map(m => (
-							<div key={m.name} className="flex items-center gap-2.5">
-								<div
-									className="h-7 w-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-									style={{ backgroundColor: m.color }}
-								>
-									{m.initial}
-								</div>
-								<span className="flex-1 text-xs font-medium text-text-primary truncate">
-									{m.name}
-								</span>
-								<span
-									className={cn(
-										"inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold shrink-0",
-										ROLE_BADGE[m.role] ?? "bg-neutral-100 text-neutral-600",
-									)}
-								>
-									{m.role}
-								</span>
-							</div>
-						))}
-					</div>
-					<button
-						className="mt-3 w-full rounded-lg border border-border-default bg-surface-card py-2 text-xs font-medium text-text-secondary hover:bg-neutral-50 transition-colors"
-						onClick={() => toast.info("Manage roles coming soon")}
-					>
-						Manage Roles
-					</button>
-				</div>
-
-				{/* Quick Actions 2x2 */}
-				<div className="rounded-xl border border-border-default bg-surface-card p-4">
-					<h3 className="text-sm font-semibold text-text-primary mb-3">Quick Actions</h3>
-					<div className="grid grid-cols-2 gap-2">
-						{SIDEBAR_QUICK_ACTIONS.map(action => (
-							<button
-								key={action.label}
-								onClick={() => toast.info(`${action.label} coming soon`)}
-								className="flex flex-col items-center gap-2 rounded-xl border border-border-default bg-surface-card p-3 text-center hover:bg-surface-card-muted transition-colors"
-							>
-								<div
-									className={cn(
-										"flex h-9 w-9 items-center justify-center rounded-xl",
-										action.bg,
-									)}
-								>
-									<action.icon size={16} className={action.color} />
-								</div>
-								<span className="text-[11px] font-medium text-text-secondary leading-tight">
-									{action.label}
-								</span>
-							</button>
-						))}
-					</div>
-				</div>
-			</div>
 		</div>
 	)
 }
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
-export function AnnouncementsTab({ communityId, communityName = "Your Community" }: { communityId: string; communityName?: string }) {
+export function AnnouncementsTab({
+	communityId,
+	communityName = "Your Community",
+	managers = [],
+	communityMeta,
+}: {
+	communityId: string
+	communityName?: string
+	managers?: CommunityDetailManager[]
+	communityMeta?: {
+		status: CommunityStatus
+		createdAt: string
+		access: CommunityAccess
+		communityUrl: string
+	}
+}) {
 	const [data, setData] = useState<AnnouncementsTabData | null>(null)
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
@@ -1313,37 +1067,23 @@ export function AnnouncementsTab({ communityId, communityName = "Your Community"
 				</div>
 
 				{/* Stat cards */}
-				{/* TODO: wire growth values from getCommunityAnnouncementsTab API response */}
 				<div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
 					<StatCard
 						icon={Megaphone}
 						label="Published"
 						value={isLoading ? "—" : (stats?.published ?? 0)}
-						trend={stats ? { value: stats.publishedGrowth, direction: "up" } : undefined}
-						sub="vs last 7 days"
 						accent="purple"
 					/>
 					<StatCard
 						icon={Calendar}
 						label="Scheduled"
 						value={isLoading ? "—" : (stats?.scheduled ?? 0)}
-						trend={stats ? { value: stats.scheduledGrowth, direction: "up" } : undefined}
-						sub="vs last 7 days"
 						accent="sky"
 					/>
 					<StatCard
 						icon={FileText}
 						label="Drafts"
 						value={isLoading ? "—" : (stats?.drafts ?? 0)}
-						trend={
-							stats
-								? {
-										value: Math.abs(stats.draftsGrowth),
-										direction: stats.draftsGrowth >= 0 ? "up" : "down",
-									}
-								: undefined
-						}
-						sub="vs last 7 days"
 						accent="amber"
 					/>
 					<StatCard
@@ -1454,82 +1194,78 @@ export function AnnouncementsTab({ communityId, communityName = "Your Community"
 
 			{/* Sidebar */}
 			<div className="hidden lg:flex w-72 shrink-0 flex-col gap-4">
-				<div className="rounded-xl border border-border-default bg-surface-card p-4">
-					<div className="flex items-center justify-between mb-3">
-						<h3 className="text-sm font-semibold text-text-primary">Community Status</h3>
-						{data && (
-							<span
-								className={cn(
-									"inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold",
-									data.communityStatus === "Active"
-										? "bg-green-100 text-green-700"
-										: "bg-neutral-100 text-neutral-600",
-								)}
-							>
-								{data.communityStatus}
-							</span>
-						)}
-					</div>
-					<div className="flex flex-col gap-2 text-xs">
-						<div className="flex items-center justify-between">
-							<span className="text-text-tertiary">Created on</span>
-							<span className="font-medium text-text-primary">{data?.createdOn ?? "—"}</span>
+				{communityMeta && (
+					<div className="rounded-xl border border-border-default bg-surface-card p-4">
+						<div className="flex items-center justify-between mb-3">
+							<h3 className="text-sm font-semibold text-text-primary">Community Status</h3>
+							<StatusBadge status={communityMeta.status} />
 						</div>
-						<div className="flex items-center justify-between">
-							<span className="text-text-tertiary">Visibility</span>
-							<span className="font-medium text-text-primary">{data?.visibility ?? "—"}</span>
-						</div>
-						<div className="mt-1">
-							<span className="text-text-tertiary block mb-1">Community URL</span>
-							<div className="flex items-center justify-between gap-2 rounded-lg bg-surface-card-muted px-3 py-2">
-								<span className="text-[11px] text-blue-500 truncate">
-									{data?.communityUrl ?? "—"}
-								</span>
-								<button
-									onClick={() => {
-										if (data?.communityUrl) {
-											void navigator.clipboard.writeText(data.communityUrl)
-											toast.success("URL copied")
-										}
-									}}
-									className="shrink-0 text-text-tertiary hover:text-text-primary transition-colors"
-								>
-									<ClipboardCopy size={12} />
-								</button>
+						<dl className="flex flex-col gap-2.5 text-xs">
+							<div className="flex items-center justify-between gap-2">
+								<dt className="text-text-tertiary">Created on</dt>
+								<dd className="text-text-primary font-medium">
+									{new Date(communityMeta.createdAt).toLocaleDateString("en-GB", {
+										day: "numeric", month: "short", year: "numeric",
+									})}
+								</dd>
 							</div>
-						</div>
+							<div className="flex items-center justify-between gap-2">
+								<dt className="text-text-tertiary">Access</dt>
+								<dd className="text-text-primary font-medium">
+									{communityMeta.access === "PUBLIC"
+										? "Public"
+										: communityMeta.access === "APPROVAL_REQUIRED"
+											? "Approval Required"
+											: "Invite Only"}
+								</dd>
+							</div>
+							<div className="flex flex-col gap-1 pt-0.5">
+								<dt className="text-text-tertiary">Community URL</dt>
+								<dd className="flex items-center gap-1.5">
+									<span className="text-text-brand text-[11px] truncate">
+										{communityMeta.communityUrl}
+									</span>
+									<button
+										className="shrink-0 text-text-tertiary hover:text-text-primary transition-colors"
+										onClick={() => {
+											void navigator.clipboard.writeText(communityMeta.communityUrl)
+											toast.success("URL copied!")
+										}}
+									>
+										<Copy size={11} />
+									</button>
+								</dd>
+							</div>
+						</dl>
+						<Button
+							variant="primary"
+							size="sm"
+							radius="md"
+							leftIcon={<Share2 size={13} />}
+							className="w-full mt-4"
+							onClick={() => toast.info("Share community coming soon")}
+						>
+							Share Community
+						</Button>
 					</div>
-					<Button
-						variant="secondary"
-						size="sm"
-						radius="md"
-						leftIcon={<Share2 size={12} />}
-						className="mt-3 w-full justify-center"
-						onClick={() => toast.info("Share coming soon")}
-					>
-						Share Community
-					</Button>
-				</div>
+				)}
 
 				<div className="rounded-xl border border-border-default bg-surface-card p-4">
-					<div className="flex items-center justify-between mb-3">
-						<h3 className="text-sm font-semibold text-text-primary">Managers &amp; Moderators</h3>
-						<button
-							className="text-xs font-medium text-text-brand hover:underline"
-							onClick={() => toast.info("View all coming soon")}
-						>
-							View All
-						</button>
-					</div>
+					<h3 className="text-sm font-semibold text-text-primary mb-3">Managers &amp; Moderators</h3>
 					<div className="flex flex-col gap-2.5">
-						{(data?.managers ?? []).map(m => (
+						{managers.map(m => (
 							<div key={m.id} className="flex items-center gap-2.5">
-								<div
-									className="h-7 w-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-									style={{ backgroundColor: m.avatarColor }}
-								>
-									{m.initial}
-								</div>
+								{m.avatarUrl ? (
+									<img
+										src={m.avatarUrl}
+										alt={m.name}
+										className="h-7 w-7 shrink-0 rounded-full object-cover"
+									/>
+								) : (
+									<div className="h-7 w-7 shrink-0 rounded-full bg-surface-brand-soft flex items-center justify-center text-[10px] font-semibold text-text-brand">
+										{m.initial}
+									</div>
+								)}
 								<span className="flex-1 text-xs font-medium text-text-primary truncate">
 									{m.name}
 								</span>
@@ -1544,41 +1280,17 @@ export function AnnouncementsTab({ communityId, communityName = "Your Community"
 							</div>
 						))}
 					</div>
-					<button
-						className="mt-3 w-full rounded-lg border border-border-default bg-surface-card py-2 text-xs font-medium text-text-secondary hover:bg-neutral-50 transition-colors"
-						onClick={() => toast.info("Manage roles coming soon")}
-					>
-						Manage Roles
-					</button>
 				</div>
 
 				<div className="rounded-xl border border-border-default bg-surface-card p-4">
 					<h3 className="text-sm font-semibold text-text-primary mb-3">Quick Actions</h3>
-					<div className="grid grid-cols-2 gap-2">
-						{SIDEBAR_QUICK_ACTIONS.map(action => (
-							<button
-								key={action.label}
-								onClick={() =>
-									action.label === "Create Announcement"
-										? setView("create")
-										: toast.info(`${action.label} coming soon`)
-								}
-								className="flex flex-col items-center gap-2 rounded-xl border border-border-default bg-surface-card p-3 text-center hover:bg-surface-card-muted transition-colors"
-							>
-								<div
-									className={cn(
-										"flex h-9 w-9 items-center justify-center rounded-xl",
-										action.bg,
-									)}
-								>
-									<action.icon size={16} className={action.color} />
-								</div>
-								<span className="text-[11px] font-medium text-text-secondary leading-tight">
-									{action.label}
-								</span>
-							</button>
-						))}
-					</div>
+					<button
+						onClick={() => setView("create")}
+						className="flex items-center gap-3 w-full rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 transition-opacity hover:opacity-80 text-left"
+					>
+						<Megaphone size={15} className="shrink-0 text-rose-500" />
+						<span className="text-xs font-medium text-rose-500">Create Announcement</span>
+					</button>
 				</div>
 			</div>
 		</div>
