@@ -99,6 +99,7 @@ function AnnouncementRow({
 	return (
 		<div className="flex items-start gap-4 rounded-xl border border-border-default bg-surface-card p-4">
 			{item.imageUrl ? (
+				// eslint-disable-next-line @next/next/no-img-element
 				<img src={item.imageUrl} alt="" className="h-24 w-20 shrink-0 rounded-lg object-cover" />
 			) : (
 				<div className="h-24 w-20 shrink-0 rounded-lg" style={{ background: item.imageGradient }} />
@@ -237,7 +238,7 @@ function CreateView({
 	communityId,
 	communityName,
 	onPublish,
-	onBack,
+	onBack: _onBack,
 }: {
 	communityId: string
 	communityName: string
@@ -460,6 +461,7 @@ function CreateView({
 							/>
 							{imagePreview ? (
 								<div className="relative rounded-lg overflow-hidden border border-border-default">
+									{/* eslint-disable-next-line @next/next/no-img-element */}
 									<img
 										src={imagePreview}
 										alt="Cover preview"
@@ -661,6 +663,7 @@ function CreateView({
 							</div>
 						</div>
 						{imagePreview ? (
+							// eslint-disable-next-line @next/next/no-img-element
 							<img src={imagePreview} alt="" className="h-20 w-full object-cover" />
 						) : (
 							<div className="h-20 bg-linear-to-br from-purple-900 via-purple-700 to-pink-600" />
@@ -795,6 +798,7 @@ function SuccessView({
 				<div className="rounded-xl border border-border-default bg-surface-card p-4">
 					<div className="flex items-start gap-4">
 						{imagePreview ? (
+							// eslint-disable-next-line @next/next/no-img-element
 							<img
 								src={imagePreview}
 								alt=""
@@ -1256,6 +1260,7 @@ export function AnnouncementsTab({
 						{managers.map(m => (
 							<div key={m.id} className="flex items-center gap-2.5">
 								{m.avatarUrl ? (
+									// eslint-disable-next-line @next/next/no-img-element
 									<img
 										src={m.avatarUrl}
 										alt={m.name}

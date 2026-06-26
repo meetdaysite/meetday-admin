@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { CheckCircle2, Pencil, Copy, Check, Loader2, Rocket, Globe, ShieldCheck, Lock } from "lucide-react"
@@ -77,15 +77,13 @@ export function Step5ReviewPublish() {
 		setPublishing(true)
 		try {
 			await publishCommunity(communityId)
-			store.nextStep() // → success screen (step 6)
+			store.nextStep() // â†’ success screen (step 6)
 		} catch {
 			toast.error("Failed to publish community. Please try again.")
 		} finally {
 			setPublishing(false)
 		}
 	}
-
-	const totalManagers = (s4?.managers.length ?? 0) + (s4?.hosts.length ?? 0) + (s4?.moderators.length ?? 0)
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -97,6 +95,7 @@ export function Step5ReviewPublish() {
 					<div className="rounded-panel border border-border-subtle bg-surface-canvas shadow-card overflow-hidden">
 						<div className="h-40 bg-linear-to-br from-[#1a0533] to-[#4c1d95] relative">
 							{s1.coverImageUrl && (
+								// eslint-disable-next-line @next/next/no-img-element
 								<img
 									src={s1.coverImageUrl}
 									alt="Cover"
@@ -106,6 +105,7 @@ export function Step5ReviewPublish() {
 							<div className="absolute -bottom-6 left-6">
 								<div className="h-14 w-14 rounded-full border-2 border-white bg-surface-card overflow-hidden shadow-card">
 									{s1.iconUrl ? (
+										// eslint-disable-next-line @next/next/no-img-element
 										<img
 											src={s1.iconUrl}
 											alt="Icon"
@@ -175,7 +175,7 @@ export function Step5ReviewPublish() {
 										<p className="text-[10px] font-medium uppercase tracking-wide mb-0.5">
 											Category
 										</p>
-										<p>{s1.categoryName || "—"}</p>
+										<p>{s1.categoryName || "â€”"}</p>
 									</div>
 									<div>
 										<p className="text-[10px] font-medium uppercase tracking-wide mb-1">
@@ -286,7 +286,7 @@ export function Step5ReviewPublish() {
 												<p className="font-medium">Manually added:</p>
 												{s3.manualEvents.slice(0, 3).map(e => (
 													<p key={e.id} className="truncate">
-														• {e.title}
+														â€¢ {e.title}
 													</p>
 												))}
 												{s3.manualEvents.length > 3 && (
@@ -375,7 +375,7 @@ export function Step5ReviewPublish() {
 									key={item}
 									className="text-caption text-text-secondary flex items-start gap-1.5"
 								>
-									<span className="mt-0.5">•</span>
+									<span className="mt-0.5">â€¢</span>
 									{item}
 								</p>
 							))}
@@ -441,7 +441,7 @@ export function Step5ReviewPublish() {
 					radius="md"
 					onClick={() => store.prevStep()}
 				>
-					← Back
+					â† Back
 				</Button>
 				<Button
 					type="button"

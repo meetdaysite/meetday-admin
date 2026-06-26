@@ -11,13 +11,8 @@ import {
 	CheckCircle,
 	XCircle,
 	ChevronDown,
-	ChevronRight,
 	Lightbulb,
 	Flag,
-	Shield,
-	Volume2,
-	AlertTriangle,
-	Bell,
 	Pin,
 	PinOff,
 	Trash2,
@@ -25,7 +20,6 @@ import {
 	Plus,
 	X,
 	ImagePlus,
-	type LucideIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 import { LineChart, Line, ResponsiveContainer } from "recharts"
@@ -57,10 +51,6 @@ const POST_TYPE_BADGE: Record<string, string> = {
 	Photo: "bg-purple-100 text-purple-700",
 	Text:  "bg-blue-100 text-blue-700",
 	Poll:  "bg-amber-100 text-amber-700",
-}
-
-const ICON_MAP: Record<string, LucideIcon> = {
-	shield: Shield, speaker: Volume2, warning: AlertTriangle, bell: Bell,
 }
 
 type ViewMode = "list" | "grid"
@@ -167,6 +157,7 @@ function PostCard({
 			<div className="flex items-start justify-between gap-2">
 				<div className="flex items-center gap-2.5">
 					{post.authorAvatarUrl ? (
+						// eslint-disable-next-line @next/next/no-img-element
 						<img
 							src={post.authorAvatarUrl}
 							alt={post.authorName}
@@ -200,6 +191,7 @@ function PostCard({
 			{/* Media + Content */}
 			<div className="flex gap-3">
 				{post.mediaThumbnail && (
+					// eslint-disable-next-line @next/next/no-img-element
 					<img
 						src={post.mediaThumbnail}
 						alt=""
@@ -338,7 +330,7 @@ export function FeedTab({ communityId }: { communityId: string }) {
 	const [isCreating, setIsCreating]       = useState(false)
 	const mediaInputRef = useRef<HTMLInputElement>(null)
 
-	const searchTimerRef = useRef<ReturnType<typeof setTimeout>>()
+	const searchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
 	function handleSearchChange(v: string) {
 		setSearchInput(v)
@@ -777,6 +769,7 @@ export function FeedTab({ communityId }: { communityId: string }) {
 								<div key={report.id} className="flex flex-col gap-1.5">
 									<div className="flex items-center gap-2.5">
 										{report.reporterAvatarUrl ? (
+											// eslint-disable-next-line @next/next/no-img-element
 											<img
 												src={report.reporterAvatarUrl}
 												alt={report.reporterName}
@@ -913,6 +906,7 @@ export function FeedTab({ communityId }: { communityId: string }) {
 								<div className="grid grid-cols-4 gap-2">
 									{mediaItems.map((m, i) => (
 										<div key={m.key} className="relative aspect-square">
+											{/* eslint-disable-next-line @next/next/no-img-element */}
 											<img
 												src={m.preview}
 												alt=""

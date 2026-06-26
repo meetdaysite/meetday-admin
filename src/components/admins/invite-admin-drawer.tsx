@@ -167,6 +167,7 @@ export function InviteAdminDrawer({
 		},
 	})
 
+	// eslint-disable-next-line react-hooks/incompatible-library
 	const roleName = watch("roleName")
 
 	// Fetch roles when drawer opens

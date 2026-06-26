@@ -68,11 +68,9 @@ export function Step2CommunityRules() {
 	const communityType = store.step1Data?.type ?? "MEETDAY_MANAGED_PUBLIC"
 	const accessInfo = ACCESS_DISPLAY[communityType]
 
-	const { control, handleSubmit, watch, setValue } = useForm<Step2Snapshot>({
+	const { control, handleSubmit } = useForm<Step2Snapshot>({
 		defaultValues: store.step2Snapshot ?? DEFAULT_VALUES,
 	})
-
-	const values = watch()
 
 	const onSubmit = async (data: Step2Snapshot) => {
 		if (!store.communityId) return

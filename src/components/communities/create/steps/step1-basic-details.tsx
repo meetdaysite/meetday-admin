@@ -137,6 +137,7 @@ export function Step1BasicDetails() {
 			primaryCity: watchedCity || null,
 			interestTags: watchedTags.map(t => t.label),
 		})
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [watchedName, watchedSlug, watchedDesc, watchedType, watchedCity, watchedTags])
 
 	useEffect(() => {

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useCallback, useRef, useState } from "react"
 import { ImageIcon, Upload, X, Pencil, Loader2 } from "lucide-react"
@@ -105,6 +105,7 @@ export function ImageUploadZone({
 			>
 				{previewUrl ? (
 					<>
+						{/* eslint-disable-next-line @next/next/no-img-element */}
 						<img
 							src={previewUrl}
 							alt={label}

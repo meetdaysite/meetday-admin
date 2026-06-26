@@ -4,11 +4,14 @@ import { apiClient } from "./client"
 import type {
 	Community,
 	CommunityStatus,
-	AssignableCommunityRole,
+	CommunityVisibility,
+	CommunityAccess,
 	CreateCommunityDraftRequest,
 	UpdateCommunitySettingsRequest,
 	AssignCommunityMemberRequest,
 } from "@/types"
+
+export type { CommunityStatus, CommunityVisibility, CommunityAccess }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,10 +73,10 @@ export async function getCommunities(params?: GetCommunitiesParams): Promise<Com
 }
 
 export async function updateCommunityStatus(
-	id: string,
-	status: CommunityStatus,
+	_id: string,
+	_status: CommunityStatus,
 ): Promise<void> {
-	// TODO: await apiClient.patch(`/admin/communities/${id}/status`, { status })
+	// TODO: await apiClient.patch(`/admin/communities/${_id}/status`, { status: _status })
 	await new Promise(r => setTimeout(r, 400))
 }
 
@@ -200,23 +203,23 @@ export async function getCommunityQueue(params?: GetCommunityQueueParams): Promi
 	return { items: filtered.slice(start, start + limit), total: filtered.length, page, limit }
 }
 
-export async function approveCommunity(id: string): Promise<void> {
-	// TODO: await apiClient.post(`/admin/communities/${id}/approve`)
+export async function approveCommunity(_id: string): Promise<void> {
+	// TODO: await apiClient.post(`/admin/communities/${_id}/approve`)
 	await new Promise(r => setTimeout(r, 500))
 }
 
-export async function rejectCommunity(id: string, reason: string): Promise<void> {
-	// TODO: await apiClient.post(`/admin/communities/${id}/reject`, { reason })
+export async function rejectCommunity(_id: string, _reason: string): Promise<void> {
+	// TODO: await apiClient.post(`/admin/communities/${_id}/reject`, { reason: _reason })
 	await new Promise(r => setTimeout(r, 500))
 }
 
-export async function bulkApproveCommunities(ids: string[]): Promise<void> {
-	// TODO: await apiClient.post("/admin/communities/bulk-approve", { ids })
+export async function bulkApproveCommunities(_ids: string[]): Promise<void> {
+	// TODO: await apiClient.post("/admin/communities/bulk-approve", { ids: _ids })
 	await new Promise(r => setTimeout(r, 700))
 }
 
-export async function bulkRejectCommunities(ids: string[], reason: string): Promise<void> {
-	// TODO: await apiClient.post("/admin/communities/bulk-reject", { ids, reason })
+export async function bulkRejectCommunities(_ids: string[], _reason: string): Promise<void> {
+	// TODO: await apiClient.post("/admin/communities/bulk-reject", { ids: _ids, reason: _reason })
 	await new Promise(r => setTimeout(r, 700))
 }
 
@@ -227,8 +230,6 @@ import type {
 	CommunityChatPermission,
 	CommunityDmPolicy,
 	CommunityPhotoSharing,
-	CommunityAccess,
-	CommunityMemberVisibility,
 } from "@/types"
 
 export type ApiCommunitySettings = {

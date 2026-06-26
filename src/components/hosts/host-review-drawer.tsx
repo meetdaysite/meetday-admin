@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-	Loader2, MapPin, Mail, Tag, Building2,
+	Loader2, MapPin, Mail, Building2,
 	Briefcase, CreditCard, BadgeCheck, AlertTriangle,
 	Globe, Link, BookOpen, Languages,
 } from "lucide-react"
@@ -547,6 +547,7 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 			})
 
 		return () => { cancelled = true }
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [open, host?.id, router])
 
 	function handleClose() {

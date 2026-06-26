@@ -342,6 +342,7 @@ export function ChatTab({
 								{managers.map(m => (
 									<div key={m.id} className="flex items-center gap-2.5">
 										{m.avatarUrl ? (
+											// eslint-disable-next-line @next/next/no-img-element
 											<img
 												src={m.avatarUrl}
 												alt={m.name}

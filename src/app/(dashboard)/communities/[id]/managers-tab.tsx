@@ -148,6 +148,7 @@ export function ManagersTab({
 								>
 									<div className="flex items-center gap-2 min-w-0">
 										{m.avatarUrl ? (
+											// eslint-disable-next-line @next/next/no-img-element
 											<img
 												src={m.avatarUrl}
 												alt={m.name}

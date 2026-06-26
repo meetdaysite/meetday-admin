@@ -238,12 +238,12 @@ export function ChannelDrawer({ open, onClose, onSuccess, communityId, channel }
 					<div className="rounded-xl border border-border-default bg-surface-card-muted px-4 py-3 space-y-1.5">
 						<p className="text-[11px] font-semibold text-text-tertiary uppercase tracking-wide">Channel Info</p>
 						<div className="flex items-center justify-between text-xs">
-							<span className="text-text-secondary">Visibility</span>
-							<span className="font-medium text-text-primary">{channel.isPrivate ? "Private" : "Public"}</span>
+							<span className="text-text-secondary">Position</span>
+							<span className="font-medium text-text-primary">#{channel.position + 1}</span>
 						</div>
 						<div className="flex items-center justify-between text-xs">
-							<span className="text-text-secondary">Members</span>
-							<span className="font-medium text-text-primary">{channel.members.toLocaleString("en-IN")}</span>
+							<span className="text-text-secondary">Default</span>
+							<span className="font-medium text-text-primary">{channel.isDefault ? "Yes" : "No"}</span>
 						</div>
 					</div>
 				)}

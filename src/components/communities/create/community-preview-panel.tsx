@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { Eye, Users, CalendarDays, MapPin, MessageSquare, Star, Globe, Lock, ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -50,6 +50,7 @@ export function CommunityPreviewPanel() {
 			{/* Cover image */}
 			<div className="relative h-32 bg-linear-to-br from-[#1a0533] to-[#4c1d95] overflow-hidden">
 				{preview.coverImageUrl ? (
+					// eslint-disable-next-line @next/next/no-img-element
 					<img src={preview.coverImageUrl} alt="Cover" className="h-full w-full object-cover" />
 				) : (
 					<div className="h-full w-full" />
@@ -59,6 +60,7 @@ export function CommunityPreviewPanel() {
 				<div className="absolute -bottom-5 left-4">
 					<div className="h-12 w-12 rounded-full border-2 border-white bg-surface-card overflow-hidden shadow-card">
 						{preview.iconUrl ? (
+							// eslint-disable-next-line @next/next/no-img-element
 							<img src={preview.iconUrl} alt="Icon" className="h-full w-full object-cover" />
 						) : (
 							<div className="h-full w-full bg-linear-to-br from-[#4c1d95] to-[#db2777]" />
@@ -113,7 +115,7 @@ export function CommunityPreviewPanel() {
 					<div className="flex flex-col items-center gap-0.5">
 						<MapPin size={14} className="text-icon-secondary" />
 						<span className="text-label-sm font-bold text-text-primary truncate max-w-full text-center">
-							{preview.primaryCity || "—"}
+							{preview.primaryCity || "â€”"}
 						</span>
 						<span className="text-[10px] text-text-secondary">City</span>
 					</div>
@@ -161,7 +163,7 @@ export function CommunityPreviewPanel() {
 							<span className="text-caption text-text-secondary">Access</span>
 							<span className="text-caption font-medium text-text-secondary flex items-center gap-1">
 								{accessInfo?.icon}
-								{accessInfo?.label ?? "—"}
+								{accessInfo?.label ?? "â€”"}
 							</span>
 						</div>
 						<div className="flex items-center justify-between">

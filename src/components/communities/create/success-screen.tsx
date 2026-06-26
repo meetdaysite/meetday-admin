@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import {
 	CheckCircle2,
@@ -17,7 +17,6 @@ import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/Button"
 import { useCreateCommunityStore } from "@/stores/create-community.store"
-import { useAuthStore } from "@/stores/auth.store"
 
 const WHATS_ACTIVE = [
 	{
@@ -45,7 +44,6 @@ const WHATS_ACTIVE = [
 export function SuccessScreen() {
 	const router = useRouter()
 	const { step1Data, communityId, reset } = useCreateCommunityStore()
-	const user = useAuthStore(s => s.user)
 	const [copied, setCopied] = useState(false)
 
 	const slug = step1Data?.slug ?? ""
@@ -74,7 +72,7 @@ export function SuccessScreen() {
 					</div>
 					<div>
 						<h1 className="text-2xl font-bold text-text-primary">
-							{step1Data?.name ?? "Community"} is now live! 🎉
+							{step1Data?.name ?? "Community"} is now live! ðŸŽ‰
 						</h1>
 						<p className="mt-1 text-sm text-text-secondary">
 							Your community has been created successfully and is ready for members.
@@ -91,7 +89,7 @@ export function SuccessScreen() {
 							label: "View Community",
 							desc: "See how your community looks to members.",
 							action: () => window.open(`https://${communityUrl}`, "_blank"),
-							buttonLabel: "View Community →",
+							buttonLabel: "View Community â†’",
 							buttonClass: "border border-[#dc2626] text-[#dc2626] hover:bg-[#fff5f5]",
 						},
 						{
@@ -103,7 +101,7 @@ export function SuccessScreen() {
 								reset()
 								router.push("/communities")
 							},
-							buttonLabel: "Create Announcement →",
+							buttonLabel: "Create Announcement â†’",
 							buttonClass: "border border-[#7c3aed] text-[#7c3aed] hover:bg-[#f5f0ff]",
 						},
 						{
@@ -112,7 +110,7 @@ export function SuccessScreen() {
 							label: "Manage Community",
 							desc: "Go to the community dashboard to manage everything.",
 							action: goToDashboard,
-							buttonLabel: "Manage Community →",
+							buttonLabel: "Manage Community â†’",
 							buttonClass: "border border-[#059669] text-[#059669] hover:bg-[#f0fdf4]",
 						},
 					].map(card => (
@@ -166,7 +164,7 @@ export function SuccessScreen() {
 						))}
 					</div>
 					<p className="mt-4 text-center text-caption text-text-secondary">
-						🎉 Great work! Your community is ready to bring people together.
+						ðŸŽ‰ Great work! Your community is ready to bring people together.
 					</p>
 				</div>
 
@@ -174,14 +172,14 @@ export function SuccessScreen() {
 				<div className="w-full max-w-2xl rounded-card border border-border-subtle bg-surface-canvas p-5 flex items-center justify-between gap-4">
 					<div>
 						<p className="text-label-sm font-semibold text-text-primary">
-							🚀 You&apos;re all set! What would you like to do next?
+							ðŸš€ You&apos;re all set! What would you like to do next?
 						</p>
 						<p className="text-caption text-text-secondary">
 							Jump into your community workspace and start building an amazing experience.
 						</p>
 					</div>
 					<Button variant="primary" size="md" radius="md" onClick={goToDashboard}>
-						Go to Community Dashboard →
+						Go to Community Dashboard â†’
 					</Button>
 				</div>
 			</div>
@@ -194,6 +192,7 @@ export function SuccessScreen() {
 					</div>
 					<div className="h-24 bg-linear-to-br from-[#1a0533] to-[#4c1d95] relative overflow-hidden">
 						{step1Data?.coverImageUrl && (
+							// eslint-disable-next-line @next/next/no-img-element
 							<img
 								src={step1Data.coverImageUrl}
 								alt=""
@@ -208,7 +207,7 @@ export function SuccessScreen() {
 							{[
 								{ label: "Community URL", value: communityUrl, copy: true },
 								{ label: "Visibility", value: "Public Community" },
-								{ label: "Category", value: step1Data?.categoryName ?? "—" },
+								{ label: "Category", value: step1Data?.categoryName ?? "â€”" },
 							].map(row => (
 								<div key={row.label}>
 									<p className="text-text-secondary">{row.label}</p>
