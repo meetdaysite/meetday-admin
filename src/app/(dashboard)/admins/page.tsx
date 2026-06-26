@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
@@ -13,7 +13,7 @@ import { InviteAdminDrawer, type InviteAdminSubmitValues } from "@/components/ad
 import { inviteAdmin, getAdmins, deactivateAdmin, reactivateAdmin } from "@/lib/api/admins"
 import type { Admin, Role } from "@/types"
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const PAGE_LIMIT = 20
 
@@ -33,7 +33,7 @@ const ACTIVE_FILTER_OPTIONS: { label: string; value: ActiveFilter }[] = [
 	{ label: "Inactive", value: "false" },
 ]
 
-// ─── Role badge ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Role badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const ROLE_STYLE: Record<Role, string> = {
 	SUPER_ADMIN: "bg-violet-50 text-violet-700",
@@ -59,7 +59,7 @@ function RoleBadge({ role }: { role: Role }) {
 	)
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function formatDate(iso: string): string {
 	return new Date(iso).toLocaleDateString("en-IN", {
@@ -69,7 +69,7 @@ function formatDate(iso: string): string {
 	})
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function AdminsPage() {
 	const currentUserId = useAuthStore((s) => s.user?.id)
@@ -128,7 +128,7 @@ export default function AdminsPage() {
 			if (page === 1) {
 				fetchAdmins()
 			} else {
-				setPage(1) // triggers useEffect → re-fetch
+				setPage(1) // triggers useEffect â†’ re-fetch
 			}
 		} catch (err: unknown) {
 			const message =
@@ -188,10 +188,10 @@ export default function AdminsPage() {
 				header: "Admin",
 				cell: ({ row }) => (
 					<div>
-						<p className="text-xs font-semibold text-foreground leading-none mb-0.5">
+						<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
 							{row.original.firstName} {row.original.lastName}
 						</p>
-						<p className="text-[11px] text-neutral-light">{row.original.email}</p>
+						<p className="text-[11px] text-text-tertiary">{row.original.email}</p>
 					</div>
 				),
 			},
@@ -209,14 +209,14 @@ export default function AdminsPage() {
 					const cities = row.original.adminProfile?.managedCities ?? []
 					if (cities.length === 0)
 						return (
-							<span className="inline-flex items-center gap-1 text-xs text-neutral-light">
+							<span className="inline-flex items-center gap-1 text-xs text-text-tertiary">
 								<Globe size={12} />
 								All cities
 							</span>
 						)
 					return (
-						<span className="inline-flex items-center gap-1 text-xs text-foreground">
-							<MapPin size={12} className="text-neutral-light" />
+						<span className="inline-flex items-center gap-1 text-xs text-text-primary">
+							<MapPin size={12} className="text-text-tertiary" />
 							{cities.join(", ")}
 						</span>
 					)
@@ -235,7 +235,7 @@ export default function AdminsPage() {
 				accessorKey: "createdAt",
 				enableSorting: true,
 				cell: ({ row }) => (
-					<span className="text-xs text-neutral-dark">
+					<span className="text-xs text-text-secondary">
 						{formatDate(row.original.createdAt)}
 					</span>
 				),
@@ -292,9 +292,9 @@ export default function AdminsPage() {
 			{/* Page header */}
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-3">
-					<h1 className="text-base font-semibold text-foreground">Admins</h1>
+					<h1 className="text-base font-semibold text-text-primary">Admins</h1>
 					{total > 0 && (
-						<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-dark">
+						<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
 							{total} total
 						</span>
 					)}
@@ -303,7 +303,7 @@ export default function AdminsPage() {
 				{canInvite && (
 					<button
 						onClick={() => setDrawerOpen(true)}
-						className="flex items-center gap-1.5 rounded-lg bg-brand-red px-3.5 py-2 text-xs font-semibold text-white hover:bg-brand-red-deep transition-colors"
+						className="flex items-center gap-1.5 rounded-lg bg-action-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors"
 					>
 						<UserPlus size={13} />
 						Invite Admin
@@ -319,7 +319,7 @@ export default function AdminsPage() {
 						setRoleFilter(e.target.value as RoleFilter)
 						setPage(1)
 					}}
-					className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-foreground focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 				>
 					{ROLE_FILTER_OPTIONS.map((o) => (
 						<option key={o.value} value={o.value}>{o.label}</option>
@@ -332,7 +332,7 @@ export default function AdminsPage() {
 						setActiveFilter(e.target.value as ActiveFilter)
 						setPage(1)
 					}}
-					className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-foreground focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 				>
 					{ACTIVE_FILTER_OPTIONS.map((o) => (
 						<option key={o.value} value={o.value}>{o.label}</option>
@@ -346,7 +346,7 @@ export default function AdminsPage() {
 				data={admins}
 				isLoading={isLoading}
 				emptyState={
-					<div className="py-12 text-center text-sm text-neutral-light">
+					<div className="py-12 text-center text-sm text-text-tertiary">
 						No admins found.
 					</div>
 				}
@@ -354,25 +354,25 @@ export default function AdminsPage() {
 
 			{/* Pagination */}
 			{totalPages > 1 && (
-				<div className="flex items-center justify-between text-xs text-neutral-light">
+				<div className="flex items-center justify-between text-xs text-text-tertiary">
 					<span>
-						Showing {(page - 1) * PAGE_LIMIT + 1}–{Math.min(page * PAGE_LIMIT, total)} of {total}
+						Showing {(page - 1) * PAGE_LIMIT + 1}â€“{Math.min(page * PAGE_LIMIT, total)} of {total}
 					</span>
 					<div className="flex items-center gap-2">
 						<button
 							disabled={page === 1}
 							onClick={() => setPage((p) => p - 1)}
-							className="rounded-md px-2.5 py-1 text-xs font-medium border border-neutral-200 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+							className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 						>
 							Previous
 						</button>
-						<span className="font-medium text-foreground">
+						<span className="font-medium text-text-primary">
 							{page} / {totalPages}
 						</span>
 						<button
 							disabled={page >= totalPages}
 							onClick={() => setPage((p) => p + 1)}
-							className="rounded-md px-2.5 py-1 text-xs font-medium border border-neutral-200 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+							className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 						>
 							Next
 						</button>

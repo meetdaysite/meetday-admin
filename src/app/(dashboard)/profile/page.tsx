@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -7,7 +7,7 @@ import { useAuthStore } from "@/stores/auth.store"
 import { getAdminProfile, type AdminProfile } from "@/lib/api/profile"
 import type { Role } from "@/types"
 
-// ─── Role badge ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Role badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const ROLE_STYLE: Record<Role, string> = {
 	SUPER_ADMIN: "bg-violet-50 text-violet-700",
@@ -23,7 +23,7 @@ const ROLE_LABEL: Record<Role, string> = {
 	SUPPORT:     "Support",
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function formatDate(iso: string): string {
 	return new Date(iso).toLocaleDateString("en-IN", {
@@ -37,13 +37,13 @@ function getInitials(firstName: string, lastName: string): string {
 	return `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase()
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ProfileSkeleton() {
 	return (
 		<div className="p-6 space-y-6 max-w-2xl mx-auto animate-pulse">
 			<div className="h-5 w-32 bg-neutral-200 rounded" />
-			<div className="bg-white rounded-xl border border-neutral-200 p-6 space-y-6">
+			<div className="bg-surface-canvas rounded-xl border border-border-default p-6 space-y-6">
 				<div className="flex items-center gap-4">
 					<div className="w-16 h-16 rounded-full bg-neutral-200 shrink-0" />
 					<div className="space-y-2">
@@ -64,7 +64,7 @@ function ProfileSkeleton() {
 	)
 }
 
-// ─── Info row ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Info row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function InfoRow({
 	icon: Icon,
@@ -77,18 +77,18 @@ function InfoRow({
 }) {
 	return (
 		<div className="py-3 flex items-start gap-3">
-			<Icon size={14} className="mt-0.5 shrink-0 text-neutral-light" />
+			<Icon size={14} className="mt-0.5 shrink-0 text-text-tertiary" />
 			<div className="min-w-0 flex-1">
-				<p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-light mb-0.5">
+				<p className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary mb-0.5">
 					{label}
 				</p>
-				<div className="text-xs text-foreground">{value}</div>
+				<div className="text-xs text-text-primary">{value}</div>
 			</div>
 		</div>
 	)
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type PageState = "loading" | "done" | "error" | "access-denied" | "not-found"
 
@@ -144,8 +144,8 @@ export default function ProfilePage() {
 			<div className="p-6 max-w-2xl mx-auto">
 				<div className="flex flex-col items-center justify-center py-20 text-center">
 					<ShieldCheck size={32} className="mb-3 text-neutral-300" />
-					<p className="text-sm font-semibold text-foreground">Access Denied</p>
-					<p className="mt-1 text-xs text-neutral-light">
+					<p className="text-sm font-semibold text-text-primary">Access Denied</p>
+					<p className="mt-1 text-xs text-text-tertiary">
 						You don&apos;t have permission to view this profile.
 					</p>
 				</div>
@@ -158,8 +158,8 @@ export default function ProfilePage() {
 			<div className="p-6 max-w-2xl mx-auto">
 				<div className="flex flex-col items-center justify-center py-20 text-center">
 					<UserX size={32} className="mb-3 text-neutral-300" />
-					<p className="text-sm font-semibold text-foreground">Profile Not Found</p>
-					<p className="mt-1 text-xs text-neutral-light">
+					<p className="text-sm font-semibold text-text-primary">Profile Not Found</p>
+					<p className="mt-1 text-xs text-text-tertiary">
 						Your admin profile could not be located.
 					</p>
 				</div>
@@ -172,8 +172,8 @@ export default function ProfilePage() {
 			<div className="p-6 max-w-2xl mx-auto">
 				<div className="flex flex-col items-center justify-center py-20 text-center">
 					<AlertTriangle size={32} className="mb-3 text-neutral-300" />
-					<p className="text-sm font-semibold text-foreground">Something went wrong</p>
-					<p className="mt-1 text-xs text-neutral-light">
+					<p className="text-sm font-semibold text-text-primary">Something went wrong</p>
+					<p className="mt-1 text-xs text-text-tertiary">
 						{errorMessage ?? "Unable to load your profile."}
 					</p>
 				</div>
@@ -189,27 +189,27 @@ export default function ProfilePage() {
 	return (
 		<div className="p-6 space-y-6 max-w-2xl mx-auto">
 			{/* Page header */}
-			<h1 className="text-base font-semibold text-foreground">My Profile</h1>
+			<h1 className="text-base font-semibold text-text-primary">My Profile</h1>
 
 			{/* Profile card */}
-			<div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
+			<div className="bg-surface-card rounded-xl border border-border-default overflow-hidden">
 				{/* Avatar + name */}
-				<div className="p-6 flex items-center gap-4 border-b border-neutral-100">
+				<div className="p-6 flex items-center gap-4 border-b border-border-subtle">
 					{profile.avatarUrl ? (
 						// eslint-disable-next-line @next/next/no-img-element
 						<img
 							src={profile.avatarUrl}
 							alt={`${profile.firstName} ${profile.lastName}`}
-							className="w-16 h-16 rounded-full object-cover shrink-0 border border-neutral-200"
+							className="w-16 h-16 rounded-full object-cover shrink-0 border border-border-default"
 						/>
 					) : (
-						<div className="w-16 h-16 rounded-full bg-brand-red text-white text-lg font-bold flex items-center justify-center shrink-0 select-none">
+						<div className="w-16 h-16 rounded-full bg-action-primary text-white text-lg font-bold flex items-center justify-center shrink-0 select-none">
 							{initials}
 						</div>
 					)}
 
 					<div className="min-w-0">
-						<p className="text-sm font-semibold text-foreground leading-none">
+						<p className="text-sm font-semibold text-text-primary leading-none">
 							{profile.firstName} {profile.lastName}
 						</p>
 						<div className="mt-1.5 flex items-center gap-2 flex-wrap">
@@ -232,7 +232,7 @@ export default function ProfilePage() {
 				</div>
 
 				{/* Info rows */}
-				<div className="px-6 divide-y divide-neutral-100">
+				<div className="px-6 divide-y divide-border-subtle">
 					<InfoRow
 						icon={Mail}
 						label="Email"
@@ -246,7 +246,7 @@ export default function ProfilePage() {
 							profile.phone ? (
 								<span className="font-medium">{profile.phone}</span>
 							) : (
-								<span className="text-neutral-light italic">Not provided</span>
+								<span className="text-text-tertiary italic">Not provided</span>
 							)
 						}
 					/>

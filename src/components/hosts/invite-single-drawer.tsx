@@ -6,8 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { CheckCircle2, Loader2 } from "lucide-react"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
-
-// ─── Schema ───────────────────────────────────────────────────────────────────
+import { TextField } from "@/components/ui/TextField"
+import { Button } from "@/components/ui/Button"
 
 const schema = z.object({
 	name:  z.string().min(1, "Name is required"),
@@ -18,44 +18,11 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
-// ─── Shared styles ────────────────────────────────────────────────────────────
-
-const inputCls =
-	"w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm placeholder:text-neutral-light " +
-	"focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
-
-// ─── Field wrapper ────────────────────────────────────────────────────────────
-
-function Field({
-	label,
-	hint,
-	error,
-	children,
-}: {
-	label: string
-	hint?: string
-	error?: string
-	children: React.ReactNode
-}) {
-	return (
-		<div className="space-y-1.5">
-			<label className="block text-xs font-medium text-foreground">{label}</label>
-			{children}
-			{hint && !error && <p className="text-[11px] text-neutral-light">{hint}</p>}
-			{error && <p className="text-[11px] text-red-600">{error}</p>}
-		</div>
-	)
-}
-
-// ─── Props ────────────────────────────────────────────────────────────────────
-
 type Props = {
 	open: boolean
 	onClose: () => void
 	onOpenBulk: () => void
 }
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export function InviteSingleDrawer({ open, onClose, onOpenBulk }: Props) {
 	const [sent, setSent] = useState(false)
@@ -93,96 +60,85 @@ export function InviteSingleDrawer({ open, onClose, onOpenBulk }: Props) {
 			description="Send an invitation email to a new host."
 		>
 			{sent ? (
-				/* ── Success state ─────────────────────────────────────────────── */
 				<div className="flex flex-col items-center justify-center py-16 text-center">
 					<div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-50">
 						<CheckCircle2 size={28} className="text-green-600" />
 					</div>
-					<h2 className="text-base font-semibold text-foreground">Invitation sent</h2>
-					<p className="mt-1 text-sm text-neutral-light max-w-xs">
+					<h2 className="text-base font-semibold text-text-primary">Invitation sent</h2>
+					<p className="mt-1 text-sm text-text-tertiary max-w-xs">
 						The host will receive an email with a link to complete their profile.
 					</p>
 					<div className="mt-6 flex items-center gap-3">
-						<button
+						<Button
 							onClick={() => {
 								setSent(false)
 								reset()
 							}}
-							className="rounded-lg bg-brand-red px-4 py-2 text-xs font-semibold text-white hover:bg-brand-red-deep transition-colors"
 						>
 							Invite another
-						</button>
-						<button
+						</Button>
+						<Button
+							variant="secondary"
 							onClick={() => {
 								handleClose()
 								onOpenBulk()
 							}}
-							className="rounded-lg border border-neutral-200 px-4 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
 						>
 							Bulk upload
-						</button>
+						</Button>
 					</div>
 				</div>
 			) : (
-				/* ── Form ──────────────────────────────────────────────────────── */
 				<form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-					<Field label="Full name" error={errors.name?.message}>
-						<input
-							{...register("name")}
-							type="text"
-							placeholder="Jane Doe"
-							className={inputCls}
-						/>
-					</Field>
+					<TextField
+						label="Full name"
+						type="text"
+						placeholder="Jane Doe"
+						error={!!errors.name}
+						helperText={errors.name?.message}
+						{...register("name")}
+					/>
 
-					<Field label="Email address" error={errors.email?.message}>
-						<input
-							{...register("email")}
-							type="email"
-							placeholder="jane@example.com"
-							autoComplete="off"
-							className={inputCls}
-						/>
-					</Field>
+					<TextField
+						label="Email address"
+						type="email"
+						placeholder="jane@example.com"
+						autoComplete="off"
+						error={!!errors.email}
+						helperText={errors.email?.message}
+						{...register("email")}
+					/>
 
-					<Field
+					<TextField
 						label="Phone"
 						hint="Optional — used for WhatsApp outreach"
-						error={errors.phone?.message}
-					>
-						<input
-							{...register("phone")}
-							type="tel"
-							placeholder="+91 98765 43210"
-							className={inputCls}
-						/>
-					</Field>
+						type="tel"
+						placeholder="+91 98765 43210"
+						error={!!errors.phone}
+						helperText={errors.phone?.message}
+						{...register("phone")}
+					/>
 
-					<Field label="City" error={errors.city?.message}>
-						<input
-							{...register("city")}
-							type="text"
-							placeholder="Mumbai"
-							className={inputCls}
-						/>
-					</Field>
+					<TextField
+						label="City"
+						type="text"
+						placeholder="Mumbai"
+						error={!!errors.city}
+						helperText={errors.city?.message}
+						{...register("city")}
+					/>
 
 					<DrawerFooter className="px-0 border-0 pt-4 justify-start">
-						<button
+						<Button
 							type="submit"
 							disabled={isSubmitting}
-							className="flex items-center gap-1.5 rounded-lg bg-brand-red px-4 py-2 text-xs font-semibold text-white hover:bg-brand-red-deep transition-colors disabled:opacity-70"
+							leftIcon={isSubmitting ? <Loader2 size={13} className="animate-spin" /> : undefined}
 						>
-							{isSubmitting && <Loader2 size={13} className="animate-spin" />}
 							Send invitation
-						</button>
-						<button
-							type="button"
-							onClick={handleClose}
-							className="rounded-lg border border-neutral-200 px-4 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
-						>
+						</Button>
+						<Button type="button" variant="secondary" onClick={handleClose}>
 							Cancel
-						</button>
+						</Button>
 					</DrawerFooter>
 				</form>
 			)}

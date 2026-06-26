@@ -1,25 +1,12 @@
 import type { Metadata } from "next"
-import localFont from "next/font/local"
+import { Poppins } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/providers"
 
-const hagrid = localFont({
-	src: [
-		{ path: "./fonts/Hagrid-Regular-trial.ttf", weight: "400", style: "normal" },
-		{ path: "./fonts/Hagrid-Text-Extrabold-trial.ttf", weight: "800", style: "normal" },
-	],
-	variable: "--font-hagrid",
-	display: "swap",
-})
-
-const garet = localFont({
-	src: [
-		{ path: "./fonts/Garet-Regular.woff2", weight: "400", style: "normal" },
-		{ path: "./fonts/Garet-Medium.woff2", weight: "500", style: "normal" },
-		{ path: "./fonts/Garet-Bold.woff2", weight: "700", style: "normal" },
-		{ path: "./fonts/Garet-Extra-Bold.woff2", weight: "800", style: "normal" },
-	],
-	variable: "--font-garet",
+const poppins = Poppins({
+	subsets: ["latin"],
+	weight: ["400", "500", "600", "700"],
+	variable: "--font-poppins",
 	display: "swap",
 })
 
@@ -34,7 +21,7 @@ export default function RootLayout({
 	children: React.ReactNode
 }>) {
 	return (
-		<html lang="en" className={`${hagrid.variable} ${garet.variable} h-full antialiased`}>
+		<html lang="en" className={`${poppins.variable} h-full antialiased`}>
 			<body className="min-h-full flex flex-col">
 				<Providers>{children}</Providers>
 			</body>

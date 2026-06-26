@@ -1,5 +1,6 @@
 import { type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/Button"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,21 +29,18 @@ export function EmptyState({
 			)}
 		>
 			{Icon && (
-				<div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-red/10">
-					<Icon size={22} className="text-brand-red" />
+				<div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-surface-brand-soft">
+					<Icon size={22} className="text-icon-brand" />
 				</div>
 			)}
-			<p className="text-sm font-semibold text-foreground">{title}</p>
+			<p className="text-sm font-semibold text-text-primary">{title}</p>
 			{description && (
-				<p className="mt-1 text-xs text-neutral-light max-w-xs">{description}</p>
+				<p className="mt-1 text-xs text-text-tertiary max-w-xs">{description}</p>
 			)}
 			{action && (
-				<button
-					onClick={action.onClick}
-					className="mt-4 rounded-lg bg-brand-red px-4 py-2 text-xs font-semibold text-white hover:bg-brand-red-deep transition-colors"
-				>
+				<Button size="sm" className="mt-4" onClick={action.onClick}>
 					{action.label}
-				</button>
+				</Button>
 			)}
 		</div>
 	)

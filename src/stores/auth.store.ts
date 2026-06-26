@@ -19,6 +19,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
 		"interest.manage",
 		"order.view",
 		"audit.read",
+		"community.manage",
 	],
 	CITY_ADMIN: [
 		"host.invite",
@@ -28,6 +29,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
 		"moderation.action",
 		"order.view",
 		"audit.read",
+		"community.manage",
 	],
 	MODERATOR: ["moderation.read", "moderation.action", "order.view"],
 	SUPPORT:   ["moderation.read", "order.view"],

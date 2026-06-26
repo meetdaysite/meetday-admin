@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 
 export function Skeleton({ className }: { className?: string }) {
 	return (
-		<div className={cn("animate-pulse rounded-md bg-neutral-100", className)} />
+		<div className={cn("animate-pulse rounded-badge bg-neutral-100", className)} />
 	)
 }
 
@@ -33,7 +33,7 @@ export function SkeletonCard({ className }: { className?: string }) {
 	return (
 		<div
 			className={cn(
-				"rounded-xl border border-neutral-200 bg-white p-5 space-y-3",
+				"rounded-xl border border-border-default bg-surface-card p-5 space-y-3",
 				className,
 			)}
 		>
@@ -54,7 +54,7 @@ export function SkeletonCard({ className }: { className?: string }) {
 
 export function SkeletonStatCard({ className }: { className?: string }) {
 	return (
-		<div className={cn("rounded-xl border border-neutral-200 bg-white p-5 space-y-3", className)}>
+		<div className={cn("rounded-xl border border-border-default bg-surface-card p-5 space-y-3", className)}>
 			<div className="flex items-start justify-between">
 				<Skeleton className="h-9 w-9 rounded-lg" />
 			</div>
@@ -62,7 +62,7 @@ export function SkeletonStatCard({ className }: { className?: string }) {
 				<Skeleton className="h-7 w-12" />
 				<Skeleton className="h-3 w-32" />
 			</div>
-			<Skeleton className="h-3 w-20 border-t border-neutral-100 pt-2.5" />
+			<Skeleton className="h-3 w-20 border-t border-border-subtle pt-2.5" />
 		</div>
 	)
 }
@@ -100,12 +100,12 @@ export function SkeletonDashboardPage() {
 			</section>
 
 			{/* Activity feed */}
-			<section className="rounded-xl border border-neutral-200 bg-white">
-				<div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100">
+			<section className="rounded-xl border border-border-default bg-surface-card">
+				<div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
 					<Skeleton className="h-4 w-28" />
 					<Skeleton className="h-3 w-20" />
 				</div>
-				<div className="px-5 divide-y divide-neutral-100">
+				<div className="px-5 divide-y divide-border-subtle">
 					{Array.from({ length: 6 }).map((_, i) => (
 						<SkeletonActivityFeedItem key={i} />
 					))}
@@ -133,15 +133,15 @@ export function SkeletonPageHeader() {
 
 export function SkeletonDashboardShell({ children }: { children?: React.ReactNode }) {
 	return (
-		<div className="flex h-screen overflow-hidden bg-background">
+		<div className="flex h-screen overflow-hidden bg-surface-page">
 			{/* Sidebar */}
-			<aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-neutral-200 bg-white">
-				<div className="flex items-center h-14 px-5 border-b border-neutral-200">
+			<aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-border-default bg-surface-canvas">
+				<div className="flex items-center h-14 px-5 border-b border-border-default">
 					<Skeleton className="h-5 w-24" />
 				</div>
 				<nav className="flex-1 py-3 px-2 space-y-1">
 					{Array.from({ length: 5 }).map((_, i) => (
-						<Skeleton key={i} className="h-8 w-full rounded-md" />
+						<Skeleton key={i} className="h-8 w-full rounded-badge" />
 					))}
 				</nav>
 			</aside>
@@ -149,7 +149,7 @@ export function SkeletonDashboardShell({ children }: { children?: React.ReactNod
 			{/* Main */}
 			<div className="flex-1 flex flex-col overflow-hidden min-w-0">
 				{/* Topbar */}
-				<header className="h-14 shrink-0 flex items-center justify-between px-4 bg-white border-b border-neutral-200">
+				<header className="h-14 shrink-0 flex items-center justify-between px-4 bg-surface-canvas border-b border-border-default">
 					<Skeleton className="h-6 w-6 rounded-md" />
 					<div className="flex items-center gap-2">
 						<div className="hidden sm:flex flex-col items-end gap-1">

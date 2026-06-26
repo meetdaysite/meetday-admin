@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { Check, Loader2 } from "lucide-react"
@@ -13,7 +13,7 @@ import {
 import { getCategories } from "@/lib/api/categories"
 import type { Category, Interest } from "@/types"
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type InterestDrawerProps = {
 	open: boolean
@@ -23,7 +23,7 @@ type InterestDrawerProps = {
 	interest?: Interest | null
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function InterestDrawer({ open, onClose, onSaved, interest }: InterestDrawerProps) {
 	const isEdit = !!interest
@@ -62,7 +62,7 @@ export function InterestDrawer({ open, onClose, onSaved, interest }: InterestDra
 				.finally(() => setLoadingDetail(false))
 		} else {
 			// create mode: still load categories so they can be optionally assigned later
-			// but keep UI simple — category assignment only available in edit mode
+			// but keep UI simple â€” category assignment only available in edit mode
 			setAllCategories([])
 			setSelectedCategoryIds(new Set())
 		}
@@ -134,7 +134,7 @@ export function InterestDrawer({ open, onClose, onSaved, interest }: InterestDra
 			<form onSubmit={handleSubmit} className="space-y-5">
 				{/* Name */}
 				<div>
-					<label className="block text-xs font-semibold text-neutral-dark mb-1.5">
+					<label className="block text-xs font-semibold text-text-secondary mb-1.5">
 						Name <span className="text-red-500" aria-hidden>*</span>
 					</label>
 					<input
@@ -143,14 +143,14 @@ export function InterestDrawer({ open, onClose, onSaved, interest }: InterestDra
 						onChange={(e) => setName(e.target.value)}
 						placeholder="e.g. Founder's Huddle"
 						disabled={isLoading}
-						className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors disabled:opacity-50"
+						className="w-full rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-sm placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors disabled:opacity-50"
 					/>
 				</div>
 
 				{/* Description */}
 				<div>
-					<label className="block text-xs font-semibold text-neutral-dark mb-1.5">
-						Description <span className="text-neutral-light font-normal">(optional)</span>
+					<label className="block text-xs font-semibold text-text-secondary mb-1.5">
+						Description <span className="text-text-tertiary font-normal">(optional)</span>
 					</label>
 					<textarea
 						value={description}
@@ -158,14 +158,14 @@ export function InterestDrawer({ open, onClose, onSaved, interest }: InterestDra
 						placeholder="e.g. For startup founders and entrepreneurs building the next big thing"
 						rows={3}
 						disabled={isLoading}
-						className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors resize-none disabled:opacity-50"
+						className="w-full rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-sm placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors resize-none disabled:opacity-50"
 					/>
 				</div>
 
 				{/* Image path */}
 				<div>
-					<label className="block text-xs font-semibold text-neutral-dark mb-1.5">
-						Image path <span className="text-neutral-light font-normal">(optional)</span>
+					<label className="block text-xs font-semibold text-text-secondary mb-1.5">
+						Image path <span className="text-text-tertiary font-normal">(optional)</span>
 					</label>
 					<input
 						type="text"
@@ -173,14 +173,14 @@ export function InterestDrawer({ open, onClose, onSaved, interest }: InterestDra
 						onChange={(e) => setImage(e.target.value)}
 						placeholder="e.g. interests/founders-huddle.jpg"
 						disabled={isLoading}
-						className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-mono placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors disabled:opacity-50"
+						className="w-full rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-sm font-mono placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors disabled:opacity-50"
 					/>
 				</div>
 
-				{/* Category mappings — edit mode only */}
+				{/* Category mappings â€” edit mode only */}
 				{isEdit && (
 					<div>
-						<label className="block text-xs font-semibold text-neutral-dark mb-1.5">
+						<label className="block text-xs font-semibold text-text-secondary mb-1.5">
 							Mapped categories
 						</label>
 						{loadingDetail ? (
@@ -189,9 +189,9 @@ export function InterestDrawer({ open, onClose, onSaved, interest }: InterestDra
 								<Skeleton className="h-8 w-3/4 rounded-lg" />
 							</div>
 						) : allCategories.length === 0 ? (
-							<p className="text-xs text-neutral-light">No categories available.</p>
+							<p className="text-xs text-text-tertiary">No categories available.</p>
 						) : (
-							<div className="rounded-xl border border-neutral-200 divide-y divide-neutral-100 overflow-hidden max-h-52 overflow-y-auto">
+							<div className="rounded-xl border border-border-default divide-y divide-border-subtle overflow-hidden max-h-52 overflow-y-auto">
 								{allCategories.map((cat) => {
 									const checked = selectedCategoryIds.has(cat.id)
 									return (
@@ -205,13 +205,13 @@ export function InterestDrawer({ open, onClose, onSaved, interest }: InterestDra
 											<span
 												className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
 													checked
-														? "bg-brand-red border-brand-red"
-														: "border-neutral-300 bg-white"
+														? "bg-action-primary border-action-primary"
+														: "border-border-strong bg-surface-canvas"
 												}`}
 											>
 												{checked && <Check size={10} className="text-white" strokeWidth={3} />}
 											</span>
-											<span className="text-xs text-foreground">{cat.name}</span>
+											<span className="text-xs text-text-primary">{cat.name}</span>
 										</button>
 									)
 								})}
@@ -233,14 +233,14 @@ export function InterestDrawer({ open, onClose, onSaved, interest }: InterestDra
 					type="button"
 					onClick={handleClose}
 					disabled={isLoading}
-					className="rounded-lg border border-neutral-200 px-4 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors disabled:opacity-50"
+					className="rounded-lg border border-border-default px-4 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors disabled:opacity-50"
 				>
 					Cancel
 				</button>
 				<button
 					onClick={handleSubmit as unknown as React.MouseEventHandler}
 					disabled={isLoading || !name.trim()}
-					className="flex items-center gap-1.5 rounded-lg bg-brand-red px-4 py-2 text-xs font-semibold text-white hover:bg-brand-red-deep transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+					className="flex items-center gap-1.5 rounded-lg bg-action-primary px-4 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					{isLoading && <Loader2 size={13} className="animate-spin" />}
 					{isEdit ? "Save Changes" : "Create Interest"}

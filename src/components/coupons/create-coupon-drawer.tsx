@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useId, useState } from "react"
 import { RefreshCw, Loader2 } from "lucide-react"
@@ -8,7 +8,7 @@ import type { CouponTarget, DiscountType } from "@/types"
 import axios from "axios"
 import { toast } from "sonner"
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function generateCode(): string {
 	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -20,8 +20,8 @@ function generateCode(): string {
 
 function inputCls(hasError?: boolean) {
 	return `w-full rounded-lg border ${
-		hasError ? "border-red-300" : "border-neutral-200"
-	} bg-white px-3 py-2.5 text-sm placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors`
+		hasError ? "border-red-300" : "border-border-default"
+	} bg-surface-canvas px-3 py-2.5 text-sm placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors`
 }
 
 function getApiErrorMessage(err: unknown): string {
@@ -31,7 +31,7 @@ function getApiErrorMessage(err: unknown): string {
 	return err instanceof Error ? err.message : "Something went wrong"
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type CreateCouponDrawerProps = {
 	open: boolean
@@ -39,12 +39,12 @@ export type CreateCouponDrawerProps = {
 	onSuccess: () => void
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDrawerProps) {
 	const uid = useId()
 
-	// ── Form state ──
+	// â”€â”€ Form state â”€â”€
 	const [code, setCode]                         = useState("")
 	const [autoGenerate, setAutoGenerate]         = useState(false)
 	const [description, setDescription]           = useState("")
@@ -54,7 +54,7 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 	const [maxUsages, setMaxUsages]               = useState("")
 	const [maxUsagesPerUser, setMaxUsagesPerUser] = useState("")
 
-	// ── UI state ──
+	// â”€â”€ UI state â”€â”€
 	const [errors, setErrors]       = useState<Record<string, string>>({})
 	const [isSubmitting, setSubmitting] = useState(false)
 
@@ -89,7 +89,7 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 		if (!code.trim()) {
 			errs.code = "Coupon code is required."
 		} else if (!/^[A-Z0-9_-]{3,20}$/.test(code.trim())) {
-			errs.code = "Code must be 3–20 chars: uppercase letters, numbers, - or _."
+			errs.code = "Code must be 3â€“20 chars: uppercase letters, numbers, - or _."
 		}
 
 		const val = Number(discountValue)
@@ -156,9 +156,9 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 			width="max-w-md"
 		>
 			<form id="create-coupon-form" onSubmit={handleSubmit} className="space-y-5">
-				{/* ── Code ── */}
+				{/* â”€â”€ Code â”€â”€ */}
 				<div className="space-y-1.5">
-					<label htmlFor={`${uid}-code`} className="block text-xs font-medium text-foreground">
+					<label htmlFor={`${uid}-code`} className="block text-xs font-medium text-text-primary">
 						Coupon Code *
 					</label>
 					<div className="flex gap-2">
@@ -174,23 +174,23 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 							type="button"
 							onClick={handleAutoGenerate}
 							title="Auto-generate code"
-							className="inline-flex items-center gap-1.5 shrink-0 rounded-lg border border-neutral-200 px-3 py-2.5 text-xs font-semibold text-neutral-dark hover:bg-neutral-50 transition-colors"
+							className="inline-flex items-center gap-1.5 shrink-0 rounded-lg border border-border-default px-3 py-2.5 text-xs font-semibold text-text-secondary hover:bg-neutral-50 transition-colors"
 						>
-							<RefreshCw size={12} className={autoGenerate ? "text-brand-red" : ""} />
+							<RefreshCw size={12} className={autoGenerate ? "text-text-brand" : ""} />
 							Auto
 						</button>
 					</div>
 					{autoGenerate && (
-						<p className="text-[11px] text-neutral-light">Auto-generated. You can still edit it.</p>
+						<p className="text-[11px] text-text-tertiary">Auto-generated. You can still edit it.</p>
 					)}
 					{errors.code && (
 						<p className="text-[11px] text-red-600">{errors.code}</p>
 					)}
 				</div>
 
-				{/* ── Description ── */}
+				{/* â”€â”€ Description â”€â”€ */}
 				<div className="space-y-1.5">
-					<label htmlFor={`${uid}-desc`} className="block text-xs font-medium text-foreground">
+					<label htmlFor={`${uid}-desc`} className="block text-xs font-medium text-text-primary">
 						Description
 					</label>
 					<input
@@ -202,9 +202,9 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 					/>
 				</div>
 
-				{/* ── Target ── */}
+				{/* â”€â”€ Target â”€â”€ */}
 				<div className="space-y-1.5">
-					<label htmlFor={`${uid}-target`} className="block text-xs font-medium text-foreground">
+					<label htmlFor={`${uid}-target`} className="block text-xs font-medium text-text-primary">
 						Target *
 					</label>
 					<div className="grid grid-cols-2 gap-2">
@@ -213,8 +213,8 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 								key={t}
 								className={`flex cursor-pointer items-center gap-2.5 rounded-lg border p-3 transition-colors ${
 									target === t
-										? "border-brand-red bg-brand-red/5"
-										: "border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50"
+										? "border-border-focus bg-surface-brand-soft"
+										: "border-border-default hover:border-border-strong hover:bg-neutral-50"
 								}`}
 							>
 								<input
@@ -224,10 +224,10 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 									className="accent-brand-red"
 								/>
 								<div>
-									<p className="text-xs font-semibold text-foreground">
+									<p className="text-xs font-semibold text-text-primary">
 										{t === "ATTENDEE" ? "Attendee" : "Host"}
 									</p>
-									<p className="text-[11px] text-neutral-light leading-relaxed">
+									<p className="text-[11px] text-text-tertiary leading-relaxed">
 										{t === "ATTENDEE" ? "Applied to attendee fees" : "Applied to host fees"}
 									</p>
 								</div>
@@ -236,10 +236,10 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 					</div>
 				</div>
 
-				{/* ── Discount ── */}
+				{/* â”€â”€ Discount â”€â”€ */}
 				<div className="grid grid-cols-2 gap-3">
 					<div className="space-y-1.5">
-						<label htmlFor={`${uid}-type`} className="block text-xs font-medium text-foreground">
+						<label htmlFor={`${uid}-type`} className="block text-xs font-medium text-text-primary">
 							Discount Type *
 						</label>
 						<select
@@ -249,12 +249,12 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 							className={inputCls()}
 						>
 							<option value="PERCENTAGE">Percentage (%)</option>
-							<option value="FLAT">Flat amount (₹)</option>
+							<option value="FLAT">Flat amount (â‚¹)</option>
 						</select>
 					</div>
 					<div className="space-y-1.5">
-						<label htmlFor={`${uid}-value`} className="block text-xs font-medium text-foreground">
-							{discountType === "PERCENTAGE" ? "Percentage *" : "Amount (₹) *"}
+						<label htmlFor={`${uid}-value`} className="block text-xs font-medium text-text-primary">
+							{discountType === "PERCENTAGE" ? "Percentage *" : "Amount (â‚¹) *"}
 						</label>
 						<input
 							id={`${uid}-value`}
@@ -273,10 +273,10 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 					</div>
 				</div>
 
-				{/* ── Usage limits ── */}
+				{/* â”€â”€ Usage limits â”€â”€ */}
 				<div className="grid grid-cols-2 gap-3">
 					<div className="space-y-1.5">
-						<label htmlFor={`${uid}-maxUsages`} className="block text-xs font-medium text-foreground">
+						<label htmlFor={`${uid}-maxUsages`} className="block text-xs font-medium text-text-primary">
 							Total Usage Limit
 						</label>
 						<input
@@ -292,10 +292,10 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 						{errors.maxUsages && (
 							<p className="text-[11px] text-red-600">{errors.maxUsages}</p>
 						)}
-						<p className="text-[11px] text-neutral-light">Max total redemptions.</p>
+						<p className="text-[11px] text-text-tertiary">Max total redemptions.</p>
 					</div>
 					<div className="space-y-1.5">
-						<label htmlFor={`${uid}-maxUsagesPerUser`} className="block text-xs font-medium text-foreground">
+						<label htmlFor={`${uid}-maxUsagesPerUser`} className="block text-xs font-medium text-text-primary">
 							Limit Per User
 						</label>
 						<input
@@ -311,7 +311,7 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 						{errors.maxUsagesPerUser && (
 							<p className="text-[11px] text-red-600">{errors.maxUsagesPerUser}</p>
 						)}
-						<p className="text-[11px] text-neutral-light">Max per single user.</p>
+						<p className="text-[11px] text-text-tertiary">Max per single user.</p>
 					</div>
 				</div>
 			</form>
@@ -321,7 +321,7 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 					type="button"
 					onClick={onClose}
 					disabled={isSubmitting}
-					className="rounded-lg border border-neutral-200 px-4 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors disabled:opacity-50"
+					className="rounded-lg border border-border-default px-4 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors disabled:opacity-50"
 				>
 					Cancel
 				</button>
@@ -329,7 +329,7 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 					type="submit"
 					form="create-coupon-form"
 					disabled={isSubmitting}
-					className="flex items-center gap-1.5 rounded-lg bg-brand-red px-4 py-2 text-xs font-semibold text-white hover:bg-brand-red-deep transition-colors disabled:opacity-70"
+					className="flex items-center gap-1.5 rounded-lg bg-action-primary px-4 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors disabled:opacity-70"
 				>
 					{isSubmitting && <Loader2 size={13} className="animate-spin" />}
 					Create Coupon

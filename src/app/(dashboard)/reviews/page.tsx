@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -10,11 +10,11 @@ import { DataTable } from "@/components/ui/data-table"
 import { getReviews, updateReviewVisibility } from "@/lib/api/reviews"
 import type { Review } from "@/types"
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const PAGE_LIMIT = 20
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function formatDate(iso: string): string {
 	return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
@@ -30,12 +30,12 @@ function StarRating({ rating }: { rating: number }) {
 					className={i < rating ? "fill-amber-400 text-amber-400" : "text-neutral-200"}
 				/>
 			))}
-			<span className="ml-1 text-[11px] font-semibold text-neutral-dark">{rating}</span>
+			<span className="ml-1 text-[11px] font-semibold text-text-secondary">{rating}</span>
 		</span>
 	)
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function ReviewsPage() {
 	const router    = useRouter()
@@ -120,10 +120,10 @@ export default function ReviewsPage() {
 					const u = row.original.reviewer
 					return (
 						<div>
-							<p className="text-xs font-semibold text-foreground leading-none mb-0.5">
+							<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
 								{u.firstName} {u.lastName}
 							</p>
-							<p className="text-[11px] text-neutral-light">{u.email}</p>
+							<p className="text-[11px] text-text-tertiary">{u.email}</p>
 						</div>
 					)
 				},
@@ -133,10 +133,10 @@ export default function ReviewsPage() {
 				header: "Event",
 				cell: ({ row }) => (
 					<div>
-						<p className="text-xs font-semibold text-foreground leading-none mb-0.5">
+						<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
 							{row.original.event.title}
 						</p>
-						<p className="text-[11px] text-neutral-light">{row.original.event.city}</p>
+						<p className="text-[11px] text-text-tertiary">{row.original.event.city}</p>
 					</div>
 				),
 			},
@@ -149,8 +149,8 @@ export default function ReviewsPage() {
 				id: "content",
 				header: "Review",
 				cell: ({ row }) => (
-					<p className="text-xs text-neutral-dark max-w-xs truncate">
-						{row.original.content ?? <span className="italic text-neutral-light">No text</span>}
+					<p className="text-xs text-text-secondary max-w-xs truncate">
+						{row.original.content ?? <span className="italic text-text-tertiary">No text</span>}
 					</p>
 				),
 			},
@@ -158,7 +158,7 @@ export default function ReviewsPage() {
 				id: "date",
 				header: "Date",
 				cell: ({ row }) => (
-					<span className="text-xs text-neutral-dark">{formatDate(row.original.createdAt)}</span>
+					<span className="text-xs text-text-secondary">{formatDate(row.original.createdAt)}</span>
 				),
 			},
 			{
@@ -175,7 +175,7 @@ export default function ReviewsPage() {
 							className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
 								r.isVisible
 									? "bg-green-50 text-green-700 hover:bg-green-100"
-									: "bg-neutral-100 text-neutral-dark hover:bg-neutral-200"
+									: "bg-neutral-100 text-text-secondary hover:bg-neutral-200"
 							}`}
 						>
 							{r.isVisible ? <Eye size={11} /> : <EyeOff size={11} />}
@@ -191,7 +191,7 @@ export default function ReviewsPage() {
 	if (!canRead) {
 		return (
 			<div className="p-6 max-w-7xl mx-auto">
-				<p className="text-sm text-neutral-light">You don&apos;t have permission to view reviews.</p>
+				<p className="text-sm text-text-tertiary">You don&apos;t have permission to view reviews.</p>
 			</div>
 		)
 	}
@@ -200,8 +200,8 @@ export default function ReviewsPage() {
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
 			<div className="flex items-center gap-3">
-				<h1 className="text-base font-semibold text-foreground">Reviews</h1>
-				<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-dark">
+				<h1 className="text-base font-semibold text-text-primary">Reviews</h1>
+				<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
 					{total}
 				</span>
 			</div>
@@ -215,8 +215,8 @@ export default function ReviewsPage() {
 						onClick={() => setVisibilityFilter(v)}
 						className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
 							visibilityFilter === v
-								? "bg-brand-red text-white"
-								: "bg-neutral-100 text-neutral-dark hover:bg-neutral-200"
+								? "bg-action-primary text-white"
+								: "bg-neutral-100 text-text-secondary hover:bg-neutral-200"
 						}`}
 					>
 						{v === "ALL" ? "All" : v === "VISIBLE" ? "Visible" : "Hidden"}
@@ -226,14 +226,14 @@ export default function ReviewsPage() {
 				<div className="relative flex-1 min-w-48 max-w-xs ml-auto">
 					<Search
 						size={13}
-						className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-light pointer-events-none"
+						className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
 					/>
 					<input
 						type="text"
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
 						placeholder="Search by reviewer, event, or content…"
-						className="w-full rounded-lg border border-neutral-200 bg-white pl-8 pr-3 py-2 text-xs placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+						className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 					/>
 				</div>
 			</div>
@@ -250,30 +250,30 @@ export default function ReviewsPage() {
 						data={filtered}
 						isLoading={isLoading}
 						emptyState={
-							<div className="py-12 text-center text-sm text-neutral-light">
+							<div className="py-12 text-center text-sm text-text-tertiary">
 								No reviews match the current filters.
 							</div>
 						}
 					/>
 
 					{totalPages > 1 && (
-						<div className="flex items-center justify-between text-xs text-neutral-light">
+						<div className="flex items-center justify-between text-xs text-text-tertiary">
 							<span>
-								Showing {(page - 1) * PAGE_LIMIT + 1}–{Math.min(page * PAGE_LIMIT, total)} of {total}
+								Showing {(page - 1) * PAGE_LIMIT + 1}â€“{Math.min(page * PAGE_LIMIT, total)} of {total}
 							</span>
 							<div className="flex items-center gap-2">
 								<button
 									disabled={page === 1}
 									onClick={() => setPage((p) => p - 1)}
-									className="rounded-md px-2.5 py-1 text-xs font-medium border border-neutral-200 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 								>
 									Previous
 								</button>
-								<span className="font-medium text-foreground">{page} / {totalPages}</span>
+								<span className="font-medium text-text-primary">{page} / {totalPages}</span>
 								<button
 									disabled={page >= totalPages}
 									onClick={() => setPage((p) => p + 1)}
-									className="rounded-md px-2.5 py-1 text-xs font-medium border border-neutral-200 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 								>
 									Next
 								</button>

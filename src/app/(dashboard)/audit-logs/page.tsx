@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -10,7 +10,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { getAuditLogs, type GetAuditLogsParams } from "@/lib/api/audit-logs"
 import type { AuditLog } from "@/types"
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const PAGE_LIMIT = 50
 
@@ -29,7 +29,7 @@ const AUDIT_ACTIONS = [
 	"DATA_EXPORT_REQUESTED", "DATA_DELETION_REQUESTED",
 ] as const
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function formatDate(iso: string): string {
 	return new Date(iso).toLocaleString("en-IN", {
@@ -52,10 +52,10 @@ function actionColor(action: string): string {
 	if (action.includes("SUBMITTED") || action.includes("CREATED") || action.includes("INITIATED")) {
 		return "text-sky-700 bg-sky-50"
 	}
-	return "text-neutral-dark bg-neutral-100"
+	return "text-text-secondary bg-neutral-100"
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function AuditLogsPage() {
 	const router  = useRouter()
@@ -146,13 +146,13 @@ export default function AuditLogsPage() {
 				header: "Actor",
 				cell: ({ row }) => {
 					const actor = row.original.actor
-					if (!actor) return <span className="text-[11px] text-neutral-light">System</span>
+					if (!actor) return <span className="text-[11px] text-text-tertiary">System</span>
 					return (
 						<div>
-							<p className="text-xs font-semibold text-foreground leading-none mb-0.5">
+							<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
 								{actor.firstName} {actor.lastName}
 							</p>
-							<p className="text-[11px] text-neutral-light">{actor.email}</p>
+							<p className="text-[11px] text-text-tertiary">{actor.email}</p>
 						</div>
 					)
 				},
@@ -163,15 +163,15 @@ export default function AuditLogsPage() {
 				cell: ({ row }) => {
 					const l = row.original
 					if (!l.entityType && !l.entityId) {
-						return <span className="text-[11px] text-neutral-light">—</span>
+						return <span className="text-[11px] text-text-tertiary">â€”</span>
 					}
 					return (
 						<div>
 							{l.entityType && (
-								<p className="text-[11px] font-semibold text-neutral-dark">{l.entityType}</p>
+								<p className="text-[11px] font-semibold text-text-secondary">{l.entityType}</p>
 							)}
 							{l.entityId && (
-								<p className="text-[11px] font-mono text-neutral-light truncate max-w-[120px]">
+								<p className="text-[11px] font-mono text-text-tertiary truncate max-w-[120px]">
 									{l.entityId}
 								</p>
 							)}
@@ -183,7 +183,7 @@ export default function AuditLogsPage() {
 				id: "timestamp",
 				header: "Timestamp",
 				cell: ({ row }) => (
-					<span className="text-xs text-neutral-dark whitespace-nowrap">{formatDate(row.original.createdAt)}</span>
+					<span className="text-xs text-text-secondary whitespace-nowrap">{formatDate(row.original.createdAt)}</span>
 				),
 			},
 		],
@@ -193,7 +193,7 @@ export default function AuditLogsPage() {
 	if (!canRead) {
 		return (
 			<div className="p-6 max-w-7xl mx-auto">
-				<p className="text-sm text-neutral-light">You don&apos;t have permission to view audit logs.</p>
+				<p className="text-sm text-text-tertiary">You don&apos;t have permission to view audit logs.</p>
 			</div>
 		)
 	}
@@ -202,8 +202,8 @@ export default function AuditLogsPage() {
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
 			<div className="flex items-center gap-3">
-				<h1 className="text-base font-semibold text-foreground">Audit Logs</h1>
-				<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-dark">
+				<h1 className="text-base font-semibold text-text-primary">Audit Logs</h1>
+				<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
 					{total}
 				</span>
 			</div>
@@ -215,7 +215,7 @@ export default function AuditLogsPage() {
 					<select
 						value={actionFilter}
 						onChange={(e) => { setActionFilter(e.target.value); setPage(1) }}
-						className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-foreground focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors max-w-[220px]"
+						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors max-w-[220px]"
 					>
 						<option value="">All actions</option>
 						{AUDIT_ACTIONS.map((a) => (
@@ -228,21 +228,21 @@ export default function AuditLogsPage() {
 						value={entityTypeFilter}
 						onChange={(e) => { setEntityTypeFilter(e.target.value); setPage(1) }}
 						placeholder="Entity type…"
-						className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors w-32"
+						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors w-32"
 					/>
 
 					<input
 						type="date"
 						value={fromDate}
 						onChange={(e) => { setFromDate(e.target.value); setPage(1) }}
-						className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-foreground focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 					/>
-					<span className="text-xs text-neutral-light">to</span>
+					<span className="text-xs text-text-tertiary">to</span>
 					<input
 						type="date"
 						value={toDate}
 						onChange={(e) => { setToDate(e.target.value); setPage(1) }}
-						className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-foreground focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 					/>
 				</div>
 
@@ -251,14 +251,14 @@ export default function AuditLogsPage() {
 					<div className="relative flex-1 min-w-48 max-w-xs">
 						<Search
 							size={13}
-							className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-light pointer-events-none"
+							className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
 						/>
 						<input
 							type="text"
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
 							placeholder="Search action, actor, entity…"
-							className="w-full rounded-lg border border-neutral-200 bg-white pl-8 pr-3 py-2 text-xs placeholder:text-neutral-light focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors"
+							className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 						/>
 					</div>
 					<input
@@ -266,18 +266,18 @@ export default function AuditLogsPage() {
 						value={actorIdInput}
 						onChange={(e) => setActorIdInput(e.target.value)}
 						placeholder="Actor ID…"
-						className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs placeholder:text-neutral-light font-mono focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors w-40"
+						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs placeholder:text-text-tertiary font-mono focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors w-40"
 					/>
 					<input
 						type="text"
 						value={entityIdInput}
 						onChange={(e) => setEntityIdInput(e.target.value)}
 						placeholder="Entity ID…"
-						className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs placeholder:text-neutral-light font-mono focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/10 transition-colors w-40"
+						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs placeholder:text-text-tertiary font-mono focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors w-40"
 					/>
 					<button
 						type="submit"
-						className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-foreground hover:bg-neutral-50 transition-colors"
+						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors"
 					>
 						Apply
 					</button>
@@ -285,7 +285,7 @@ export default function AuditLogsPage() {
 						<button
 							type="button"
 							onClick={() => { setActorIdInput(""); setActorIdFilter(""); setEntityIdInput(""); setEntityIdFilter(""); setPage(1) }}
-							className="text-xs text-neutral-light hover:text-foreground transition-colors"
+							className="text-xs text-text-tertiary hover:text-text-primary transition-colors"
 						>
 							Clear
 						</button>
@@ -305,30 +305,30 @@ export default function AuditLogsPage() {
 						data={filtered}
 						isLoading={isLoading}
 						emptyState={
-							<div className="py-12 text-center text-sm text-neutral-light">
+							<div className="py-12 text-center text-sm text-text-tertiary">
 								No audit log entries match the current filters.
 							</div>
 						}
 					/>
 
 					{totalPages > 1 && (
-						<div className="flex items-center justify-between text-xs text-neutral-light">
+						<div className="flex items-center justify-between text-xs text-text-tertiary">
 							<span>
-								Showing {(page - 1) * PAGE_LIMIT + 1}–{Math.min(page * PAGE_LIMIT, total)} of {total}
+								Showing {(page - 1) * PAGE_LIMIT + 1}â€“{Math.min(page * PAGE_LIMIT, total)} of {total}
 							</span>
 							<div className="flex items-center gap-2">
 								<button
 									disabled={page === 1}
 									onClick={() => setPage((p) => p - 1)}
-									className="rounded-md px-2.5 py-1 text-xs font-medium border border-neutral-200 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 								>
 									Previous
 								</button>
-								<span className="font-medium text-foreground">{page} / {totalPages}</span>
+								<span className="font-medium text-text-primary">{page} / {totalPages}</span>
 								<button
 									disabled={page >= totalPages}
 									onClick={() => setPage((p) => p + 1)}
-									className="rounded-md px-2.5 py-1 text-xs font-medium border border-neutral-200 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 								>
 									Next
 								</button>

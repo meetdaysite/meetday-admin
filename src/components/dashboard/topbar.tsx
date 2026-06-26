@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useRouter } from "next/navigation"
 import { Menu, ChevronsLeft, ChevronsRight, LogOut } from "lucide-react"
@@ -21,11 +21,11 @@ export function Topbar() {
 		: "?"
 
 	return (
-		<header className="h-14 shrink-0 flex items-center gap-2 px-4 bg-white border-b border-neutral-200">
+		<header className="h-14 shrink-0 flex items-center gap-2 px-4 bg-surface-canvas border-b border-border-default">
 			{/* Mobile hamburger */}
 			<button
 				onClick={() => setSidebarOpen(!sidebarOpen)}
-				className="lg:hidden flex items-center justify-center w-8 h-8 rounded-md text-neutral-dark hover:bg-neutral-100 transition-colors"
+				className="lg:hidden flex items-center justify-center w-8 h-8 rounded-md text-text-secondary hover:bg-neutral-100 transition-colors"
 				aria-label="Toggle sidebar"
 			>
 				<Menu size={18} />
@@ -36,7 +36,7 @@ export function Topbar() {
 				<Tooltip.Trigger asChild>
 					<button
 						onClick={toggleSidebarCollapsed}
-						className="hidden lg:flex items-center justify-center w-8 h-8 rounded-md text-neutral-light hover:bg-neutral-100 hover:text-neutral-dark transition-colors"
+						className="hidden lg:flex items-center justify-center w-8 h-8 rounded-md text-text-tertiary hover:bg-neutral-100 hover:text-text-secondary transition-colors"
 						aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
 					>
 						{sidebarCollapsed ? <ChevronsRight size={15} /> : <ChevronsLeft size={15} />}
@@ -46,7 +46,7 @@ export function Topbar() {
 					<Tooltip.Content
 						side="bottom"
 						sideOffset={6}
-						className="z-50 rounded-md bg-foreground px-2.5 py-1.5 text-xs text-white shadow-md animate-in fade-in-0 zoom-in-95"
+						className="z-50 rounded-md bg-text-primary px-2.5 py-1.5 text-xs text-white shadow-md animate-in fade-in-0 zoom-in-95"
 					>
 						{sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
 					</Tooltip.Content>
@@ -59,19 +59,19 @@ export function Topbar() {
 			{/* User info + logout */}
 			<div className="flex items-center gap-2">
 				<div className="hidden sm:flex flex-col items-end leading-none">
-					<span className="text-xs font-medium text-foreground">{user?.name ?? "Admin"}</span>
+					<span className="text-xs font-medium text-text-primary">{user?.name ?? "Admin"}</span>
 					{user?.email && (
-						<span className="text-[10px] text-neutral-light mt-0.5">{user.email}</span>
+						<span className="text-[10px] text-text-tertiary mt-0.5">{user.email}</span>
 					)}
 				</div>
-				<div className="w-7 h-7 rounded-full bg-brand-red text-white text-[11px] font-semibold flex items-center justify-center shrink-0">
+				<div className="w-7 h-7 rounded-full bg-action-primary text-white text-[11px] font-semibold flex items-center justify-center shrink-0">
 					{initials}
 				</div>
 				<Tooltip.Root>
 					<Tooltip.Trigger asChild>
 						<button
 							onClick={handleSignOut}
-							className="flex items-center justify-center w-8 h-8 rounded-md text-neutral-light hover:bg-neutral-100 hover:text-brand-red transition-colors"
+							className="flex items-center justify-center w-8 h-8 rounded-md text-text-tertiary hover:bg-neutral-100 hover:text-text-brand transition-colors"
 							aria-label="Sign out"
 						>
 							<LogOut size={15} />
@@ -81,7 +81,7 @@ export function Topbar() {
 						<Tooltip.Content
 							side="bottom"
 							sideOffset={6}
-							className="z-50 rounded-md bg-foreground px-2.5 py-1.5 text-xs text-white shadow-md animate-in fade-in-0 zoom-in-95"
+							className="z-50 rounded-md bg-text-primary px-2.5 py-1.5 text-xs text-white shadow-md animate-in fade-in-0 zoom-in-95"
 						>
 							Sign out
 						</Tooltip.Content>
