@@ -524,6 +524,7 @@ export type CommunityExperienceStatus = "UPCOMING" | "LIVE" | "COMPLETED" | "DRA
 export type CommunityExperienceItem = {
 	id: string
 	name: string
+	coverUrl: string | null
 	coverColor: string
 	coverInitial: string
 	tags: string[]
@@ -536,97 +537,120 @@ export type CommunityExperienceItem = {
 	visibility: "PUBLIC" | "PRIVATE" | "DRAFT"
 }
 
-export type ExperiencePerfMetric = {
-	label: string
-	value: string
-	trend: { value: number; direction: "up" | "down"; label?: string }
-	color: string
-	spark: { v: number }[]
+export type ExperienceTabCounts = {
+	all: number; upcoming: number; live: number
+	completed: number; drafts: number; cancelled: number
 }
 
-export type ExperienceTopItem = {
-	id: string
-	rank: number
-	name: string
-	coverColor: string
-	coverInitial: string
-	bookings: number
-	revenue: string
+export type ExperiencePerf30d = {
+	bookings:      { value: number; deltaPct: number }
+	revenue:       { value: number; deltaPct: number }
+	attendanceRate:{ value: number | null; deltaPct: number }
+}
+
+export type ExperienceTopPerformer = {
+	id: string; name: string
+	coverUrl: string | null; coverColor: string; coverInitial: string
+	bookings: number; revenue: number
 }
 
 export type CommunityExperienceTabStats = {
-	totalExperiences: number
-	upcoming: number
-	live: number
-	completed: number
-	drafts: number
-	cancelled: number
-	totalBookings: number
-	totalRevenue: string
+	totalExperiences: number; upcoming: number; completed: number
+	totalBookings: number; totalRevenue: number
 }
 
 export type CommunityExperienceTabData = {
-	stats: CommunityExperienceTabStats
-	performance: ExperiencePerfMetric[]
-	topPerforming: ExperienceTopItem[]
-	experiences: CommunityExperienceItem[]
+	stats:        CommunityExperienceTabStats
+	tabCounts:    ExperienceTabCounts
+	experiences:  CommunityExperienceItem[]
+	total:        number
+	page:         number
+	performance30d: ExperiencePerf30d
+	topPerforming: ExperienceTopPerformer[]
 }
 
-// ─── Experiences Tab mock data ─────────────────────────────────────────────────
-
-const MOCK_EXP_STATS: CommunityExperienceTabStats = {
-	totalExperiences: 18,
-	upcoming: 7,
-	live: 2,
-	completed: 11,
-	drafts: 3,
-	cancelled: 0,
-	totalBookings: 1248,
-	totalRevenue: "₹3.2L",
+export type ExperienceTabParams = {
+	status?: string; search?: string; sort?: string; page?: number; limit?: number
 }
 
-const MOCK_EXP_PERFORMANCE: ExperiencePerfMetric[] = [
-	{
-		label: "Bookings",
-		value: "482",
-		trend: { value: 24, direction: "up", label: "%" },
-		color: "#9333ea",
-		spark: [320, 340, 360, 380, 400, 420, 410, 440, 460, 482].map(v => ({ v })),
-	},
-	{
-		label: "Revenue",
-		value: "₹1.42L",
-		trend: { value: 18, direction: "up", label: "%" },
-		color: "#22c55e",
-		spark: [90000, 95000, 100000, 105000, 110000, 120000, 125000, 130000, 138000, 142000].map(v => ({ v })),
-	},
-	{
-		label: "Attendance Rate",
-		value: "78%",
-		trend: { value: 11, direction: "up", label: "%" },
-		color: "#f59e0b",
-		spark: [60, 63, 65, 67, 70, 72, 73, 75, 77, 78].map(v => ({ v })),
-	},
-]
+// ─── Experiences Tab API types ─────────────────────────────────────────────────
 
-const MOCK_TOP_PERFORMING: ExperienceTopItem[] = [
-	{ id: "e-1", rank: 1, name: "Night Rituals",     coverColor: "#1a0533", coverInitial: "N", bookings: 142, revenue: "₹58.8K" },
-	{ id: "e-3", rank: 2, name: "After Hours",       coverColor: "#0c1a2e", coverInitial: "A", bookings: 176, revenue: "₹84.3K" },
-	{ id: "e-2", rank: 3, name: "Rooftop Sundowner", coverColor: "#1a0a05", coverInitial: "R", bookings: 98,  revenue: "₹36.7K" },
-]
+type ApiExpItem = {
+	id: string; title: string; coverUrl: string | null; tags: string[]
+	eventDate: string; startTime: string; computedStatus: CommunityExperienceStatus
+	bookings: { confirmed: number; capacity: number; pct: number }
+	revenue: number; visibility: "PUBLIC" | "PRIVATE" | "DRAFT"
+}
 
-const MOCK_EXPERIENCES: CommunityExperienceItem[] = [
-	{ id: "e-1", name: "Night Rituals – Deep House Session", coverColor: "#1a0533", coverInitial: "N", tags: ["Music", "DJ Set"],     date: "May 24, 2024", time: "Sat • 8:00 PM",  status: "UPCOMING",  bookingsSold: 142, bookingsTotal: 200, revenue: 58800, visibility: "PUBLIC" },
-	{ id: "e-2", name: "Rooftop Sundowner",                  coverColor: "#1a0a05", coverInitial: "R", tags: ["Music", "Rooftop"],    date: "May 26, 2024", time: "Sun • 5:30 PM",  status: "UPCOMING",  bookingsSold: 98,  bookingsTotal: 150, revenue: 36750, visibility: "PUBLIC" },
-	{ id: "e-3", name: "After Hours – Techno Takeover",      coverColor: "#0c1a2e", coverInitial: "A", tags: ["Music", "Techno"],     date: "May 31, 2024", time: "Fri • 11:00 PM", status: "UPCOMING",  bookingsSold: 176, bookingsTotal: 250, revenue: 84320, visibility: "PUBLIC" },
-	{ id: "e-4", name: "Acoustic Evenings",                  coverColor: "#0a1a0a", coverInitial: "A", tags: ["Music", "Live Band"],  date: "Jun 02, 2024", time: "Sun • 7:00 PM",  status: "DRAFT",     bookingsSold: 0,   bookingsTotal: 100, revenue: 0,     visibility: "DRAFT" },
-	{ id: "e-5", name: "Sunset Sessions",                    coverColor: "#1a0a00", coverInitial: "S", tags: ["Music", "Chill"],      date: "May 12, 2024", time: "Sun • 6:00 PM",  status: "COMPLETED", bookingsSold: 120, bookingsTotal: 120, revenue: 45600, visibility: "PUBLIC" },
-	{ id: "e-6", name: "Neon Nights",                        coverColor: "#0a1628", coverInitial: "N", tags: ["Music", "DJ Set"],     date: "May 05, 2024", time: "Sun • 9:00 PM",  status: "COMPLETED", bookingsSold: 200, bookingsTotal: 200, revenue: 76000, visibility: "PUBLIC" },
-	{ id: "e-7", name: "Vinyl Vibes",                        coverColor: "#1a051a", coverInitial: "V", tags: ["Music", "Vinyl"],      date: "Apr 28, 2024", time: "Sun • 4:00 PM",  status: "COMPLETED", bookingsSold: 88,  bookingsTotal: 100, revenue: 25520, visibility: "PUBLIC" },
-	{ id: "e-8", name: "Open Decks Community Night",         coverColor: "#05101a", coverInitial: "O", tags: ["Music", "Open Decks"], date: "Apr 20, 2024", time: "Sat • 8:00 PM",  status: "COMPLETED", bookingsSold: 60,  bookingsTotal: 80,  revenue: 18900, visibility: "PRIVATE" },
-]
+type ApiExpResponse = {
+	stats: { totalExperiences: number; upcoming: number; completed: number; totalBookings: number; totalRevenue: number }
+	tabCounts: ExperienceTabCounts
+	experiences: ApiExpItem[]
+	total: number; page: number; limit: number
+	sidebar: {
+		performance30d: ExperiencePerf30d
+		topExperiences: { id: string; title: string; coverUrl: string | null; bookings: number; revenue: number }[]
+	}
+}
 
-// ─── Experiences Tab API ───────────────────────────────────────────────────────
+const EXP_COVER_COLORS = ["#1a0533", "#0c1a2e", "#1a0a05", "#0a1a0c", "#1a051a", "#051028"]
+function expCoverColor(id: string): string {
+	let h = 0
+	for (const c of id) h = (h * 31 + c.charCodeAt(0)) & 0x7fffffff
+	return EXP_COVER_COLORS[h % EXP_COVER_COLORS.length]
+}
+
+export async function getCommunityExperiencesTab(
+	communityId: string,
+	params: ExperienceTabParams = {},
+): Promise<CommunityExperienceTabData> {
+	const qs = new URLSearchParams()
+	if (params.status && params.status !== "ALL") qs.set("status", params.status)
+	if (params.search) qs.set("search", params.search)
+	if (params.sort)   qs.set("sort", params.sort)
+	if (params.page)   qs.set("page", String(params.page))
+	if (params.limit)  qs.set("limit", String(params.limit))
+
+	const { data: o } = await apiClient.get<ApiExpResponse>(
+		`/admin/communities/${communityId}/experiences?${qs}`,
+	)
+
+	const experiences: CommunityExperienceItem[] = o.experiences.map(e => ({
+		id:           e.id,
+		name:         e.title,
+		coverUrl:     e.coverUrl,
+		coverColor:   expCoverColor(e.id),
+		coverInitial: e.title[0].toUpperCase(),
+		tags:         e.tags,
+		date:         new Date(e.eventDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+		time:         `${new Date(e.eventDate).toLocaleDateString("en-US", { weekday: "short" })} • ${e.startTime}`,
+		status:       e.computedStatus,
+		bookingsSold: e.bookings.confirmed,
+		bookingsTotal:e.bookings.capacity,
+		revenue:      e.revenue,
+		visibility:   e.visibility,
+	}))
+
+	const topPerforming: ExperienceTopPerformer[] = o.sidebar.topExperiences.map(t => ({
+		id:           t.id,
+		name:         t.title,
+		coverUrl:     t.coverUrl,
+		coverColor:   expCoverColor(t.id),
+		coverInitial: t.title[0].toUpperCase(),
+		bookings:     t.bookings,
+		revenue:      t.revenue,
+	}))
+
+	return {
+		stats:          o.stats,
+		tabCounts:      o.tabCounts,
+		experiences,
+		total:          o.total,
+		page:           o.page,
+		performance30d: o.sidebar.performance30d,
+		topPerforming,
+	}
+}
 
 // ─── Members Tab types ─────────────────────────────────────────────────────────
 
@@ -716,19 +740,6 @@ export async function getCommunityMembersTab(communityId: string): Promise<Commu
 	void communityId
 	await new Promise(r => setTimeout(r, 600))
 	return { stats: MOCK_MEMBERS_STATS, topCities: MOCK_TOP_CITIES, segments: MOCK_MEMBER_SEGMENTS, members: MOCK_MEMBERS }
-}
-
-export async function getCommunityExperiencesTab(communityId: string): Promise<CommunityExperienceTabData> {
-	// TODO: const { data } = await apiClient.get<CommunityExperienceTabData>(`/admin/communities/${communityId}/experiences/tab`)
-	// TODO: return data
-	void communityId
-	await new Promise(r => setTimeout(r, 600))
-	return {
-		stats: MOCK_EXP_STATS,
-		performance: MOCK_EXP_PERFORMANCE,
-		topPerforming: MOCK_TOP_PERFORMING,
-		experiences: MOCK_EXPERIENCES,
-	}
 }
 
 // ─── Feed Tab ─────────────────────────────────────────────────────────────────
@@ -1163,7 +1174,7 @@ export type GrowthDataPoint = {
 }
 
 export type EngagementBreakdownItem = {
-	label: string; value: number; growth: number; color: string; barColor: string
+	label: string; value: number; growth: number; barColor: string
 }
 
 export type AnalyticsTopExperience = {
@@ -1181,129 +1192,198 @@ export type AgeGroup = { range: string; pct: number }
 
 export type TopContributor = {
 	rank: number; name: string; handle: string
-	avatarColor: string; avatarInitial: string; points: number
+	avatarUrl: string | null; avatarColor: string; avatarInitial: string; points: number
 }
 
 export type AnalyticsTopHost = {
 	id: string; name: string; handle: string
-	avatarColor: string; avatarInitial: string; eventCount: number
+	avatarUrl: string | null; avatarColor: string; avatarInitial: string; eventCount: number
 }
 
 export type AnalyticsTabData = {
-	stats:              AnalyticsTabStats
-	growthData:         GrowthDataPoint[]
-	growthSummary:      { membersJoined: number; membersLeft: number; netGrowth: number; growthRate: number }
+	stats:               AnalyticsTabStats
+	growthData:          GrowthDataPoint[]
+	growthSummary:       { membersJoined: number; membersLeft: number; netGrowth: number; growthRate: number }
 	engagementBreakdown: EngagementBreakdownItem[]
-	experiencesImpact:  { totalBookings: number; bookingsGrowth: number }
-	topExperiences:     AnalyticsTopExperience[]
-	communityHealth:    { score: number; maxScore: number; label: string; factors: HealthFactor[] }
-	interests:          AnalyticsInterestSegment[]
-	topCities:          AnalyticsTopCity[]
-	ageDistribution:    AgeGroup[]
-	topContributors:    TopContributor[]
-	topHosts:           AnalyticsTopHost[]
-	lastUpdated:        string
+	experiencesImpact:   { totalBookings: number; bookingsGrowth: number }
+	topExperiences:      AnalyticsTopExperience[]
+	communityHealth:     { score: number; maxScore: number; label: string; factors: HealthFactor[] }
+	interests:           AnalyticsInterestSegment[]
+	topCities:           AnalyticsTopCity[]
+	ageDistribution:     AgeGroup[]
+	topContributors:     TopContributor[]
+	topHosts:            AnalyticsTopHost[]
 }
 
-const MOCK_ANALYTICS_STATS: AnalyticsTabStats = {
-	members: 1248,          membersGrowth: 18,
-	activeMembers: 786,     activeMembersGrowth: 12,
-	experiencesBooked: 482, experiencesBookedGrowth: 24,
-	communityRevenue: "₹3.2L", communityRevenueGrowth: 16,
-	retention: 72,          retentionGrowth: 5,
+// ─── Analytics API types ───────────────────────────────────────────────────────
+
+type ApiAnalyticsMetric   = { value: number; deltaPct: number }
+type ApiEngagementMetric  = { value: number; changePct: number }
+
+type ApiAnalyticsData = {
+	summary: {
+		members: ApiAnalyticsMetric; activeMembers: ApiAnalyticsMetric
+		experiencesBooked: ApiAnalyticsMetric; communityRevenue: ApiAnalyticsMetric
+		retention: ApiAnalyticsMetric
+	}
+	growth: {
+		series: { date: string; joined: number; left: number; netGrowth: number }[]
+		totalJoined: number; totalLeft: number; netGrowth: number; growthRatePct: number
+	}
+	engagement: {
+		posts: ApiEngagementMetric; comments: ApiEngagementMetric
+		reactions: ApiEngagementMetric; shares: ApiEngagementMetric
+		chatMessages: ApiEngagementMetric; announcementReach: ApiEngagementMetric
+	}
+	experiencesImpact: {
+		totalBookings: { value: number; changePct: number }
+		topExperiences: { id: string; title: string; bookings: number; revenue: number; attendancePct: number }[]
+	}
+	healthScore: {
+		total: number; rating: string
+		factors: { memberGrowth: number; engagement: number; eventAttendance: number; reportRate: number; retention: number }
+	}
+	memberInsights: {
+		interests: { name: string; pct: number }[]
+		topCities: { city: string; pct: number }[]
+		ageDistribution: { range: string; label: string; pct: number }[]
+	}
+	topContributors: { userId: string; name: string; handle: string | null; avatarUrl: string | null; activityScore: number }[]
+	topHosts: { userId: string; name: string; handle: string | null; avatarUrl: string | null; eventCount: number }[]
 }
 
-const MOCK_GROWTH_DATA: GrowthDataPoint[] = [
-	{ label: "Apr 21", membersJoined: 45,  membersLeft: 18, netGrowth: 27 },
-	{ label: "Apr 28", membersJoined: 68,  membersLeft: 22, netGrowth: 46 },
-	{ label: "May 5",  membersJoined: 92,  membersLeft: 20, netGrowth: 72 },
-	{ label: "May 12", membersJoined: 125, membersLeft: 25, netGrowth: 100 },
-	{ label: "May 19", membersJoined: 150, membersLeft: 28, netGrowth: 122 },
-]
+// ─── Analytics transform helpers ───────────────────────────────────────────────
 
-const MOCK_ENGAGEMENT_BREAKDOWN: EngagementBreakdownItem[] = [
-	{ label: "Posts",               value: 156,   growth: 18, color: "#a855f7", barColor: "#a855f7" },
-	{ label: "Comments",            value: 342,   growth: 22, color: "#3b82f6", barColor: "#3b82f6" },
-	{ label: "Reactions",           value: 1248,  growth: 30, color: "#ef4444", barColor: "#ef4444" },
-	{ label: "Shares",              value: 276,   growth: 15, color: "#f59e0b", barColor: "#f59e0b" },
-	{ label: "Chat Messages",       value: 2421,  growth: 20, color: "#22c55e", barColor: "#22c55e" },
-	{ label: "Announcement Opens",  value: 1876,  growth: 25, color: "#06b6d4", barColor: "#06b6d4" },
-]
-
-const MOCK_TOP_EXPERIENCES_ANALYTICS: AnalyticsTopExperience[] = [
-	{ id: "e1", name: "Night Rituals",    imageGradient: "linear-gradient(135deg,#4c1d95,#db2777)", bookings: 162, revenue: "₹1.1L", attendancePct: 82 },
-	{ id: "e2", name: "After Hours",      imageGradient: "linear-gradient(135deg,#1e3a5f,#0ea5e9)", bookings: 128, revenue: "₹84K",  attendancePct: 79 },
-	{ id: "e3", name: "Neon Nights",      imageGradient: "linear-gradient(135deg,#064e3b,#10b981)", bookings: 104, revenue: "₹62K",  attendancePct: 76 },
-	{ id: "e4", name: "Sunset Sessions",  imageGradient: "linear-gradient(135deg,#92400e,#f59e0b)", bookings: 88,  revenue: "₹55K",  attendancePct: 71 },
-]
-
-const MOCK_COMMUNITY_HEALTH = {
-	score: 92, maxScore: 100, label: "Excellent",
-	factors: [
-		{ label: "Member Growth",    score: 18, max: 20 },
-		{ label: "Engagement",       score: 19, max: 20 },
-		{ label: "Event Attendance", score: 18, max: 20 },
-		{ label: "Report Rate",      score: 19, max: 20 },
-		{ label: "Retention",        score: 18, max: 20 },
-	],
+const HEALTH_RATING_LABEL: Record<string, string> = {
+	EXCELLENT: "Excellent", GOOD: "Good", FAIR: "Fair",
+	NEEDS_ATTENTION: "Needs Attention",
 }
 
-const MOCK_ANALYTICS_INTERESTS: AnalyticsInterestSegment[] = [
-	{ label: "Music Lovers",    pct: 52, color: "#a855f7" },
-	{ label: "Creative Pros",   pct: 22, color: "#3b82f6" },
-	{ label: "Night Explorers", pct: 16, color: "#22c55e" },
-	{ label: "Event Hosts",     pct: 10, color: "#f59e0b" },
+const EXP_GRADIENTS = [
+	"linear-gradient(135deg,#4c1d95,#db2777)",
+	"linear-gradient(135deg,#1e3a5f,#0ea5e9)",
+	"linear-gradient(135deg,#064e3b,#10b981)",
+	"linear-gradient(135deg,#92400e,#f59e0b)",
+	"linear-gradient(135deg,#1e1b4b,#6366f1)",
 ]
 
-const MOCK_ANALYTICS_CITIES: AnalyticsTopCity[] = [
-	{ city: "Kolkata",   pct: 28, color: "#a855f7" },
-	{ city: "Mumbai",    pct: 22, color: "#3b82f6" },
-	{ city: "Delhi",     pct: 18, color: "#22c55e" },
-	{ city: "Bangalore", pct: 12, color: "#f59e0b" },
-	{ city: "Others",    pct: 20, color: "#9ca3af" },
+const INTEREST_COLORS  = ["#a855f7", "#3b82f6", "#22c55e", "#f59e0b", "#f43f5e", "#06b6d4"]
+const CITY_COLORS      = ["#a855f7", "#3b82f6", "#22c55e", "#f59e0b", "#9ca3af"]
+const CONTRIB_COLORS   = ["#f59e0b", "#9ca3af", "#cd7f32", "#6366f1", "#3b82f6"]
+
+const ENGAGEMENT_CONFIG: { key: keyof ApiAnalyticsData["engagement"]; label: string; color: string }[] = [
+	{ key: "posts",             label: "Posts",              color: "#a855f7" },
+	{ key: "comments",          label: "Comments",           color: "#3b82f6" },
+	{ key: "reactions",         label: "Reactions",          color: "#ef4444" },
+	{ key: "shares",            label: "Shares",             color: "#f59e0b" },
+	{ key: "chatMessages",      label: "Chat Messages",      color: "#22c55e" },
+	{ key: "announcementReach", label: "Announcement Reach", color: "#06b6d4" },
 ]
 
-const MOCK_AGE_DISTRIBUTION: AgeGroup[] = [
-	{ range: "18-24", pct: 14 },
-	{ range: "25-34", pct: 38 },
-	{ range: "35-44", pct: 28 },
-	{ range: "45-54", pct: 14 },
-	{ range: "55+",   pct: 6  },
-]
+function formatRevenue(paise: number): string {
+	const rs = paise / 100
+	if (rs >= 10_000_000) return `₹${(rs / 10_000_000).toFixed(1)}Cr`
+	if (rs >= 100_000)    return `₹${(rs / 100_000).toFixed(1)}L`
+	if (rs >= 1_000)      return `₹${(rs / 1_000).toFixed(0)}K`
+	return `₹${rs}`
+}
 
-const MOCK_TOP_CONTRIBUTORS: TopContributor[] = [
-	{ rank: 1, name: "Rishav",  handle: "@rishav.live",      avatarColor: "#3b82f6", avatarInitial: "R", points: 320 },
-	{ rank: 2, name: "Ananya",  handle: "@ananya.music",     avatarColor: "#ec4899", avatarInitial: "A", points: 260 },
-	{ rank: 3, name: "Arjun",   handle: "@arjun.beats",      avatarColor: "#f59e0b", avatarInitial: "A", points: 210 },
-	{ rank: 4, name: "Neha",    handle: "@neha.vibes",       avatarColor: "#f43f5e", avatarInitial: "N", points: 180 },
-	{ rank: 5, name: "Kabir",   handle: "@kabir.collects",   avatarColor: "#6366f1", avatarInitial: "K", points: 150 },
-]
-
-const MOCK_ANALYTICS_TOP_HOSTS: AnalyticsTopHost[] = [
-	{ id: "h1", name: "Bestcurate",        handle: "@beatcurate", avatarColor: "#1e1b4b", avatarInitial: "B", eventCount: 8 },
-	{ id: "h2", name: "Luna Nights",       handle: "@lunanights", avatarColor: "#4c1d95", avatarInitial: "L", eventCount: 6 },
-	{ id: "h3", name: "Rooftop Collective",handle: "@rooftop.co", avatarColor: "#1c1917", avatarInitial: "R", eventCount: 5 },
-]
+function formatGrowthDate(dateStr: string): string {
+	return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+}
 
 export async function getCommunityAnalytics(communityId: string): Promise<AnalyticsTabData> {
-	// TODO: const { data } = await apiClient.get<AnalyticsTabData>(`/admin/communities/${communityId}/analytics/tab`)
-	// TODO: return data
-	void communityId
-	await new Promise(r => setTimeout(r, 600))
+	const { data: o } = await apiClient.get<ApiAnalyticsData>(
+		`/admin/communities/${communityId}/analytics`,
+	)
+
 	return {
-		stats:               MOCK_ANALYTICS_STATS,
-		growthData:          MOCK_GROWTH_DATA,
-		growthSummary:       { membersJoined: 312, membersLeft: 68, netGrowth: 244, growthRate: 18 },
-		engagementBreakdown: MOCK_ENGAGEMENT_BREAKDOWN,
-		experiencesImpact:   { totalBookings: 482, bookingsGrowth: 24 },
-		topExperiences:      MOCK_TOP_EXPERIENCES_ANALYTICS,
-		communityHealth:     MOCK_COMMUNITY_HEALTH,
-		interests:           MOCK_ANALYTICS_INTERESTS,
-		topCities:           MOCK_ANALYTICS_CITIES,
-		ageDistribution:     MOCK_AGE_DISTRIBUTION,
-		topContributors:     MOCK_TOP_CONTRIBUTORS,
-		topHosts:            MOCK_ANALYTICS_TOP_HOSTS,
-		lastUpdated:         "May 19, 2024 • 10:30 AM",
+		stats: {
+			members:                 o.summary.members.value,
+			membersGrowth:           o.summary.members.deltaPct,
+			activeMembers:           o.summary.activeMembers.value,
+			activeMembersGrowth:     o.summary.activeMembers.deltaPct,
+			experiencesBooked:       o.summary.experiencesBooked.value,
+			experiencesBookedGrowth: o.summary.experiencesBooked.deltaPct,
+			communityRevenue:        formatRevenue(o.summary.communityRevenue.value),
+			communityRevenueGrowth:  o.summary.communityRevenue.deltaPct,
+			retention:               o.summary.retention.value,
+			retentionGrowth:         o.summary.retention.deltaPct,
+		},
+		growthData: o.growth.series.map(s => ({
+			label:         formatGrowthDate(s.date),
+			membersJoined: s.joined,
+			membersLeft:   s.left,
+			netGrowth:     s.netGrowth,
+		})),
+		growthSummary: {
+			membersJoined: o.growth.totalJoined,
+			membersLeft:   o.growth.totalLeft,
+			netGrowth:     o.growth.netGrowth,
+			growthRate:    o.growth.growthRatePct,
+		},
+		engagementBreakdown: ENGAGEMENT_CONFIG.map(cfg => ({
+			label:    cfg.label,
+			value:    o.engagement[cfg.key].value,
+			growth:   o.engagement[cfg.key].changePct,
+			barColor: cfg.color,
+		})),
+		experiencesImpact: {
+			totalBookings:  o.experiencesImpact.totalBookings.value,
+			bookingsGrowth: o.experiencesImpact.totalBookings.changePct,
+		},
+		topExperiences: o.experiencesImpact.topExperiences.map((e, i) => ({
+			id:            e.id,
+			name:          e.title,
+			imageGradient: EXP_GRADIENTS[i % EXP_GRADIENTS.length],
+			bookings:      e.bookings,
+			revenue:       formatRevenue(e.revenue),
+			attendancePct: e.attendancePct,
+		})),
+		communityHealth: {
+			score:    o.healthScore.total,
+			maxScore: 100,
+			label:    HEALTH_RATING_LABEL[o.healthScore.rating] ?? o.healthScore.rating,
+			factors: [
+				{ label: "Member Growth",    score: o.healthScore.factors.memberGrowth,   max: 20 },
+				{ label: "Engagement",       score: o.healthScore.factors.engagement,      max: 20 },
+				{ label: "Event Attendance", score: o.healthScore.factors.eventAttendance, max: 20 },
+				{ label: "Report Rate",      score: o.healthScore.factors.reportRate,      max: 20 },
+				{ label: "Retention",        score: o.healthScore.factors.retention,       max: 20 },
+			],
+		},
+		interests: o.memberInsights.interests.map((s, i) => ({
+			label: s.name,
+			pct:   s.pct,
+			color: INTEREST_COLORS[i % INTEREST_COLORS.length],
+		})),
+		topCities: o.memberInsights.topCities.map((c, i) => ({
+			city:  c.city,
+			pct:   c.pct,
+			color: CITY_COLORS[i % CITY_COLORS.length],
+		})),
+		ageDistribution: o.memberInsights.ageDistribution.map(a => ({
+			range: a.label,
+			pct:   a.pct,
+		})),
+		topContributors: o.topContributors.map((c, i) => ({
+			rank:          i + 1,
+			name:          c.name,
+			handle:        c.handle ? `@${c.handle}` : "",
+			avatarUrl:     c.avatarUrl,
+			avatarColor:   CONTRIB_COLORS[i % CONTRIB_COLORS.length],
+			avatarInitial: c.name[0].toUpperCase(),
+			points:        c.activityScore,
+		})),
+		topHosts: o.topHosts.map((h, i) => ({
+			id:            h.userId,
+			name:          h.name,
+			handle:        h.handle ? `@${h.handle}` : "",
+			avatarUrl:     h.avatarUrl,
+			avatarColor:   CONTRIB_COLORS[i % CONTRIB_COLORS.length],
+			avatarInitial: h.name[0].toUpperCase(),
+			eventCount:    h.eventCount,
+		})),
 	}
 }
 

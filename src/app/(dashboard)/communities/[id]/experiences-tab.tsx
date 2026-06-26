@@ -1,33 +1,24 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { type ColumnDef } from "@tanstack/react-table"
+import * as Dialog from "@radix-ui/react-dialog"
 import {
 	Search,
-	SlidersHorizontal,
-	Plus,
 	Eye,
-	Pencil,
 	Users,
 	Calendar,
 	CheckCircle,
 	LayoutGrid,
 	Banknote,
-	PlusCircle,
-	Copy,
-	Tag,
-	Settings,
-	Lightbulb,
 	ChevronLeft,
 	ChevronRight,
 	Unlink,
-	type LucideIcon,
+	X,
 } from "lucide-react"
-import { LineChart, Line, ResponsiveContainer } from "recharts"
 import { toast } from "sonner"
 import { DataTable } from "@/components/ui/data-table"
 import { StatCard } from "@/components/dashboard/stat-card"
-import { Button } from "@/components/ui/Button"
 import {
 	getCommunityExperiencesTab,
 	detachCommunityEvent,
@@ -41,50 +32,23 @@ import { cn } from "@/lib/utils"
 type StatusFilter = "ALL" | "UPCOMING" | "LIVE" | "COMPLETED" | "DRAFT" | "CANCELLED"
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-	UPCOMING: { label: "Upcoming", className: "bg-blue-100 text-blue-700" },
-	LIVE: { label: "Live", className: "bg-purple-100 text-purple-700" },
+	UPCOMING:  { label: "Upcoming",  className: "bg-blue-100 text-blue-700" },
+	LIVE:      { label: "Live",      className: "bg-purple-100 text-purple-700" },
 	COMPLETED: { label: "Completed", className: "bg-green-100 text-green-700" },
-	DRAFT: { label: "Draft", className: "bg-neutral-100 text-text-secondary" },
+	DRAFT:     { label: "Draft",     className: "bg-neutral-100 text-text-secondary" },
 	CANCELLED: { label: "Cancelled", className: "bg-red-50 text-red-600" },
 }
 
 const BOOKING_BAR_COLOR: Record<string, string> = {
-	UPCOMING: "#3b82f6",
-	LIVE: "#9333ea",
-	COMPLETED: "#22c55e",
-	DRAFT: "#d1d5db",
-	CANCELLED: "#d1d5db",
+	UPCOMING: "#3b82f6", LIVE: "#9333ea", COMPLETED: "#22c55e",
+	DRAFT: "#d1d5db", CANCELLED: "#d1d5db",
 }
 
-const QUICK_ACTIONS: { label: string; description: string; icon: LucideIcon; bg: string; color: string }[] = [
-	{
-		label: "Create New Experience",
-		description: "Set up a new experience",
-		icon: PlusCircle,
-		bg: "bg-purple-50",
-		color: "text-purple-500",
-	},
-	{
-		label: "Duplicate Experience",
-		description: "Copy and reuse an existing experience",
-		icon: Copy,
-		bg: "bg-amber-50",
-		color: "text-amber-500",
-	},
-	{
-		label: "Manage Categories",
-		description: "Organize experience categories",
-		icon: Tag,
-		bg: "bg-sky-50",
-		color: "text-sky-500",
-	},
-	{
-		label: "Experience Settings",
-		description: "Configure booking & visibility",
-		icon: Settings,
-		bg: "bg-indigo-50",
-		color: "text-indigo-500",
-	},
+const SORT_OPTIONS = [
+	{ value: "NEWEST_FIRST",  label: "Sort by: Newest First" },
+	{ value: "OLDEST",        label: "Sort by: Oldest First" },
+	{ value: "MOST_BOOKINGS", label: "Sort by: Most Bookings" },
+	{ value: "REVENUE",       label: "Sort by: Revenue" },
 ]
 
 const PAGE_SIZE = 10
@@ -93,39 +57,209 @@ const PAGE_SIZE = 10
 
 function fmtRevenue(n: number): string {
 	if (n === 0) return "₹0"
+	if (n >= 100_000) return `₹${(n / 100_000).toFixed(1)}L`
+	if (n >= 1_000)   return `₹${(n / 1_000).toFixed(0)}K`
 	return `₹${n.toLocaleString("en-IN")}`
+}
+
+function TrendBadge({ pct }: { pct: number }) {
+	if (pct === 0) return <span className="text-[10px] text-text-tertiary">No change</span>
+	const up = pct > 0
+	return (
+		<span className={cn(
+			"inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
+			up ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600",
+		)}>
+			{up ? "↑" : "↓"} {Math.abs(pct)}%
+		</span>
+	)
+}
+
+// ─── Experience Detail Modal ──────────────────────────────────────────────────
+
+const STATUS_BADGE_MODAL: Record<string, { label: string; className: string }> = {
+	UPCOMING:  { label: "Upcoming",  className: "bg-blue-100 text-blue-700" },
+	LIVE:      { label: "Live",      className: "bg-purple-100 text-purple-700" },
+	COMPLETED: { label: "Completed", className: "bg-green-100 text-green-700" },
+	DRAFT:     { label: "Draft",     className: "bg-neutral-100 text-text-secondary" },
+	CANCELLED: { label: "Cancelled", className: "bg-red-50 text-red-600" },
+}
+
+function ExperienceDetailModal({
+	exp,
+	onClose,
+	onDetach,
+	isDetaching,
+}: {
+	exp: CommunityExperienceItem | null
+	onClose: () => void
+	onDetach: (id: string) => void
+	isDetaching: boolean
+}) {
+	if (!exp) return null
+	const bookingPct = exp.bookingsTotal > 0
+		? Math.round((exp.bookingsSold / exp.bookingsTotal) * 100)
+		: 0
+	const statusCfg = STATUS_BADGE_MODAL[exp.status] ?? { label: exp.status, className: "bg-neutral-100 text-text-secondary" }
+
+	return (
+		<Dialog.Root open={!!exp} onOpenChange={(v) => !v && onClose()}>
+			<Dialog.Portal>
+				<Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+				<Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-surface-card shadow-2xl focus:outline-none overflow-hidden">
+					{/* Cover */}
+					<div className="relative aspect-video w-full bg-surface-card-muted overflow-hidden">
+						{exp.coverUrl ? (
+							<img src={exp.coverUrl} alt={exp.name} className="h-full w-full object-cover" />
+						) : (
+							<div
+								className="h-full w-full flex items-center justify-center text-4xl font-bold text-white/30 select-none"
+								style={{ backgroundColor: exp.coverColor }}
+							>
+								{exp.coverInitial}
+							</div>
+						)}
+						<div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
+						<Dialog.Close asChild>
+							<button
+								className="absolute top-3 right-3 rounded-lg bg-black/30 p-1.5 text-white/80 hover:bg-black/50 transition-colors"
+								aria-label="Close"
+							>
+								<X size={14} />
+							</button>
+						</Dialog.Close>
+						<div className="absolute bottom-3 left-4 right-4 flex items-end justify-between gap-2">
+							<Dialog.Title className="text-sm font-bold text-white leading-snug line-clamp-2 flex-1">
+								{exp.name}
+							</Dialog.Title>
+							<span className={cn("shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold", statusCfg.className)}>
+								{statusCfg.label}
+							</span>
+						</div>
+					</div>
+
+					{/* Body */}
+					<div className="px-5 py-4 flex flex-col gap-4">
+						{/* Tags */}
+						{exp.tags.length > 0 && (
+							<div className="flex flex-wrap gap-1.5">
+								{exp.tags.map(tag => (
+									<span key={tag} className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-medium text-text-secondary">
+										{tag}
+									</span>
+								))}
+							</div>
+						)}
+
+						{/* Details */}
+						<dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+							<div>
+								<dt className="text-text-tertiary mb-0.5">Date</dt>
+								<dd className="font-semibold text-text-primary">{exp.date}</dd>
+							</div>
+							<div>
+								<dt className="text-text-tertiary mb-0.5">Time</dt>
+								<dd className="font-semibold text-text-primary">{exp.time}</dd>
+							</div>
+							<div>
+								<dt className="text-text-tertiary mb-0.5">Visibility</dt>
+								<dd className="flex items-center gap-1.5 font-semibold text-text-primary">
+									<span className={cn(
+										"h-1.5 w-1.5 rounded-full shrink-0",
+										exp.visibility === "PUBLIC" ? "bg-green-500" : exp.visibility === "PRIVATE" ? "bg-amber-500" : "bg-neutral-400",
+									)} />
+									{exp.visibility === "PUBLIC" ? "Public" : exp.visibility === "PRIVATE" ? "Private" : "Draft"}
+								</dd>
+							</div>
+							<div>
+								<dt className="text-text-tertiary mb-0.5">Revenue</dt>
+								<dd className="font-semibold text-text-primary tabular-nums">{fmtRevenue(exp.revenue)}</dd>
+							</div>
+						</dl>
+
+						{/* Bookings */}
+						<div>
+							<div className="flex items-center justify-between text-xs mb-1.5">
+								<span className="text-text-tertiary">Bookings</span>
+								<span className="font-semibold text-text-primary tabular-nums">
+									{exp.bookingsSold} / {exp.bookingsTotal}
+									{bookingPct > 0 && (
+										<span className="text-text-tertiary font-normal ml-1">({bookingPct}%)</span>
+									)}
+								</span>
+							</div>
+							<div className="h-2 rounded-full bg-surface-card-muted overflow-hidden">
+								<div
+									className="h-full rounded-full bg-action-primary transition-all"
+									style={{ width: `${bookingPct}%` }}
+								/>
+							</div>
+							<p className="mt-1 text-[10px] text-text-tertiary">
+								{exp.bookingsTotal - exp.bookingsSold} seats remaining
+							</p>
+						</div>
+
+						{/* Detach */}
+						<div className="border-t border-border-subtle pt-3">
+							<button
+								disabled={isDetaching}
+								onClick={() => onDetach(exp.id)}
+								className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+							>
+								<Unlink size={13} />
+								{isDetaching ? "Detaching…" : "Detach from Community"}
+							</button>
+						</div>
+					</div>
+				</Dialog.Content>
+			</Dialog.Portal>
+		</Dialog.Root>
+	)
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function ExperiencesTab({ communityId }: { communityId: string }) {
-	const [data, setData] = useState<CommunityExperienceTabData | null>(null)
-	const [isLoading, setIsLoading] = useState(true)
-	const [error, setError] = useState<string | null>(null)
+	const [data, setData]             = useState<CommunityExperienceTabData | null>(null)
+	const [isLoading, setIsLoading]   = useState(true)
+	const [error, setError]           = useState<string | null>(null)
 	const [activeFilter, setActiveFilter] = useState<StatusFilter>("ALL")
-	const [search, setSearch] = useState("")
-	const [sort, setSort] = useState("newest")
-	const [page, setPage] = useState(1)
+	const [searchInput, setSearchInput]   = useState("")
+	const [committedSearch, setCommittedSearch] = useState("")
+	const [sort, setSort]             = useState("NEWEST_FIRST")
+	const [page, setPage]             = useState(1)
 	const [detachingId, setDetachingId] = useState<string | null>(null)
+	const [selectedExp, setSelectedExp] = useState<CommunityExperienceItem | null>(null)
+	const searchTimerRef = useRef<ReturnType<typeof setTimeout>>()
+
+	function handleSearchChange(v: string) {
+		setSearchInput(v)
+		clearTimeout(searchTimerRef.current)
+		searchTimerRef.current = setTimeout(() => {
+			setCommittedSearch(v)
+			setPage(1)
+		}, 350)
+	}
 
 	const load = useCallback(async () => {
 		setIsLoading(true)
 		setError(null)
 		try {
-			setData(await getCommunityExperiencesTab(communityId))
+			setData(await getCommunityExperiencesTab(communityId, {
+				status: activeFilter !== "ALL" ? activeFilter : undefined,
+				search: committedSearch || undefined,
+				sort,
+				page,
+				limit: PAGE_SIZE,
+			}))
 		} catch {
 			setError("Failed to load experiences.")
 		} finally {
 			setIsLoading(false)
 		}
-	}, [communityId])
+	}, [communityId, activeFilter, committedSearch, sort, page])
 
-	useEffect(() => {
-		load()
-	}, [load])
-	useEffect(() => {
-		setPage(1)
-	}, [activeFilter, search, sort])
+	useEffect(() => { void load() }, [load])
 
 	const handleDetach = useCallback(
 		async (eventId: string) => {
@@ -133,30 +267,16 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 			try {
 				await detachCommunityEvent(communityId, eventId)
 				toast.success("Experience detached from community")
-				setData(prev =>
-					prev ? { ...prev, experiences: prev.experiences.filter(e => e.id !== eventId) } : prev,
-				)
+				setSelectedExp(null)
+				void load()
 			} catch {
 				toast.error("Failed to detach experience")
 			} finally {
 				setDetachingId(null)
 			}
 		},
-		[communityId],
+		[communityId, load],
 	)
-
-	const filtered = useMemo(() => {
-		if (!data) return []
-		let items = data.experiences
-		if (activeFilter !== "ALL") items = items.filter(e => e.status === activeFilter)
-		const q = search.trim().toLowerCase()
-		if (q) items = items.filter(e => e.name.toLowerCase().includes(q))
-		if (sort === "oldest") items = [...items].reverse()
-		return items
-	}, [data, activeFilter, search, sort])
-
-	const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
-	const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
 	const columns = useMemo<ColumnDef<CommunityExperienceItem>[]>(
 		() => [
@@ -167,24 +287,22 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 					const e = row.original
 					return (
 						<div className="flex items-center gap-3 max-w-55">
-							<div
-								className="h-10 w-10 shrink-0 rounded-md flex items-center justify-center text-sm font-bold text-white/20 select-none"
-								style={{ backgroundColor: e.coverColor }}
-							>
-								{e.coverInitial}
-							</div>
+							{e.coverUrl ? (
+								<img
+									src={e.coverUrl}
+									alt={e.name}
+									className="h-10 w-10 shrink-0 rounded-md object-cover"
+								/>
+							) : (
+								<div
+									className="h-10 w-10 shrink-0 rounded-md flex items-center justify-center text-sm font-bold text-white/40 select-none"
+									style={{ backgroundColor: e.coverColor }}
+								>
+									{e.coverInitial}
+								</div>
+							)}
 							<div className="min-w-0">
 								<p className="text-xs font-semibold text-text-primary truncate">{e.name}</p>
-								<div className="flex items-center gap-1 mt-1 flex-wrap">
-									{e.tags.map(tag => (
-										<span
-											key={tag}
-											className="text-[10px] bg-neutral-100 text-text-secondary rounded px-1.5 py-0.5 font-medium"
-										>
-											{tag}
-										</span>
-									))}
-								</div>
 							</div>
 						</div>
 					)
@@ -192,7 +310,7 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 			},
 			{
 				id: "datetime",
-				header: () => <span className="whitespace-nowrap">Date & Time</span>,
+				header: () => <span className="whitespace-nowrap">Date &amp; Time</span>,
 				cell: ({ row }) => (
 					<div>
 						<p className="text-xs font-medium text-text-primary">{row.original.date}</p>
@@ -209,12 +327,7 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 						className: "bg-neutral-100 text-text-secondary",
 					}
 					return (
-						<span
-							className={cn(
-								"inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-								cfg.className,
-							)}
-						>
+						<span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold", cfg.className)}>
 							{cfg.label}
 						</span>
 					)
@@ -238,10 +351,7 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 								)}
 							</div>
 							<div className="mt-1 h-1.5 rounded-full bg-surface-card-muted overflow-hidden">
-								<div
-									className="h-full rounded-full"
-									style={{ width: `${pct}%`, backgroundColor: bar }}
-								/>
+								<div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: bar }} />
 							</div>
 						</div>
 					)
@@ -261,9 +371,8 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 				header: "Visibility",
 				cell: ({ row }) => {
 					const v = row.original.visibility
-					const dot =
-						v === "PUBLIC" ? "bg-green-500" : v === "PRIVATE" ? "bg-amber-500" : "bg-neutral-400"
-					const label = v === "PUBLIC" ? "Public" : v === "PRIVATE" ? "Private" : "Draft"
+					const dot   = v === "PUBLIC" ? "bg-green-500" : v === "PRIVATE" ? "bg-amber-500" : "bg-neutral-400"
+					const label = v === "PUBLIC" ? "Public"       : v === "PRIVATE" ? "Private"      : "Draft"
 					return (
 						<div className="flex items-center gap-1.5">
 							<span className={cn("h-1.5 w-1.5 rounded-full shrink-0", dot)} />
@@ -280,16 +389,11 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 					return (
 						<div className="flex items-center gap-1" onClick={ev => ev.stopPropagation()}>
 							<button
+								onClick={() => setSelectedExp(e)}
 								className="rounded-md p-1.5 text-text-secondary hover:bg-neutral-100 transition-colors"
-								title="View"
+								title="View details"
 							>
 								<Eye size={14} />
-							</button>
-							<button
-								className="rounded-md p-1.5 text-text-secondary hover:bg-neutral-100 transition-colors"
-								title="Edit"
-							>
-								<Pencil size={14} />
 							</button>
 							<button
 								disabled={detachingId === e.id}
@@ -304,7 +408,7 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 				},
 			},
 		],
-		[detachingId, handleDetach],
+		[detachingId, handleDetach, setSelectedExp],
 	)
 
 	if (error) {
@@ -315,18 +419,23 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 		)
 	}
 
-	const stats = data?.stats
+	const counts    = data?.tabCounts
+	const stats     = data?.stats
+	const perf      = data?.performance30d
+	const total     = data?.total ?? 0
+	const totalPages = Math.ceil(total / PAGE_SIZE)
 
 	const FILTER_TABS: { id: StatusFilter; label: string; count: number }[] = [
-		{ id: "ALL", label: "All Experiences", count: stats?.totalExperiences ?? 0 },
-		{ id: "UPCOMING", label: "Upcoming", count: stats?.upcoming ?? 0 },
-		{ id: "LIVE", label: "Live", count: stats?.live ?? 0 },
-		{ id: "COMPLETED", label: "Completed", count: stats?.completed ?? 0 },
-		{ id: "DRAFT", label: "Drafts", count: stats?.drafts ?? 0 },
-		{ id: "CANCELLED", label: "Cancelled", count: stats?.cancelled ?? 0 },
+		{ id: "ALL",       label: "All Experiences", count: counts?.all ?? 0 },
+		{ id: "UPCOMING",  label: "Upcoming",        count: counts?.upcoming ?? 0 },
+		{ id: "LIVE",      label: "Live",             count: counts?.live ?? 0 },
+		{ id: "COMPLETED", label: "Completed",        count: counts?.completed ?? 0 },
+		{ id: "DRAFT",     label: "Drafts",           count: counts?.drafts ?? 0 },
+		{ id: "CANCELLED", label: "Cancelled",        count: counts?.cancelled ?? 0 },
 	]
 
 	return (
+		<>
 		<div className="flex items-start gap-5">
 			{/* ── Main ──────────────────────────────────────────────────────── */}
 			<div className="flex-1 min-w-0 flex flex-col gap-5">
@@ -335,65 +444,44 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 					<div>
 						<h2 className="text-base font-semibold text-text-primary">Community Experiences</h2>
 						<p className="mt-0.5 text-xs text-text-tertiary">
-							Create, manage and track experiences for your community.
+							View and manage experiences linked to this community.
 						</p>
 					</div>
-					<div className="flex items-center gap-2 shrink-0">
-						<div className="relative">
-							<Search
-								size={13}
-								className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
-							/>
-							<input
-								type="text"
-								placeholder="Search experiences..."
-								value={search}
-								onChange={e => setSearch(e.target.value)}
-								className="h-8 w-48 rounded-lg border border-border-default bg-surface-card pl-8 pr-3 text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-border-focus"
-							/>
-						</div>
-						<Button
-							variant="secondary"
-							size="sm"
-							radius="md"
-							leftIcon={<SlidersHorizontal size={13} />}
-							disabled
-						>
-							Filters
-						</Button>
-						<Button
-							variant="primary"
-							size="sm"
-							radius="md"
-							leftIcon={<Plus size={13} />}
-							onClick={() => toast.info("Create experience coming soon")}
-						>
-							Create Experience
-						</Button>
+					<div className="relative shrink-0">
+						<Search
+							size={13}
+							className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
+						/>
+						<input
+							type="text"
+							placeholder="Search experiences..."
+							value={searchInput}
+							onChange={e => handleSearchChange(e.target.value)}
+							className="h-8 w-48 rounded-lg border border-border-default bg-surface-card pl-8 pr-3 text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-border-focus"
+						/>
 					</div>
 				</div>
 
 				{/* Stat cards */}
-				{/* TODO: replace hardcoded values with stats from getCommunityExperiencesTab API */}
 				<div className="grid grid-cols-3 gap-3 lg:grid-cols-5">
 					<StatCard
 						icon={LayoutGrid}
 						label="Total Experiences"
-						value={isLoading ? "—" : (stats?.totalExperiences ?? 0)}
+						value={isLoading ? "—" : (counts?.all ?? 0)}
 						sub="All time"
 						accent="purple"
 					/>
 					<StatCard
 						icon={Calendar}
 						label="Upcoming"
-						value={isLoading ? "—" : (stats?.upcoming ?? 0)}
+						value={isLoading ? "—" : (counts?.upcoming ?? 0)}
 						sub="Next 30 days"
 						accent="sky"
 					/>
 					<StatCard
 						icon={CheckCircle}
 						label="Completed"
-						value={isLoading ? "—" : (stats?.completed ?? 0)}
+						value={isLoading ? "—" : (counts?.completed ?? 0)}
 						sub="All time"
 						accent="amber"
 					/>
@@ -407,7 +495,7 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 					<StatCard
 						icon={Banknote}
 						label="Total Revenue"
-						value={isLoading ? "—" : (stats?.totalRevenue ?? "—")}
+						value={isLoading ? "—" : fmtRevenue(stats?.totalRevenue ?? 0)}
 						sub="All time"
 						accent="green"
 					/>
@@ -419,7 +507,7 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 						{FILTER_TABS.map(tab => (
 							<button
 								key={tab.id}
-								onClick={() => setActiveFilter(tab.id)}
+								onClick={() => { setActiveFilter(tab.id); setPage(1) }}
 								className={cn(
 									"inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors",
 									activeFilter === tab.id
@@ -443,18 +531,19 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 					</div>
 					<select
 						value={sort}
-						onChange={e => setSort(e.target.value)}
+						onChange={e => { setSort(e.target.value); setPage(1) }}
 						className="h-8 rounded-lg border border-border-default bg-surface-card px-3 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-border-focus"
 					>
-						<option value="newest">Sort by: Newest First</option>
-						<option value="oldest">Sort by: Oldest First</option>
+						{SORT_OPTIONS.map(o => (
+							<option key={o.value} value={o.value}>{o.label}</option>
+						))}
 					</select>
 				</div>
 
 				{/* Table */}
 				<DataTable
 					columns={columns}
-					data={paginated}
+					data={data?.experiences ?? []}
 					isLoading={isLoading}
 					emptyState={
 						<div className="py-12 text-center text-sm text-text-tertiary">
@@ -468,7 +557,9 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 					<span>
 						{isLoading
 							? "Loading…"
-							: `Showing ${filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} to ${Math.min(page * PAGE_SIZE, filtered.length)} of ${filtered.length} experiences`}
+							: total === 0
+								? "No experiences found"
+								: `Showing ${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)} of ${total} experiences`}
 					</span>
 					{totalPages > 1 && (
 						<div className="flex items-center gap-1">
@@ -507,144 +598,98 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 
 			{/* ── Sidebar ───────────────────────────────────────────────────── */}
 			<div className="hidden lg:flex w-72 shrink-0 flex-col gap-4">
-				{/* Experience Performance */}
+				{/* Experience Performance (30 Days) */}
 				<div className="rounded-xl border border-border-default bg-surface-card p-4">
-					<div className="flex items-center justify-between mb-2">
-						<h3 className="text-sm font-semibold text-text-primary">
-							Experience Performance{" "}
-							<span className="font-normal text-text-tertiary text-xs">(30 Days)</span>
-						</h3>
-						<button
-							className="text-xs font-medium text-text-brand hover:underline shrink-0"
-							onClick={() => toast.info("Analytics coming soon")}
-						>
-							View Analytics
-						</button>
-					</div>
+					<h3 className="text-sm font-semibold text-text-primary mb-1">
+						Experience Performance{" "}
+						<span className="font-normal text-text-tertiary text-xs">(30 Days)</span>
+					</h3>
 					<div className="flex flex-col divide-y divide-border-subtle">
-						{(data?.performance ?? []).map(metric => (
-							<div key={metric.label} className="flex items-center justify-between gap-2 py-3">
-								<div>
-									<p className="text-[11px] text-text-tertiary">{metric.label}</p>
-									<div className="flex items-center gap-1.5 mt-0.5">
-										<span className="text-sm font-bold text-text-primary tabular-nums">
-											{metric.value}
-										</span>
-										<span
-											className={cn(
-												"inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
-												metric.trend.direction === "up"
-													? "bg-green-50 text-green-700"
-													: "bg-red-50 text-red-600",
-											)}
-										>
-											↑ +{metric.trend.value}
-											{metric.trend.label ?? ""}
-										</span>
-									</div>
-								</div>
-								<div className="w-20 h-8 shrink-0">
-									<ResponsiveContainer width="100%" height={32}>
-										<LineChart data={metric.spark}>
-											<Line
-												type="monotone"
-												dataKey="v"
-												stroke={metric.color}
-												strokeWidth={1.5}
-												dot={false}
-												isAnimationActive={false}
-											/>
-										</LineChart>
-									</ResponsiveContainer>
-								</div>
+						<div className="flex items-center justify-between gap-2 py-3">
+							<div>
+								<p className="text-[11px] text-text-tertiary">Bookings</p>
+								<p className="text-sm font-bold text-text-primary tabular-nums mt-0.5">
+									{isLoading ? "—" : (perf?.bookings.value ?? 0).toLocaleString("en-IN")}
+								</p>
 							</div>
-						))}
+							{!isLoading && <TrendBadge pct={perf?.bookings.deltaPct ?? 0} />}
+						</div>
+						<div className="flex items-center justify-between gap-2 py-3">
+							<div>
+								<p className="text-[11px] text-text-tertiary">Revenue</p>
+								<p className="text-sm font-bold text-text-primary tabular-nums mt-0.5">
+									{isLoading ? "—" : fmtRevenue(perf?.revenue.value ?? 0)}
+								</p>
+							</div>
+							{!isLoading && <TrendBadge pct={perf?.revenue.deltaPct ?? 0} />}
+						</div>
+						<div className="flex items-center justify-between gap-2 py-3">
+							<div>
+								<p className="text-[11px] text-text-tertiary">Attendance Rate</p>
+								<p className="text-sm font-bold text-text-primary tabular-nums mt-0.5">
+									{isLoading
+										? "—"
+										: perf?.attendanceRate.value == null
+											? "—"
+											: `${perf.attendanceRate.value}%`}
+								</p>
+							</div>
+							{!isLoading && <TrendBadge pct={perf?.attendanceRate.deltaPct ?? 0} />}
+						</div>
 					</div>
 				</div>
 
 				{/* Top Performing Experiences */}
 				<div className="rounded-xl border border-border-default bg-surface-card p-4">
-					<div className="flex items-center justify-between mb-3">
-						<h3 className="text-sm font-semibold text-text-primary">
-							Top Performing Experiences
-						</h3>
-						<button className="text-xs font-medium text-text-brand hover:underline">
-							View All
-						</button>
-					</div>
-					<div className="flex flex-col gap-3">
-						{(data?.topPerforming ?? []).map(item => (
-							<div key={item.id} className="flex items-center gap-2.5">
-								<span className="text-xs font-semibold text-text-tertiary w-4 shrink-0">
-									{item.rank}
-								</span>
-								<div
-									className="h-9 w-9 shrink-0 rounded-md flex items-center justify-center text-xs font-bold text-white/20 select-none"
-									style={{ backgroundColor: item.coverColor }}
-								>
-									{item.coverInitial}
-								</div>
-								<div className="flex-1 min-w-0">
-									<p className="text-xs font-medium text-text-primary truncate">
-										{item.name}
-									</p>
-									<p className="text-[11px] text-text-tertiary">{item.bookings} bookings</p>
-								</div>
-								<span className="text-xs font-semibold text-text-primary tabular-nums shrink-0">
-									{item.revenue}
-								</span>
-							</div>
-						))}
-					</div>
-				</div>
-
-				{/* Quick Actions */}
-				<div className="rounded-xl border border-border-default bg-surface-card p-4">
-					<h3 className="text-sm font-semibold text-text-primary mb-3">Quick Actions</h3>
-					<div className="flex flex-col gap-1">
-						{QUICK_ACTIONS.map(action => (
-							<button
-								key={action.label}
-								className="flex items-center gap-3 rounded-lg p-2.5 hover:bg-surface-card-muted transition-colors text-left"
-								onClick={() => toast.info(`${action.label} coming soon`)}
-							>
-								<div
-									className={cn(
-										"flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-										action.bg,
+					<h3 className="text-sm font-semibold text-text-primary mb-3">
+						Top Performing Experiences
+					</h3>
+					{(data?.topPerforming ?? []).length === 0 ? (
+						<div className="flex h-28 items-center justify-center rounded-lg border border-dashed border-border-default">
+							<p className="text-xs text-text-tertiary">Top experiences — coming soon</p>
+						</div>
+					) : (
+						<div className="flex flex-col gap-3">
+							{data!.topPerforming.map((item, i) => (
+								<div key={item.id} className="flex items-center gap-2.5">
+									<span className="text-xs font-semibold text-text-tertiary w-4 shrink-0">
+										{i + 1}
+									</span>
+									{item.coverUrl ? (
+										<img
+											src={item.coverUrl}
+											alt={item.name}
+											className="h-9 w-9 shrink-0 rounded-md object-cover"
+										/>
+									) : (
+										<div
+											className="h-9 w-9 shrink-0 rounded-md flex items-center justify-center text-xs font-bold text-white/40 select-none"
+											style={{ backgroundColor: item.coverColor }}
+										>
+											{item.coverInitial}
+										</div>
 									)}
-								>
-									<action.icon size={15} className={action.color} />
+									<div className="flex-1 min-w-0">
+										<p className="text-xs font-medium text-text-primary truncate">{item.name}</p>
+										<p className="text-[11px] text-text-tertiary">{item.bookings} bookings</p>
+									</div>
+									<span className="text-xs font-semibold text-text-primary tabular-nums shrink-0">
+										{fmtRevenue(item.revenue)}
+									</span>
 								</div>
-								<div>
-									<p className="text-xs font-medium text-text-primary">{action.label}</p>
-									<p className="text-[10px] text-text-tertiary leading-tight">
-										{action.description}
-									</p>
-								</div>
-							</button>
-						))}
-					</div>
-				</div>
-
-				{/* Tips */}
-				<div className="rounded-xl border border-amber-100 bg-amber-50 p-4">
-					<div className="flex items-center gap-2 mb-2">
-						<Lightbulb size={13} className="text-amber-500 shrink-0" />
-						<h3 className="text-xs font-semibold text-amber-800">Tips</h3>
-					</div>
-					<p className="text-[11px] text-amber-700 leading-relaxed">
-						Promote your upcoming experiences in Announcements and Community Feed to increase
-						visibility and bookings.
-					</p>
-					<button
-						className="mt-2 text-[11px] font-medium text-text-brand hover:underline"
-						onClick={() => toast.info("Learn more coming soon")}
-					>
-						Learn more →
-					</button>
+							))}
+						</div>
+					)}
 				</div>
 			</div>
 		</div>
+
+		<ExperienceDetailModal
+			exp={selectedExp}
+			onClose={() => setSelectedExp(null)}
+			onDetach={handleDetach}
+			isDetaching={!!detachingId}
+		/>
+		</>
 	)
 }

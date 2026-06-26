@@ -8,13 +8,6 @@ import {
 	IndianRupee,
 	Heart,
 	Star,
-	ChevronRight,
-	Clock,
-	Download,
-	Share2,
-	Calendar,
-	FileDown,
-	type LucideIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -32,51 +25,33 @@ import {
 	Tooltip,
 	ResponsiveContainer,
 } from "recharts"
-import { Button } from "@/components/ui/Button"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { getCommunityAnalytics, type AnalyticsTabData } from "@/lib/api/communities"
 import { cn } from "@/lib/utils"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const QUICK_ACTIONS: { label: string; description: string; icon: LucideIcon; bg: string; color: string }[] = [
-	{
-		label: "Export Analytics",
-		description: "Download detailed analytics report",
-		icon: Download,
-		bg: "bg-green-50",
-		color: "text-green-500",
-	},
-	{
-		label: "Download CSV",
-		description: "Export raw data in CSV format",
-		icon: FileDown,
-		bg: "bg-blue-50",
-		color: "text-blue-500",
-	},
-	{
-		label: "Share Report",
-		description: "Share analytics with your team",
-		icon: Share2,
-		bg: "bg-purple-50",
-		color: "text-purple-500",
-	},
-	{
-		label: "Schedule Report",
-		description: "Automate email reports",
-		icon: Calendar,
-		bg: "bg-amber-50",
-		color: "text-amber-500",
-	},
-]
-
 const RANK_COLORS = ["#f59e0b", "#9ca3af", "#b45309", "#6366f1", "#6366f1"]
 
 // ─── Health Score Donut ───────────────────────────────────────────────────────
 
+const HEALTH_COLOR: Record<string, { fill: string; track: string; text: string }> = {
+	Excellent:        { fill: "#22c55e", track: "#f0fdf4", text: "text-green-600" },
+	Good:             { fill: "#3b82f6", track: "#eff6ff", text: "text-blue-600"  },
+	Fair:             { fill: "#f59e0b", track: "#fffbeb", text: "text-amber-600" },
+	"Needs Attention":{ fill: "#ef4444", track: "#fef2f2", text: "text-red-600"   },
+}
+
+const HEALTH_SUBTEXT: Record<string, string> = {
+	Excellent:         "Your community is thriving! Keep it up.",
+	Good:              "Your community is in good shape.",
+	Fair:              "Some areas need attention.",
+	"Needs Attention": "Action required to improve community health.",
+}
+
 function HealthDonut({ score, maxScore, label }: { score: number; maxScore: number; label: string }) {
-	const pct = score / maxScore
-	const filled = pct * 100
+	const filled = (score / maxScore) * 100
+	const colors = HEALTH_COLOR[label] ?? HEALTH_COLOR["Good"]
 	const data = [{ v: filled }, { v: 100 - filled }]
 	return (
 		<div className="relative flex items-center justify-center">
@@ -93,8 +68,8 @@ function HealthDonut({ score, maxScore, label }: { score: number; maxScore: numb
 					strokeWidth={0}
 					paddingAngle={0}
 				>
-					<Cell fill="#22c55e" />
-					<Cell fill="#f0fdf4" />
+					<Cell fill={colors.fill} />
+					<Cell fill={colors.track} />
 				</Pie>
 			</PieChart>
 			<div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -102,7 +77,7 @@ function HealthDonut({ score, maxScore, label }: { score: number; maxScore: numb
 				<span className="text-[10px] text-text-tertiary">/{maxScore}</span>
 				<div className="flex items-center gap-0.5 mt-0.5">
 					<Star size={9} className="text-amber-400 fill-amber-400" />
-					<span className="text-[10px] font-semibold text-green-600">{label}</span>
+					<span className={`text-[10px] font-semibold ${colors.text}`}>{label}</span>
 				</div>
 			</div>
 		</div>
@@ -158,7 +133,6 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 	const [data, setData] = useState<AnalyticsTabData | null>(null)
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
-	const [growthRange, setGrowthRange] = useState("Last 30 Days")
 
 	const load = useCallback(async () => {
 		setIsLoading(true)
@@ -198,19 +172,9 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 							Deep insights into your community&apos;s growth, engagement and performance.
 						</p>
 					</div>
-					<Button
-						variant="secondary"
-						size="sm"
-						radius="md"
-						leftIcon={<Download size={13} />}
-						onClick={() => toast.info("Export analytics coming soon")}
-					>
-						Export Report
-					</Button>
 				</div>
 
 				{/* Stat cards */}
-				{/* TODO: wire growth values from getCommunityAnalytics API response */}
 				<div className="grid grid-cols-3 gap-3 lg:grid-cols-5">
 					<StatCard
 						icon={Users}
@@ -367,21 +331,7 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 
 					{/* Growth summary card */}
 					<div className="rounded-xl border border-border-default bg-surface-card p-4 w-48 flex flex-col gap-3">
-						<div className="relative">
-							<select
-								value={growthRange}
-								onChange={e => setGrowthRange(e.target.value)}
-								className="h-7 w-full appearance-none rounded-lg border border-border-default bg-surface-card pl-2 pr-6 text-[11px] text-text-primary focus:outline-none"
-							>
-								{["Last 30 Days", "Last 7 Days", "Last 90 Days"].map(o => (
-									<option key={o}>{o}</option>
-								))}
-							</select>
-							<ChevronRight
-								size={10}
-								className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rotate-90 text-text-tertiary"
-							/>
-						</div>
+						<p className="text-[11px] font-semibold text-text-tertiary">Last 30 Days</p>
 						<div>
 							<p className="text-[10px] text-text-tertiary mb-0.5">Members Joined</p>
 							<p className="text-xl font-bold text-green-500">
@@ -474,7 +424,11 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 									<span className="text-right">Bookings</span>
 									<span className="text-right">Revenue</span>
 								</div>
-								{(data?.topExperiences ?? []).map(exp => (
+								{(data?.topExperiences ?? []).length === 0 ? (
+									<div className="flex h-16 items-center justify-center text-xs text-text-tertiary">
+										No experiences yet
+									</div>
+								) : (data?.topExperiences ?? []).map(exp => (
 									<div
 										key={exp.id}
 										className="grid grid-cols-4 items-center py-1.5 border-b border-border-subtle last:border-0"
@@ -498,12 +452,6 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 								))}
 							</div>
 						</div>
-						<button
-							className="flex items-center gap-1 text-xs font-medium text-text-brand hover:underline"
-							onClick={() => toast.info("View all experience analytics coming soon")}
-						>
-							View All Experiences Analytics <ChevronRight size={12} />
-						</button>
 					</div>
 
 					{/* Community Health */}
@@ -523,9 +471,7 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 									</div>
 								)}
 								<p className="text-[10px] text-text-tertiary text-center leading-tight">
-									Your community is
-									<br />
-									thriving! Keep it up.
+									{data ? (HEALTH_SUBTEXT[data.communityHealth.label] ?? "") : ""}
 								</p>
 							</div>
 							<div className="flex-1 min-w-0">
@@ -533,34 +479,36 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 									Health Factors
 								</p>
 								<div className="flex flex-col gap-2">
-									{(data?.communityHealth.factors ?? []).map(f => (
-										<div key={f.label} className="flex items-center gap-2">
-											<div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-green-100">
-												<svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-													<path
-														d="M1.5 4L3 5.5L6.5 2"
-														stroke="#22c55e"
-														strokeWidth="1.5"
-														strokeLinecap="round"
-														strokeLinejoin="round"
-													/>
-												</svg>
+									{(data?.communityHealth.factors ?? []).map(f => {
+										const pct = f.score / f.max
+										const good = pct >= 0.75
+										const fair = pct >= 0.5
+										const iconBg = good ? "bg-green-100" : fair ? "bg-amber-100" : "bg-red-100"
+										const iconStroke = good ? "#22c55e" : fair ? "#f59e0b" : "#ef4444"
+										const scoreColor = good ? "text-green-600" : fair ? "text-amber-600" : "text-red-500"
+										return (
+											<div key={f.label} className="flex items-center gap-2">
+												<div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${iconBg}`}>
+													<svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+														<path
+															d={good || fair ? "M1.5 4L3 5.5L6.5 2" : "M2 2L6 6M6 2L2 6"}
+															stroke={iconStroke}
+															strokeWidth="1.5"
+															strokeLinecap="round"
+															strokeLinejoin="round"
+														/>
+													</svg>
+												</div>
+												<span className="flex-1 text-[11px] text-text-primary">
+													{f.label}
+												</span>
+												<span className={`text-[11px] font-semibold tabular-nums ${scoreColor}`}>
+													{f.score} / {f.max}
+												</span>
 											</div>
-											<span className="flex-1 text-[11px] text-text-primary">
-												{f.label}
-											</span>
-											<span className="text-[11px] font-semibold text-text-primary tabular-nums">
-												{f.score} / {f.max}
-											</span>
-										</div>
-									))}
+										)
+									})}
 								</div>
-								<button
-									className="mt-3 flex items-center gap-1 text-xs font-medium text-text-brand hover:underline"
-									onClick={() => toast.info("Health details coming soon")}
-								>
-									View Health Details <ChevronRight size={12} />
-								</button>
 							</div>
 						</div>
 					</div>
@@ -575,12 +523,12 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 							<p className="text-[10px] font-semibold text-text-tertiary uppercase tracking-wide mb-3">
 								Interests
 							</p>
-							{data ? (
-								<InterestsDonut segments={data.interests} />
-							) : (
+							{!data || data.interests.length === 0 ? (
 								<div className="h-20 flex items-center justify-center text-xs text-text-tertiary">
-									—
+									No data yet
 								</div>
+							) : (
+								<InterestsDonut segments={data.interests} />
 							)}
 						</div>
 
@@ -589,27 +537,33 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 							<p className="text-[10px] font-semibold text-text-tertiary uppercase tracking-wide mb-3">
 								Top Cities
 							</p>
-							<div className="flex flex-col gap-2">
-								{(data?.topCities ?? []).map(c => (
-									<div key={c.city} className="flex items-center gap-2">
-										<span className="text-[11px] text-text-secondary w-20 shrink-0">
-											{c.city}
-										</span>
-										<div className="flex-1 h-1.5 rounded-full bg-neutral-100 overflow-hidden">
-											<div
-												className="h-full rounded-full"
-												style={{
-													width: `${(c.pct / 30) * 100}%`,
-													backgroundColor: c.color,
-												}}
-											/>
+							{(data?.topCities ?? []).length === 0 ? (
+								<div className="h-20 flex items-center justify-center text-xs text-text-tertiary">
+									No data yet
+								</div>
+							) : (
+								<div className="flex flex-col gap-2">
+									{(data?.topCities ?? []).map(c => (
+										<div key={c.city} className="flex items-center gap-2">
+											<span className="text-[11px] text-text-secondary w-20 shrink-0">
+												{c.city}
+											</span>
+											<div className="flex-1 h-1.5 rounded-full bg-neutral-100 overflow-hidden">
+												<div
+													className="h-full rounded-full"
+													style={{
+														width: `${(c.pct / 30) * 100}%`,
+														backgroundColor: c.color,
+													}}
+												/>
+											</div>
+											<span className="text-[11px] font-semibold text-text-primary w-8 text-right tabular-nums">
+												{c.pct}%
+											</span>
 										</div>
-										<span className="text-[11px] font-semibold text-text-primary w-8 text-right tabular-nums">
-											{c.pct}%
-										</span>
-									</div>
-								))}
-							</div>
+									))}
+								</div>
+							)}
 						</div>
 
 						{/* Age Distribution bar chart */}
@@ -620,6 +574,10 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 							{isLoading ? (
 								<div className="h-28 flex items-center justify-center text-xs text-text-tertiary">
 									—
+								</div>
+							) : (data?.ageDistribution ?? []).length === 0 ? (
+								<div className="h-28 flex items-center justify-center text-xs text-text-tertiary">
+									No data yet
 								</div>
 							) : (
 								<ResponsiveContainer width="100%" height={112}>
@@ -655,9 +613,13 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 											}}
 										/>
 										<Bar dataKey="pct" fill="#a855f7" radius={[3, 3, 0, 0]}>
-											{(data?.ageDistribution ?? []).map((_, i) => (
-												<Cell key={i} fill={i === 1 ? "#7c3aed" : "#c4b5fd"} />
-											))}
+											{(() => {
+												const ages = data?.ageDistribution ?? []
+												const maxPct = Math.max(...ages.map(a => a.pct), 0)
+												return ages.map((a, i) => (
+													<Cell key={i} fill={a.pct === maxPct ? "#7c3aed" : "#c4b5fd"} />
+												))
+											})()}
 										</Bar>
 									</BarChart>
 								</ResponsiveContainer>
@@ -671,17 +633,9 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 			<div className="hidden lg:flex w-72 shrink-0 flex-col gap-4">
 				{/* Top Contributors */}
 				<div className="rounded-xl border border-border-default bg-surface-card p-4">
-					<div className="flex items-center justify-between mb-3">
-						<div>
-							<h3 className="text-sm font-semibold text-text-primary">Top Contributors</h3>
-							<p className="text-[10px] text-text-tertiary">Last 30 Days</p>
-						</div>
-						<button
-							className="text-xs font-medium text-text-brand hover:underline"
-							onClick={() => toast.info("View all contributors coming soon")}
-						>
-							View All
-						</button>
+					<div className="mb-3">
+						<h3 className="text-sm font-semibold text-text-primary">Top Contributors</h3>
+						<p className="text-[10px] text-text-tertiary">Last 30 Days</p>
 					</div>
 					<div className="flex flex-col gap-2.5">
 						{(data?.topContributors ?? []).map((c, i) => (
@@ -689,12 +643,16 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 								<span className="text-[11px] font-bold text-text-tertiary w-4 text-center shrink-0">
 									{c.rank}
 								</span>
-								<div
-									className="h-7 w-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-									style={{ backgroundColor: c.avatarColor }}
-								>
-									{c.avatarInitial}
-								</div>
+								{c.avatarUrl ? (
+									<img src={c.avatarUrl} alt={c.name} className="h-7 w-7 shrink-0 rounded-full object-cover" />
+								) : (
+									<div
+										className="h-7 w-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+										style={{ backgroundColor: c.avatarColor }}
+									>
+										{c.avatarInitial}
+									</div>
+								)}
 								<div className="flex-1 min-w-0">
 									<p className="text-xs font-semibold text-text-primary">{c.name}</p>
 									<p className="text-[10px] text-text-tertiary">{c.handle}</p>
@@ -702,8 +660,7 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 								<div className="flex items-center gap-0.5 shrink-0">
 									<Star
 										size={10}
-										className="fill-amber-400 text-amber-400"
-										style={{ color: RANK_COLORS[i] }}
+										style={{ fill: RANK_COLORS[i], color: RANK_COLORS[i] }}
 									/>
 									<span className="text-[11px] font-semibold text-text-secondary tabular-nums">
 										{c.points} pts
@@ -716,24 +673,22 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 
 				{/* Top Hosts */}
 				<div className="rounded-xl border border-border-default bg-surface-card p-4">
-					<div className="flex items-center justify-between mb-3">
+					<div className="mb-3">
 						<h3 className="text-sm font-semibold text-text-primary">Top Hosts</h3>
-						<button
-							className="text-xs font-medium text-text-brand hover:underline"
-							onClick={() => toast.info("View all hosts coming soon")}
-						>
-							View All
-						</button>
 					</div>
 					<div className="flex flex-col gap-2.5">
 						{(data?.topHosts ?? []).map(h => (
 							<div key={h.id} className="flex items-center gap-2.5">
-								<div
-									className="h-9 w-9 shrink-0 rounded-xl flex items-center justify-center text-xs font-bold text-white"
-									style={{ backgroundColor: h.avatarColor }}
-								>
-									{h.avatarInitial}
-								</div>
+								{h.avatarUrl ? (
+									<img src={h.avatarUrl} alt={h.name} className="h-9 w-9 shrink-0 rounded-xl object-cover" />
+								) : (
+									<div
+										className="h-9 w-9 shrink-0 rounded-xl flex items-center justify-center text-xs font-bold text-white"
+										style={{ backgroundColor: h.avatarColor }}
+									>
+										{h.avatarInitial}
+									</div>
+								)}
 								<div className="flex-1 min-w-0">
 									<p className="text-xs font-semibold text-text-primary">{h.name}</p>
 									<p className="text-[10px] text-text-tertiary">{h.handle}</p>
@@ -746,48 +701,6 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 					</div>
 				</div>
 
-				{/* Quick Actions */}
-				<div className="rounded-xl border border-border-default bg-surface-card p-4">
-					<h3 className="text-sm font-semibold text-text-primary mb-2">Quick Actions</h3>
-					<div className="flex flex-col">
-						{QUICK_ACTIONS.map(action => (
-							<button
-								key={action.label}
-								className="flex items-center gap-3 rounded-lg p-2.5 hover:bg-surface-card-muted transition-colors text-left"
-								onClick={() => toast.info(`${action.label} coming soon`)}
-							>
-								<div
-									className={cn(
-										"flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-										action.bg,
-									)}
-								>
-									<action.icon size={14} className={action.color} />
-								</div>
-								<div className="flex-1 min-w-0">
-									<p className="text-xs font-medium text-text-primary">{action.label}</p>
-									<p className="text-[10px] text-text-tertiary truncate">
-										{action.description}
-									</p>
-								</div>
-								<ChevronRight size={12} className="text-text-tertiary shrink-0" />
-							</button>
-						))}
-					</div>
-				</div>
-
-				{/* Last updated note */}
-				<div className="rounded-xl border border-border-default bg-surface-card-muted px-4 py-3 flex items-start gap-2.5">
-					<Clock size={13} className="text-text-tertiary shrink-0 mt-0.5" />
-					<div>
-						<p className="text-[11px] font-medium text-text-primary">
-							All data is updated in real-time.
-						</p>
-						<p className="text-[10px] text-text-tertiary">
-							Last updated: {data?.lastUpdated ?? "—"}
-						</p>
-					</div>
-				</div>
 			</div>
 		</div>
 	)
