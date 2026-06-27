@@ -86,16 +86,76 @@ export function SkeletonActivityFeedItem() {
 export function SkeletonDashboardPage() {
 	return (
 		<div className="p-6 space-y-6 max-w-7xl mx-auto">
-			{/* SLA banner placeholder */}
-			<Skeleton className="h-16 w-full rounded-xl" />
-
-			{/* Stat cards */}
+			{/* Overview */}
 			<section>
 				<Skeleton className="mb-3 h-3 w-20" />
 				<div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
 					{Array.from({ length: 4 }).map((_, i) => (
 						<SkeletonStatCard key={i} />
 					))}
+				</div>
+			</section>
+
+			{/* Review queue */}
+			<section className="rounded-xl border border-border-default bg-surface-canvas">
+				<div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
+					<div className="space-y-1">
+						<Skeleton className="h-4 w-24" />
+						<Skeleton className="h-3 w-44" />
+					</div>
+				</div>
+				<div className="grid grid-cols-2 gap-4 px-5 py-4 lg:grid-cols-4">
+					{Array.from({ length: 4 }).map((_, i) => (
+						<SkeletonStatCard key={i} />
+					))}
+				</div>
+			</section>
+
+			{/* Live operations */}
+			<section className="rounded-xl border border-border-default bg-surface-canvas">
+				<div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
+					<div className="space-y-1">
+						<Skeleton className="h-4 w-24" />
+						<Skeleton className="h-3 w-48" />
+					</div>
+				</div>
+				<div className="grid grid-cols-1 gap-4 px-5 py-4 md:grid-cols-3">
+					{Array.from({ length: 3 }).map((_, i) => (
+						<SkeletonStatCard key={i} />
+					))}
+				</div>
+			</section>
+
+			{/* Revenue overview */}
+			<section className="rounded-xl border border-border-default bg-surface-canvas">
+				<div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
+					<div className="space-y-1">
+						<Skeleton className="h-4 w-28" />
+						<Skeleton className="h-3 w-48" />
+					</div>
+					<Skeleton className="h-5 w-32 rounded-full" />
+				</div>
+				<div className="px-5 py-5 space-y-5">
+					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+						{Array.from({ length: 4 }).map((_, i) => (
+							<SkeletonStatCard key={i} />
+						))}
+					</div>
+					<div className="rounded-xl border border-border-default bg-surface-card p-4 space-y-4">
+						<div className="flex items-center gap-3">
+							<Skeleton className="h-3 w-24" />
+							<Skeleton className="h-3 w-24" />
+						</div>
+						<div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+							{Array.from({ length: 6 }).map((_, i) => (
+								<div key={i} className="space-y-2">
+									<Skeleton className="h-40 w-full rounded-lg" />
+									<Skeleton className="h-3 w-12 mx-auto" />
+									<Skeleton className="h-2.5 w-16 mx-auto" />
+								</div>
+							))}
+						</div>
+					</div>
 				</div>
 			</section>
 
@@ -108,6 +168,30 @@ export function SkeletonDashboardPage() {
 				<div className="px-5 divide-y divide-border-subtle">
 					{Array.from({ length: 6 }).map((_, i) => (
 						<SkeletonActivityFeedItem key={i} />
+					))}
+				</div>
+			</section>
+
+			{/* Platform health */}
+			<section className="rounded-xl border border-border-default bg-surface-canvas">
+				<div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
+					<div className="space-y-1">
+						<Skeleton className="h-4 w-28" />
+						<Skeleton className="h-3 w-44" />
+					</div>
+				</div>
+				<div className="grid grid-cols-1 gap-4 px-5 py-4 lg:grid-cols-2">
+					{Array.from({ length: 4 }).map((_, i) => (
+						<div key={i} className="flex items-center justify-between gap-3 rounded-xl border border-border-default bg-surface-card px-4 py-3">
+							<div className="flex items-center gap-3 min-w-0">
+								<Skeleton className="h-9 w-9 rounded-lg" />
+								<div className="space-y-2">
+									<Skeleton className="h-3.5 w-28" />
+									<Skeleton className="h-2.5 w-24" />
+								</div>
+							</div>
+							<Skeleton className="h-5 w-20 rounded-full" />
+						</div>
 					))}
 				</div>
 			</section>

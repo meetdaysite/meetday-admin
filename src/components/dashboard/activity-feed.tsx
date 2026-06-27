@@ -1,7 +1,6 @@
-﻿import { formatDistanceToNow } from "date-fns"
+import { formatDistanceToNow } from "date-fns"
+import { CalendarDays, Flag, ShieldCheck, Tag, Users, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type ActivityEventType =
 	| "host_approved"
@@ -19,43 +18,84 @@ export type ActivityItem = {
 	type: ActivityEventType
 	actorName: string
 	targetName: string
+	subLabel?: string
 	createdAt: Date
 }
 
-// â”€â”€â”€ Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 const EVENT_CONFIG: Record<
 	ActivityEventType,
-	{ label: string; dotClass: string }
+	{
+		icon: LucideIcon
+		iconBox: string
+		iconColor: string
+		dotClass: string
+	}
 > = {
-	host_approved:       { label: "approved host",              dotClass: "bg-green-500" },
-	host_rejected:       { label: "rejected host",              dotClass: "bg-red-500" },
-	host_info_requested: { label: "requested info from host",   dotClass: "bg-amber-400" },
-	host_invite_sent:    { label: "invited host",               dotClass: "bg-blue-400" },
-	event_approved:      { label: "approved event",             dotClass: "bg-green-500" },
-	event_rejected:      { label: "rejected event",             dotClass: "bg-red-500" },
-	event_edit_requested:{ label: "requested edit on event",    dotClass: "bg-amber-400" },
-	admin_invited:       { label: "invited admin",              dotClass: "bg-blue-500" },
-	coupon_created:      { label: "created coupon",             dotClass: "bg-purple-500" },
+	host_approved: {
+		icon: Users,
+		iconBox: "bg-surface-brand-soft",
+		iconColor: "text-icon-brand",
+		dotClass: "bg-green-500",
+	},
+	host_rejected: {
+		icon: Users,
+		iconBox: "bg-rose-50",
+		iconColor: "text-red-600",
+		dotClass: "bg-red-500",
+	},
+	host_info_requested: {
+		icon: Users,
+		iconBox: "bg-amber-50",
+		iconColor: "text-amber-600",
+		dotClass: "bg-amber-400",
+	},
+	host_invite_sent: {
+		icon: Users,
+		iconBox: "bg-sky-50",
+		iconColor: "text-sky-600",
+		dotClass: "bg-blue-400",
+	},
+	event_approved: {
+		icon: CalendarDays,
+		iconBox: "bg-green-50",
+		iconColor: "text-green-600",
+		dotClass: "bg-green-500",
+	},
+	event_rejected: {
+		icon: Flag,
+		iconBox: "bg-rose-50",
+		iconColor: "text-red-600",
+		dotClass: "bg-red-500",
+	},
+	event_edit_requested: {
+		icon: CalendarDays,
+		iconBox: "bg-amber-50",
+		iconColor: "text-amber-600",
+		dotClass: "bg-amber-400",
+	},
+	admin_invited: {
+		icon: ShieldCheck,
+		iconBox: "bg-surface-vibe-soft",
+		iconColor: "text-text-vibe",
+		dotClass: "bg-blue-500",
+	},
+	coupon_created: {
+		icon: Tag,
+		iconBox: "bg-surface-success-soft",
+		iconColor: "text-text-success",
+		dotClass: "bg-purple-500",
+	},
 }
-
-// â”€â”€â”€ Components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function FeedRow({ item }: { item: ActivityItem }) {
 	const cfg = EVENT_CONFIG[item.type]
-	const initials = item.actorName
-		.split(" ")
-		.map(w => w[0])
-		.join("")
-		.slice(0, 2)
-		.toUpperCase()
+	const Icon = cfg.icon
 
 	return (
 		<li className="flex items-start gap-3 py-3">
-			{/* Avatar */}
 			<div className="relative shrink-0">
-				<div className="h-8 w-8 rounded-full bg-surface-brand-soft text-icon-brand text-[11px] font-semibold flex items-center justify-center">
-					{initials}
+				<div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl", cfg.iconBox)}>
+					<Icon size={18} className={cfg.iconColor} />
 				</div>
 				<span
 					className={cn(
@@ -66,12 +106,11 @@ function FeedRow({ item }: { item: ActivityItem }) {
 				/>
 			</div>
 
-			{/* Text */}
-			<div className="flex-1 min-w-0">
-				<p className="text-sm leading-snug text-text-primary">
-					<span className="font-medium">{item.actorName}</span>{" "}
-					<span className="text-text-secondary">{cfg.label}</span>{" "}
-					<span className="font-medium">{item.targetName}</span>
+			<div className="min-w-0 flex-1">
+				<p className="text-sm font-medium leading-snug text-text-primary">{item.targetName}</p>
+				<p className="mt-0.5 text-[11px] text-text-secondary">
+					<span className="font-medium text-text-primary">{item.actorName}</span>
+					{item.subLabel ? ` · ${item.subLabel}` : ""}
 				</p>
 				<p className="mt-0.5 text-[11px] text-text-tertiary" suppressHydrationWarning>
 					{formatDistanceToNow(item.createdAt, { addSuffix: true })}
@@ -81,11 +120,8 @@ function FeedRow({ item }: { item: ActivityItem }) {
 	)
 }
 
-// â”€â”€â”€ Activity feed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 export type ActivityFeedProps = {
 	items: ActivityItem[]
-	/** Max items to show before truncating */
 	limit?: number
 }
 
@@ -103,7 +139,7 @@ export function ActivityFeed({ items, limit = 10 }: ActivityFeedProps) {
 
 	return (
 		<ul className="divide-y divide-border-subtle">
-			{visible.map(item => (
+			{visible.map((item) => (
 				<FeedRow key={item.id} item={item} />
 			))}
 		</ul>

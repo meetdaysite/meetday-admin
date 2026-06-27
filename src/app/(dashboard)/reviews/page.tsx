@@ -104,7 +104,7 @@ export default function ReviewsPage() {
 				(r) =>
 					!q ||
 					r.event.title.toLowerCase().includes(q) ||
-					`${r.reviewer.firstName} ${r.reviewer.lastName}`.toLowerCase().includes(q) ||
+					(r.reviewer ? `${r.reviewer.firstName} ${r.reviewer.lastName}`.toLowerCase().includes(q) : false) ||
 					(r.content ?? "").toLowerCase().includes(q),
 			)
 	}, [reviews, search, visibilityFilter])
@@ -118,6 +118,7 @@ export default function ReviewsPage() {
 				header: "Reviewer",
 				cell: ({ row }) => {
 					const u = row.original.reviewer
+					if (!u) return <span className="text-xs text-text-tertiary italic">Unknown</span>
 					return (
 						<div>
 							<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
@@ -132,12 +133,9 @@ export default function ReviewsPage() {
 				id: "event",
 				header: "Event",
 				cell: ({ row }) => (
-					<div>
-						<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
-							{row.original.event.title}
-						</p>
-						<p className="text-[11px] text-text-tertiary">{row.original.event.city}</p>
-					</div>
+					<p className="text-xs font-semibold text-text-primary max-w-40 truncate">
+						{row.original.event.title}
+					</p>
 				),
 			},
 			{
@@ -148,11 +146,30 @@ export default function ReviewsPage() {
 			{
 				id: "content",
 				header: "Review",
-				cell: ({ row }) => (
-					<p className="text-xs text-text-secondary max-w-xs truncate">
-						{row.original.content ?? <span className="italic text-text-tertiary">No text</span>}
-					</p>
-				),
+				cell: ({ row }) => {
+					const { content, highlights } = row.original
+					return (
+						<div className="flex flex-col gap-1 max-w-xs">
+							{content ? (
+								<p className="text-xs text-text-secondary truncate">{content}</p>
+							) : (
+								<span className="text-xs italic text-text-tertiary">No text</span>
+							)}
+							{highlights.length > 0 && (
+								<div className="flex flex-wrap gap-1">
+									{highlights.map(h => (
+										<span
+											key={h}
+											className="rounded-full bg-surface-page px-1.5 py-0.5 text-[10px] font-medium text-text-secondary border border-border-subtle capitalize"
+										>
+											{h.toLowerCase().replace(/_/g, " ")}
+										</span>
+									))}
+								</div>
+							)}
+						</div>
+					)
+				},
 			},
 			{
 				id: "date",

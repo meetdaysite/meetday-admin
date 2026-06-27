@@ -57,7 +57,7 @@ export function ConfirmDialog({
 							className={cn(
 								"flex items-center gap-1.5 rounded-action px-4 py-2 text-xs font-semibold text-action-primary-text transition-colors disabled:opacity-70",
 								destructive
-									? "bg-color-red-600 hover:bg-color-red-700"
+									? "bg-red-600 hover:bg-red-700 text-white"
 									: "bg-action-primary hover:bg-action-primary-hover",
 							)}
 						>

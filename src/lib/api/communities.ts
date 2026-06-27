@@ -6,12 +6,13 @@ import type {
 	CommunityStatus,
 	CommunityVisibility,
 	CommunityAccess,
+	CommunityType,
 	CreateCommunityDraftRequest,
 	UpdateCommunitySettingsRequest,
 	AssignCommunityMemberRequest,
 } from "@/types"
 
-export type { CommunityStatus, CommunityVisibility, CommunityAccess }
+export type { CommunityStatus, CommunityVisibility, CommunityAccess, CommunityType }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -360,6 +361,7 @@ export type CommunityDetailData = {
 	id: string
 	slug: string
 	name: string
+	type: CommunityType
 	description: string | null
 	thumbnailUrl: string | null
 	iconUrl: string | null
@@ -502,6 +504,7 @@ export async function getCommunityById(id: string): Promise<CommunityDetailData>
 		id: o.community.id,
 		slug: o.community.slug,
 		name: o.community.name,
+		type: o.community.type as CommunityType,
 		description: o.community.description,
 		thumbnailUrl: o.community.coverUrl,
 		iconUrl: o.community.iconUrl,
@@ -655,7 +658,7 @@ export async function getCommunityExperiencesTab(
 
 // ─── Members Tab types ─────────────────────────────────────────────────────────
 
-export type CommunityMemberRole   = "Member" | "Moderator" | "Manager" | "Owner"
+export type CommunityMemberRole   = "Member" | "Moderator" | "Host" | "Manager" | "Owner"
 export type CommunityMemberStatus = "Active" | "Inactive" | "Banned"
 
 export type CommunityMemberItem = {
@@ -690,57 +693,319 @@ export type CommunityMembersTabStats = {
 
 export type CommunityMembersTabData = {
 	stats: CommunityMembersTabStats
-	topCities:  { city: string; pct: number; color: string }[]
-	segments:   { label: string; pct: number; color: string }[]
+	topCities:  { city: string; count: number; pct: number; color: string }[]
+	segments:   { label: string; count: number; pct: number; color: string }[]
 	members: CommunityMemberItem[]
 }
 
 // ─── Members Tab mock data ──────────────────────────────────────────────────────
 
-const MOCK_MEMBERS_STATS: CommunityMembersTabStats = {
-	totalMembers: 1248,
-	activeMembers: 786,        activeMembersGrowth: 12,
-	newMembers: 142,           newMembersGrowth: 18,
-	engagementRate: 62,        engagementRateGrowth: 8,
-	retentionRate: 72,         retentionRateGrowth: 6,
-	inactiveMembers: 216,
-	bannedMembers: 12,
-}
+const MOCK_TOP_CITIES: CommunityMembersTabData["topCities"] = []
+const MOCK_MEMBER_SEGMENTS: CommunityMembersTabData["segments"] = []
 
-const MOCK_TOP_CITIES = [
-	{ city: "Kolkata",   pct: 38, color: "#9333ea" },
-	{ city: "Mumbai",    pct: 22, color: "#3b82f6" },
-	{ city: "Delhi",     pct: 18, color: "#22c55e" },
-	{ city: "Bangalore", pct: 12, color: "#f59e0b" },
-	{ city: "Others",    pct: 10, color: "#9ca3af" },
-]
-
-const MOCK_MEMBER_SEGMENTS = [
-	{ label: "Music Lovers",    pct: 52, color: "#9333ea" },
-	{ label: "Creative Pros",   pct: 22, color: "#3b82f6" },
-	{ label: "Night Explorers", pct: 16, color: "#22c55e" },
-	{ label: "Event Hosts",     pct: 10, color: "#f59e0b" },
-]
-
-const MOCK_MEMBERS: CommunityMemberItem[] = [
-	{ id: "mem-1", name: "Rishav Sen",    handle: "@rishav.live",    avatarColor: "#3b82f6", avatarInitial: "R", joinDate: "May 18, 2024", joinTime: "9:42 PM",  lastActive: "Today",       lastActiveTime: "2:15 PM",  engagementPct: 85, role: "Member",    status: "Active",   isNew: true },
-	{ id: "mem-2", name: "Ananya Gupta",  handle: "@ananya.music",   avatarColor: "#ec4899", avatarInitial: "A", joinDate: "May 17, 2024", joinTime: "6:10 PM",  lastActive: "Today",       lastActiveTime: "11:30 AM", engagementPct: 78, role: "Member",    status: "Active",   isNew: true },
-	{ id: "mem-3", name: "Arjun Mehta",   handle: "@arjun.beats",    avatarColor: "#f59e0b", avatarInitial: "A", joinDate: "May 16, 2024", joinTime: "4:05 PM",  lastActive: "Yesterday",   lastActiveTime: "10:45 PM", engagementPct: 54, role: "Member",    status: "Active",   isNew: true },
-	{ id: "mem-4", name: "Neha Patel",    handle: "@neha.vibes",     avatarColor: "#f43f5e", avatarInitial: "N", joinDate: "May 15, 2024", joinTime: "3:22 PM",  lastActive: "3 days ago",  lastActiveTime: "8:20 PM",  engagementPct: 48, role: "Moderator", status: "Active",   isNew: false },
-	{ id: "mem-5", name: "Kabir Singh",   handle: "@kabir.collects", avatarColor: "#6366f1", avatarInitial: "K", joinDate: "May 14, 2024", joinTime: "1:11 PM",  lastActive: "7 days ago",  lastActiveTime: "9:15 PM",  engagementPct: 22, role: "Member",    status: "Inactive", isNew: false },
-	{ id: "mem-6", name: "Ishita Roy",    handle: "@ishita.roy",     avatarColor: "#a855f7", avatarInitial: "I", joinDate: "May 13, 2024", joinTime: "12:08 PM", lastActive: "10 days ago", lastActiveTime: "6:40 PM",  engagementPct: 18, role: "Member",    status: "Inactive", isNew: false },
-	{ id: "mem-7", name: "Rohan Das",     handle: "@rohan.das",      avatarColor: "#22c55e", avatarInitial: "R", joinDate: "May 12, 2024", joinTime: "10:33 AM", lastActive: "1 day ago",   lastActiveTime: "7:05 PM",  engagementPct: 70, role: "Member",    status: "Active",   isNew: false },
-	{ id: "mem-8", name: "Meera Nair",    handle: "@meera.nair",     avatarColor: "#f97316", avatarInitial: "M", joinDate: "May 10, 2024", joinTime: "8:55 PM",  lastActive: "15 days ago", lastActiveTime: "11:10 AM", engagementPct: 15, role: "Member",    status: "Banned",   isNew: false },
-]
+const INSIGHTS_CITY_COLORS    = ["#9333ea", "#3b82f6", "#22c55e", "#f59e0b", "#9ca3af", "#f43f5e", "#06b6d4"]
+const INSIGHTS_SEGMENT_COLORS = ["#9333ea", "#3b82f6", "#22c55e", "#f59e0b", "#f43f5e", "#06b6d4"]
 
 // ─── Members Tab API ────────────────────────────────────────────────────────────
 
+type ApiMembersStats = {
+	totalMembers: number
+	activeMembers:  { value: number; deltaPct: number }
+	newMembers:     { value: number; deltaPct: number }
+	engagementRate: { value: number; deltaPct: number }
+	retentionRate:  { value: number; deltaPct: number }
+	tabCounts: { all: number; active: number; new: number; inactive: number; banned: number }
+}
+
+type ApiMembersInsights = {
+	topCities:      { city: string; count: number; pct: number }[]
+	memberSegments: { label: string; count: number; pct: number }[]
+}
+
 export async function getCommunityMembersTab(communityId: string): Promise<CommunityMembersTabData> {
-	// TODO: const { data } = await apiClient.get<CommunityMembersTabData>(`/admin/communities/${communityId}/members/tab`)
-	// TODO: return data
-	void communityId
-	await new Promise(r => setTimeout(r, 600))
-	return { stats: MOCK_MEMBERS_STATS, topCities: MOCK_TOP_CITIES, segments: MOCK_MEMBER_SEGMENTS, members: MOCK_MEMBERS }
+	const [{ data: statsData }, { data: insightsData }] = await Promise.all([
+		apiClient.get<ApiMembersStats>(`/admin/communities/${communityId}/members/stats`),
+		apiClient.get<ApiMembersInsights>(`/admin/communities/${communityId}/members/insights`),
+	])
+	return {
+		stats: {
+			totalMembers:         statsData.totalMembers,
+			activeMembers:        statsData.activeMembers.value,
+			activeMembersGrowth:  statsData.activeMembers.deltaPct,
+			newMembers:           statsData.newMembers.value,
+			newMembersGrowth:     statsData.newMembers.deltaPct,
+			engagementRate:       statsData.engagementRate.value,
+			engagementRateGrowth: statsData.engagementRate.deltaPct,
+			retentionRate:        statsData.retentionRate.value,
+			retentionRateGrowth:  statsData.retentionRate.deltaPct,
+			inactiveMembers:      statsData.tabCounts.inactive,
+			bannedMembers:        statsData.tabCounts.banned,
+		},
+		topCities: insightsData.topCities.map((c, i) => ({
+			city:  c.city,
+			count: c.count,
+			pct:   c.pct,
+			color: INSIGHTS_CITY_COLORS[i % INSIGHTS_CITY_COLORS.length],
+		})),
+		segments: insightsData.memberSegments.map((s, i) => ({
+			label: s.label,
+			count: s.count,
+			pct:   s.pct,
+			color: INSIGHTS_SEGMENT_COLORS[i % INSIGHTS_SEGMENT_COLORS.length],
+		})),
+		members: [],
+	}
+}
+
+// ─── Members List API ───────────────────────────────────────────────────────
+
+type ApiMemberItem = {
+	userId:              string
+	name:                string
+	email:               string
+	avatarUrl:           string | null
+	role:                string
+	status:              string
+	joinedAt:            string
+	lastActiveAt:        string
+	engagementPct:       number
+	engagementLevel:     string
+	activityScore:       number
+	messageCount:        number
+	eventsAttendedCount: number
+	bannedAt:            string | null
+}
+
+type ApiMemberDetail = ApiMemberItem & {
+	bannedBy:    string | null
+	memberSince: string
+}
+
+type ApiMembersListResponse = {
+	items:      ApiMemberItem[]
+	total:      number
+	page:       number
+	limit:      number
+	totalPages: number
+}
+
+export type CommunityMembersListData = {
+	items:      CommunityMemberItem[]
+	total:      number
+	page:       number
+	limit:      number
+	totalPages: number
+}
+
+const MEMBER_AVATAR_COLORS = ["#3b82f6", "#ec4899", "#f59e0b", "#6366f1", "#22c55e", "#f43f5e", "#a855f7"]
+
+function memberAvatarColor(name: string): string {
+	let h = 0
+	for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0x7fffffff
+	return MEMBER_AVATAR_COLORS[h % MEMBER_AVATAR_COLORS.length]
+}
+
+function formatMemberJoinDate(iso: string): { date: string; time: string } {
+	const d = new Date(iso)
+	return {
+		date: d.toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" }),
+		time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
+	}
+}
+
+function formatMemberLastActive(iso: string): { label: string; time: string } {
+	const d     = new Date(iso)
+	const days  = Math.floor((Date.now() - d.getTime()) / 86_400_000)
+	const label = days === 0 ? "Today" : days === 1 ? "Yesterday" : `${days} days ago`
+	return { label, time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }) }
+}
+
+function toMemberRole(apiRole: string): CommunityMemberRole {
+	const map: Record<string, CommunityMemberRole> = {
+		OWNER: "Owner", MANAGER: "Manager", HOST: "Host", MODERATOR: "Moderator", MEMBER: "Member",
+	}
+	return map[apiRole] ?? "Member"
+}
+
+function toMemberStatus(apiStatus: string): { status: CommunityMemberStatus; isNew: boolean } {
+	if (apiStatus === "INACTIVE") return { status: "Inactive", isNew: false }
+	if (apiStatus === "BANNED")   return { status: "Banned",   isNew: false }
+	if (apiStatus === "NEW")      return { status: "Active",   isNew: true  }
+	return { status: "Active", isNew: false }
+}
+
+export async function getCommunityMembers(
+	communityId: string,
+	params: {
+		page:    number
+		limit:   number
+		status?: string
+		sort:    string
+		search?: string
+	},
+): Promise<CommunityMembersListData> {
+	const q = new URLSearchParams({ page: String(params.page), limit: String(params.limit), sort: params.sort })
+	if (params.status) q.set("status", params.status)
+	if (params.search) q.set("search", params.search)
+
+	const { data } = await apiClient.get<ApiMembersListResponse>(
+		`/admin/communities/${communityId}/members?${q.toString()}`,
+	)
+
+	return {
+		items: data.items.map(item => {
+			const { date, time }                       = formatMemberJoinDate(item.joinedAt)
+			const { label: lastActive, time: lastActiveTime } = formatMemberLastActive(item.lastActiveAt)
+			const { status, isNew }                    = toMemberStatus(item.status)
+			return {
+				id:             item.userId,
+				name:           item.name,
+				handle:         item.email,
+				avatarColor:    memberAvatarColor(item.name),
+				avatarInitial:  item.name[0]?.toUpperCase() ?? "?",
+				joinDate:       date,
+				joinTime:       time,
+				lastActive,
+				lastActiveTime,
+				engagementPct:  item.engagementPct,
+				role:           toMemberRole(item.role),
+				status,
+				isNew,
+			}
+		}),
+		total:      data.total,
+		page:       data.page,
+		limit:      data.limit,
+		totalPages: data.totalPages,
+	}
+}
+
+export type CommunityMemberDetail = {
+	id:                  string
+	name:                string
+	email:               string
+	avatarUrl:           string | null
+	avatarColor:         string
+	avatarInitial:       string
+	role:                CommunityMemberRole
+	status:              CommunityMemberStatus
+	isNew:               boolean
+	joinDate:            string
+	joinTime:            string
+	memberSince:         string
+	lastActive:          string
+	lastActiveTime:      string
+	engagementPct:       number
+	engagementLevel:     string
+	activityScore:       number
+	messageCount:        number
+	eventsAttendedCount: number
+	bannedAt:            string | null
+	bannedBy:            string | null
+}
+
+export async function getCommunityMember(
+	communityId: string,
+	userId:      string,
+): Promise<CommunityMemberDetail> {
+	const { data } = await apiClient.get<ApiMemberDetail>(
+		`/admin/communities/${communityId}/members/${userId}`,
+	)
+	const { date, time }                            = formatMemberJoinDate(data.joinedAt)
+	const { label: lastActive, time: lastActiveTime } = formatMemberLastActive(data.lastActiveAt)
+	const { status, isNew }                          = toMemberStatus(data.status)
+	return {
+		id:                  data.userId,
+		name:                data.name,
+		email:               data.email,
+		avatarUrl:           data.avatarUrl,
+		avatarColor:         memberAvatarColor(data.name),
+		avatarInitial:       data.name[0]?.toUpperCase() ?? "?",
+		role:                toMemberRole(data.role),
+		status,
+		isNew,
+		joinDate:            date,
+		joinTime:            time,
+		memberSince:         new Date(data.memberSince).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" }),
+		lastActive,
+		lastActiveTime,
+		engagementPct:       data.engagementPct,
+		engagementLevel:     data.engagementLevel,
+		activityScore:       data.activityScore,
+		messageCount:        data.messageCount,
+		eventsAttendedCount: data.eventsAttendedCount,
+		bannedAt:            data.bannedAt
+			? new Date(data.bannedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })
+			: null,
+		bannedBy: data.bannedBy,
+	}
+}
+
+export async function banCommunityMember(communityId: string, userId: string): Promise<void> {
+	await apiClient.post(`/admin/communities/${communityId}/members/${userId}/ban`)
+}
+
+export async function unbanCommunityMember(communityId: string, userId: string): Promise<void> {
+	await apiClient.delete(`/admin/communities/${communityId}/members/${userId}/ban`)
+}
+
+export async function kickCommunityMember(communityId: string, userId: string): Promise<void> {
+	await apiClient.post(`/admin/communities/${communityId}/members/${userId}/kick`)
+}
+
+export type InviteMembersResult = {
+	token:     string
+	inviteUrl: string
+	expiresAt: string
+	maxUses:   number
+}
+
+export async function inviteCommunityMembers(
+	communityId:  string,
+	expiresInDays: number,
+	maxUses:       number,
+): Promise<InviteMembersResult> {
+	const { data } = await apiClient.post<InviteMembersResult>(
+		`/admin/communities/${communityId}/members/invite`,
+		{ expiresInDays, maxUses },
+	)
+	return data
+}
+
+export type ImportMembersResult = {
+	imported: number
+	skipped:  number
+	notFound: number
+	errors:   string[]
+}
+
+export async function importCommunityMembers(
+	communityId: string,
+	file: File,
+): Promise<ImportMembersResult> {
+	const formData = new FormData()
+	formData.append("file", file)
+	const { data } = await apiClient.post<ImportMembersResult>(
+		`/admin/communities/${communityId}/members/import`,
+		formData,
+		{ headers: { "Content-Type": "multipart/form-data" } },
+	)
+	return data
+}
+
+export async function exportCommunityMembers(communityId: string): Promise<void> {
+	const { data } = await apiClient.get<Blob>(
+		`/admin/communities/${communityId}/members/export`,
+		{ responseType: "blob" },
+	)
+	const url = URL.createObjectURL(new Blob([data], { type: "text/csv" }))
+	const a = document.createElement("a")
+	a.href = url
+	a.download = "community-members.csv"
+	document.body.appendChild(a)
+	a.click()
+	document.body.removeChild(a)
+	URL.revokeObjectURL(url)
 }
 
 // ─── Feed Tab ─────────────────────────────────────────────────────────────────
@@ -762,6 +1027,7 @@ export type CommunityFeedPost = {
 	mediaThumbnail:      string | null
 	comments:            number
 	reactions:           number
+	shares:              number
 	views:               number
 	status:              CommunityPostStatus
 	pendingReportCount:  number
@@ -794,18 +1060,12 @@ export type CommunityFeedOverviewItem = {
 	sparkline:   number[]
 }
 
-export type CommunityModerationTool = {
-	label:       string
-	description: string
-	iconKey:     "shield" | "speaker" | "warning" | "bell"
-	color:       string
-	bg:          string
-}
 
 export type CommunityRecentReport = {
 	id:                    string
 	postId:                string
 	postSnippet:           string | null
+	body:                  string | null
 	type:                  string
 	reporterName:          string
 	reporterAvatarUrl:     string | null
@@ -823,11 +1083,10 @@ export type CommunityFeedStats = {
 }
 
 export type CommunityFeedTabData = {
-	stats:           CommunityFeedStats
-	overview:        CommunityFeedOverviewItem[]
-	moderationTools: CommunityModerationTool[]
-	recentReports:   CommunityRecentReport[]
-	tip:             string
+	stats:         CommunityFeedStats
+	overview:      CommunityFeedOverviewItem[]
+	recentReports: CommunityRecentReport[]
+	tip:           string
 }
 
 // ─── Feed Overview API ────────────────────────────────────────────────────────
@@ -854,12 +1113,6 @@ function formatOverviewValue(v: number): string {
 	return String(v)
 }
 
-const MOCK_MODERATION_TOOLS: CommunityModerationTool[] = [
-	{ label: "Auto-moderation",  description: "Manage keywords and filters",     iconKey: "shield",  color: "text-green-500",  bg: "bg-green-50" },
-	{ label: "Muted Words",      description: "24 words configured",             iconKey: "speaker", color: "text-blue-500",   bg: "bg-blue-50" },
-	{ label: "Member Warnings",  description: "12 active warnings",              iconKey: "warning", color: "text-amber-500",  bg: "bg-amber-50" },
-	{ label: "Content Alerts",   description: "Real-time monitoring active",     iconKey: "bell",    color: "text-indigo-500", bg: "bg-indigo-50" },
-]
 
 // ─── Recent Reports API ───────────────────────────────────────────────────────
 
@@ -961,6 +1214,7 @@ export async function getCommunityFeedPosts(
 			mediaThumbnail:      item.mediaUrls[0] ?? null,
 			comments:            item.counts.comments,
 			reactions:           item.counts.reactions,
+			shares:              item.counts.shares,
 			views:               item.counts.views,
 			status:              mapFeedPostStatus(item.status, item.isPinned),
 			pendingReportCount:  item.pendingReportCount,
@@ -1190,6 +1444,7 @@ export async function getCommunityFeedTab(communityId: string): Promise<Communit
 		id:                    r.reportId,
 		postId:                r.postId,
 		postSnippet:           r.postSnippet,
+		body:                  r.body,
 		type:                  r.label,
 		reporterName:          r.reporter.name,
 		reporterAvatarUrl:     r.reporter.avatarUrl,
@@ -1199,11 +1454,10 @@ export async function getCommunityFeedTab(communityId: string): Promise<Communit
 		timeAgo:               toTimeAgo(r.reportedAt),
 	}))
 	return {
-		stats:           statsData,
+		stats:         statsData,
 		overview,
-		moderationTools: MOCK_MODERATION_TOOLS,
 		recentReports,
-		tip:             "Use pinned posts to highlight important updates or community guidelines.",
+		tip:           "Use pinned posts to highlight important updates or community guidelines.",
 	}
 }
 
@@ -1684,6 +1938,36 @@ export async function detachCommunityEvent(
 
 export async function publishCommunity(id: string): Promise<void> {
 	await apiClient.post(`/admin/communities/${id}/publish`)
+}
+
+export async function archiveCommunity(id: string): Promise<void> {
+	await apiClient.post(`/admin/communities/${id}/archive`)
+}
+
+export async function restoreCommunity(id: string): Promise<void> {
+	await apiClient.post(`/admin/communities/${id}/restore`)
+}
+
+export async function deleteCommunity(id: string): Promise<void> {
+	await apiClient.delete(`/admin/communities/${id}`)
+}
+
+export type UpdateCommunityPayload = {
+	name?: string
+	slug?: string
+	type?: CommunityType
+	description?: string
+	categoryId?: string
+	access?: CommunityAccess
+	memberVisibility?: "ALL_MEMBERS" | "AFTER_ATTENDING" | "HIDDEN"
+	coverImageKey?: string
+	iconKey?: string
+	interestTags?: string[]
+	autoAddMatchingEvents?: boolean
+}
+
+export async function updateCommunity(id: string, payload: UpdateCommunityPayload): Promise<void> {
+	await apiClient.patch(`/admin/communities/${id}`, payload)
 }
 
 // ─── Announcements ────────────────────────────────────────────────────────────

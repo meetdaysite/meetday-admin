@@ -8,6 +8,7 @@ import {
 	MessageSquare,
 	Heart,
 	Eye,
+	Share2,
 	CheckCircle,
 	XCircle,
 	ChevronDown,
@@ -24,6 +25,7 @@ import {
 import { toast } from "sonner"
 import { LineChart, Line, ResponsiveContainer } from "recharts"
 import { StatCard } from "@/components/dashboard/stat-card"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import {
 	getCommunityFeedTab,
 	getCommunityFeedPosts,
@@ -138,18 +140,18 @@ function PostCard({
 	post,
 	onApprove,
 	onReject,
-	onDelete,
+	onDeleteRequest,
 	onPin,
 	onUnpin,
 	isActing,
 }: {
 	post: CommunityFeedPost
-	onApprove: (id: string) => void
-	onReject:  (id: string) => void
-	onDelete:  (id: string) => void
-	onPin:     (id: string) => void
-	onUnpin:   (id: string) => void
-	isActing:  boolean
+	onApprove:       (id: string) => void
+	onReject:        (id: string) => void
+	onDeleteRequest: (id: string) => void
+	onPin:           (id: string) => void
+	onUnpin:         (id: string) => void
+	isActing:        boolean
 }) {
 	return (
 		<div className="rounded-xl border border-border-default bg-surface-card p-4 flex flex-col gap-3">
@@ -226,6 +228,9 @@ function PostCard({
 					<span className="flex items-center gap-1">
 						<Eye size={11} /> {post.views}
 					</span>
+					<span className="flex items-center gap-1">
+						<Share2 size={11} /> {post.shares}
+					</span>
 					{post.pendingReportCount > 0 && (
 						<span className="flex items-center gap-1 text-red-500 font-semibold">
 							<Flag size={11} /> {post.pendingReportCount} report{post.pendingReportCount !== 1 ? "s" : ""}
@@ -286,7 +291,7 @@ function PostCard({
 						</button>
 					)}
 					<button
-						onClick={() => onDelete(post.id)}
+						onClick={() => onDeleteRequest(post.id)}
 						disabled={isActing}
 						title="Delete post"
 						className="rounded-lg p-1.5 text-text-tertiary hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
@@ -319,6 +324,8 @@ export function FeedTab({ communityId }: { communityId: string }) {
 	const [sort, setSort]                 = useState("newest")
 	const [page, setPage]                 = useState(1)
 	const [pendingPostIds, setPendingPostIds] = useState<Set<string>>(new Set())
+	const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+	const [pendingReportIds, setPendingReportIds] = useState<Set<string>>(new Set())
 
 	const [createOpen, setCreateOpen]       = useState(false)
 	const [createType, setCreateType]       = useState<CreateFeedPostRequest["postType"]>("TEXT")
@@ -404,6 +411,7 @@ export function FeedTab({ communityId }: { communityId: string }) {
 	}
 
 	async function handleDelete(id: string) {
+		setDeleteConfirmId(null)
 		setPendingPostIds(s => new Set(s).add(id))
 		try {
 			await deleteFeedPost(communityId, id)
@@ -440,6 +448,7 @@ export function FeedTab({ communityId }: { communityId: string }) {
 		}
 	}
 	async function handleResolveReport(reportId: string) {
+		setPendingReportIds(s => new Set(s).add(reportId))
 		try {
 			await resolveFeedReport(communityId, reportId)
 			setData(prev => prev ? {
@@ -449,9 +458,12 @@ export function FeedTab({ communityId }: { communityId: string }) {
 			toast.success("Report resolved")
 		} catch {
 			toast.error("Failed to resolve report")
+		} finally {
+			setPendingReportIds(s => { const n = new Set(s); n.delete(reportId); return n })
 		}
 	}
 	async function handleDismissReport(reportId: string) {
+		setPendingReportIds(s => new Set(s).add(reportId))
 		try {
 			await dismissFeedReport(communityId, reportId)
 			setData(prev => prev ? {
@@ -461,6 +473,8 @@ export function FeedTab({ communityId }: { communityId: string }) {
 			toast.success("Report dismissed")
 		} catch {
 			toast.error("Failed to dismiss report")
+		} finally {
+			setPendingReportIds(s => { const n = new Set(s); n.delete(reportId); return n })
 		}
 	}
 
@@ -487,8 +501,21 @@ export function FeedTab({ communityId }: { communityId: string }) {
 		}
 	}
 
+	function resetCreateForm() {
+		setCreateOpen(false)
+		setCreateContent("")
+		setCreatePollOptions(["", ""])
+		setCreateType("TEXT")
+		setCreateCategory("GENERAL")
+		setMediaItems([])
+	}
+
 	async function handleCreate() {
 		if (!createContent.trim()) return
+		if (createType === "POLL" && createPollOptions.filter(o => o.trim()).length < 2) {
+			toast.error("Add at least 2 poll options")
+			return
+		}
 		setIsCreating(true)
 		try {
 			const payload: CreateFeedPostRequest = {
@@ -500,12 +527,7 @@ export function FeedTab({ communityId }: { communityId: string }) {
 			}
 			await createFeedPost(communityId, payload)
 			toast.success("Post created successfully")
-			setCreateOpen(false)
-			setCreateContent("")
-			setCreatePollOptions(["", ""])
-			setCreateType("TEXT")
-			setCreateCategory("GENERAL")
-			setMediaItems([])
+			resetCreateForm()
 			void loadPosts()
 		} catch {
 			toast.error("Failed to create post")
@@ -686,7 +708,7 @@ export function FeedTab({ communityId }: { communityId: string }) {
 						</div>
 						<div className={cn("gap-3", viewMode === "grid" ? "grid grid-cols-2" : "flex flex-col")}>
 							{queuePosts.map(post => (
-								<PostCard key={post.id} post={post} onApprove={handleApprove} onReject={handleReject} onDelete={handleDelete} onPin={handlePin} onUnpin={handleUnpin} isActing={pendingPostIds.has(post.id)} />
+								<PostCard key={post.id} post={post} onApprove={handleApprove} onReject={handleReject} onDeleteRequest={setDeleteConfirmId} onPin={handlePin} onUnpin={handleUnpin} isActing={pendingPostIds.has(post.id)} />
 							))}
 						</div>
 					</div>
@@ -700,7 +722,7 @@ export function FeedTab({ communityId }: { communityId: string }) {
 						</h3>
 						<div className={cn("gap-3", viewMode === "grid" ? "grid grid-cols-2" : "flex flex-col")}>
 							{otherPosts.map(post => (
-								<PostCard key={post.id} post={post} onApprove={handleApprove} onReject={handleReject} onDelete={handleDelete} onPin={handlePin} onUnpin={handleUnpin} isActing={pendingPostIds.has(post.id)} />
+								<PostCard key={post.id} post={post} onApprove={handleApprove} onReject={handleReject} onDeleteRequest={setDeleteConfirmId} onPin={handlePin} onUnpin={handleUnpin} isActing={pendingPostIds.has(post.id)} />
 							))}
 						</div>
 					</div>
@@ -751,7 +773,17 @@ export function FeedTab({ communityId }: { communityId: string }) {
 						<span className="text-[10px] text-text-tertiary">Last 7 Days</span>
 					</div>
 					<div className="divide-y divide-border-subtle">
-						{(data?.overview ?? []).map(item => (
+						{isLoading ? (
+							Array.from({ length: 4 }).map((_, i) => (
+								<div key={i} className="flex items-center gap-2 py-2 animate-pulse">
+									<div className="flex-1 flex flex-col gap-1.5">
+										<div className="h-2.5 w-20 rounded bg-surface-card-muted" />
+										<div className="h-3.5 w-12 rounded bg-surface-card-muted" />
+									</div>
+									<div className="w-20 h-8 rounded bg-surface-card-muted" />
+								</div>
+							))
+						) : (data?.overview ?? []).map(item => (
 							<OverviewRow key={item.label} item={item} />
 						))}
 					</div>
@@ -795,6 +827,9 @@ export function FeedTab({ communityId }: { communityId: string }) {
 												/>
 												<p className="text-xs font-medium text-text-primary truncate">{report.type}</p>
 											</div>
+											{report.body && (
+												<p className="text-[10px] text-text-secondary truncate mt-0.5 italic">{report.body}</p>
+											)}
 											{report.postSnippet && (
 												<p className="text-[10px] text-text-tertiary truncate mt-0.5">&ldquo;{report.postSnippet}&rdquo;</p>
 											)}
@@ -804,15 +839,17 @@ export function FeedTab({ communityId }: { communityId: string }) {
 									<div className="flex items-center gap-1.5 pl-9">
 										<button
 											onClick={() => handleResolveReport(report.id)}
-											className="flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700 hover:bg-green-100 transition-colors"
+											disabled={pendingReportIds.has(report.id)}
+											className="flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700 hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 										>
-											<CheckCircle size={9} /> Resolve
+											<CheckCircle size={9} /> {pendingReportIds.has(report.id) ? "…" : "Resolve"}
 										</button>
 										<button
 											onClick={() => handleDismissReport(report.id)}
-											className="flex items-center gap-1 rounded-md border border-border-default bg-surface-card px-2 py-0.5 text-[10px] font-semibold text-text-secondary hover:bg-neutral-50 transition-colors"
+											disabled={pendingReportIds.has(report.id)}
+											className="flex items-center gap-1 rounded-md border border-border-default bg-surface-card px-2 py-0.5 text-[10px] font-semibold text-text-secondary hover:bg-neutral-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 										>
-											<X size={9} /> Dismiss
+											<X size={9} /> {pendingReportIds.has(report.id) ? "…" : "Dismiss"}
 										</button>
 									</div>
 								</div>
@@ -838,13 +875,13 @@ export function FeedTab({ communityId }: { communityId: string }) {
 		{createOpen && (
 			<div
 				className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-				onClick={e => { if (e.target === e.currentTarget) { setCreateOpen(false); setMediaItems([]) } }}
+				onClick={e => { if (e.target === e.currentTarget) resetCreateForm() }}
 			>
 				<div className="w-full max-w-md rounded-2xl border border-border-default bg-surface-card shadow-xl">
 					<div className="flex items-center justify-between border-b border-border-subtle px-5 py-4">
 						<h2 className="text-sm font-semibold text-text-primary">Create Post</h2>
 						<button
-							onClick={() => { setCreateOpen(false); setMediaItems([]) }}
+							onClick={resetCreateForm}
 							className="rounded-lg p-1 text-text-tertiary hover:bg-surface-card-muted transition-colors"
 						>
 							<X size={15} />
@@ -996,7 +1033,7 @@ export function FeedTab({ communityId }: { communityId: string }) {
 					</div>
 					<div className="flex items-center justify-end gap-2 border-t border-border-subtle px-5 py-3">
 						<button
-							onClick={() => { setCreateOpen(false); setMediaItems([]) }}
+							onClick={resetCreateForm}
 							className="rounded-lg border border-border-default bg-surface-card px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-neutral-50 transition-colors"
 						>
 							Cancel
@@ -1012,6 +1049,17 @@ export function FeedTab({ communityId }: { communityId: string }) {
 				</div>
 			</div>
 		)}
+
+		<ConfirmDialog
+			open={deleteConfirmId !== null}
+			onClose={() => setDeleteConfirmId(null)}
+			onConfirm={() => deleteConfirmId && handleDelete(deleteConfirmId)}
+			title="Delete Post"
+			description="Are you sure you want to delete this post? This action cannot be undone."
+			confirmLabel="Delete"
+			destructive
+			isLoading={deleteConfirmId !== null && pendingPostIds.has(deleteConfirmId)}
+		/>
 		</>
 	)
 }

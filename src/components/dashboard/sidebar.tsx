@@ -19,8 +19,6 @@ import {
 	Sparkles,
 	Users,
 	CirclePlus,
-	Folders,
-	BarChart2,
 	type LucideIcon,
 } from "lucide-react"
 import { useAuthStore } from "@/stores/auth.store"
@@ -68,12 +66,6 @@ const NAV: NavSection[] = [
 		title: "Communities",
 		items: [
 			{
-				label: "Community Queue",
-				href: "/communities/queue",
-				icon: Clock,
-				permission: "community.manage",
-			},
-			{
 				label: "All Communities",
 				href: "/communities",
 				icon: Users,
@@ -84,18 +76,6 @@ const NAV: NavSection[] = [
 				label: "Create Community",
 				href: "/communities/create",
 				icon: CirclePlus,
-				permission: "community.manage",
-			},
-			{
-				label: "Community Categories",
-				href: "/communities/categories",
-				icon: Folders,
-				permission: "community.manage",
-			},
-			{
-				label: "Reports",
-				href: "/communities/reports",
-				icon: BarChart2,
 				permission: "community.manage",
 			},
 		],
