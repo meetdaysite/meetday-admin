@@ -470,8 +470,9 @@ export type Review = {
 	id: string
 	rating: number
 	content: string | null
+	highlights: string[]
 	isVisible: boolean
 	createdAt: string
-	event: { id: string; title: string; city: string }
-	reviewer: { id: string; firstName: string; lastName: string; email: string }
+	event: { id: string; title: string }
+	reviewer: { id: string; firstName: string; lastName: string; email: string } | null
 }

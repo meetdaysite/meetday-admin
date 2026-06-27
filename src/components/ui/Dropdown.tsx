@@ -2,7 +2,6 @@
 
 import clsx from "clsx"
 import React, { useEffect, useId, useRef, useState } from "react"
-import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -66,7 +65,17 @@ const leftElSizeClasses: Record<NonNullable<DropdownProps["size"]>, string> = {
 // ─── Chevron icon ─────────────────────────────────────────────────────────────
 
 function ChevronDown({ className }: { className?: string }) {
-	return <AltArrowDownSvg className={className} aria-hidden />
+	return (
+		<svg viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+			<path
+				d="M4 6.25L8 10.25L12 6.25"
+				stroke="currentColor"
+				strokeWidth={1.75}
+				strokeLinecap="round"
+				strokeLinejoin="round"
+			/>
+		</svg>
+	)
 }
 
 // ─── Check icon ───────────────────────────────────────────────────────────────

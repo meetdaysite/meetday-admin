@@ -1,15 +1,18 @@
 ﻿"use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Menu, ChevronsLeft, ChevronsRight, LogOut } from "lucide-react"
 import * as Tooltip from "@radix-ui/react-tooltip"
 import { useUIStore } from "@/stores/ui.store"
 import { useAuthStore } from "@/stores/auth.store"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 export function Topbar() {
 	const router = useRouter()
 	const { sidebarOpen, setSidebarOpen, sidebarCollapsed, toggleSidebarCollapsed } = useUIStore()
 	const { user, clearAuth } = useAuthStore()
+	const [confirmOpen, setConfirmOpen] = useState(false)
 
 	function handleSignOut() {
 		clearAuth()
@@ -21,6 +24,7 @@ export function Topbar() {
 		: "?"
 
 	return (
+		<>
 		<header className="h-14 shrink-0 flex items-center gap-2 px-4 bg-surface-canvas border-b border-border-default">
 			{/* Mobile hamburger */}
 			<button
@@ -70,7 +74,7 @@ export function Topbar() {
 				<Tooltip.Root>
 					<Tooltip.Trigger asChild>
 						<button
-							onClick={handleSignOut}
+							onClick={() => setConfirmOpen(true)}
 							className="flex items-center justify-center w-8 h-8 rounded-md text-text-tertiary hover:bg-neutral-100 hover:text-text-brand transition-colors"
 							aria-label="Sign out"
 						>
@@ -89,5 +93,15 @@ export function Topbar() {
 				</Tooltip.Root>
 			</div>
 		</header>
+
+		<ConfirmDialog
+			open={confirmOpen}
+			onClose={() => setConfirmOpen(false)}
+			onConfirm={handleSignOut}
+			title="Sign out"
+			description="Are you sure you want to sign out?"
+			confirmLabel="Sign out"
+		/>
+		</>
 	)
 }

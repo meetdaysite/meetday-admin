@@ -12,8 +12,9 @@ import {
 	TrendingUp,
 	Eye,
 	Pencil,
-	MoreHorizontal,
-	Download,
+	Trash2,
+	Archive,
+	ArchiveRestore,
 	Plus,
 	RotateCcw,
 } from "lucide-react"
@@ -23,9 +24,13 @@ import { DataTable } from "@/components/ui/data-table"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { Button } from "@/components/ui/Button"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import {
 	getCommunities,
 	getCommunityStats,
+	archiveCommunity,
+	restoreCommunity,
+	deleteCommunity,
 	type CommunityStats,
 	type GetCommunitiesParams,
 } from "@/lib/api/communities"
@@ -90,6 +95,15 @@ export default function CommunitiesPage() {
 
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL")
 	const [search, setSearch] = useState("")
+	const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+	const [deleteTargetName, setDeleteTargetName] = useState("")
+	const [isDeleting, setIsDeleting] = useState(false)
+	const [archiveTargetId, setArchiveTargetId] = useState<string | null>(null)
+	const [archiveTargetName, setArchiveTargetName] = useState("")
+	const [isArchiving, setIsArchiving] = useState(false)
+	const [restoreTargetId, setRestoreTargetId] = useState<string | null>(null)
+	const [restoreTargetName, setRestoreTargetName] = useState("")
+	const [isRestoring, setIsRestoring] = useState(false)
 
 	// ─── Fetch ────────────────────────────────────────────────────────────────
 
@@ -145,6 +159,55 @@ export default function CommunitiesPage() {
 		setStatusFilter("ALL")
 		setSearch("")
 		setPage(1)
+	}
+
+	function extractApiMessage(err: unknown, fallback: string): string {
+		return (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? fallback
+	}
+
+	async function handleArchive() {
+		if (!archiveTargetId) return
+		setIsArchiving(true)
+		try {
+			await archiveCommunity(archiveTargetId)
+			toast.success("Community archived")
+			setArchiveTargetId(null)
+			fetchCommunities()
+		} catch (err: unknown) {
+			toast.error(extractApiMessage(err, "Failed to archive community"))
+		} finally {
+			setIsArchiving(false)
+		}
+	}
+
+	async function handleRestore() {
+		if (!restoreTargetId) return
+		setIsRestoring(true)
+		try {
+			await restoreCommunity(restoreTargetId)
+			toast.success("Community restored")
+			setRestoreTargetId(null)
+			fetchCommunities()
+		} catch (err: unknown) {
+			toast.error(extractApiMessage(err, "Failed to restore community"))
+		} finally {
+			setIsRestoring(false)
+		}
+	}
+
+	async function handleDelete() {
+		if (!deleteTargetId) return
+		setIsDeleting(true)
+		try {
+			await deleteCommunity(deleteTargetId)
+			toast.success("Community deleted")
+			setDeleteTargetId(null)
+			fetchCommunities()
+		} catch (err: unknown) {
+			toast.error(extractApiMessage(err, "Failed to delete community"))
+		} finally {
+			setIsDeleting(false)
+		}
 	}
 
 	const totalPages = Math.ceil(total / PAGE_LIMIT)
@@ -232,30 +295,52 @@ export default function CommunitiesPage() {
 			{
 				id: "actions",
 				header: "",
-				cell: ({ row }) => (
+				cell: ({ row }) => {
+					const c = row.original
+					return (
 					<div className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
 						<button
 							className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-neutral-100"
 							title="View"
-							onClick={() => router.push(`/communities/${row.original.id}`)}
+							onClick={() => router.push(`/communities/${c.id}`)}
 						>
 							<Eye size={14} />
 						</button>
 						<button
 							className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-neutral-100"
 							title="Edit"
-							onClick={() => router.push(`/communities/${row.original.id}/edit`)}
+							onClick={() => router.push(`/communities/${c.id}/edit`)}
 						>
 							<Pencil size={14} />
 						</button>
+						{c.status === "PUBLISHED" && (
+							<button
+								className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-amber-50 hover:text-amber-600"
+								title="Archive community"
+								onClick={() => { setArchiveTargetId(c.id); setArchiveTargetName(c.name) }}
+							>
+								<Archive size={14} />
+							</button>
+						)}
+						{c.status === "ARCHIVED" && (
+							<button
+								className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-green-50 hover:text-green-600"
+								title="Restore community"
+								onClick={() => { setRestoreTargetId(c.id); setRestoreTargetName(c.name) }}
+							>
+								<ArchiveRestore size={14} />
+							</button>
+						)}
 						<button
-							className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-neutral-100"
-							title="More options"
+							className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-red-50 hover:text-red-600"
+							title="Delete community"
+							onClick={() => { setDeleteTargetId(c.id); setDeleteTargetName(c.name) }}
 						>
-							<MoreHorizontal size={14} />
+							<Trash2 size={14} />
 						</button>
 					</div>
-				),
+					)
+				},
 			},
 		],
 		[router],
@@ -291,16 +376,6 @@ export default function CommunitiesPage() {
 					</p>
 				</div>
 				<div className="flex items-center gap-2 shrink-0">
-					{/* TODO: implement CSV export */}
-					<Button
-						variant="secondary"
-						size="sm"
-						radius="md"
-						leftIcon={<Download size={13} />}
-						disabled
-					>
-						Export
-					</Button>
 					<Button
 						variant="primary"
 						size="sm"
@@ -450,6 +525,35 @@ export default function CommunitiesPage() {
 					)}
 				</>
 			)}
+
+			<ConfirmDialog
+				open={archiveTargetId !== null}
+				onClose={() => setArchiveTargetId(null)}
+				onConfirm={handleArchive}
+				title="Archive Community"
+				description={`Are you sure you want to archive "${archiveTargetName}"? Only published communities can be archived.`}
+				confirmLabel="Archive"
+				isLoading={isArchiving}
+			/>
+			<ConfirmDialog
+				open={restoreTargetId !== null}
+				onClose={() => setRestoreTargetId(null)}
+				onConfirm={handleRestore}
+				title="Restore Community"
+				description={`Are you sure you want to restore "${restoreTargetName}"? The community will be moved back to Published.`}
+				confirmLabel="Restore"
+				isLoading={isRestoring}
+			/>
+			<ConfirmDialog
+				open={deleteTargetId !== null}
+				onClose={() => setDeleteTargetId(null)}
+				onConfirm={handleDelete}
+				title="Delete Community"
+				description={`Are you sure you want to delete "${deleteTargetName}"? This action cannot be undone.`}
+				confirmLabel="Delete"
+				destructive
+				isLoading={isDeleting}
+			/>
 		</div>
 	)
 }

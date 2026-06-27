@@ -6,12 +6,13 @@ import type {
 	CommunityStatus,
 	CommunityVisibility,
 	CommunityAccess,
+	CommunityType,
 	CreateCommunityDraftRequest,
 	UpdateCommunitySettingsRequest,
 	AssignCommunityMemberRequest,
 } from "@/types"
 
-export type { CommunityStatus, CommunityVisibility, CommunityAccess }
+export type { CommunityStatus, CommunityVisibility, CommunityAccess, CommunityType }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -360,6 +361,7 @@ export type CommunityDetailData = {
 	id: string
 	slug: string
 	name: string
+	type: CommunityType
 	description: string | null
 	thumbnailUrl: string | null
 	iconUrl: string | null
@@ -502,6 +504,7 @@ export async function getCommunityById(id: string): Promise<CommunityDetailData>
 		id: o.community.id,
 		slug: o.community.slug,
 		name: o.community.name,
+		type: o.community.type as CommunityType,
 		description: o.community.description,
 		thumbnailUrl: o.community.coverUrl,
 		iconUrl: o.community.iconUrl,
@@ -1024,6 +1027,7 @@ export type CommunityFeedPost = {
 	mediaThumbnail:      string | null
 	comments:            number
 	reactions:           number
+	shares:              number
 	views:               number
 	status:              CommunityPostStatus
 	pendingReportCount:  number
@@ -1056,18 +1060,12 @@ export type CommunityFeedOverviewItem = {
 	sparkline:   number[]
 }
 
-export type CommunityModerationTool = {
-	label:       string
-	description: string
-	iconKey:     "shield" | "speaker" | "warning" | "bell"
-	color:       string
-	bg:          string
-}
 
 export type CommunityRecentReport = {
 	id:                    string
 	postId:                string
 	postSnippet:           string | null
+	body:                  string | null
 	type:                  string
 	reporterName:          string
 	reporterAvatarUrl:     string | null
@@ -1085,11 +1083,10 @@ export type CommunityFeedStats = {
 }
 
 export type CommunityFeedTabData = {
-	stats:           CommunityFeedStats
-	overview:        CommunityFeedOverviewItem[]
-	moderationTools: CommunityModerationTool[]
-	recentReports:   CommunityRecentReport[]
-	tip:             string
+	stats:         CommunityFeedStats
+	overview:      CommunityFeedOverviewItem[]
+	recentReports: CommunityRecentReport[]
+	tip:           string
 }
 
 // ─── Feed Overview API ────────────────────────────────────────────────────────
@@ -1116,12 +1113,6 @@ function formatOverviewValue(v: number): string {
 	return String(v)
 }
 
-const MOCK_MODERATION_TOOLS: CommunityModerationTool[] = [
-	{ label: "Auto-moderation",  description: "Manage keywords and filters",     iconKey: "shield",  color: "text-green-500",  bg: "bg-green-50" },
-	{ label: "Muted Words",      description: "24 words configured",             iconKey: "speaker", color: "text-blue-500",   bg: "bg-blue-50" },
-	{ label: "Member Warnings",  description: "12 active warnings",              iconKey: "warning", color: "text-amber-500",  bg: "bg-amber-50" },
-	{ label: "Content Alerts",   description: "Real-time monitoring active",     iconKey: "bell",    color: "text-indigo-500", bg: "bg-indigo-50" },
-]
 
 // ─── Recent Reports API ───────────────────────────────────────────────────────
 
@@ -1223,6 +1214,7 @@ export async function getCommunityFeedPosts(
 			mediaThumbnail:      item.mediaUrls[0] ?? null,
 			comments:            item.counts.comments,
 			reactions:           item.counts.reactions,
+			shares:              item.counts.shares,
 			views:               item.counts.views,
 			status:              mapFeedPostStatus(item.status, item.isPinned),
 			pendingReportCount:  item.pendingReportCount,
@@ -1452,6 +1444,7 @@ export async function getCommunityFeedTab(communityId: string): Promise<Communit
 		id:                    r.reportId,
 		postId:                r.postId,
 		postSnippet:           r.postSnippet,
+		body:                  r.body,
 		type:                  r.label,
 		reporterName:          r.reporter.name,
 		reporterAvatarUrl:     r.reporter.avatarUrl,
@@ -1461,11 +1454,10 @@ export async function getCommunityFeedTab(communityId: string): Promise<Communit
 		timeAgo:               toTimeAgo(r.reportedAt),
 	}))
 	return {
-		stats:           statsData,
+		stats:         statsData,
 		overview,
-		moderationTools: MOCK_MODERATION_TOOLS,
 		recentReports,
-		tip:             "Use pinned posts to highlight important updates or community guidelines.",
+		tip:           "Use pinned posts to highlight important updates or community guidelines.",
 	}
 }
 
@@ -1946,6 +1938,36 @@ export async function detachCommunityEvent(
 
 export async function publishCommunity(id: string): Promise<void> {
 	await apiClient.post(`/admin/communities/${id}/publish`)
+}
+
+export async function archiveCommunity(id: string): Promise<void> {
+	await apiClient.post(`/admin/communities/${id}/archive`)
+}
+
+export async function restoreCommunity(id: string): Promise<void> {
+	await apiClient.post(`/admin/communities/${id}/restore`)
+}
+
+export async function deleteCommunity(id: string): Promise<void> {
+	await apiClient.delete(`/admin/communities/${id}`)
+}
+
+export type UpdateCommunityPayload = {
+	name?: string
+	slug?: string
+	type?: CommunityType
+	description?: string
+	categoryId?: string
+	access?: CommunityAccess
+	memberVisibility?: "ALL_MEMBERS" | "AFTER_ATTENDING" | "HIDDEN"
+	coverImageKey?: string
+	iconKey?: string
+	interestTags?: string[]
+	autoAddMatchingEvents?: boolean
+}
+
+export async function updateCommunity(id: string, payload: UpdateCommunityPayload): Promise<void> {
+	await apiClient.patch(`/admin/communities/${id}`, payload)
 }
 
 // ─── Announcements ────────────────────────────────────────────────────────────

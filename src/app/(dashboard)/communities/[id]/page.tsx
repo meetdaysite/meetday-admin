@@ -1,9 +1,9 @@
 "use client"
 
 import React, { useCallback, useEffect, useState } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import {
-	ExternalLink,
+	// ExternalLink,
 	Copy,
 	Share2,
 	Megaphone,
@@ -15,6 +15,10 @@ import {
 	Star,
 	TrendingUp,
 	TrendingDown,
+	Pencil,
+	Trash2,
+	Archive,
+	ArchiveRestore,
 	type LucideIcon,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -22,8 +26,12 @@ import { LineChart, Line, ResponsiveContainer } from "recharts"
 import { usePermission } from "@/lib/hooks/use-permission"
 import { Button } from "@/components/ui/Button"
 import { StatusBadge } from "@/components/ui/status-badge"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import {
 	getCommunityById,
+	archiveCommunity,
+	restoreCommunity,
+	deleteCommunity,
 	type CommunityDetailData,
 	type CommunityDetailStatCard,
 } from "@/lib/api/communities"
@@ -74,10 +82,38 @@ const ACTIVITY_ICON: Record<string, { icon: LucideIcon; bg: string; color: strin
 	announcement: { icon: Bell, bg: "bg-amber-50", color: "text-amber-500" },
 }
 
-const QUICK_ACTIONS: { label: string; icon: React.ElementType; bg: string; border: string; color: string; tab: Tab }[] = [
-	{ label: "Create Announcement", icon: Megaphone,     bg: "bg-rose-50",   border: "border-rose-200",   color: "text-rose-500",   tab: "announcements" },
-	{ label: "Schedule Event",      icon: CalendarPlus,  bg: "bg-sky-50",    border: "border-sky-200",    color: "text-sky-500",    tab: "experiences"   },
-	{ label: "Post in Community",   icon: MessageSquare, bg: "bg-purple-50", border: "border-purple-200", color: "text-purple-500", tab: "feed"          },
+const QUICK_ACTIONS: {
+	label: string
+	icon: React.ElementType
+	bg: string
+	border: string
+	color: string
+	tab: Tab
+}[] = [
+	{
+		label: "Create Announcement",
+		icon: Megaphone,
+		bg: "bg-rose-50",
+		border: "border-rose-200",
+		color: "text-rose-500",
+		tab: "announcements",
+	},
+	{
+		label: "Schedule Event",
+		icon: CalendarPlus,
+		bg: "bg-sky-50",
+		border: "border-sky-200",
+		color: "text-sky-500",
+		tab: "experiences",
+	},
+	{
+		label: "Post in Community",
+		icon: MessageSquare,
+		bg: "bg-purple-50",
+		border: "border-purple-200",
+		color: "text-purple-500",
+		tab: "feed",
+	},
 ]
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -155,6 +191,7 @@ function SidebarCard({
 
 export default function CommunityDetailPage() {
 	const params = useParams()
+	const router = useRouter()
 	const id = params.id as string
 	const canView = usePermission("community.manage")
 
@@ -162,6 +199,58 @@ export default function CommunityDetailPage() {
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 	const [activeTab, setActiveTab] = useState<Tab>("overview")
+	const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false)
+	const [isArchiving, setIsArchiving] = useState(false)
+	const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false)
+	const [isRestoring, setIsRestoring] = useState(false)
+	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+	const [isDeleting, setIsDeleting] = useState(false)
+
+	function extractApiMessage(err: unknown, fallback: string): string {
+		return (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? fallback
+	}
+
+	async function handleArchive() {
+		setIsArchiving(true)
+		try {
+			await archiveCommunity(id)
+			toast.success("Community archived")
+			setArchiveConfirmOpen(false)
+			load()
+		} catch (err: unknown) {
+			toast.error(extractApiMessage(err, "Failed to archive community"))
+		} finally {
+			setIsArchiving(false)
+		}
+	}
+
+	async function handleRestore() {
+		setIsRestoring(true)
+		try {
+			await restoreCommunity(id)
+			toast.success("Community restored")
+			setRestoreConfirmOpen(false)
+			load()
+		} catch (err: unknown) {
+			toast.error(extractApiMessage(err, "Failed to restore community"))
+		} finally {
+			setIsRestoring(false)
+		}
+	}
+
+	async function handleDelete() {
+		setIsDeleting(true)
+		try {
+			await deleteCommunity(id)
+			toast.success("Community deleted")
+			router.replace("/communities")
+		} catch (err: unknown) {
+			toast.error(extractApiMessage(err, "Failed to delete community"))
+			setDeleteConfirmOpen(false)
+		} finally {
+			setIsDeleting(false)
+		}
+	}
 
 	const load = useCallback(async () => {
 		setIsLoading(true)
@@ -248,7 +337,7 @@ export default function CommunityDetailPage() {
 					</div>
 				</div>
 				<div className="flex items-center gap-2 shrink-0">
-					<Button
+					{/* <Button
 						variant="secondary"
 						size="sm"
 						radius="md"
@@ -256,9 +345,81 @@ export default function CommunityDetailPage() {
 						onClick={() => toast.info("Opens the community on meetday.ai")}
 					>
 						View Community
+					</Button> */}
+					<Button
+						variant="secondary"
+						size="sm"
+						radius="md"
+						leftIcon={<Pencil size={13} />}
+						onClick={() => router.push(`/communities/${id}/edit`)}
+					>
+						Edit
+					</Button>
+					{community.status === "PUBLISHED" && (
+						<Button
+							variant="secondary"
+							size="sm"
+							radius="md"
+							leftIcon={<Archive size={13} />}
+							onClick={() => setArchiveConfirmOpen(true)}
+							className="border-amber-200 text-amber-700 hover:bg-amber-50"
+						>
+							Archive
+						</Button>
+					)}
+					{community.status === "ARCHIVED" && (
+						<Button
+							variant="secondary"
+							size="sm"
+							radius="md"
+							leftIcon={<ArchiveRestore size={13} />}
+							onClick={() => setRestoreConfirmOpen(true)}
+							className="border-green-200 text-green-700 hover:bg-green-50"
+						>
+							Restore
+						</Button>
+					)}
+					<Button
+						variant="secondary"
+						size="sm"
+						radius="md"
+						leftIcon={<Trash2 size={13} />}
+						onClick={() => setDeleteConfirmOpen(true)}
+						className="border-red-200 text-red-600 hover:bg-red-50"
+					>
+						Delete
 					</Button>
 				</div>
 			</div>
+
+			<ConfirmDialog
+				open={archiveConfirmOpen}
+				onClose={() => setArchiveConfirmOpen(false)}
+				onConfirm={handleArchive}
+				title="Archive Community"
+				description={`Are you sure you want to archive "${community.name}"? Only published communities can be archived.`}
+				confirmLabel="Archive"
+				isLoading={isArchiving}
+			/>
+			<ConfirmDialog
+				open={restoreConfirmOpen}
+				onClose={() => setRestoreConfirmOpen(false)}
+				onConfirm={handleRestore}
+				title="Restore Community"
+				description={`Are you sure you want to restore "${community.name}"? The community will be moved back to Published.`}
+				confirmLabel="Restore"
+				isLoading={isRestoring}
+			/>
+			<ConfirmDialog
+				open={deleteConfirmOpen}
+				onClose={() => setDeleteConfirmOpen(false)}
+				onConfirm={handleDelete}
+				title="Delete Community"
+				description={`Are you sure you want to delete "${community.name}"? This action cannot be undone.`}
+				confirmLabel="Delete"
+				destructive
+				isLoading={isDeleting}
+			/>
 
 			{/* ── Tabs ──────────────────────────────────────────────────────── */}
 			<div className="border-b border-border-default mb-5">
@@ -318,11 +479,17 @@ export default function CommunityDetailPage() {
 										>
 											<div
 												className="h-24 flex items-end relative bg-surface-secondary"
-												style={exp.coverUrl ? undefined : { backgroundColor: "#1a0533" }}
+												style={
+													exp.coverUrl ? undefined : { backgroundColor: "#1a0533" }
+												}
 											>
 												{exp.coverUrl ? (
 													// eslint-disable-next-line @next/next/no-img-element
-													<img src={exp.coverUrl} alt={exp.title} className="absolute inset-0 w-full h-full object-cover" />
+													<img
+														src={exp.coverUrl}
+														alt={exp.title}
+														className="absolute inset-0 w-full h-full object-cover"
+													/>
 												) : (
 													<span className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-white/10 select-none">
 														{exp.coverInitial}
@@ -337,7 +504,8 @@ export default function CommunityDetailPage() {
 													{exp.date}
 												</p>
 												<p className="text-[10px] text-text-tertiary">{exp.venue}</p>
-												{(exp.attendeeCount > 0 || (exp.rating != null && exp.rating > 0)) && (
+												{(exp.attendeeCount > 0 ||
+													(exp.rating != null && exp.rating > 0)) && (
 													<div className="flex items-center justify-between mt-2">
 														{exp.attendeeCount > 0 && (
 															<span className="flex items-center gap-0.5 text-[10px] text-text-secondary">
@@ -551,26 +719,34 @@ export default function CommunityDetailPage() {
 				<FeedTab communityId={id} />
 			) : activeTab === "announcements" ? (
 				<AnnouncementsTab
-						communityId={id}
-						communityName={community?.name}
-						managers={community?.managers}
-						communityMeta={community ? {
-							status: community.status,
-							createdAt: community.createdAt,
-							access: community.access,
-							communityUrl: community.communityUrl,
-						} : undefined}
-					/>
+					communityId={id}
+					communityName={community?.name}
+					managers={community?.managers}
+					communityMeta={
+						community
+							? {
+									status: community.status,
+									createdAt: community.createdAt,
+									access: community.access,
+									communityUrl: community.communityUrl,
+								}
+							: undefined
+					}
+				/>
 			) : activeTab === "chat" ? (
 				<ChatTab
 					communityId={id}
 					managers={community?.managers}
-					communityMeta={community ? {
-						status: community.status,
-						createdAt: community.createdAt,
-						access: community.access,
-						communityUrl: community.communityUrl,
-					} : undefined}
+					communityMeta={
+						community
+							? {
+									status: community.status,
+									createdAt: community.createdAt,
+									access: community.access,
+									communityUrl: community.communityUrl,
+								}
+							: undefined
+					}
 				/>
 			) : activeTab === "analytics" ? (
 				<AnalyticsTab communityId={id} />
