@@ -1,8 +1,9 @@
 ﻿"use client"
 
 import { CategoryDrawer } from "@/components/categories/category-drawer"
+import { Button } from "@/components/ui/Button"
 import { DataView } from "@/components/ui/data-view"
-import { PageHeader } from "@/components/ui/page-header"
+import PageHeader from "@/components/ui/PageHeader"
 import { SearchInput } from "@/components/ui/search-input"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { getCategories } from "@/lib/api/categories"
@@ -96,17 +97,17 @@ export default function CategoriesPage() {
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
-			<PageHeader title="Categories" count={categories.length}>
-				{canManage && (
-					<button
-						onClick={openCreate}
-						className="flex items-center gap-1.5 rounded-lg bg-action-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors"
-					>
-						<Plus size={13} />
-						New Category
-					</button>
-				)}
-			</PageHeader>
+			<PageHeader
+				title="Categories"
+				description="Manage the categories for your products."
+				buttons={
+					canManage && (
+						<Button leftIcon={<Plus size={13} />} onClick={openCreate}>
+							Add Category
+						</Button>
+					)
+				}
+			/>
 
 			{/* Search */}
 			<SearchInput

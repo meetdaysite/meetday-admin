@@ -3,7 +3,7 @@
 import { DataView } from "@/components/ui/data-view"
 import { DateRangeFilter } from "@/components/ui/date-range-filter"
 import { FilterSelect } from "@/components/ui/filter-select"
-import { PageHeader } from "@/components/ui/page-header"
+import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { getAuditLogs, type GetAuditLogsParams } from "@/lib/api/audit-logs"
@@ -179,7 +179,7 @@ export default function AuditLogsPage() {
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
-			<PageHeader title="Audit Logs" count={total} />
+			<PageHeader title="Audit Logs" description="View a log of all actions performed in the system." />
 
 			{/* Filters */}
 			<div className="space-y-3">

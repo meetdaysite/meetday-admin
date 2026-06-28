@@ -4,7 +4,7 @@ import { EventReviewDrawer, type EventAction } from "@/components/events/event-r
 import { ClearableInput } from "@/components/ui/clearable-input"
 import { DataView } from "@/components/ui/data-view"
 import { FilterTabs } from "@/components/ui/filter-tabs"
-import { PageHeader } from "@/components/ui/page-header"
+import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { StatusBadge } from "@/components/ui/status-badge"
@@ -190,7 +190,10 @@ export default function EventsPage() {
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
-			<PageHeader title="All Events" count={total} />
+			<PageHeader
+				title="Events"
+				description="Manage and review all events on the platform."
+			/>
 
 			{/* Filters */}
 			<div className="space-y-3">

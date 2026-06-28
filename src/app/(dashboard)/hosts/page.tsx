@@ -5,7 +5,7 @@ import { HostReviewDrawer } from "@/components/hosts/host-review-drawer"
 import { ClearableInput } from "@/components/ui/clearable-input"
 import { DataView } from "@/components/ui/data-view"
 import { FilterSelect } from "@/components/ui/filter-select"
-import { PageHeader } from "@/components/ui/page-header"
+import PageHeader from "@/components/ui/PageHeader"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { approveHost, getHosts, rejectHost } from "@/lib/api/hosts"
 import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
@@ -212,7 +212,7 @@ export default function HostsPage() {
 	return (
 		<div className="p-6 space-y-6 max-w-7xl mx-auto">
 			{/* Page header */}
-			<PageHeader title="Hosts" count={total > 0 ? `${total} total` : undefined} />
+			<PageHeader title="Hosts" description="Manage and review all hosts on the platform." />
 
 			{/* Filters */}
 			<div className="flex items-center gap-3 flex-wrap">

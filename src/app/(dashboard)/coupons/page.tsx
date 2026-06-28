@@ -2,8 +2,10 @@
 
 import { CouponUsageDrawer } from "@/components/coupons/coupon-usage-drawer"
 import { CreateCouponDrawer } from "@/components/coupons/create-coupon-drawer"
+import { Button } from "@/components/ui/Button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { DataTable } from "@/components/ui/data-table"
+import PageHeader from "@/components/ui/PageHeader"
 import { Pagination } from "@/components/ui/pagination"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
@@ -132,7 +134,6 @@ export default function CouponsPage() {
 		return coupons.filter(c => c.code.toLowerCase().includes(q))
 	}, [coupons, search])
 
-	const activeCount = coupons.filter(c => c.isActive).length
 	const totalPages = Math.ceil(total / PAGE_LIMIT)
 
 	// â"€â"€ Columns â"€â"€
@@ -251,26 +252,17 @@ export default function CouponsPage() {
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
-			<div className="flex items-center justify-between gap-3">
-				<div className="flex items-center gap-3">
-					<h1 className="text-base font-semibold text-text-primary">Coupons</h1>
-					{!isLoading && activeCount > 0 && (
-						<span className="rounded-full bg-green-100 px-2.5 py-0.5 text-[11px] font-semibold text-green-700">
-							{activeCount} active
-						</span>
-					)}
-				</div>
-
-				{canCreate && (
-					<button
-						onClick={() => setCreateDrawerOpen(true)}
-						className="inline-flex items-center gap-1.5 rounded-lg bg-action-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors"
-					>
-						<Plus size={13} />
-						New Coupon
-					</button>
-				)}
-			</div>
+			<PageHeader
+				title="Coupons"
+				description="Manage the coupons for your transactions."
+				buttons={
+					canCreate && (
+						<Button leftIcon={<Plus size={13} />} onClick={() => setCreateDrawerOpen(true)}>
+							Add Coupon
+						</Button>
+					)
+				}
+			/>
 
 			{/* Filters */}
 			<div className="space-y-3">

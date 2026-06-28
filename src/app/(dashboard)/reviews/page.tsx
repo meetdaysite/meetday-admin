@@ -2,7 +2,7 @@
 
 import { DataView } from "@/components/ui/data-view"
 import { FilterTabs } from "@/components/ui/filter-tabs"
-import { PageHeader } from "@/components/ui/page-header"
+import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { getReviews, updateReviewVisibility } from "@/lib/api/reviews"
@@ -230,7 +230,10 @@ export default function ReviewsPage() {
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
-			<PageHeader title="Reviews" count={total} />
+			<PageHeader
+				title="Reviews"
+				description="Manage the reviews for your events."
+			/>
 
 			{/* Filters */}
 			<div className="flex items-center gap-2 flex-wrap">

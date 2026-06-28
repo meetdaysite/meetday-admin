@@ -1,10 +1,11 @@
 ﻿"use client"
 
 import { InviteAdminDrawer, type InviteAdminSubmitValues } from "@/components/admins/invite-admin-drawer"
+import { Button } from "@/components/ui/Button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { DataView } from "@/components/ui/data-view"
 import { FilterSelect } from "@/components/ui/filter-select"
-import { PageHeader } from "@/components/ui/page-header"
+import PageHeader from "@/components/ui/PageHeader"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { deactivateAdmin, getAdmins, inviteAdmin, reactivateAdmin } from "@/lib/api/admins"
 import { ROLE_LABEL, ROLE_STYLE } from "@/lib/constants/roles"
@@ -258,17 +259,17 @@ export default function AdminsPage() {
 	return (
 		<div className="p-6 space-y-6 max-w-7xl mx-auto">
 			{/* Page header */}
-			<PageHeader title="Admins" count={total > 0 ? `${total} total` : undefined}>
-				{canInvite && (
-					<button
-						onClick={() => setDrawerOpen(true)}
-						className="flex items-center gap-1.5 rounded-lg bg-action-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors"
-					>
-						<UserPlus size={13} />
-						Invite Admin
-					</button>
-				)}
-			</PageHeader>
+			<PageHeader
+				title="Admins"
+				description="Manage the admins who have access to the admin panel."
+				buttons={
+					canInvite && (
+						<Button leftIcon={<UserPlus size={13} />} onClick={() => setDrawerOpen(true)}>
+							Invite Admin
+						</Button>
+					)
+				}
+			/>
 
 			{/* Filters */}
 			<div className="flex items-center gap-3">

@@ -1,5 +1,6 @@
 ﻿"use client"
 
+import PageHeader from "@/components/ui/PageHeader"
 import { getAdminProfile, type AdminProfile } from "@/lib/api/profile"
 import { ROLE_LABEL, ROLE_STYLE } from "@/lib/constants/roles"
 import { formatDateLong } from "@/lib/formatters"
@@ -170,7 +171,7 @@ export default function ProfilePage() {
 	return (
 		<div className="p-6 space-y-6 max-w-2xl mx-auto">
 			{/* Page header */}
-			<h1 className="text-base font-semibold text-text-primary">My Profile</h1>
+			<PageHeader title="Profile" description="View your admin profile." />
 
 			{/* Profile card */}
 			<div className="bg-surface-card rounded-xl border border-border-default overflow-hidden">

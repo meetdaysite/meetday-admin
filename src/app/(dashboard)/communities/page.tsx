@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { DataView } from "@/components/ui/data-view"
 import { FilterSelect } from "@/components/ui/filter-select"
+import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { StatusBadge } from "@/components/ui/status-badge"
@@ -36,7 +37,7 @@ import {
 	Trash2,
 	TrendingUp,
 	UserCheck,
-	Users,
+	Users
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -341,30 +342,20 @@ export default function CommunitiesPage() {
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
-			<div className="flex items-start justify-between gap-4">
-				<div>
-					<div className="flex items-center gap-3">
-						<h1 className="text-base font-semibold text-text-primary">All Communities</h1>
-						<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
-							{total}
-						</span>
-					</div>
-					<p className="mt-0.5 text-xs text-text-tertiary">
-						Manage all communities created by Meetday.
-					</p>
-				</div>
-				<div className="flex items-center gap-2 shrink-0">
+			<PageHeader
+				title="Communities"
+				description="Manage and review all communities on the platform."
+				buttons={
 					<Button
 						variant="primary"
-						size="sm"
 						radius="md"
-						leftIcon={<Plus size={13} />}
+						leftIcon={<Plus size={14} />}
 						onClick={() => router.push("/communities/create")}
 					>
 						Create Community
 					</Button>
-				</div>
-			</div>
+				}
+			/>
 
 			{/* Stat cards */}
 			{/* TODO: replace hardcoded trend percentages with values from getCommunityStats API */}

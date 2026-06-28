@@ -3,7 +3,9 @@
 import { HostReviewDrawer, type HostAction } from "@/components/hosts/host-review-drawer"
 import { InviteBulkDrawer } from "@/components/hosts/invite-bulk-drawer"
 import { InviteSingleDrawer } from "@/components/hosts/invite-single-drawer"
+import { Button } from "@/components/ui/Button"
 import { DataTable } from "@/components/ui/data-table"
+import PageHeader from "@/components/ui/PageHeader"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { getHosts, approveHost, rejectHost, suspendHost, restoreHost } from "@/lib/api/hosts"
 import { usePermission } from "@/lib/hooks/use-permission"
@@ -21,10 +23,10 @@ const PAGE_LIMIT = 20
 type StatusFilter = ApprovalStatus | "ALL"
 
 const STATUS_TABS: { label: string; value: StatusFilter }[] = [
-	{ label: "All",       value: "ALL" },
-	{ label: "Pending",   value: "PENDING" },
-	{ label: "Approved",  value: "APPROVED" },
-	{ label: "Rejected",  value: "REJECTED" },
+	{ label: "All", value: "ALL" },
+	{ label: "Pending", value: "PENDING" },
+	{ label: "Approved", value: "APPROVED" },
+	{ label: "Rejected", value: "REJECTED" },
 	{ label: "Suspended", value: "SUSPENDED" },
 ]
 
@@ -103,13 +105,13 @@ export default function HostQueuePage() {
 	async function handleAction(hostId: string, action: HostAction, reason?: string) {
 		const callMap: Record<HostAction, () => Promise<void>> = {
 			approve: () => approveHost(hostId),
-			reject:  () => rejectHost(hostId, reason!),
+			reject: () => rejectHost(hostId, reason!),
 			suspend: () => suspendHost(hostId, reason!),
 			restore: () => restoreHost(hostId),
 		}
 		const successMap: Record<HostAction, string> = {
 			approve: "Host approved",
-			reject:  "Host rejected",
+			reject: "Host rejected",
 			suspend: "Host suspended",
 			restore: "Host restored",
 		}
@@ -155,14 +157,12 @@ export default function HostQueuePage() {
 		const q = search.toLowerCase()
 		if (!q) return hosts
 		return hosts.filter(
-			(h) =>
+			h =>
 				h.displayName.toLowerCase().includes(q) ||
 				(h.user.email ?? "").toLowerCase().includes(q) ||
 				`${h.user.firstName} ${h.user.lastName}`.toLowerCase().includes(q),
 		)
 	}, [hosts, search])
-
-	const pendingCount = total > 0 && statusFilter === "PENDING" ? total : undefined
 
 	const columns = useMemo<ColumnDef<Host>[]>(
 		() => [
@@ -238,44 +238,46 @@ export default function HostQueuePage() {
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
-			<div className="flex items-center gap-3">
-				<h1 className="text-base font-semibold text-text-primary">Host Queue</h1>
-				{pendingCount !== undefined && pendingCount > 0 && (
-					<span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700">
-						{pendingCount} pending
-					</span>
-				)}
-				{canInvite && (
-					<div className="ml-auto flex items-center gap-2">
-						<button
-							onClick={() => setSingleOpen(true)}
-							className="flex items-center gap-1.5 rounded-lg border border-border-default bg-surface-canvas px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors"
-						>
-							<UserPlus size={13} />
-							Invite Host
-						</button>
-						<button
-							onClick={() => setBulkOpen(true)}
-							className="flex items-center gap-1.5 rounded-lg bg-action-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors"
-						>
-							<Upload size={13} />
-							Bulk Upload
-						</button>
-					</div>
-				)}
-			</div>
+			<PageHeader
+				title="Host Queue"
+				description="Review and manage hosts who have applied to join the platform."
+				buttons={
+					canInvite && (
+						<>
+							<Button
+								variant="secondary"
+								leftIcon={<UserPlus size={13} />}
+								onClick={() => setSingleOpen(true)}
+							>
+								Invite Host
+							</Button>
+
+							<Button
+								onClick={() => setBulkOpen(true)}
+								variant="primary"
+								leftIcon={<Upload size={13} />}
+							>
+								Bulk Upload
+							</Button>
+						</>
+					)
+				}
+			/>
 
 			{/* Filters */}
 			<div className="space-y-3">
 				{/* Status tabs */}
 				<div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
-					{STATUS_TABS.map((tab) => {
+					{STATUS_TABS.map(tab => {
 						const active = statusFilter === tab.value
 						const count = active ? total : null
 						return (
 							<button
 								key={tab.value}
-								onClick={() => { setStatusFilter(tab.value); setPage(1) }}
+								onClick={() => {
+									setStatusFilter(tab.value)
+									setPage(1)
+								}}
 								className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
 									active
 										? "bg-action-primary text-white"
@@ -286,7 +288,9 @@ export default function HostQueuePage() {
 								{count !== null && (
 									<span
 										className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
-											active ? "bg-surface-canvas/20 text-white" : "bg-surface-canvas text-text-secondary"
+											active
+												? "bg-surface-canvas/20 text-white"
+												: "bg-surface-canvas text-text-secondary"
 										}`}
 									>
 										{count}
@@ -307,7 +311,7 @@ export default function HostQueuePage() {
 						<input
 							type="text"
 							value={search}
-							onChange={(e) => setSearch(e.target.value)}
+							onChange={e => setSearch(e.target.value)}
 							placeholder="Search by name or email…"
 							className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 						/>
@@ -315,7 +319,10 @@ export default function HostQueuePage() {
 
 					<select
 						value={kycFilter}
-						onChange={(e) => { setKycFilter(e.target.value as KycStatus | "ALL"); setPage(1) }}
+						onChange={e => {
+							setKycFilter(e.target.value as KycStatus | "ALL")
+							setPage(1)
+						}}
 						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 					>
 						<option value="ALL">KYC: All</option>
@@ -327,7 +334,10 @@ export default function HostQueuePage() {
 
 					<select
 						value={planFilter}
-						onChange={(e) => { setPlanFilter(e.target.value as HostPlan | "ALL"); setPage(1) }}
+						onChange={e => {
+							setPlanFilter(e.target.value as HostPlan | "ALL")
+							setPage(1)
+						}}
 						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 					>
 						<option value="ALL">Plan: All</option>
@@ -340,14 +350,18 @@ export default function HostQueuePage() {
 						<input
 							type="text"
 							value={cityInput}
-							onChange={(e) => setCityInput(e.target.value)}
+							onChange={e => setCityInput(e.target.value)}
 							placeholder="Filter by city…"
 							className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors w-36"
 						/>
 						{cityFilter && (
 							<button
 								type="button"
-								onClick={() => { setCityInput(""); setCityFilter(""); setPage(1) }}
+								onClick={() => {
+									setCityInput("")
+									setCityFilter("")
+									setPage(1)
+								}}
 								className="rounded-lg border border-border-default px-2.5 py-2 text-xs text-text-secondary hover:bg-neutral-50 transition-colors"
 							>
 								Clear
@@ -382,12 +396,13 @@ export default function HostQueuePage() {
 					{totalPages > 1 && (
 						<div className="flex items-center justify-between text-xs text-text-tertiary">
 							<span>
-								Showing {(page - 1) * PAGE_LIMIT + 1}â€“{Math.min(page * PAGE_LIMIT, total)} of {total}
+								Showing {(page - 1) * PAGE_LIMIT + 1}â€“{Math.min(page * PAGE_LIMIT, total)}{" "}
+								of {total}
 							</span>
 							<div className="flex items-center gap-2">
 								<button
 									disabled={page === 1}
-									onClick={() => setPage((p) => p - 1)}
+									onClick={() => setPage(p => p - 1)}
 									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 								>
 									Previous
@@ -397,7 +412,7 @@ export default function HostQueuePage() {
 								</span>
 								<button
 									disabled={page >= totalPages}
-									onClick={() => setPage((p) => p + 1)}
+									onClick={() => setPage(p => p + 1)}
 									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 								>
 									Next
@@ -411,7 +426,10 @@ export default function HostQueuePage() {
 			{/* Review drawer */}
 			<HostReviewDrawer
 				open={drawerOpen}
-				onClose={() => { setDrawerOpen(false); setSelectedHost(null) }}
+				onClose={() => {
+					setDrawerOpen(false)
+					setSelectedHost(null)
+				}}
 				host={selectedHost}
 				onAction={handleAction}
 			/>
@@ -420,12 +438,18 @@ export default function HostQueuePage() {
 			<InviteSingleDrawer
 				open={singleOpen}
 				onClose={() => setSingleOpen(false)}
-				onOpenBulk={() => { setSingleOpen(false); setBulkOpen(true) }}
+				onOpenBulk={() => {
+					setSingleOpen(false)
+					setBulkOpen(true)
+				}}
 			/>
 			<InviteBulkDrawer
 				open={bulkOpen}
 				onClose={() => setBulkOpen(false)}
-				onOpenSingle={() => { setBulkOpen(false); setSingleOpen(true) }}
+				onOpenSingle={() => {
+					setBulkOpen(false)
+					setSingleOpen(true)
+				}}
 			/>
 		</div>
 	)

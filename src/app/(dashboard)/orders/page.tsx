@@ -5,7 +5,7 @@ import { ClearableInput } from "@/components/ui/clearable-input"
 import { DataView } from "@/components/ui/data-view"
 import { DateRangeFilter } from "@/components/ui/date-range-filter"
 import { FilterTabs } from "@/components/ui/filter-tabs"
-import { PageHeader } from "@/components/ui/page-header"
+import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { StatusBadge } from "@/components/ui/status-badge"
@@ -139,7 +139,7 @@ export default function OrdersPage() {
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
-			<PageHeader title="Orders" count={total} />
+			<PageHeader title="Orders" description="Manage the orders for your payments." />
 
 			{/* Filters */}
 			<div className="space-y-3">

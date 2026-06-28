@@ -2,6 +2,7 @@
 
 import { EventReviewDrawer, type EventAction } from "@/components/events/event-review-drawer"
 import { DataView } from "@/components/ui/data-view"
+import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { approveEvent, forceCancelEvent, getPendingEvents, rejectEvent } from "@/lib/api/events"
@@ -38,7 +39,6 @@ export default function EventQueuePage() {
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 	const [events, setEvents] = useState<Event[]>([])
-	const [total, setTotal] = useState(0)
 	const [search, setSearch] = useState("")
 
 	const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
@@ -50,7 +50,6 @@ export default function EventQueuePage() {
 		try {
 			const res = await getPendingEvents()
 			setEvents(res.events)
-			setTotal(res.total ?? res.events.length)
 		} catch (err: unknown) {
 			const status = (err as { response?: { status?: number } })?.response?.status
 			if (status === 401) {
@@ -194,14 +193,10 @@ export default function EventQueuePage() {
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
-			<div className="flex items-center gap-3">
-				<h1 className="text-base font-semibold text-text-primary">Event Queue</h1>
-				{total > 0 && (
-					<span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700">
-						{total} pending
-					</span>
-				)}
-			</div>
+			<PageHeader
+				title="Event Queue"
+				description="Review and approve events submitted by hosts before they go live on the platform."
+			/>
 
 			{/* Search */}
 			<SearchInput
