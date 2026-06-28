@@ -3,9 +3,18 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-	Loader2, MapPin, Mail, Building2,
-	Briefcase, CreditCard, BadgeCheck, AlertTriangle,
-	Globe, Link, BookOpen, Languages,
+	Loader2,
+	MapPin,
+	Mail,
+	Building2,
+	Briefcase,
+	CreditCard,
+	BadgeCheck,
+	AlertTriangle,
+	Globe,
+	Link,
+	BookOpen,
+	Languages,
 } from "lucide-react"
 import * as Dialog from "@radix-ui/react-dialog"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
@@ -15,7 +24,7 @@ import { RejectHostDialog } from "@/components/hosts/reject-host-dialog"
 import { getHostById } from "@/lib/api/hosts"
 import type { Host, HostDetail } from "@/types"
 
-//  Types 
+//  Types
 
 export type HostAction = "approve" | "reject" | "suspend" | "restore"
 
@@ -26,7 +35,7 @@ export type HostReviewDrawerProps = {
 	onAction: (hostId: string, action: HostAction, reason?: string) => Promise<void>
 }
 
-//  Helpers 
+//  Helpers
 
 function formatDate(iso: string): string {
 	return new Date(iso).toLocaleDateString("en-IN", {
@@ -154,12 +163,14 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 					<span className="text-[11px] text-text-tertiary">KYC</span>
 					<StatusBadge status={detail.kycStatus} />
 				</div>
-				<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
-					{detail.hostType}
-				</span>
-				<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
-					{detail.currentPlan}
-				</span>
+				<div className="flex items-center gap-1.5">
+					<span className="text-[11px] text-text-tertiary">Host Type</span>
+					<StatusBadge status={detail.hostType} />
+				</div>
+				<div className="flex items-center gap-1.5">
+					<span className="text-[11px] text-text-tertiary">Current Plan</span>
+					<StatusBadge status={detail.currentPlan} />
+				</div>
 			</div>
 
 			{/* Rejection reason */}
@@ -174,9 +185,7 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 			)}
 
 			{detail.approvedAt && (
-				<p className="text-[11px] text-text-tertiary">
-					Approved on {formatDate(detail.approvedAt)}
-				</p>
+				<p className="text-[11px] text-text-tertiary">Approved on {formatDate(detail.approvedAt)}</p>
 			)}
 
 			<div className="border-t border-border-subtle" />
@@ -207,24 +216,18 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 						<span className="text-xs text-text-tertiary">Account status</span>
 						<StatusBadge status={detail.user.isActive ? "ACTIVE" : "DISABLED"} />
 					</div>
-					{detail.tagline && (
-						<DetailRow icon={BookOpen} label="Tagline" value={detail.tagline} />
-					)}
-					{detail.hostBio && (
-						<DetailRow icon={BookOpen} label="Bio" value={detail.hostBio} />
-					)}
+					{detail.tagline && <DetailRow icon={BookOpen} label="Tagline" value={detail.tagline} />}
+					{detail.hostBio && <DetailRow icon={BookOpen} label="Bio" value={detail.hostBio} />}
 					{detail.languages.length > 0 && (
-						<DetailRow
-							icon={Languages}
-							label="Languages"
-							value={detail.languages.join(", ")}
-						/>
+						<DetailRow icon={Languages} label="Languages" value={detail.languages.join(", ")} />
 					)}
 				</div>
 			</div>
 
 			{/*  Links */}
-			{(detail.socialLinks?.website || detail.socialLinks?.instagram || detail.portfolioLinks.length > 0) && (
+			{(detail.socialLinks?.website ||
+				detail.socialLinks?.instagram ||
+				detail.portfolioLinks.length > 0) && (
 				<>
 					<div className="border-t border-border-subtle" />
 					<div>
@@ -235,7 +238,12 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 									icon={Globe}
 									label="Website"
 									value={
-										<a href={detail.socialLinks.website} target="_blank" rel="noopener noreferrer" className="text-text-brand hover:underline break-all">
+										<a
+											href={detail.socialLinks.website}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="text-text-brand hover:underline break-all"
+										>
 											{detail.socialLinks.website}
 										</a>
 									}
@@ -246,7 +254,12 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 									icon={Globe}
 									label="Instagram"
 									value={
-										<a href={detail.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-text-brand hover:underline break-all">
+										<a
+											href={detail.socialLinks.instagram}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="text-text-brand hover:underline break-all"
+										>
 											{detail.socialLinks.instagram}
 										</a>
 									}
@@ -258,7 +271,12 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 									icon={Link}
 									label={`Portfolio ${detail.portfolioLinks.length > 1 ? i + 1 : ""}`.trim()}
 									value={
-										<a href={link} target="_blank" rel="noopener noreferrer" className="text-text-brand hover:underline break-all">
+										<a
+											href={link}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="text-text-brand hover:underline break-all"
+										>
 											{link}
 										</a>
 									}
@@ -275,11 +293,7 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 			{addressParts.length > 0 && (
 				<div>
 					<SectionLabel>Address</SectionLabel>
-					<DetailRow
-						icon={MapPin}
-						label="Location"
-						value={addressParts.join(", ")}
-					/>
+					<DetailRow icon={MapPin} label="Location" value={addressParts.join(", ")} />
 				</div>
 			)}
 
@@ -335,7 +349,7 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 					<div>
 						<SectionLabel>Categories</SectionLabel>
 						<div className="flex flex-wrap gap-1.5">
-							{detail.categories.map((cat) => (
+							{detail.categories.map(cat => (
 								<span
 									key={cat.categoryId}
 									className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-medium text-text-secondary"
@@ -403,7 +417,11 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 						/>
 						<div className="flex items-center gap-3 pl-10">
 							<span className="text-xs text-text-tertiary">Verification</span>
-							<StatusBadge status={detail.payoutAccount.isVerified ? "VERIFIED" : detail.payoutAccount.status} />
+							<StatusBadge
+								status={
+									detail.payoutAccount.isVerified ? "VERIFIED" : detail.payoutAccount.status
+								}
+							/>
 						</div>
 					</div>
 				)}
@@ -447,7 +465,7 @@ function SuspendHostDialog({
 	}
 
 	return (
-		<Dialog.Root open={open} onOpenChange={(v) => !v && handleClose()}>
+		<Dialog.Root open={open} onOpenChange={v => !v && handleClose()}>
 			<Dialog.Portal>
 				<Dialog.Overlay className="fixed inset-0 z-60 bg-black/40" />
 				<Dialog.Content className="fixed left-1/2 top-1/2 z-60 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl bg-surface-canvas p-6 shadow-xl focus:outline-none">
@@ -464,11 +482,13 @@ function SuspendHostDialog({
 						<div>
 							<label className="block text-[11px] font-semibold text-text-secondary mb-1.5">
 								Suspension reason{" "}
-								<span className="text-red-500" aria-hidden>*</span>
+								<span className="text-red-500" aria-hidden>
+									*
+								</span>
 							</label>
 							<textarea
 								value={reason}
-								onChange={(e) => setReason(e.target.value)}
+								onChange={e => setReason(e.target.value)}
 								placeholder="e.g. Multiple reports of fraudulent event listings."
 								rows={4}
 								disabled={isLoading}
@@ -523,7 +543,7 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 		setErrorMessage(null)
 
 		getHostById(host.id)
-			.then((data) => {
+			.then(data => {
 				if (!cancelled) {
 					setDetail(data)
 					setFetchState("done")
@@ -546,8 +566,10 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 				}
 			})
 
-		return () => { cancelled = true }
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		return () => {
+			cancelled = true
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [open, host?.id, router])
 
 	function handleClose() {
@@ -630,7 +652,9 @@ export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDr
 			{fetchState === "done" && detail && <HostDetailContent detail={detail} />}
 
 			{/* Footer */}
-			<DrawerFooter className={isPending || isApproved || isSuspended ? "justify-between" : "justify-end"}>
+			<DrawerFooter
+				className={isPending || isApproved || isSuspended ? "justify-between" : "justify-end"}
+			>
 				{isPending && (
 					<>
 						<button

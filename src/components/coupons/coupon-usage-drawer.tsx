@@ -8,16 +8,21 @@ import { getCouponById, disableCoupon } from "@/lib/api/coupons"
 import type { Coupon, CouponRedemption } from "@/types"
 import axios from "axios"
 import { toast } from "sonner"
+import { StatusBadge } from "../ui/status-badge"
 
 //  Helpers
 
 function formatDateTime(iso: string): string {
 	const d = new Date(iso)
-	return d.toLocaleDateString("en-IN", {
-		day: "numeric",
-		month: "short",
-		year: "numeric",
-	}) + " · " + d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+	return (
+		d.toLocaleDateString("en-IN", {
+			day: "numeric",
+			month: "short",
+			year: "numeric",
+		}) +
+		" · " +
+		d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+	)
 }
 
 function fmtRate(rate: number): string {
@@ -49,7 +54,7 @@ function Stat({ icon: Icon, label, value }: { icon: React.ElementType; label: st
 	)
 }
 
-//  Redemption timeline item 
+//  Redemption timeline item
 
 function RedemptionItem({ redemption, isLast }: { redemption: CouponRedemption; isLast: boolean }) {
 	const userName = redemption.user
@@ -103,12 +108,12 @@ export type CouponUsageDrawerProps = {
 //  Component
 
 export function CouponUsageDrawer({ open, onClose, coupon, onDisableSuccess }: CouponUsageDrawerProps) {
-	const [detail, setDetail]               = useState<Coupon | null>(null)
+	const [detail, setDetail] = useState<Coupon | null>(null)
 	const [isLoadingDetail, setLoadingDetail] = useState(false)
-	const [detailError, setDetailError]     = useState<string | null>(null)
+	const [detailError, setDetailError] = useState<string | null>(null)
 
 	const [confirmDisable, setConfirmDisable] = useState(false)
-	const [isDisabling, setIsDisabling]       = useState(false)
+	const [isDisabling, setIsDisabling] = useState(false)
 
 	// Fetch full detail whenever a coupon is opened
 	useEffect(() => {
@@ -123,8 +128,10 @@ export function CouponUsageDrawer({ open, onClose, coupon, onDisableSuccess }: C
 		setDetailError(null)
 
 		getCouponById(coupon.id)
-			.then((data) => { if (!cancelled) setDetail(data) })
-			.catch((err) => {
+			.then(data => {
+				if (!cancelled) setDetail(data)
+			})
+			.catch(err => {
 				if (cancelled) return
 				if (axios.isAxiosError(err) && err.response?.status === 404) {
 					setDetailError("This coupon no longer exists.")
@@ -132,9 +139,13 @@ export function CouponUsageDrawer({ open, onClose, coupon, onDisableSuccess }: C
 					setDetailError("Failed to load coupon details.")
 				}
 			})
-			.finally(() => { if (!cancelled) setLoadingDetail(false) })
+			.finally(() => {
+				if (!cancelled) setLoadingDetail(false)
+			})
 
-		return () => { cancelled = true }
+		return () => {
+			cancelled = true
+		}
 	}, [open, coupon?.id])
 
 	async function handleDisable() {
@@ -158,8 +169,8 @@ export function CouponUsageDrawer({ open, onClose, coupon, onDisableSuccess }: C
 	}
 
 	const displayCoupon = detail ?? coupon
-	const usageCount    = detail?.usageCount ?? detail?.redemptions?.length ?? coupon?.usageCount ?? 0
-	const redemptions   = detail?.redemptions ?? []
+	const usageCount = detail?.usageCount ?? detail?.redemptions?.length ?? coupon?.usageCount ?? 0
+	const redemptions = detail?.redemptions ?? []
 
 	return (
 		<>
@@ -189,15 +200,11 @@ export function CouponUsageDrawer({ open, onClose, coupon, onDisableSuccess }: C
 				{!isLoadingDetail && !detailError && displayCoupon && (
 					<div className="space-y-6">
 						{/* Status badge */}
-						<span
-							className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-								displayCoupon.isActive
-									? "bg-green-50 text-green-700"
-									: "bg-neutral-100 text-text-secondary"
-							}`}
-						>
-							{displayCoupon.isActive ? "Active" : "Inactive"}
-						</span>
+						<StatusBadge
+							status={
+								displayCoupon.isActive ? "Active".toUpperCase() : "Inactive".toUpperCase()
+							}
+						/>
 
 						{/* Summary grid */}
 						<div className="grid grid-cols-2 gap-4">
@@ -246,7 +253,11 @@ export function CouponUsageDrawer({ open, onClose, coupon, onDisableSuccess }: C
 							) : (
 								<div>
 									{redemptions.map((r, i) => (
-										<RedemptionItem key={r.id} redemption={r} isLast={i === redemptions.length - 1} />
+										<RedemptionItem
+											key={r.id}
+											redemption={r}
+											isLast={i === redemptions.length - 1}
+										/>
 									))}
 								</div>
 							)}

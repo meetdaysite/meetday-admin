@@ -89,7 +89,7 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 		if (!code.trim()) {
 			errs.code = "Coupon code is required."
 		} else if (!/^[A-Z0-9_-]{3,20}$/.test(code.trim())) {
-			errs.code = "Code must be 3â€“20 chars: uppercase letters, numbers, - or _."
+			errs.code = "Code must be 3-20 chars: uppercase letters, numbers, - or _."
 		}
 
 		const val = Number(discountValue)

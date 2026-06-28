@@ -28,7 +28,7 @@ export function DrawerFooter({
 	return (
 		<div
 			className={cn(
-				"flex items-center justify-end gap-3 border-t border-border-subtle py-4 shrink-0",
+				"flex items-center justify-end gap-3 border-t border-border-subtle py-4 shrink-0 mt-6",
 				className,
 			)}
 		>
@@ -77,18 +77,18 @@ export function Drawer({
 									{/* Header */}
 									<div className="flex items-start justify-between border-b border-border-subtle px-6 py-5 shrink-0">
 										<div>
-											<Dialog.Title className="text-sm font-semibold text-text-primary">
+											<Dialog.Title className="text-heading-sm font-semibold text-text-primary">
 												{title}
 											</Dialog.Title>
 											{description && (
-												<Dialog.Description className="mt-1 text-xs text-text-tertiary">
+												<Dialog.Description className="mt-1 text-label-md text-text-tertiary">
 													{description}
 												</Dialog.Description>
 											)}
 										</div>
 										<button
 											onClick={onClose}
-											className="rounded-action p-1.5 text-icon-muted hover:bg-surface-card-muted hover:text-icon-primary transition-colors"
+											className="rounded-action p-1.5 text-icon-primary hover:bg-surface-card-muted hover:text-icon-primary transition-colors"
 											aria-label="Close drawer"
 										>
 											<X size={16} />
