@@ -14,12 +14,14 @@ export type { CommunityStatus, CommunityVisibility, CommunityAccess, CommunityTy
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export type StatValue = { value: number; deltaPct: number | null }
+
 export type CommunityStats = {
-	totalCommunities: number
-	activeCommunities: number
-	totalMembers: number
-	upcomingEvents: number
-	avgEngagementRate: number
+	totalCommunities: StatValue
+	activeCommunities: StatValue
+	totalMembers: StatValue
+	upcomingEvents: StatValue
+	avgEngagementRate: StatValue
 }
 
 export type GetCommunitiesParams = {
@@ -40,25 +42,20 @@ export type CommunitiesListResponse = {
 
 // ─── API functions ────────────────────────────────────────────────────────────
 
-type ApiCommunityStats = {
-	totalCommunities: number | { value: number; deltaPct: number }
-	activeCommunities: number | { value: number; deltaPct: number }
-	totalMembers: number | { value: number; deltaPct: number }
-	upcomingEvents: number | { value: number; deltaPct: number }
-	avgEngagementRate: number | { value: number; deltaPct: number }
-}
+type RawStat = number | { value: number; deltaPct: number | null }
 
-function unwrapStat(v: number | { value: number; deltaPct: number }): number {
-	return typeof v === "object" ? v.value : v
+function unwrapStat(v: RawStat): StatValue {
+	if (typeof v === "object") return { value: v.value, deltaPct: v.deltaPct }
+	return { value: v, deltaPct: null }
 }
 
 export async function getCommunityStats(): Promise<CommunityStats> {
-	const { data } = await apiClient.get<ApiCommunityStats>("/admin/communities/stats")
+	const { data } = await apiClient.get<Record<string, RawStat>>("/admin/communities/stats")
 	return {
-		totalCommunities:  unwrapStat(data.totalCommunities),
+		totalCommunities: unwrapStat(data.totalCommunities),
 		activeCommunities: unwrapStat(data.activeCommunities),
-		totalMembers:      unwrapStat(data.totalMembers),
-		upcomingEvents:    unwrapStat(data.upcomingEvents),
+		totalMembers: unwrapStat(data.totalMembers),
+		upcomingEvents: unwrapStat(data.upcomingEvents),
 		avgEngagementRate: unwrapStat(data.avgEngagementRate),
 	}
 }
@@ -313,7 +310,7 @@ export type CommunityDetailData = {
 function toTimeAgo(iso: string): string {
 	const diff = Date.now() - new Date(iso).getTime()
 	const m = Math.floor(diff / 60000)
-	if (m < 1)  return "just now"
+	if (m < 1) return "just now"
 	if (m < 60) return `${m}m ago`
 	const h = Math.floor(m / 60)
 	if (h < 24) return `${h}h ago`
@@ -322,20 +319,20 @@ function toTimeAgo(iso: string): string {
 }
 
 const ACTIVITY_TYPE_MAP: Record<string, CommunityDetailActivity["type"]> = {
-	NEW_POST:             "post",
-	MEMBER_JOINED:        "member",
+	NEW_POST: "post",
+	MEMBER_JOINED: "member",
 	ANNOUNCEMENT_CREATED: "announcement",
-	NEW_EXPERIENCE:       "experience",
+	NEW_EXPERIENCE: "experience",
 }
 
 const DISPLAY_ROLES: Record<string, "Owner" | "Manager" | "Moderator"> = {
-	OWNER: "Owner", MANAGER: "Manager", MODERATOR: "Moderator",
+	OWNER: "Owner",
+	MANAGER: "Manager",
+	MODERATOR: "Moderator",
 }
 
 export async function getCommunityById(id: string): Promise<CommunityDetailData> {
-	const { data: o } = await apiClient.get<ApiOverviewResponse>(
-		`/admin/communities/${id}/overview`,
-	)
+	const { data: o } = await apiClient.get<ApiOverviewResponse>(`/admin/communities/${id}/overview`)
 
 	const statCards: CommunityDetailStatCard[] = [
 		{
@@ -346,7 +343,8 @@ export async function getCommunityById(id: string): Promise<CommunityDetailData>
 				direction: o.stats.totalMembers.delta7d >= 0 ? "up" : "down",
 				label: "% vs last 7d",
 			},
-			sub: `${o.stats.totalMembers.delta7d >= 0 ? "+" : ""}${o.stats.totalMembers.delta7d} this week`,
+			// sub: `${o.stats.totalMembers.delta7d >= 0 ? "+" : ""}${o.stats.totalMembers.delta7d} this week`,
+			sub: `in this week`,
 			color: "#9333ea",
 			spark: o.stats.totalMembers.sparkline.map(v => ({ v })),
 		},
@@ -358,7 +356,8 @@ export async function getCommunityById(id: string): Promise<CommunityDetailData>
 				direction: o.stats.activeExperiences.delta7d >= 0 ? "up" : "down",
 				label: "% vs last 7d",
 			},
-			sub: `${o.stats.activeExperiences.delta7d >= 0 ? "+" : ""}${o.stats.activeExperiences.delta7d} this week`,
+			// sub: `${o.stats.activeExperiences.delta7d >= 0 ? "+" : ""}${o.stats.activeExperiences.delta7d} this week`,
+			sub: `in this week`,
 			color: "#3b82f6",
 			spark: o.stats.activeExperiences.sparkline.map(v => ({ v })),
 		},
@@ -370,7 +369,8 @@ export async function getCommunityById(id: string): Promise<CommunityDetailData>
 				direction: o.stats.postReach7d.delta7d >= 0 ? "up" : "down",
 				label: "% vs last 7d",
 			},
-			sub: `${o.stats.postReach7d.delta7d >= 0 ? "+" : ""}${o.stats.postReach7d.delta7d} this week`,
+			// sub: `${o.stats.postReach7d.delta7d >= 0 ? "+" : ""}${o.stats.postReach7d.delta7d} this week`,
+			sub: `in this week`,
 			color: "#22c55e",
 			spark: o.stats.postReach7d.sparkline.map(v => ({ v })),
 		},
@@ -382,7 +382,8 @@ export async function getCommunityById(id: string): Promise<CommunityDetailData>
 				direction: o.stats.messages7d.delta7d >= 0 ? "up" : "down",
 				label: "% vs last 7d",
 			},
-			sub: `${o.stats.messages7d.delta7d >= 0 ? "+" : ""}${o.stats.messages7d.delta7d} this week`,
+			// sub: `${o.stats.messages7d.delta7d >= 0 ? "+" : ""}${o.stats.messages7d.delta7d} this week`,
+			sub: `in this week`,
 			color: "#f59e0b",
 			spark: o.stats.messages7d.sparkline.map(v => ({ v })),
 		},
@@ -402,7 +403,9 @@ export async function getCommunityById(id: string): Promise<CommunityDetailData>
 		id: e.id,
 		title: e.title,
 		date: new Date(e.eventDate).toLocaleDateString("en-GB", {
-			weekday: "short", day: "numeric", month: "short",
+			weekday: "short",
+			day: "numeric",
+			month: "short",
 		}),
 		venue: e.city,
 		attendeeCount: e.attendeeCount,
@@ -424,11 +427,11 @@ export async function getCommunityById(id: string): Promise<CommunityDetailData>
 	const eng = o.topEngagement7d
 	const engMax = Math.max(eng.posts, eng.comments, eng.reactions, eng.shares, eng.newMembers, 1)
 	const topEngagement: CommunityDetailEngagement[] = [
-		{ label: "Posts",       value: eng.posts,       max: engMax, color: "#a855f7" },
-		{ label: "Comments",    value: eng.comments,    max: engMax, color: "#3b82f6" },
-		{ label: "Reactions",   value: eng.reactions,   max: engMax, color: "#ef4444" },
-		{ label: "Shares",      value: eng.shares,      max: engMax, color: "#f59e0b" },
-		{ label: "New Members", value: eng.newMembers,  max: engMax, color: "#22c55e" },
+		{ label: "Posts", value: eng.posts, max: engMax, color: "#a855f7" },
+		{ label: "Comments", value: eng.comments, max: engMax, color: "#3b82f6" },
+		{ label: "Reactions", value: eng.reactions, max: engMax, color: "#ef4444" },
+		{ label: "Shares", value: eng.shares, max: engMax, color: "#f59e0b" },
+		{ label: "New Members", value: eng.newMembers, max: engMax, color: "#22c55e" },
 	]
 
 	return {
@@ -473,58 +476,93 @@ export type CommunityExperienceItem = {
 }
 
 export type ExperienceTabCounts = {
-	all: number; upcoming: number; live: number
-	completed: number; drafts: number; cancelled: number
+	all: number
+	upcoming: number
+	live: number
+	completed: number
+	drafts: number
+	cancelled: number
 }
 
 export type ExperiencePerf30d = {
-	bookings:      { value: number; deltaPct: number }
-	revenue:       { value: number; deltaPct: number }
-	attendanceRate:{ value: number | null; deltaPct: number }
+	bookings: { value: number; deltaPct: number }
+	revenue: { value: number; deltaPct: number }
+	attendanceRate: { value: number | null; deltaPct: number }
 }
 
 export type ExperienceTopPerformer = {
-	id: string; name: string
-	coverUrl: string | null; coverColor: string; coverInitial: string
-	bookings: number; revenue: number
+	id: string
+	name: string
+	coverUrl: string | null
+	coverColor: string
+	coverInitial: string
+	bookings: number
+	revenue: number
 }
 
 export type CommunityExperienceTabStats = {
-	totalExperiences: number; upcoming: number; completed: number
-	totalBookings: number; totalRevenue: number
+	totalExperiences: number
+	upcoming: number
+	completed: number
+	totalBookings: number
+	totalRevenue: number
 }
 
 export type CommunityExperienceTabData = {
-	stats:        CommunityExperienceTabStats
-	tabCounts:    ExperienceTabCounts
-	experiences:  CommunityExperienceItem[]
-	total:        number
-	page:         number
+	stats: CommunityExperienceTabStats
+	tabCounts: ExperienceTabCounts
+	experiences: CommunityExperienceItem[]
+	total: number
+	page: number
 	performance30d: ExperiencePerf30d
 	topPerforming: ExperienceTopPerformer[]
 }
 
 export type ExperienceTabParams = {
-	status?: string; search?: string; sort?: string; page?: number; limit?: number
+	status?: string
+	search?: string
+	sort?: string
+	page?: number
+	limit?: number
 }
 
 // ─── Experiences Tab API types ─────────────────────────────────────────────────
 
 type ApiExpItem = {
-	id: string; title: string; coverUrl: string | null; tags: string[]
-	eventDate: string; startTime: string; computedStatus: CommunityExperienceStatus
+	id: string
+	title: string
+	coverUrl: string | null
+	tags: string[]
+	eventDate: string
+	startTime: string
+	computedStatus: CommunityExperienceStatus
 	bookings: { confirmed: number; capacity: number; pct: number }
-	revenue: number; visibility: "PUBLIC" | "PRIVATE" | "DRAFT"
+	revenue: number
+	visibility: "PUBLIC" | "PRIVATE" | "DRAFT"
 }
 
 type ApiExpResponse = {
-	stats: { totalExperiences: number; upcoming: number; completed: number; totalBookings: number; totalRevenue: number }
+	stats: {
+		totalExperiences: number
+		upcoming: number
+		completed: number
+		totalBookings: number
+		totalRevenue: number
+	}
 	tabCounts: ExperienceTabCounts
 	experiences: ApiExpItem[]
-	total: number; page: number; limit: number
+	total: number
+	page: number
+	limit: number
 	sidebar: {
 		performance30d: ExperiencePerf30d
-		topExperiences: { id: string; title: string; coverUrl: string | null; bookings: number; revenue: number }[]
+		topExperiences: {
+			id: string
+			title: string
+			coverUrl: string | null
+			bookings: number
+			revenue: number
+		}[]
 	}
 }
 
@@ -542,46 +580,50 @@ export async function getCommunityExperiencesTab(
 	const qs = new URLSearchParams()
 	if (params.status && params.status !== "ALL") qs.set("status", params.status)
 	if (params.search) qs.set("search", params.search)
-	if (params.sort)   qs.set("sort", params.sort)
-	if (params.page)   qs.set("page", String(params.page))
-	if (params.limit)  qs.set("limit", String(params.limit))
+	if (params.sort) qs.set("sort", params.sort)
+	if (params.page) qs.set("page", String(params.page))
+	if (params.limit) qs.set("limit", String(params.limit))
 
 	const { data: o } = await apiClient.get<ApiExpResponse>(
 		`/admin/communities/${communityId}/experiences?${qs}`,
 	)
 
 	const experiences: CommunityExperienceItem[] = o.experiences.map(e => ({
-		id:           e.id,
-		name:         e.title,
-		coverUrl:     e.coverUrl,
-		coverColor:   expCoverColor(e.id),
+		id: e.id,
+		name: e.title,
+		coverUrl: e.coverUrl,
+		coverColor: expCoverColor(e.id),
 		coverInitial: e.title[0].toUpperCase(),
-		tags:         e.tags,
-		date:         new Date(e.eventDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-		time:         `${new Date(e.eventDate).toLocaleDateString("en-US", { weekday: "short" })} • ${e.startTime}`,
-		status:       e.computedStatus,
+		tags: e.tags,
+		date: new Date(e.eventDate).toLocaleDateString("en-US", {
+			month: "short",
+			day: "numeric",
+			year: "numeric",
+		}),
+		time: `${new Date(e.eventDate).toLocaleDateString("en-US", { weekday: "short" })} • ${e.startTime}`,
+		status: e.computedStatus,
 		bookingsSold: e.bookings.confirmed,
-		bookingsTotal:e.bookings.capacity,
-		revenue:      e.revenue,
-		visibility:   e.visibility,
+		bookingsTotal: e.bookings.capacity,
+		revenue: e.revenue,
+		visibility: e.visibility,
 	}))
 
 	const topPerforming: ExperienceTopPerformer[] = o.sidebar.topExperiences.map(t => ({
-		id:           t.id,
-		name:         t.title,
-		coverUrl:     t.coverUrl,
-		coverColor:   expCoverColor(t.id),
+		id: t.id,
+		name: t.title,
+		coverUrl: t.coverUrl,
+		coverColor: expCoverColor(t.id),
 		coverInitial: t.title[0].toUpperCase(),
-		bookings:     t.bookings,
-		revenue:      t.revenue,
+		bookings: t.bookings,
+		revenue: t.revenue,
 	}))
 
 	return {
-		stats:          o.stats,
-		tabCounts:      o.tabCounts,
+		stats: o.stats,
+		tabCounts: o.tabCounts,
 		experiences,
-		total:          o.total,
-		page:           o.page,
+		total: o.total,
+		page: o.page,
 		performance30d: o.sidebar.performance30d,
 		topPerforming,
 	}
@@ -589,7 +631,7 @@ export async function getCommunityExperiencesTab(
 
 // ─── Members Tab types ─────────────────────────────────────────────────────────
 
-export type CommunityMemberRole   = "Member" | "Moderator" | "Host" | "Manager" | "Owner"
+export type CommunityMemberRole = "Member" | "Moderator" | "Host" | "Manager" | "Owner"
 export type CommunityMemberStatus = "Active" | "Inactive" | "Banned"
 
 export type CommunityMemberItem = {
@@ -624,27 +666,27 @@ export type CommunityMembersTabStats = {
 
 export type CommunityMembersTabData = {
 	stats: CommunityMembersTabStats
-	topCities:  { city: string; count: number; pct: number; color: string }[]
-	segments:   { label: string; count: number; pct: number; color: string }[]
+	topCities: { city: string; count: number; pct: number; color: string }[]
+	segments: { label: string; count: number; pct: number; color: string }[]
 	members: CommunityMemberItem[]
 }
 
-const INSIGHTS_CITY_COLORS    = ["#9333ea", "#3b82f6", "#22c55e", "#f59e0b", "#9ca3af", "#f43f5e", "#06b6d4"]
+const INSIGHTS_CITY_COLORS = ["#9333ea", "#3b82f6", "#22c55e", "#f59e0b", "#9ca3af", "#f43f5e", "#06b6d4"]
 const INSIGHTS_SEGMENT_COLORS = ["#9333ea", "#3b82f6", "#22c55e", "#f59e0b", "#f43f5e", "#06b6d4"]
 
 // ─── Members Tab API ────────────────────────────────────────────────────────────
 
 type ApiMembersStats = {
 	totalMembers: number
-	activeMembers:  { value: number; deltaPct: number }
-	newMembers:     { value: number; deltaPct: number }
+	activeMembers: { value: number; deltaPct: number }
+	newMembers: { value: number; deltaPct: number }
 	engagementRate: { value: number; deltaPct: number }
-	retentionRate:  { value: number; deltaPct: number }
+	retentionRate: { value: number; deltaPct: number }
 	tabCounts: { all: number; active: number; new: number; inactive: number; banned: number }
 }
 
 type ApiMembersInsights = {
-	topCities:      { city: string; count: number; pct: number }[]
+	topCities: { city: string; count: number; pct: number }[]
 	memberSegments: { label: string; count: number; pct: number }[]
 }
 
@@ -655,28 +697,28 @@ export async function getCommunityMembersTab(communityId: string): Promise<Commu
 	])
 	return {
 		stats: {
-			totalMembers:         statsData.totalMembers,
-			activeMembers:        statsData.activeMembers.value,
-			activeMembersGrowth:  statsData.activeMembers.deltaPct,
-			newMembers:           statsData.newMembers.value,
-			newMembersGrowth:     statsData.newMembers.deltaPct,
-			engagementRate:       statsData.engagementRate.value,
+			totalMembers: statsData.totalMembers,
+			activeMembers: statsData.activeMembers.value,
+			activeMembersGrowth: statsData.activeMembers.deltaPct,
+			newMembers: statsData.newMembers.value,
+			newMembersGrowth: statsData.newMembers.deltaPct,
+			engagementRate: statsData.engagementRate.value,
 			engagementRateGrowth: statsData.engagementRate.deltaPct,
-			retentionRate:        statsData.retentionRate.value,
-			retentionRateGrowth:  statsData.retentionRate.deltaPct,
-			inactiveMembers:      statsData.tabCounts.inactive,
-			bannedMembers:        statsData.tabCounts.banned,
+			retentionRate: statsData.retentionRate.value,
+			retentionRateGrowth: statsData.retentionRate.deltaPct,
+			inactiveMembers: statsData.tabCounts.inactive,
+			bannedMembers: statsData.tabCounts.banned,
 		},
 		topCities: insightsData.topCities.map((c, i) => ({
-			city:  c.city,
+			city: c.city,
 			count: c.count,
-			pct:   c.pct,
+			pct: c.pct,
 			color: INSIGHTS_CITY_COLORS[i % INSIGHTS_CITY_COLORS.length],
 		})),
 		segments: insightsData.memberSegments.map((s, i) => ({
 			label: s.label,
 			count: s.count,
-			pct:   s.pct,
+			pct: s.pct,
 			color: INSIGHTS_SEGMENT_COLORS[i % INSIGHTS_SEGMENT_COLORS.length],
 		})),
 		members: [],
@@ -686,40 +728,40 @@ export async function getCommunityMembersTab(communityId: string): Promise<Commu
 // ─── Members List API ───────────────────────────────────────────────────────
 
 type ApiMemberItem = {
-	userId:              string
-	name:                string
-	email:               string
-	avatarUrl:           string | null
-	role:                string
-	status:              string
-	joinedAt:            string
-	lastActiveAt:        string
-	engagementPct:       number
-	engagementLevel:     string
-	activityScore:       number
-	messageCount:        number
+	userId: string
+	name: string
+	email: string
+	avatarUrl: string | null
+	role: string
+	status: string
+	joinedAt: string
+	lastActiveAt: string
+	engagementPct: number
+	engagementLevel: string
+	activityScore: number
+	messageCount: number
 	eventsAttendedCount: number
-	bannedAt:            string | null
+	bannedAt: string | null
 }
 
 type ApiMemberDetail = ApiMemberItem & {
-	bannedBy:    string | null
+	bannedBy: string | null
 	memberSince: string
 }
 
 type ApiMembersListResponse = {
-	items:      ApiMemberItem[]
-	total:      number
-	page:       number
-	limit:      number
+	items: ApiMemberItem[]
+	total: number
+	page: number
+	limit: number
 	totalPages: number
 }
 
 export type CommunityMembersListData = {
-	items:      CommunityMemberItem[]
-	total:      number
-	page:       number
-	limit:      number
+	items: CommunityMemberItem[]
+	total: number
+	page: number
+	limit: number
 	totalPages: number
 }
 
@@ -740,37 +782,48 @@ function formatMemberJoinDate(iso: string): { date: string; time: string } {
 }
 
 function formatMemberLastActive(iso: string): { label: string; time: string } {
-	const d     = new Date(iso)
-	const days  = Math.floor((Date.now() - d.getTime()) / 86_400_000)
+	const d = new Date(iso)
+	const days = Math.floor((Date.now() - d.getTime()) / 86_400_000)
 	const label = days === 0 ? "Today" : days === 1 ? "Yesterday" : `${days} days ago`
-	return { label, time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }) }
+	return {
+		label,
+		time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
+	}
 }
 
 function toMemberRole(apiRole: string): CommunityMemberRole {
 	const map: Record<string, CommunityMemberRole> = {
-		OWNER: "Owner", MANAGER: "Manager", HOST: "Host", MODERATOR: "Moderator", MEMBER: "Member",
+		OWNER: "Owner",
+		MANAGER: "Manager",
+		HOST: "Host",
+		MODERATOR: "Moderator",
+		MEMBER: "Member",
 	}
 	return map[apiRole] ?? "Member"
 }
 
 function toMemberStatus(apiStatus: string): { status: CommunityMemberStatus; isNew: boolean } {
 	if (apiStatus === "INACTIVE") return { status: "Inactive", isNew: false }
-	if (apiStatus === "BANNED")   return { status: "Banned",   isNew: false }
-	if (apiStatus === "NEW")      return { status: "Active",   isNew: true  }
+	if (apiStatus === "BANNED") return { status: "Banned", isNew: false }
+	if (apiStatus === "NEW") return { status: "Active", isNew: true }
 	return { status: "Active", isNew: false }
 }
 
 export async function getCommunityMembers(
 	communityId: string,
 	params: {
-		page:    number
-		limit:   number
+		page: number
+		limit: number
 		status?: string
-		sort:    string
+		sort: string
 		search?: string
 	},
 ): Promise<CommunityMembersListData> {
-	const q = new URLSearchParams({ page: String(params.page), limit: String(params.limit), sort: params.sort })
+	const q = new URLSearchParams({
+		page: String(params.page),
+		limit: String(params.limit),
+		sort: params.sort,
+	})
 	if (params.status) q.set("status", params.status)
 	if (params.search) q.set("search", params.search)
 
@@ -780,88 +833,96 @@ export async function getCommunityMembers(
 
 	return {
 		items: data.items.map(item => {
-			const { date, time }                       = formatMemberJoinDate(item.joinedAt)
+			const { date, time } = formatMemberJoinDate(item.joinedAt)
 			const { label: lastActive, time: lastActiveTime } = formatMemberLastActive(item.lastActiveAt)
-			const { status, isNew }                    = toMemberStatus(item.status)
+			const { status, isNew } = toMemberStatus(item.status)
 			return {
-				id:             item.userId,
-				name:           item.name,
-				handle:         item.email,
-				avatarColor:    memberAvatarColor(item.name),
-				avatarInitial:  item.name[0]?.toUpperCase() ?? "?",
-				joinDate:       date,
-				joinTime:       time,
+				id: item.userId,
+				name: item.name,
+				handle: item.email,
+				avatarColor: memberAvatarColor(item.name),
+				avatarInitial: item.name[0]?.toUpperCase() ?? "?",
+				joinDate: date,
+				joinTime: time,
 				lastActive,
 				lastActiveTime,
-				engagementPct:  item.engagementPct,
-				role:           toMemberRole(item.role),
+				engagementPct: item.engagementPct,
+				role: toMemberRole(item.role),
 				status,
 				isNew,
 			}
 		}),
-		total:      data.total,
-		page:       data.page,
-		limit:      data.limit,
+		total: data.total,
+		page: data.page,
+		limit: data.limit,
 		totalPages: data.totalPages,
 	}
 }
 
 export type CommunityMemberDetail = {
-	id:                  string
-	name:                string
-	email:               string
-	avatarUrl:           string | null
-	avatarColor:         string
-	avatarInitial:       string
-	role:                CommunityMemberRole
-	status:              CommunityMemberStatus
-	isNew:               boolean
-	joinDate:            string
-	joinTime:            string
-	memberSince:         string
-	lastActive:          string
-	lastActiveTime:      string
-	engagementPct:       number
-	engagementLevel:     string
-	activityScore:       number
-	messageCount:        number
+	id: string
+	name: string
+	email: string
+	avatarUrl: string | null
+	avatarColor: string
+	avatarInitial: string
+	role: CommunityMemberRole
+	status: CommunityMemberStatus
+	isNew: boolean
+	joinDate: string
+	joinTime: string
+	memberSince: string
+	lastActive: string
+	lastActiveTime: string
+	engagementPct: number
+	engagementLevel: string
+	activityScore: number
+	messageCount: number
 	eventsAttendedCount: number
-	bannedAt:            string | null
-	bannedBy:            string | null
+	bannedAt: string | null
+	bannedBy: string | null
 }
 
 export async function getCommunityMember(
 	communityId: string,
-	userId:      string,
+	userId: string,
 ): Promise<CommunityMemberDetail> {
 	const { data } = await apiClient.get<ApiMemberDetail>(
 		`/admin/communities/${communityId}/members/${userId}`,
 	)
-	const { date, time }                            = formatMemberJoinDate(data.joinedAt)
+	const { date, time } = formatMemberJoinDate(data.joinedAt)
 	const { label: lastActive, time: lastActiveTime } = formatMemberLastActive(data.lastActiveAt)
-	const { status, isNew }                          = toMemberStatus(data.status)
+	const { status, isNew } = toMemberStatus(data.status)
 	return {
-		id:                  data.userId,
-		name:                data.name,
-		email:               data.email,
-		avatarUrl:           data.avatarUrl,
-		avatarColor:         memberAvatarColor(data.name),
-		avatarInitial:       data.name[0]?.toUpperCase() ?? "?",
-		role:                toMemberRole(data.role),
+		id: data.userId,
+		name: data.name,
+		email: data.email,
+		avatarUrl: data.avatarUrl,
+		avatarColor: memberAvatarColor(data.name),
+		avatarInitial: data.name[0]?.toUpperCase() ?? "?",
+		role: toMemberRole(data.role),
 		status,
 		isNew,
-		joinDate:            date,
-		joinTime:            time,
-		memberSince:         new Date(data.memberSince).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" }),
+		joinDate: date,
+		joinTime: time,
+		memberSince: new Date(data.memberSince).toLocaleDateString("en-IN", {
+			month: "short",
+			day: "numeric",
+			year: "numeric",
+		}),
 		lastActive,
 		lastActiveTime,
-		engagementPct:       data.engagementPct,
-		engagementLevel:     data.engagementLevel,
-		activityScore:       data.activityScore,
-		messageCount:        data.messageCount,
+		engagementPct: data.engagementPct,
+		engagementLevel: data.engagementLevel,
+		activityScore: data.activityScore,
+		messageCount: data.messageCount,
 		eventsAttendedCount: data.eventsAttendedCount,
-		bannedAt:            data.bannedAt
-			? new Date(data.bannedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })
+		bannedAt: data.bannedAt
+			? new Date(data.bannedAt).toLocaleDateString("en-IN", {
+					month: "short",
+					day: "numeric",
+					year: "numeric",
+				})
 			: null,
 		bannedBy: data.bannedBy,
 	}
@@ -880,16 +941,16 @@ export async function kickCommunityMember(communityId: string, userId: string): 
 }
 
 export type InviteMembersResult = {
-	token:     string
+	token: string
 	inviteUrl: string
 	expiresAt: string
-	maxUses:   number
+	maxUses: number
 }
 
 export async function inviteCommunityMembers(
-	communityId:  string,
+	communityId: string,
 	expiresInDays: number,
-	maxUses:       number,
+	maxUses: number,
 ): Promise<InviteMembersResult> {
 	const { data } = await apiClient.post<InviteMembersResult>(
 		`/admin/communities/${communityId}/members/invite`,
@@ -900,15 +961,12 @@ export async function inviteCommunityMembers(
 
 export type ImportMembersResult = {
 	imported: number
-	skipped:  number
+	skipped: number
 	notFound: number
-	errors:   string[]
+	errors: string[]
 }
 
-export async function importCommunityMembers(
-	communityId: string,
-	file: File,
-): Promise<ImportMembersResult> {
+export async function importCommunityMembers(communityId: string, file: File): Promise<ImportMembersResult> {
 	const formData = new FormData()
 	formData.append("file", file)
 	const { data } = await apiClient.post<ImportMembersResult>(
@@ -920,10 +978,9 @@ export async function importCommunityMembers(
 }
 
 export async function exportCommunityMembers(communityId: string): Promise<void> {
-	const { data } = await apiClient.get<Blob>(
-		`/admin/communities/${communityId}/members/export`,
-		{ responseType: "blob" },
-	)
+	const { data } = await apiClient.get<Blob>(`/admin/communities/${communityId}/members/export`, {
+		responseType: "blob",
+	})
 	const url = URL.createObjectURL(new Blob([data], { type: "text/csv" }))
 	const a = document.createElement("a")
 	a.href = url
@@ -936,81 +993,80 @@ export async function exportCommunityMembers(communityId: string): Promise<void>
 
 // ─── Feed Tab ─────────────────────────────────────────────────────────────────
 
-export type CommunityPostType   = "Photo" | "Text" | "Poll"
+export type CommunityPostType = "Photo" | "Text" | "Poll"
 export type CommunityPostStatus = "Queue" | "Published" | "Rejected" | "Pinned" | "Reported"
 
 export type CommunityFeedPost = {
-	id:                  string
-	authorName:          string
-	authorAvatarUrl:     string | null
-	authorAvatarColor:   string
+	id: string
+	authorName: string
+	authorAvatarUrl: string | null
+	authorAvatarColor: string
 	authorAvatarInitial: string
-	authorBadge:         null
-	timeAgo:             string
-	postType:            CommunityPostType
-	content:             string
-	hashtags:            string[]
-	mediaThumbnail:      string | null
-	comments:            number
-	reactions:           number
-	shares:              number
-	views:               number
-	status:              CommunityPostStatus
-	pendingReportCount:  number
+	authorBadge: null
+	timeAgo: string
+	postType: CommunityPostType
+	content: string
+	hashtags: string[]
+	mediaThumbnail: string | null
+	comments: number
+	reactions: number
+	shares: number
+	views: number
+	status: CommunityPostStatus
+	pendingReportCount: number
 }
 
 export type FeedPostsParams = {
-	status?:   string
+	status?: string
 	postType?: string
-	search?:   string
-	sort?:     string
-	from?:     string
-	to?:       string
-	page?:     number
-	limit?:    number
+	search?: string
+	sort?: string
+	from?: string
+	to?: string
+	page?: number
+	limit?: number
 }
 
 export type CommunityFeedPostsData = {
-	posts:      CommunityFeedPost[]
-	total:      number
-	page:       number
+	posts: CommunityFeedPost[]
+	total: number
+	page: number
 	totalPages: number
 }
 
 export type CommunityFeedOverviewItem = {
-	label:       string
-	value:       string
-	growth:      number
-	direction:   "up" | "down"
-	color:       string
-	sparkline:   number[]
+	label: string
+	value: string
+	growth: number
+	direction: "up" | "down"
+	color: string
+	sparkline: number[]
 }
 
-
 export type CommunityRecentReport = {
-	id:                    string
-	postId:                string
-	postSnippet:           string | null
-	body:                  string | null
-	type:                  string
-	reporterName:          string
-	reporterAvatarUrl:     string | null
-	reporterAvatarColor:   string
+	id: string
+	postId: string
+	postSnippet: string | null
+	body: string | null
+	type: string
+	reporterName: string
+	reporterAvatarUrl: string | null
+	reporterAvatarColor: string
 	reporterAvatarInitial: string
-	severityColor:         "red" | "yellow" | "green"
-	timeAgo:               string
+	severityColor: "red" | "yellow" | "green"
+	timeAgo: string
 }
 
 export type CommunityFeedStats = {
-	postQueue:  number
-	published:  number
-	reported:   number
-	pinned:     number
+	postQueue: number
+	published: number
+	reported: number
+	pinned: number
 }
 
 export type CommunityFeedTabData = {
-	stats:         CommunityFeedStats
-	overview:      CommunityFeedOverviewItem[]
+	stats: CommunityFeedStats
+	overview: CommunityFeedOverviewItem[]
 	recentReports: CommunityRecentReport[]
 }
 
@@ -1018,19 +1074,21 @@ export type CommunityFeedTabData = {
 
 type ApiFeedOverviewMetric = { value: number; deltaPct: number; sparkline: number[] }
 type ApiFeedOverviewData = {
-	totalPosts:       ApiFeedOverviewMetric
-	engagement:       ApiFeedOverviewMetric
-	reportsReceived:  ApiFeedOverviewMetric
-	postsApproved:    ApiFeedOverviewMetric
+	totalPosts: ApiFeedOverviewMetric
+	engagement: ApiFeedOverviewMetric
+	reportsReceived: ApiFeedOverviewMetric
+	postsApproved: ApiFeedOverviewMetric
 }
 
 const FEED_OVERVIEW_CONFIG: {
-	key: keyof ApiFeedOverviewData; label: string; color: string
+	key: keyof ApiFeedOverviewData
+	label: string
+	color: string
 }[] = [
-	{ key: "totalPosts",      label: "Total Posts",      color: "#a855f7" },
-	{ key: "engagement",      label: "Engagement",       color: "#22c55e" },
+	{ key: "totalPosts", label: "Total Posts", color: "#a855f7" },
+	{ key: "engagement", label: "Engagement", color: "#22c55e" },
 	{ key: "reportsReceived", label: "Reports Received", color: "#ef4444" },
-	{ key: "postsApproved",   label: "Posts Approved",   color: "#3b82f6" },
+	{ key: "postsApproved", label: "Posts Approved", color: "#3b82f6" },
 ]
 
 function formatOverviewValue(v: number): string {
@@ -1038,22 +1096,21 @@ function formatOverviewValue(v: number): string {
 	return String(v)
 }
 
-
 // ─── Recent Reports API ───────────────────────────────────────────────────────
 
 type ApiRecentReport = {
-	reportId:      string
-	postId:        string
-	postSnippet:   string | null
-	reporter:      { name: string; avatarUrl: string | null }
-	reason:        string
-	body:          string | null
-	label:         string
+	reportId: string
+	postId: string
+	postSnippet: string | null
+	reporter: { name: string; avatarUrl: string | null }
+	reason: string
+	body: string | null
+	label: string
 	severityColor: string
-	reportedAt:    string
+	reportedAt: string
 }
 
-const REPORT_AVATAR_COLORS = ["#3b82f6","#ec4899","#f59e0b","#6366f1","#22c55e","#f43f5e","#a855f7"]
+const REPORT_AVATAR_COLORS = ["#3b82f6", "#ec4899", "#f59e0b", "#6366f1", "#22c55e", "#f43f5e", "#a855f7"]
 function reporterAvatarColor(name: string): string {
 	let h = 0
 	for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0x7fffffff
@@ -1089,7 +1146,7 @@ type ApiFeedPostsResponse = {
 	totalPages: number
 }
 
-const FEED_POST_AUTHOR_COLORS = ["#3b82f6","#ec4899","#f59e0b","#6366f1","#22c55e","#f43f5e","#a855f7"]
+const FEED_POST_AUTHOR_COLORS = ["#3b82f6", "#ec4899", "#f59e0b", "#6366f1", "#22c55e", "#f43f5e", "#a855f7"]
 function feedAuthorColor(id: string): string {
 	let h = 0
 	for (const c of id) h = (h * 31 + c.charCodeAt(0)) & 0x7fffffff
@@ -1099,13 +1156,17 @@ function feedAuthorColor(id: string): string {
 function mapFeedPostStatus(apiStatus: string, isPinned: boolean): CommunityPostStatus {
 	if (isPinned && apiStatus === "PUBLISHED") return "Pinned"
 	const m: Record<string, CommunityPostStatus> = {
-		PENDING: "Queue", PUBLISHED: "Published", REJECTED: "Rejected",
+		PENDING: "Queue",
+		PUBLISHED: "Published",
+		REJECTED: "Rejected",
 	}
 	return m[apiStatus] ?? "Published"
 }
 
 const FEED_POST_TYPE_MAP: Record<string, CommunityPostType> = {
-	TEXT: "Text", PHOTO: "Photo", POLL: "Poll",
+	TEXT: "Text",
+	PHOTO: "Photo",
+	POLL: "Poll",
 }
 
 export async function getCommunityFeedPosts(
@@ -1113,39 +1174,39 @@ export async function getCommunityFeedPosts(
 	params: FeedPostsParams = {},
 ): Promise<CommunityFeedPostsData> {
 	const qs = new URLSearchParams()
-	if (params.status)   qs.set("status",   params.status)
-	if (params.postType) qs.set("postType",  params.postType)
-	if (params.search)   qs.set("search",    params.search)
-	if (params.sort)     qs.set("sort",      params.sort)
-	if (params.from)     qs.set("from",      params.from)
-	if (params.to)       qs.set("to",        params.to)
-	if (params.page)     qs.set("page",      String(params.page))
-	if (params.limit)    qs.set("limit",     String(params.limit))
+	if (params.status) qs.set("status", params.status)
+	if (params.postType) qs.set("postType", params.postType)
+	if (params.search) qs.set("search", params.search)
+	if (params.sort) qs.set("sort", params.sort)
+	if (params.from) qs.set("from", params.from)
+	if (params.to) qs.set("to", params.to)
+	if (params.page) qs.set("page", String(params.page))
+	if (params.limit) qs.set("limit", String(params.limit))
 	const { data: o } = await apiClient.get<ApiFeedPostsResponse>(
 		`/admin/communities/${communityId}/feed/posts?${qs}`,
 	)
 	return {
 		posts: o.items.map(item => ({
-			id:                  item.id,
-			authorName:          item.author.name,
-			authorAvatarUrl:     item.author.avatarUrl,
-			authorAvatarColor:   feedAuthorColor(item.author.id),
+			id: item.id,
+			authorName: item.author.name,
+			authorAvatarUrl: item.author.avatarUrl,
+			authorAvatarColor: feedAuthorColor(item.author.id),
 			authorAvatarInitial: item.author.name[0]?.toUpperCase() ?? "?",
-			authorBadge:         null,
-			timeAgo:             toTimeAgo(item.createdAt),
-			postType:            FEED_POST_TYPE_MAP[item.postType] ?? "Text",
-			content:             item.content,
-			hashtags:            item.content.match(/#\w+/g) ?? [],
-			mediaThumbnail:      item.mediaUrls[0] ?? null,
-			comments:            item.counts.comments,
-			reactions:           item.counts.reactions,
-			shares:              item.counts.shares,
-			views:               item.counts.views,
-			status:              mapFeedPostStatus(item.status, item.isPinned),
-			pendingReportCount:  item.pendingReportCount,
+			authorBadge: null,
+			timeAgo: toTimeAgo(item.createdAt),
+			postType: FEED_POST_TYPE_MAP[item.postType] ?? "Text",
+			content: item.content,
+			hashtags: item.content.match(/#\w+/g) ?? [],
+			mediaThumbnail: item.mediaUrls[0] ?? null,
+			comments: item.counts.comments,
+			reactions: item.counts.reactions,
+			shares: item.counts.shares,
+			views: item.counts.views,
+			status: mapFeedPostStatus(item.status, item.isPinned),
+			pendingReportCount: item.pendingReportCount,
 		})),
-		total:      o.total,
-		page:       o.page,
+		total: o.total,
+		page: o.page,
 		totalPages: o.totalPages,
 	}
 }
@@ -1202,35 +1263,35 @@ export async function createFeedPost(
 export type AnnouncementStatus = "Published" | "Scheduled" | "Draft"
 
 export type AnnouncementItem = {
-	id:              string
-	title:           string
-	status:          AnnouncementStatus
-	content:         string
-	imageUrl:        string | null
-	imageGradient:   string
-	isPinned:        boolean
+	id: string
+	title: string
+	status: AnnouncementStatus
+	content: string
+	imageUrl: string | null
+	imageGradient: string
+	isPinned: boolean
 	// Published
-	authorName:      string
-	authorInitial:   string
+	authorName: string
+	authorInitial: string
 	authorAvatarColor: string
-	timeAgo:         string | null
-	views:           number | null
-	likes:           number | null
-	bookmarks:       number | null
+	timeAgo: string | null
+	views: number | null
+	likes: number | null
+	bookmarks: number | null
 	// Scheduled
-	scheduledFor:    string | null
+	scheduledFor: string | null
 }
 
 export type AnnouncementsTabStats = {
-	published:        number
-	scheduled:        number
-	drafts:           number
-	totalReach:       string
+	published: number
+	scheduled: number
+	drafts: number
+	totalReach: string
 	totalReachGrowth: number
 }
 
 export type AnnouncementsTabData = {
-	stats:         AnnouncementsTabStats
+	stats: AnnouncementsTabStats
 	announcements: AnnouncementItem[]
 }
 
@@ -1263,22 +1324,22 @@ type ApiAnnouncementItem = {
 const ANN_STATUS_MAP: Record<ApiAnnouncementItem["status"], AnnouncementStatus> = {
 	PUBLISHED: "Published",
 	SCHEDULED: "Scheduled",
-	DRAFT:     "Draft",
+	DRAFT: "Draft",
 }
 
 const ANN_CATEGORY_GRADIENT: Record<string, string> = {
-	COMMUNITY_UPDATE:    "linear-gradient(135deg,#1e3a5f,#1d4ed8,#0ea5e9)",
-	EVENT_REMINDER:      "linear-gradient(135deg,#92400e,#b45309,#f59e0b)",
-	EVENT_DROP:          "linear-gradient(135deg,#064e3b,#065f46,#10b981)",
-	EVENT_ANNOUNCEMENT:  "linear-gradient(135deg,#4c1d95,#7c3aed,#db2777)",
-	ALERT:               "linear-gradient(135deg,#7f1d1d,#991b1b,#ef4444)",
-	PROMOTION:           "linear-gradient(135deg,#1e1b4b,#312e81,#ec4899)",
-	NEWS:                "linear-gradient(135deg,#1e293b,#334155,#475569)",
-	MILESTONE:           "linear-gradient(135deg,#3b0764,#6b21a8,#a855f7)",
+	COMMUNITY_UPDATE: "linear-gradient(135deg,#1e3a5f,#1d4ed8,#0ea5e9)",
+	EVENT_REMINDER: "linear-gradient(135deg,#92400e,#b45309,#f59e0b)",
+	EVENT_DROP: "linear-gradient(135deg,#064e3b,#065f46,#10b981)",
+	EVENT_ANNOUNCEMENT: "linear-gradient(135deg,#4c1d95,#7c3aed,#db2777)",
+	ALERT: "linear-gradient(135deg,#7f1d1d,#991b1b,#ef4444)",
+	PROMOTION: "linear-gradient(135deg,#1e1b4b,#312e81,#ec4899)",
+	NEWS: "linear-gradient(135deg,#1e293b,#334155,#475569)",
+	MILESTONE: "linear-gradient(135deg,#3b0764,#6b21a8,#a855f7)",
 }
 const ANN_DEFAULT_GRADIENT = "linear-gradient(135deg,#1c1917,#292524,#44403c)"
 
-const ANN_AVATAR_COLORS = ["#6366f1","#f59e0b","#ec4899","#22c55e","#3b82f6","#a855f7","#f97316"]
+const ANN_AVATAR_COLORS = ["#6366f1", "#f59e0b", "#ec4899", "#22c55e", "#3b82f6", "#a855f7", "#f97316"]
 
 function formatScheduledAt(iso: string): string {
 	const d = new Date(iso)
@@ -1288,7 +1349,6 @@ function formatScheduledAt(iso: string): string {
 		d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
 	)
 }
-
 
 export async function getCommunityAnnouncementsTab(communityId: string): Promise<AnnouncementsTabData> {
 	const [{ data: listData }, { data: statsData }] = await Promise.all([
@@ -1310,37 +1370,37 @@ export async function getCommunityAnnouncementsTab(communityId: string): Promise
 	const items = listData.items
 
 	const announcements: AnnouncementItem[] = items.map((item, i) => {
-		const status      = ANN_STATUS_MAP[item.status] ?? "Draft"
+		const status = ANN_STATUS_MAP[item.status] ?? "Draft"
 		const isPublished = status === "Published"
 		const isScheduled = status === "Scheduled"
 		return {
-			id:               item.id,
-			title:            item.title,
+			id: item.id,
+			title: item.title,
 			status,
-			content:          item.body,
-			imageUrl:         item.imageUrl ?? null,
-			imageGradient:    ANN_CATEGORY_GRADIENT[item.category] ?? ANN_DEFAULT_GRADIENT,
-			isPinned:         item.isPinned,
-			authorName:       item.author.name,
-			authorInitial:    item.author.name?.[0]?.toUpperCase() ?? "?",
+			content: item.body,
+			imageUrl: item.imageUrl ?? null,
+			imageGradient: ANN_CATEGORY_GRADIENT[item.category] ?? ANN_DEFAULT_GRADIENT,
+			isPinned: item.isPinned,
+			authorName: item.author.name,
+			authorInitial: item.author.name?.[0]?.toUpperCase() ?? "?",
 			authorAvatarColor: ANN_AVATAR_COLORS[i % ANN_AVATAR_COLORS.length],
-			timeAgo:          isPublished && item.publishedAt ? toTimeAgo(item.publishedAt) : null,
-			views:            isPublished ? item.reachCount    : null,
-			likes:            isPublished ? item.likeCount     : null,
-			bookmarks:        isPublished ? item.bookmarkCount : null,
-			scheduledFor:     isScheduled && item.scheduledAt ? formatScheduledAt(item.scheduledAt) : null,
+			timeAgo: isPublished && item.publishedAt ? toTimeAgo(item.publishedAt) : null,
+			views: isPublished ? item.reachCount : null,
+			likes: isPublished ? item.likeCount : null,
+			bookmarks: isPublished ? item.bookmarkCount : null,
+			scheduledFor: isScheduled && item.scheduledAt ? formatScheduledAt(item.scheduledAt) : null,
 		}
 	})
 
-	const reachVal   = statsData.totalReach.value
+	const reachVal = statsData.totalReach.value
 	const totalReach = reachVal >= 1000 ? `${(reachVal / 1000).toFixed(1)}K` : String(reachVal)
 	const reachGrowth = statsData.totalReach.changePercent ?? 0
 
 	return {
 		stats: {
-			published:        statsData.published,
-			scheduled:        statsData.scheduled,
-			drafts:           statsData.drafts,
+			published: statsData.published,
+			scheduled: statsData.scheduled,
+			drafts: statsData.drafts,
 			totalReach,
 			totalReachGrowth: reachGrowth,
 		},
@@ -1357,29 +1417,29 @@ export async function getCommunityFeedTab(communityId: string): Promise<Communit
 	const overview: CommunityFeedOverviewItem[] = FEED_OVERVIEW_CONFIG.map(cfg => {
 		const m = overviewData[cfg.key]
 		return {
-			label:     cfg.label,
-			value:     formatOverviewValue(m.value),
-			growth:    Math.abs(m.deltaPct),
+			label: cfg.label,
+			value: formatOverviewValue(m.value),
+			growth: Math.abs(m.deltaPct),
 			direction: m.deltaPct >= 0 ? "up" : "down",
-			color:     cfg.color,
+			color: cfg.color,
 			sparkline: m.sparkline,
 		}
 	})
 	const recentReports: CommunityRecentReport[] = reportsData.map(r => ({
-		id:                    r.reportId,
-		postId:                r.postId,
-		postSnippet:           r.postSnippet,
-		body:                  r.body,
-		type:                  r.label,
-		reporterName:          r.reporter.name,
-		reporterAvatarUrl:     r.reporter.avatarUrl,
-		reporterAvatarColor:   reporterAvatarColor(r.reporter.name),
+		id: r.reportId,
+		postId: r.postId,
+		postSnippet: r.postSnippet,
+		body: r.body,
+		type: r.label,
+		reporterName: r.reporter.name,
+		reporterAvatarUrl: r.reporter.avatarUrl,
+		reporterAvatarColor: reporterAvatarColor(r.reporter.name),
 		reporterAvatarInitial: r.reporter.name[0]?.toUpperCase() ?? "?",
-		severityColor:         toSeverityColor(r.severityColor),
-		timeAgo:               toTimeAgo(r.reportedAt),
+		severityColor: toSeverityColor(r.severityColor),
+		timeAgo: toTimeAgo(r.reportedAt),
 	}))
 	return {
-		stats:         statsData,
+		stats: statsData,
 		overview,
 		recentReports,
 	}
@@ -1404,7 +1464,6 @@ export type ChatTabData = {
 	totalChannels: number
 	channels: ChatChannel[]
 }
-
 
 // ─── Channel management ───────────────────────────────────────────────────────
 
@@ -1434,17 +1493,11 @@ export async function updateCommunityChannel(
 	await apiClient.patch(`/communities/${communityId}/channels/${channelId}`, body)
 }
 
-export async function deleteCommunityChannel(
-	communityId: string,
-	channelId: string,
-): Promise<void> {
+export async function deleteCommunityChannel(communityId: string, channelId: string): Promise<void> {
 	await apiClient.delete(`/communities/${communityId}/channels/${channelId}`)
 }
 
-export async function reorderCommunityChannels(
-	communityId: string,
-	orderedIds: string[],
-): Promise<void> {
+export async function reorderCommunityChannels(communityId: string, orderedIds: string[]): Promise<void> {
 	await apiClient.patch(`/communities/${communityId}/channels/order`, { orderedIds })
 }
 
@@ -1460,22 +1513,31 @@ type ApiChannelEntry = {
 	quickReplies: string[]
 }
 
-const CHANNEL_ICON_COLORS = ["#6366f1", "#f59e0b", "#ec4899", "#ef4444", "#a855f7", "#22c55e", "#3b82f6", "#f97316"]
+const CHANNEL_ICON_COLORS = [
+	"#6366f1",
+	"#f59e0b",
+	"#ec4899",
+	"#ef4444",
+	"#a855f7",
+	"#22c55e",
+	"#3b82f6",
+	"#f97316",
+]
 
 export async function getCommunityChat(communityId: string): Promise<ChatTabData> {
 	const { data } = await apiClient.get<ApiChannelEntry[]>(`/communities/${communityId}/channels`)
 
 	const channels: ChatChannel[] = data.map((ch, i) => ({
-		id:           ch.id,
-		name:         ch.name,
-		description:  ch.description ?? "",
-		slug:         ch.slug,
-		isDefault:    ch.isDefault,
-		position:     ch.position,
+		id: ch.id,
+		name: ch.name,
+		description: ch.description ?? "",
+		slug: ch.slug,
+		isDefault: ch.isDefault,
+		position: ch.position,
 		welcomeTitle: ch.welcomeTitle ?? "",
-		welcomeBody:  ch.welcomeBody ?? "",
+		welcomeBody: ch.welcomeBody ?? "",
 		quickReplies: ch.quickReplies ?? [],
-		iconColor:    CHANNEL_ICON_COLORS[i % CHANNEL_ICON_COLORS.length],
+		iconColor: CHANNEL_ICON_COLORS[i % CHANNEL_ICON_COLORS.length],
 	}))
 
 	return {
@@ -1487,24 +1549,39 @@ export async function getCommunityChat(communityId: string): Promise<ChatTabData
 // ─── Analytics Tab ────────────────────────────────────────────────────────────
 
 export type AnalyticsTabStats = {
-	members: number; membersGrowth: number
-	activeMembers: number; activeMembersGrowth: number
-	experiencesBooked: number; experiencesBookedGrowth: number
-	communityRevenue: string; communityRevenueGrowth: number
-	retention: number; retentionGrowth: number
+	members: number
+	membersGrowth: number
+	activeMembers: number
+	activeMembersGrowth: number
+	experiencesBooked: number
+	experiencesBookedGrowth: number
+	communityRevenue: string
+	communityRevenueGrowth: number
+	retention: number
+	retentionGrowth: number
 }
 
 export type GrowthDataPoint = {
-	label: string; membersJoined: number; membersLeft: number; netGrowth: number
+	label: string
+	membersJoined: number
+	membersLeft: number
+	netGrowth: number
 }
 
 export type EngagementBreakdownItem = {
-	label: string; value: number; growth: number; barColor: string
+	label: string
+	value: number
+	growth: number
+	barColor: string
 }
 
 export type AnalyticsTopExperience = {
-	id: string; name: string; imageGradient: string
-	bookings: number; revenue: string; attendancePct: number
+	id: string
+	name: string
+	imageGradient: string
+	bookings: number
+	revenue: string
+	attendancePct: number
 }
 
 export type HealthFactor = { label: string; score: number; max: number }
@@ -1516,71 +1593,116 @@ export type AnalyticsTopCity = { city: string; pct: number; color: string }
 export type AgeGroup = { range: string; pct: number }
 
 export type TopContributor = {
-	rank: number; name: string; handle: string
-	avatarUrl: string | null; avatarColor: string; avatarInitial: string; points: number
+	rank: number
+	name: string
+	handle: string
+	avatarUrl: string | null
+	avatarColor: string
+	avatarInitial: string
+	points: number
 }
 
 export type AnalyticsTopHost = {
-	id: string; name: string; handle: string
-	avatarUrl: string | null; avatarColor: string; avatarInitial: string; eventCount: number
+	id: string
+	name: string
+	handle: string
+	avatarUrl: string | null
+	avatarColor: string
+	avatarInitial: string
+	eventCount: number
 }
 
 export type AnalyticsTabData = {
-	stats:               AnalyticsTabStats
-	growthData:          GrowthDataPoint[]
-	growthSummary:       { membersJoined: number; membersLeft: number; netGrowth: number; growthRate: number }
+	stats: AnalyticsTabStats
+	growthData: GrowthDataPoint[]
+	growthSummary: { membersJoined: number; membersLeft: number; netGrowth: number; growthRate: number }
 	engagementBreakdown: EngagementBreakdownItem[]
-	experiencesImpact:   { totalBookings: number; bookingsGrowth: number }
-	topExperiences:      AnalyticsTopExperience[]
-	communityHealth:     { score: number; maxScore: number; label: string; factors: HealthFactor[] }
-	interests:           AnalyticsInterestSegment[]
-	topCities:           AnalyticsTopCity[]
-	ageDistribution:     AgeGroup[]
-	topContributors:     TopContributor[]
-	topHosts:            AnalyticsTopHost[]
+	experiencesImpact: { totalBookings: number; bookingsGrowth: number }
+	topExperiences: AnalyticsTopExperience[]
+	communityHealth: { score: number; maxScore: number; label: string; factors: HealthFactor[] }
+	interests: AnalyticsInterestSegment[]
+	topCities: AnalyticsTopCity[]
+	ageDistribution: AgeGroup[]
+	topContributors: TopContributor[]
+	topHosts: AnalyticsTopHost[]
 }
 
 // ─── Analytics API types ───────────────────────────────────────────────────────
 
-type ApiAnalyticsMetric   = { value: number; deltaPct: number }
-type ApiEngagementMetric  = { value: number; changePct: number }
+type ApiAnalyticsMetric = { value: number; deltaPct: number }
+type ApiEngagementMetric = { value: number; changePct: number }
 
 type ApiAnalyticsData = {
 	summary: {
-		members: ApiAnalyticsMetric; activeMembers: ApiAnalyticsMetric
-		experiencesBooked: ApiAnalyticsMetric; communityRevenue: ApiAnalyticsMetric
+		members: ApiAnalyticsMetric
+		activeMembers: ApiAnalyticsMetric
+		experiencesBooked: ApiAnalyticsMetric
+		communityRevenue: ApiAnalyticsMetric
 		retention: ApiAnalyticsMetric
 	}
 	growth: {
 		series: { date: string; joined: number; left: number; netGrowth: number }[]
-		totalJoined: number; totalLeft: number; netGrowth: number; growthRatePct: number
+		totalJoined: number
+		totalLeft: number
+		netGrowth: number
+		growthRatePct: number
 	}
 	engagement: {
-		posts: ApiEngagementMetric; comments: ApiEngagementMetric
-		reactions: ApiEngagementMetric; shares: ApiEngagementMetric
-		chatMessages: ApiEngagementMetric; announcementReach: ApiEngagementMetric
+		posts: ApiEngagementMetric
+		comments: ApiEngagementMetric
+		reactions: ApiEngagementMetric
+		shares: ApiEngagementMetric
+		chatMessages: ApiEngagementMetric
+		announcementReach: ApiEngagementMetric
 	}
 	experiencesImpact: {
 		totalBookings: { value: number; changePct: number }
-		topExperiences: { id: string; title: string; bookings: number; revenue: number; attendancePct: number }[]
+		topExperiences: {
+			id: string
+			title: string
+			bookings: number
+			revenue: number
+			attendancePct: number
+		}[]
 	}
 	healthScore: {
-		total: number; rating: string
-		factors: { memberGrowth: number; engagement: number; eventAttendance: number; reportRate: number; retention: number }
+		total: number
+		rating: string
+		factors: {
+			memberGrowth: number
+			engagement: number
+			eventAttendance: number
+			reportRate: number
+			retention: number
+		}
 	}
 	memberInsights: {
 		interests: { name: string; pct: number }[]
 		topCities: { city: string; pct: number }[]
 		ageDistribution: { range: string; label: string; pct: number }[]
 	}
-	topContributors: { userId: string; name: string; handle: string | null; avatarUrl: string | null; activityScore: number }[]
-	topHosts: { userId: string; name: string; handle: string | null; avatarUrl: string | null; eventCount: number }[]
+	topContributors: {
+		userId: string
+		name: string
+		handle: string | null
+		avatarUrl: string | null
+		activityScore: number
+	}[]
+	topHosts: {
+		userId: string
+		name: string
+		handle: string | null
+		avatarUrl: string | null
+		eventCount: number
+	}[]
 }
 
 // ─── Analytics transform helpers ───────────────────────────────────────────────
 
 const HEALTH_RATING_LABEL: Record<string, string> = {
-	EXCELLENT: "Excellent", GOOD: "Good", FAIR: "Fair",
+	EXCELLENT: "Excellent",
+	GOOD: "Good",
+	FAIR: "Fair",
 	NEEDS_ATTENTION: "Needs Attention",
 }
 
@@ -1592,24 +1714,24 @@ const EXP_GRADIENTS = [
 	"linear-gradient(135deg,#1e1b4b,#6366f1)",
 ]
 
-const INTEREST_COLORS  = ["#a855f7", "#3b82f6", "#22c55e", "#f59e0b", "#f43f5e", "#06b6d4"]
-const CITY_COLORS      = ["#a855f7", "#3b82f6", "#22c55e", "#f59e0b", "#9ca3af"]
-const CONTRIB_COLORS   = ["#f59e0b", "#9ca3af", "#cd7f32", "#6366f1", "#3b82f6"]
+const INTEREST_COLORS = ["#a855f7", "#3b82f6", "#22c55e", "#f59e0b", "#f43f5e", "#06b6d4"]
+const CITY_COLORS = ["#a855f7", "#3b82f6", "#22c55e", "#f59e0b", "#9ca3af"]
+const CONTRIB_COLORS = ["#f59e0b", "#9ca3af", "#cd7f32", "#6366f1", "#3b82f6"]
 
 const ENGAGEMENT_CONFIG: { key: keyof ApiAnalyticsData["engagement"]; label: string; color: string }[] = [
-	{ key: "posts",             label: "Posts",              color: "#a855f7" },
-	{ key: "comments",          label: "Comments",           color: "#3b82f6" },
-	{ key: "reactions",         label: "Reactions",          color: "#ef4444" },
-	{ key: "shares",            label: "Shares",             color: "#f59e0b" },
-	{ key: "chatMessages",      label: "Chat Messages",      color: "#22c55e" },
+	{ key: "posts", label: "Posts", color: "#a855f7" },
+	{ key: "comments", label: "Comments", color: "#3b82f6" },
+	{ key: "reactions", label: "Reactions", color: "#ef4444" },
+	{ key: "shares", label: "Shares", color: "#f59e0b" },
+	{ key: "chatMessages", label: "Chat Messages", color: "#22c55e" },
 	{ key: "announcementReach", label: "Announcement Reach", color: "#06b6d4" },
 ]
 
 function formatRevenue(paise: number): string {
 	const rs = paise / 100
 	if (rs >= 10_000_000) return `₹${(rs / 10_000_000).toFixed(1)}Cr`
-	if (rs >= 100_000)    return `₹${(rs / 100_000).toFixed(1)}L`
-	if (rs >= 1_000)      return `₹${(rs / 1_000).toFixed(0)}K`
+	if (rs >= 100_000) return `₹${(rs / 100_000).toFixed(1)}L`
+	if (rs >= 1_000) return `₹${(rs / 1_000).toFixed(0)}K`
 	return `₹${rs}`
 }
 
@@ -1618,96 +1740,94 @@ function formatGrowthDate(dateStr: string): string {
 }
 
 export async function getCommunityAnalytics(communityId: string): Promise<AnalyticsTabData> {
-	const { data: o } = await apiClient.get<ApiAnalyticsData>(
-		`/admin/communities/${communityId}/analytics`,
-	)
+	const { data: o } = await apiClient.get<ApiAnalyticsData>(`/admin/communities/${communityId}/analytics`)
 
 	return {
 		stats: {
-			members:                 o.summary.members.value,
-			membersGrowth:           o.summary.members.deltaPct,
-			activeMembers:           o.summary.activeMembers.value,
-			activeMembersGrowth:     o.summary.activeMembers.deltaPct,
-			experiencesBooked:       o.summary.experiencesBooked.value,
+			members: o.summary.members.value,
+			membersGrowth: o.summary.members.deltaPct,
+			activeMembers: o.summary.activeMembers.value,
+			activeMembersGrowth: o.summary.activeMembers.deltaPct,
+			experiencesBooked: o.summary.experiencesBooked.value,
 			experiencesBookedGrowth: o.summary.experiencesBooked.deltaPct,
-			communityRevenue:        formatRevenue(o.summary.communityRevenue.value),
-			communityRevenueGrowth:  o.summary.communityRevenue.deltaPct,
-			retention:               o.summary.retention.value,
-			retentionGrowth:         o.summary.retention.deltaPct,
+			communityRevenue: formatRevenue(o.summary.communityRevenue.value),
+			communityRevenueGrowth: o.summary.communityRevenue.deltaPct,
+			retention: o.summary.retention.value,
+			retentionGrowth: o.summary.retention.deltaPct,
 		},
 		growthData: o.growth.series.map(s => ({
-			label:         formatGrowthDate(s.date),
+			label: formatGrowthDate(s.date),
 			membersJoined: s.joined,
-			membersLeft:   s.left,
-			netGrowth:     s.netGrowth,
+			membersLeft: s.left,
+			netGrowth: s.netGrowth,
 		})),
 		growthSummary: {
 			membersJoined: o.growth.totalJoined,
-			membersLeft:   o.growth.totalLeft,
-			netGrowth:     o.growth.netGrowth,
-			growthRate:    o.growth.growthRatePct,
+			membersLeft: o.growth.totalLeft,
+			netGrowth: o.growth.netGrowth,
+			growthRate: o.growth.growthRatePct,
 		},
 		engagementBreakdown: ENGAGEMENT_CONFIG.map(cfg => ({
-			label:    cfg.label,
-			value:    o.engagement[cfg.key].value,
-			growth:   o.engagement[cfg.key].changePct,
+			label: cfg.label,
+			value: o.engagement[cfg.key].value,
+			growth: o.engagement[cfg.key].changePct,
 			barColor: cfg.color,
 		})),
 		experiencesImpact: {
-			totalBookings:  o.experiencesImpact.totalBookings.value,
+			totalBookings: o.experiencesImpact.totalBookings.value,
 			bookingsGrowth: o.experiencesImpact.totalBookings.changePct,
 		},
 		topExperiences: o.experiencesImpact.topExperiences.map((e, i) => ({
-			id:            e.id,
-			name:          e.title,
+			id: e.id,
+			name: e.title,
 			imageGradient: EXP_GRADIENTS[i % EXP_GRADIENTS.length],
-			bookings:      e.bookings,
-			revenue:       formatRevenue(e.revenue),
+			bookings: e.bookings,
+			revenue: formatRevenue(e.revenue),
 			attendancePct: e.attendancePct,
 		})),
 		communityHealth: {
-			score:    o.healthScore.total,
+			score: o.healthScore.total,
 			maxScore: 100,
-			label:    HEALTH_RATING_LABEL[o.healthScore.rating] ?? o.healthScore.rating,
+			label: HEALTH_RATING_LABEL[o.healthScore.rating] ?? o.healthScore.rating,
 			factors: [
-				{ label: "Member Growth",    score: o.healthScore.factors.memberGrowth,   max: 20 },
-				{ label: "Engagement",       score: o.healthScore.factors.engagement,      max: 20 },
+				{ label: "Member Growth", score: o.healthScore.factors.memberGrowth, max: 20 },
+				{ label: "Engagement", score: o.healthScore.factors.engagement, max: 20 },
 				{ label: "Event Attendance", score: o.healthScore.factors.eventAttendance, max: 20 },
-				{ label: "Report Rate",      score: o.healthScore.factors.reportRate,      max: 20 },
-				{ label: "Retention",        score: o.healthScore.factors.retention,       max: 20 },
+				{ label: "Report Rate", score: o.healthScore.factors.reportRate, max: 20 },
+				{ label: "Retention", score: o.healthScore.factors.retention, max: 20 },
 			],
 		},
 		interests: o.memberInsights.interests.map((s, i) => ({
 			label: s.name,
-			pct:   s.pct,
+			pct: s.pct,
 			color: INTEREST_COLORS[i % INTEREST_COLORS.length],
 		})),
 		topCities: o.memberInsights.topCities.map((c, i) => ({
-			city:  c.city,
-			pct:   c.pct,
+			city: c.city,
+			pct: c.pct,
 			color: CITY_COLORS[i % CITY_COLORS.length],
 		})),
 		ageDistribution: o.memberInsights.ageDistribution.map(a => ({
 			range: a.label,
-			pct:   a.pct,
+			pct: a.pct,
 		})),
 		topContributors: o.topContributors.map((c, i) => ({
-			rank:          i + 1,
-			name:          c.name,
-			handle:        c.handle ? `@${c.handle}` : "",
-			avatarUrl:     c.avatarUrl,
-			avatarColor:   CONTRIB_COLORS[i % CONTRIB_COLORS.length],
+			rank: i + 1,
+			name: c.name,
+			handle: c.handle ? `@${c.handle}` : "",
+			avatarUrl: c.avatarUrl,
+			avatarColor: CONTRIB_COLORS[i % CONTRIB_COLORS.length],
 			avatarInitial: c.name[0].toUpperCase(),
-			points:        c.activityScore,
+			points: c.activityScore,
 		})),
 		topHosts: o.topHosts.map((h, i) => ({
-			id:            h.userId,
-			name:          h.name,
-			handle:        h.handle ? `@${h.handle}` : "",
-			avatarUrl:     h.avatarUrl,
-			avatarColor:   CONTRIB_COLORS[i % CONTRIB_COLORS.length],
+			id: h.userId,
+			name: h.name,
+			handle: h.handle ? `@${h.handle}` : "",
+			avatarUrl: h.avatarUrl,
+			avatarColor: CONTRIB_COLORS[i % CONTRIB_COLORS.length],
 			avatarInitial: h.name[0].toUpperCase(),
-			eventCount:    h.eventCount,
+			eventCount: h.eventCount,
 		})),
 	}
 }
@@ -1717,23 +1837,29 @@ export async function getCommunityAnalytics(communityId: string): Promise<Analyt
 export type ManagerRoleType = "Owner" | "Manager" | "Moderator" | "View Only"
 
 export type ManagerTeamMember = {
-	id: string; name: string
-	avatarUrl: string | null; avatarColor: string; avatarInitial: string
+	id: string
+	name: string
+	avatarUrl: string | null
+	avatarColor: string
+	avatarInitial: string
 	role: ManagerRoleType
 }
 
 export type ManagersTabStats = {
-	owners: number; managers: number; moderators: number; viewOnly: number; totalUsers: number
+	owners: number
+	managers: number
+	moderators: number
+	viewOnly: number
+	totalUsers: number
 }
 
 export type ManagersAccessSummary = { label: string; count: number; pct: number; color: string }
 
 export type ManagersTabData = {
-	stats:         ManagersTabStats
-	teamMembers:   ManagerTeamMember[]
+	stats: ManagersTabStats
+	teamMembers: ManagerTeamMember[]
 	accessSummary: ManagersAccessSummary[]
 }
-
 
 type ApiManagerEntry = {
 	userId: string
@@ -1744,12 +1870,11 @@ type ApiManagerEntry = {
 }
 
 const MANAGER_ROLE_MAP: Record<string, ManagerRoleType> = {
-	OWNER:    "Owner",
-	MANAGER:  "Manager",
+	OWNER: "Owner",
+	MANAGER: "Manager",
 	MODERATOR: "Moderator",
-	HOST:     "View Only",
+	HOST: "View Only",
 }
-
 
 const AVATAR_COLORS = ["#f59e0b", "#ec4899", "#6366f1", "#f43f5e", "#22c55e", "#3b82f6", "#a855f7", "#f97316"]
 
@@ -1759,10 +1884,10 @@ export async function getCommunityManagers(communityId: string): Promise<Manager
 	const teamMembers: ManagerTeamMember[] = data.map((m, i) => {
 		const role = MANAGER_ROLE_MAP[m.role] ?? "View Only"
 		return {
-			id:           m.userId,
-			name:         `${m.firstName} ${m.lastName}`,
-			avatarUrl:    m.avatarUrl,
-			avatarColor:  AVATAR_COLORS[i % AVATAR_COLORS.length],
+			id: m.userId,
+			name: `${m.firstName} ${m.lastName}`,
+			avatarUrl: m.avatarUrl,
+			avatarColor: AVATAR_COLORS[i % AVATAR_COLORS.length],
 			avatarInitial: m.firstName[0].toUpperCase(),
 			role,
 		}
@@ -1772,19 +1897,39 @@ export async function getCommunityManagers(communityId: string): Promise<Manager
 	for (const m of teamMembers) counts[m.role]++
 
 	const stats: ManagersTabStats = {
-		owners:     counts.Owner,
-		managers:   counts.Manager,
+		owners: counts.Owner,
+		managers: counts.Manager,
 		moderators: counts.Moderator,
-		viewOnly:   counts["View Only"],
+		viewOnly: counts["View Only"],
 		totalUsers: data.length,
 	}
 
 	const total = data.length || 1
 	const accessSummary: ManagersAccessSummary[] = [
-		{ label: "Owners",     count: counts.Owner,         pct: Math.round(counts.Owner / total * 100),         color: "#a855f7" },
-		{ label: "Managers",   count: counts.Manager,       pct: Math.round(counts.Manager / total * 100),       color: "#3b82f6" },
-		{ label: "Moderators", count: counts.Moderator,     pct: Math.round(counts.Moderator / total * 100),     color: "#22c55e" },
-		{ label: "View Only",  count: counts["View Only"],  pct: Math.round(counts["View Only"] / total * 100),  color: "#f97316" },
+		{
+			label: "Owners",
+			count: counts.Owner,
+			pct: Math.round((counts.Owner / total) * 100),
+			color: "#a855f7",
+		},
+		{
+			label: "Managers",
+			count: counts.Manager,
+			pct: Math.round((counts.Manager / total) * 100),
+			color: "#3b82f6",
+		},
+		{
+			label: "Moderators",
+			count: counts.Moderator,
+			pct: Math.round((counts.Moderator / total) * 100),
+			color: "#22c55e",
+		},
+		{
+			label: "View Only",
+			count: counts["View Only"],
+			pct: Math.round((counts["View Only"] / total) * 100),
+			color: "#f97316",
+		},
 	].filter(s => s.count > 0)
 
 	return { stats, teamMembers, accessSummary }
@@ -1792,20 +1937,14 @@ export async function getCommunityManagers(communityId: string): Promise<Manager
 
 // ─── Create Community workflow ────────────────────────────────────────────────
 
-export async function createCommunityDraft(
-	payload: CreateCommunityDraftRequest,
-): Promise<{ id: string }> {
+export async function createCommunityDraft(payload: CreateCommunityDraftRequest): Promise<{ id: string }> {
 	const { data } = await apiClient.post<{ id: string }>("/admin/communities", payload)
 	return data
 }
 
-export async function updateCommunityDraft(
-	id: string,
-	payload: CreateCommunityDraftRequest,
-): Promise<void> {
+export async function updateCommunityDraft(id: string, payload: CreateCommunityDraftRequest): Promise<void> {
 	await apiClient.patch(`/admin/communities/${id}`, payload)
 }
-
 
 export async function updateCommunitySettings(
 	id: string,
@@ -1814,10 +1953,7 @@ export async function updateCommunitySettings(
 	await apiClient.put(`/admin/communities/${id}/settings`, payload)
 }
 
-export async function replaceCommunityInterests(
-	id: string,
-	interestIds: string[],
-): Promise<void> {
+export async function replaceCommunityInterests(id: string, interestIds: string[]): Promise<void> {
 	await apiClient.put(`/admin/communities/${id}/interests`, { interestIds })
 }
 
@@ -1828,10 +1964,7 @@ export async function setCommunityCities(
 	await apiClient.put(`/admin/communities/${id}/cities`, payload)
 }
 
-export async function attachCommunityEvent(
-	id: string,
-	eventId: string,
-): Promise<void> {
+export async function attachCommunityEvent(id: string, eventId: string): Promise<void> {
 	await apiClient.post(`/admin/communities/${id}/events`, { eventId })
 }
 
@@ -1846,17 +1979,11 @@ export async function assignCommunityMember(
 	await apiClient.post(`/admin/communities/${id}/members`, payload)
 }
 
-export async function removeCommunityMember(
-	communityId: string,
-	memberId: string,
-): Promise<void> {
+export async function removeCommunityMember(communityId: string, memberId: string): Promise<void> {
 	await apiClient.delete(`/admin/communities/${communityId}/members/${memberId}`)
 }
 
-export async function detachCommunityEvent(
-	communityId: string,
-	eventId: string,
-): Promise<void> {
+export async function detachCommunityEvent(communityId: string, eventId: string): Promise<void> {
 	await apiClient.delete(`/admin/communities/${communityId}/events/${eventId}`)
 }
 
@@ -1920,17 +2047,11 @@ export async function deleteCommunityAnnouncement(
 	await apiClient.delete(`/admin/communities/${communityId}/announcements/${announcementId}`)
 }
 
-export async function pinCommunityAnnouncement(
-	communityId: string,
-	announcementId: string,
-): Promise<void> {
+export async function pinCommunityAnnouncement(communityId: string, announcementId: string): Promise<void> {
 	await apiClient.post(`/admin/communities/${communityId}/announcements/${announcementId}/pin`)
 }
 
-export async function unpinCommunityAnnouncement(
-	communityId: string,
-	announcementId: string,
-): Promise<void> {
+export async function unpinCommunityAnnouncement(communityId: string, announcementId: string): Promise<void> {
 	await apiClient.delete(`/admin/communities/${communityId}/announcements/${announcementId}/pin`)
 }
 

@@ -341,31 +341,36 @@ export default function CommunitiesPage() {
 				<StatCard
 					icon={LayoutGrid}
 					label="Total Communities"
-					value={statsLoading ? "—" : (stats?.totalCommunities ?? 0)}
+					value={statsLoading ? "—" : (stats?.totalCommunities.value ?? 0)}
+					trend={stats?.totalCommunities.deltaPct != null ? { value: stats.totalCommunities.deltaPct, direction: stats.totalCommunities.deltaPct >= 0 ? "up" : "down", label: "%" } : undefined}
 					accent="brand"
 				/>
 				<StatCard
 					icon={UserCheck}
 					label="Active Communities"
-					value={statsLoading ? "—" : (stats?.activeCommunities ?? 0)}
+					value={statsLoading ? "—" : (stats?.activeCommunities.value ?? 0)}
+					trend={stats?.activeCommunities.deltaPct != null ? { value: stats.activeCommunities.deltaPct, direction: stats.activeCommunities.deltaPct >= 0 ? "up" : "down", label: "%" } : undefined}
 					accent="green"
 				/>
 				<StatCard
 					icon={Users}
 					label="Total Members"
-					value={statsLoading ? "—" : formatCount(stats?.totalMembers ?? 0)}
+					value={statsLoading ? "—" : formatCount(stats?.totalMembers.value ?? 0)}
+					trend={stats?.totalMembers.deltaPct != null ? { value: stats.totalMembers.deltaPct, direction: stats.totalMembers.deltaPct >= 0 ? "up" : "down", label: "%" } : undefined}
 					accent="amber"
 				/>
 				<StatCard
 					icon={CalendarDays}
 					label="Upcoming Events"
-					value={statsLoading ? "—" : (stats?.upcomingEvents ?? 0)}
+					value={statsLoading ? "—" : (stats?.upcomingEvents.value ?? 0)}
+					trend={stats?.upcomingEvents.deltaPct != null ? { value: stats.upcomingEvents.deltaPct, direction: stats.upcomingEvents.deltaPct >= 0 ? "up" : "down", label: "%" } : undefined}
 					accent="sky"
 				/>
 				<StatCard
 					icon={TrendingUp}
 					label="Avg. Engagement"
-					value={statsLoading ? "—" : `${stats?.avgEngagementRate ?? 0}%`}
+					value={statsLoading ? "—" : `${stats?.avgEngagementRate.value ?? 0}%`}
+					trend={stats?.avgEngagementRate.deltaPct != null ? { value: stats.avgEngagementRate.deltaPct, direction: stats.avgEngagementRate.deltaPct >= 0 ? "up" : "down", label: "%" } : undefined}
 					accent="purple"
 				/>
 			</div>

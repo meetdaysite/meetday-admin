@@ -54,7 +54,11 @@ const BADGE_CONFIG: Partial<Record<string, { label: string; className: string }>
 	PAUSED: { label: "Paused", className: "bg-neutral-100 text-text-secondary border-neutral-200" },
 	PENDING_PAYMENT: { label: "Pending Payment", className: "bg-amber-50 text-amber-700 border-amber-200" },
 	CONFIRMED: { label: "Confirmed", className: "bg-green-50 text-green-700 border-green-200" },
-	REFUNDED: { label: "Refunded", className: "bg-sky-50 text-sky-700 border-sky-200" },
+	REFUNDED:  { label: "Refunded",  className: "bg-sky-50 text-sky-700 border-sky-200" },
+	UPCOMING:  { label: "Upcoming",  className: "bg-blue-50 text-blue-700 border-blue-200" },
+	LIVE:      { label: "Live",      className: "bg-purple-50 text-purple-700 border-purple-200" },
+	COMPLETED: { label: "Completed", className: "bg-green-50 text-green-700 border-green-200" },
+	ARCHIVED:  { label: "Archived",  className: "bg-neutral-100 text-text-secondary border-neutral-200" },
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────

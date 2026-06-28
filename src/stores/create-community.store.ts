@@ -8,7 +8,6 @@ import type {
 	AssignableCommunityRole,
 	Interest,
 } from "@/types"
-import type { Event } from "@/types"
 
 // ─── Snapshot types ───────────────────────────────────────────────────────────
 
@@ -48,7 +47,6 @@ export type Step3Snapshot = {
 	interests: Interest[]
 	primaryCity: string
 	cities: string[]
-	manualEvents: Pick<Event, "id" | "title" | "eventDate" | "city">[]
 }
 
 export type AssignedMember = {

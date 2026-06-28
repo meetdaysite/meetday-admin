@@ -119,17 +119,17 @@ function DetailStatCard({ card }: { card: CommunityDetailStatCard }) {
 	return (
 		<div className="rounded-xl border border-border-default bg-surface-card p-4 flex flex-col gap-1.5">
 			<p className="text-xs text-text-tertiary font-medium">{card.label}</p>
-			<div className="flex items-baseline gap-2">
+			<div className="flex items-center justify-between gap-2">
 				<span className="text-2xl font-bold text-text-primary tabular-nums leading-none">
 					{card.value}
 				</span>
+			</div>
+			<div className="flex items-center gap-1">
 				{card.trend && (
 					<span
 						className={cn(
-							"flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold",
-							card.trend.direction === "up"
-								? "bg-green-50 text-green-700"
-								: "bg-red-50 text-red-600",
+							"flex items-center gap-0.5 text-[11px] font-semibold",
+							card.trend.direction === "up" ? "text-green-700" : "text-red-600",
 						)}
 					>
 						{card.trend.direction === "up" ? (
@@ -137,13 +137,12 @@ function DetailStatCard({ card }: { card: CommunityDetailStatCard }) {
 						) : (
 							<TrendingDown size={10} />
 						)}
-						{card.trend.value > 0 ? "+" : ""}
-						{card.trend.value}
-						{card.trend.label ?? ""}
+						{/* {card.trend.value > 0 ? "+" : ""} */}
+						{card.trend.value}%{/* {card.trend.label ?? ""} */}
 					</span>
 				)}
+				{card.sub && <p className="text-[11px] text-text-tertiary">{card.sub}</p>}
 			</div>
-			{card.sub && <p className="text-[11px] text-text-tertiary">{card.sub}</p>}
 			{card.spark.length > 0 && (
 				<div className="h-12 mt-1">
 					<ResponsiveContainer width="100%" height={48}>
@@ -308,13 +307,15 @@ export default function CommunityDetailPage() {
 					)}
 					<div>
 						<div className="flex items-center gap-2 flex-wrap">
-							<h1 className="text-base font-semibold text-text-primary">{community.name}</h1>
+							<h1 className="text-heading-sm font-semibold text-text-primary">
+								{community.name}
+							</h1>
 							{community.isMeetdayManaged && (
-								<span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold bg-amber-100 text-amber-700">
+								<span className="inline-flex items-center rounded-full px-3 py-1.5 text-[11px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">
 									Meetday Managed
 								</span>
 							)}
-							<span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold bg-green-100 text-green-700">
+							<span className="inline-flex items-center rounded-full px-3 py-1.5 text-[11px] font-semibold bg-green-100 text-green-700  border border-green-200">
 								{accessLabel} Community
 							</span>
 						</div>
