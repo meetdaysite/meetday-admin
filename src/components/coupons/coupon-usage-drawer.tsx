@@ -9,7 +9,7 @@ import type { Coupon, CouponRedemption } from "@/types"
 import axios from "axios"
 import { toast } from "sonner"
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Helpers
 
 function formatDateTime(iso: string): string {
 	const d = new Date(iso)
@@ -33,7 +33,7 @@ function getApiErrorMessage(err: unknown): string {
 	return err instanceof Error ? err.message : "Something went wrong"
 }
 
-// â”€â”€â”€ Summary stat â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Summary stat”€
 
 function Stat({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
 	return (
@@ -49,7 +49,7 @@ function Stat({ icon: Icon, label, value }: { icon: React.ElementType; label: st
 	)
 }
 
-// â”€â”€â”€ Redemption timeline item â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Redemption timeline item 
 
 function RedemptionItem({ redemption, isLast }: { redemption: CouponRedemption; isLast: boolean }) {
 	const userName = redemption.user
@@ -91,7 +91,7 @@ function RedemptionItem({ redemption, isLast }: { redemption: CouponRedemption; 
 	)
 }
 
-// â”€â”€â”€ Props â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Props
 
 export type CouponUsageDrawerProps = {
 	open: boolean
@@ -100,7 +100,7 @@ export type CouponUsageDrawerProps = {
 	onDisableSuccess?: (id: string) => void
 }
 
-// â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Component
 
 export function CouponUsageDrawer({ open, onClose, coupon, onDisableSuccess }: CouponUsageDrawerProps) {
 	const [detail, setDetail]               = useState<Coupon | null>(null)

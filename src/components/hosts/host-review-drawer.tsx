@@ -15,7 +15,7 @@ import { RejectHostDialog } from "@/components/hosts/reject-host-dialog"
 import { getHostById } from "@/lib/api/hosts"
 import type { Host, HostDetail } from "@/types"
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Types 
 
 export type HostAction = "approve" | "reject" | "suspend" | "restore"
 
@@ -26,7 +26,7 @@ export type HostReviewDrawerProps = {
 	onAction: (hostId: string, action: HostAction, reason?: string) => Promise<void>
 }
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Helpers 
 
 function formatDate(iso: string): string {
 	return new Date(iso).toLocaleDateString("en-IN", {
@@ -36,7 +36,7 @@ function formatDate(iso: string): string {
 	})
 }
 
-// â”€â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Sub-components
 
 function SectionLabel({ children }: { children: string }) {
 	return (
@@ -77,7 +77,7 @@ function VerificationRow({ label, status }: { label: string; status: string }) {
 	)
 }
 
-// â”€â”€â”€ Loading skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Loading skeleton
 
 function DrawerSkeleton() {
 	return (
@@ -130,7 +130,7 @@ function DrawerSkeleton() {
 	)
 }
 
-// â”€â”€â”€ Detail content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Detail content
 
 function HostDetailContent({ detail }: { detail: HostDetail }) {
 	const fullName = `${detail.user.firstName} ${detail.user.lastName}`
@@ -144,7 +144,7 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 
 	return (
 		<div className="space-y-6">
-			{/* â”€â”€ Status row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+			{/*  Status row  */}
 			<div className="flex items-center gap-2 flex-wrap">
 				<div className="flex items-center gap-1.5">
 					<span className="text-[11px] text-text-tertiary">Approval</span>
@@ -181,7 +181,7 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 
 			<div className="border-t border-border-subtle" />
 
-			{/* â”€â”€ Profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+			{/*  Profile */}
 			<div>
 				<SectionLabel>Profile</SectionLabel>
 				<div className="space-y-3.5">
@@ -223,7 +223,7 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 				</div>
 			</div>
 
-			{/* â”€â”€ Links â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+			{/*  Links */}
 			{(detail.socialLinks?.website || detail.socialLinks?.instagram || detail.portfolioLinks.length > 0) && (
 				<>
 					<div className="border-t border-border-subtle" />
@@ -271,7 +271,7 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 
 			<div className="border-t border-border-subtle" />
 
-			{/* â”€â”€ Address â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+			{/*  Address */}
 			{addressParts.length > 0 && (
 				<div>
 					<SectionLabel>Address</SectionLabel>
@@ -285,7 +285,7 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 
 			{addressParts.length > 0 && <div className="border-t border-border-subtle" />}
 
-			{/* â”€â”€ Verification â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+			{/*  Verification  */}
 			<div>
 				<SectionLabel>Verification</SectionLabel>
 				<div className="rounded-xl border border-border-default divide-y divide-border-subtle px-3.5">
@@ -296,7 +296,7 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 
 			<div className="border-t border-border-subtle" />
 
-			{/* â”€â”€ Experience & operations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+			{/*  Experience & operations  */}
 			<div>
 				<SectionLabel>Experience & Operations</SectionLabel>
 				<div className="space-y-3.5">
@@ -328,7 +328,7 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 				</div>
 			</div>
 
-			{/* â”€â”€ Categories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+			{/*  Categories  */}
 			{detail.categories.length > 0 && (
 				<>
 					<div className="border-t border-border-subtle" />
@@ -350,7 +350,7 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 
 			<div className="border-t border-border-subtle" />
 
-			{/* â”€â”€ Subscriptions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+			{/*  Subscriptions  */}
 			<div>
 				<SectionLabel>Recent Subscriptions</SectionLabel>
 				{detail.subscriptions.length === 0 ? (
@@ -376,7 +376,7 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 
 			<div className="border-t border-border-subtle" />
 
-			{/* â”€â”€ Payout account â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+			{/*  Payout account  */}
 			<div>
 				<SectionLabel>Payout Account</SectionLabel>
 				{detail.payoutAccount === null ? (
@@ -412,7 +412,7 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 	)
 }
 
-// â”€â”€â”€ Suspend dialog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Suspend dialog
 
 function SuspendHostDialog({
 	open,
@@ -502,7 +502,7 @@ function SuspendHostDialog({
 	)
 }
 
-// â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Component
 
 export function HostReviewDrawer({ open, onClose, host, onAction }: HostReviewDrawerProps) {
 	const router = useRouter()
