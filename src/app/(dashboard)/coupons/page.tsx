@@ -8,6 +8,7 @@ import { DataTable } from "@/components/ui/data-table"
 import PageHeader from "@/components/ui/PageHeader"
 import { Pagination } from "@/components/ui/pagination"
 import { PermissionGuard } from "@/components/ui/permission-guard"
+import { FilterSelect } from "@/components/ui/filter-select"
 import { SearchInput } from "@/components/ui/search-input"
 import { disableCoupon, getCoupons } from "@/lib/api/coupons"
 import { extractApiErrorMessage } from "@/lib/error-handler"
@@ -25,7 +26,7 @@ const PAGE_LIMIT = 20
 // Helpers
 
 function discountLabel(c: Coupon): string {
-	return c.discountType === "PERCENTAGE" ? `${c.discountValue}%` : `â‚¹${c.discountValue}`
+	return c.discountType === "PERCENTAGE" ? `${c.discountValue}%` : `र ${c.discountValue}`
 }
 
 // Filter
@@ -265,45 +266,24 @@ export default function CouponsPage() {
 			/>
 
 			{/* Filters */}
-			<div className="space-y-3">
-				{/* Active status tabs + target select */}
-				<div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
-					{ACTIVE_TABS.map(tab => (
-						<button
-							key={tab.value}
-							onClick={() => setActiveFilter(tab.value)}
-							className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-								activeFilter === tab.value
-									? "bg-action-primary text-white"
-									: "bg-neutral-100 text-text-secondary hover:bg-neutral-200"
-							}`}
-						>
-							{tab.label}
-						</button>
-					))}
-
-					<div className="w-px h-4 bg-neutral-200 mx-1 shrink-0" />
-
-					{/* Target filter */}
-					<select
-						value={targetFilter}
-						onChange={e => setTargetFilter(e.target.value as TargetFilter)}
-						className="rounded-full border border-border-default bg-surface-canvas px-3 py-1.5 text-xs font-semibold text-text-secondary focus:border-border-focus focus:outline-none transition-colors"
-					>
-						{TARGET_OPTIONS.map(o => (
-							<option key={o.value} value={o.value}>
-								{o.label}
-							</option>
-						))}
-					</select>
-				</div>
-
+			<div className="flex flex-wrap items-center gap-3">
 				{/* Search */}
 				<SearchInput
 					value={search}
 					onChange={setSearch}
 					placeholder="Search by code…"
 					className="max-w-xs"
+				/>
+
+				<FilterSelect
+					value={activeFilter}
+					onChange={v => setActiveFilter(v as ActiveFilter)}
+					options={ACTIVE_TABS}
+				/>
+				<FilterSelect
+					value={targetFilter}
+					onChange={v => setTargetFilter(v as TargetFilter)}
+					options={TARGET_OPTIONS}
 				/>
 			</div>
 

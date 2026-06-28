@@ -1,23 +1,29 @@
-﻿﻿"use client"
+﻿"use client"
 
-import type { HostAction } from "@/components/hosts/host-review-drawer"
-import { HostReviewDrawer } from "@/components/hosts/host-review-drawer"
+import { HostReviewDrawer, type HostAction } from "@/components/hosts/host-review-drawer"
+import { InviteBulkDrawer } from "@/components/hosts/invite-bulk-drawer"
+import { InviteSingleDrawer } from "@/components/hosts/invite-single-drawer"
 import { ClearableInput } from "@/components/ui/clearable-input"
 import { DataView } from "@/components/ui/data-view"
 import { FilterSelect } from "@/components/ui/filter-select"
 import PageHeader from "@/components/ui/PageHeader"
+import { PermissionGuard } from "@/components/ui/permission-guard"
+import { SearchInput } from "@/components/ui/search-input"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { approveHost, getHosts, rejectHost } from "@/lib/api/hosts"
+import { approveHost, getHosts, rejectHost, suspendHost, restoreHost } from "@/lib/api/hosts"
+import { formatDate } from "@/lib/formatters"
+import { useDrawer } from "@/lib/hooks/use-drawer"
 import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { ApprovalStatus, Host, HostPlan, KycStatus } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
-import { MapPin } from "lucide-react"
+import { Upload, UserPlus } from "lucide-react"
+import { Button } from "@/components/ui/Button"
 import { useRouter } from "next/navigation"
 import { useCallback, useMemo, useState } from "react"
 import { toast } from "sonner"
 
-// â"€â"€â"€ Constants â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// Constants
 
 const PAGE_LIMIT = 20
 
@@ -25,11 +31,12 @@ type ApprovalFilter = ApprovalStatus | "ALL"
 type KycFilter = KycStatus | "ALL"
 type PlanFilter = HostPlan | "ALL"
 
-const APPROVAL_FILTER_OPTIONS: { label: string; value: ApprovalFilter }[] = [
-	{ label: "All statuses", value: "ALL" },
+const STATUS_TABS: { label: string; value: ApprovalFilter }[] = [
+	{ label: "All", value: "ALL" },
 	{ label: "Pending", value: "PENDING" },
 	{ label: "Approved", value: "APPROVED" },
 	{ label: "Rejected", value: "REJECTED" },
+	{ label: "Suspended", value: "SUSPENDED" },
 ]
 
 const KYC_FILTER_OPTIONS: { label: string; value: KycFilter }[] = [
@@ -47,32 +54,37 @@ const PLAN_FILTER_OPTIONS: { label: string; value: PlanFilter }[] = [
 	{ label: "Community", value: "COMMUNITY" },
 ]
 
-// â"€â"€â"€ Page â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// Page
 
 export default function HostsPage() {
 	const router = useRouter()
 	const canApprove = usePermission("host.approve")
+	const canInvite = usePermission("host.invite")
 
 	const [page, setPage] = useState(1)
-	const [approvalFilter, setApprovalFilter] = useState<ApprovalFilter>("ALL")
+	const [statusFilter, setStatusFilter] = useState<ApprovalFilter>("ALL")
 	const [kycFilter, setKycFilter] = useState<KycFilter>("ALL")
 	const [planFilter, setPlanFilter] = useState<PlanFilter>("ALL")
-	const [cityFilter, setCityFilter] = useState("")
 	const [cityInput, setCityInput] = useState("")
+	const [cityFilter, setCityFilter] = useState("")
+	const [search, setSearch] = useState("")
 
-	const [selectedHost, setSelectedHost] = useState<Host | null>(null)
+	const [singleOpen, setSingleOpen] = useState(false)
+	const [bulkOpen, setBulkOpen] = useState(false)
+
+	const { item: selectedHost, open: drawerOpen, openDrawer, closeDrawer } = useDrawer<Host>()
 
 	const fetcher = useCallback(
 		() =>
 			getHosts({
 				page,
 				limit: PAGE_LIMIT,
-				...(approvalFilter !== "ALL" && { approvalStatus: approvalFilter }),
+				...(statusFilter !== "ALL" && { approvalStatus: statusFilter }),
 				...(kycFilter !== "ALL" && { kycStatus: kycFilter }),
 				...(planFilter !== "ALL" && { plan: planFilter }),
 				...(cityFilter && { city: cityFilter }),
 			}).then(r => ({ items: r.hosts, total: r.total })),
-		[page, approvalFilter, kycFilter, planFilter, cityFilter],
+		[page, statusFilter, kycFilter, planFilter, cityFilter],
 	)
 
 	const {
@@ -83,16 +95,31 @@ export default function HostsPage() {
 		refresh: fetchHosts,
 	} = usePaginatedFetch(fetcher, "Failed to load hosts")
 
+	const filtered = useMemo(() => {
+		const q = search.toLowerCase()
+		if (!q) return hosts
+		return hosts.filter(
+			h =>
+				h.displayName.toLowerCase().includes(q) ||
+				(h.user.email ?? "").toLowerCase().includes(q) ||
+				`${h.user.firstName} ${h.user.lastName}`.toLowerCase().includes(q),
+		)
+	}, [hosts, search])
+
 	async function handleAction(hostId: string, action: HostAction, reason?: string) {
-		const call = action === "approve" ? approveHost(hostId) : rejectHost(hostId, reason!)
 		try {
-			await call
-			toast.success(action === "approve" ? "Host approved" : "Host rejected", {
-				description:
-					action === "approve"
-						? "The host has been approved and will be notified."
-						: "The host has been rejected and will be notified.",
-			})
+			if (action === "approve") await approveHost(hostId)
+			else if (action === "reject") await rejectHost(hostId, reason!)
+			else if (action === "suspend") await suspendHost(hostId, reason!)
+			else if (action === "restore") await restoreHost(hostId)
+
+			const labels: Record<HostAction, string> = {
+				approve: "Host approved",
+				reject: "Host rejected",
+				suspend: "Host suspended",
+				restore: "Host restored",
+			}
+			toast.success(labels[action])
 			fetchHosts()
 		} catch (err: unknown) {
 			const axiosErr = err as { response?: { status?: number; data?: { message?: string } } }
@@ -110,7 +137,7 @@ export default function HostsPage() {
 			} else if (status === 400) {
 				const msg = axiosErr?.response?.data?.message
 				toast.error(`Cannot ${action} host`, {
-					description: msg ?? "Host is not in a pending state.",
+					description: msg ?? "Host is not in the required state.",
 				})
 			} else {
 				toast.error(`Failed to ${action} host`, {
@@ -119,12 +146,6 @@ export default function HostsPage() {
 			}
 			throw err
 		}
-	}
-
-	function handleCitySearch(e: React.FormEvent) {
-		e.preventDefault()
-		setPage(1)
-		setCityFilter(cityInput.trim())
 	}
 
 	const columns = useMemo<ColumnDef<Host>[]>(
@@ -156,6 +177,22 @@ export default function HostsPage() {
 				),
 			},
 			{
+				id: "cities",
+				header: "Cities",
+				cell: ({ row }) => {
+					const cities = row.original.operatingCities
+					if (!cities?.length) return <span className="text-[11px] text-text-tertiary">—</span>
+					return (
+						<span className="text-xs text-text-primary">
+							{cities.slice(0, 2).join(", ")}
+							{cities.length > 2 && (
+								<span className="text-text-tertiary"> +{cities.length - 2}</span>
+							)}
+						</span>
+					)
+				},
+			},
+			{
 				id: "plan",
 				header: "Plan",
 				cell: ({ row }) => (
@@ -165,43 +202,23 @@ export default function HostsPage() {
 				),
 			},
 			{
-				id: "location",
-				header: "Location",
-				cell: ({ row }) => {
-					const { city, state } = row.original.address ?? {}
-					return (
-						<span className="inline-flex items-center gap-1 text-xs text-text-primary">
-							<MapPin size={12} className="text-text-tertiary shrink-0" />
-							{[city, state].filter(Boolean).join(", ")}
-						</span>
-					)
-				},
-			},
-			{
 				id: "kycStatus",
 				header: "KYC",
 				cell: ({ row }) => <StatusBadge status={row.original.kycStatus} />,
 			},
 			{
 				id: "approvalStatus",
-				header: "Approval",
+				header: "Status",
 				cell: ({ row }) => <StatusBadge status={row.original.approvalStatus} />,
 			},
 			{
-				id: "categories",
-				header: "Categories",
-				cell: ({ row }) => {
-					const cats = row.original.categories
-					if (cats.length === 0) return <span className="text-xs text-text-tertiary">-</span>
-					return (
-						<span className="text-xs text-text-primary">
-							{cats.slice(0, 2).join(", ")}
-							{cats.length > 2 && (
-								<span className="text-text-tertiary"> +{cats.length - 2}</span>
-							)}
-						</span>
-					)
-				},
+				id: "joined",
+				header: "Joined",
+				cell: ({ row }) => (
+					<span className="text-xs text-text-secondary">
+						{row.original.createdAt ? formatDate(row.original.createdAt) : "—"}
+					</span>
+				),
 			},
 		],
 		[],
@@ -209,20 +226,52 @@ export default function HostsPage() {
 
 	const totalPages = Math.ceil(total / PAGE_LIMIT)
 
+	if (!canApprove) return <PermissionGuard message="You don't have permission to view hosts." />
+
 	return (
-		<div className="p-6 space-y-6 max-w-7xl mx-auto">
-			{/* Page header */}
-			<PageHeader title="Hosts" description="Manage and review all hosts on the platform." />
+		<div className="p-6 space-y-5 max-w-7xl mx-auto">
+			{/* Header */}
+			<PageHeader
+				title="All Hosts"
+				description="View and manage all hosts on the platform."
+				buttons={
+					canInvite && (
+						<>
+							<Button
+								variant="secondary"
+								leftIcon={<UserPlus size={13} />}
+								onClick={() => setSingleOpen(true)}
+							>
+								Invite Host
+							</Button>
+							<Button
+								variant="primary"
+								leftIcon={<Upload size={13} />}
+								onClick={() => setBulkOpen(true)}
+							>
+								Bulk Upload
+							</Button>
+						</>
+					)
+				}
+			/>
 
 			{/* Filters */}
-			<div className="flex items-center gap-3 flex-wrap">
+			<div className="flex items-center gap-2 flex-wrap">
+				<SearchInput
+					value={search}
+					onChange={setSearch}
+					placeholder="Search by name or email…"
+					className="flex-1 min-w-48 max-w-xs"
+				/>
+
 				<FilterSelect
-					value={approvalFilter}
+					value={statusFilter}
 					onChange={v => {
-						setApprovalFilter(v as ApprovalFilter)
+						setStatusFilter(v as ApprovalFilter)
 						setPage(1)
 					}}
-					options={APPROVAL_FILTER_OPTIONS}
+					options={STATUS_TABS}
 				/>
 
 				<FilterSelect
@@ -243,7 +292,7 @@ export default function HostsPage() {
 					options={PLAN_FILTER_OPTIONS}
 				/>
 
-				<form onSubmit={handleCitySearch}>
+				<form onSubmit={e => { e.preventDefault(); setPage(1); setCityFilter(cityInput.trim()) }}>
 					<ClearableInput
 						value={cityInput}
 						onChange={setCityInput}
@@ -262,21 +311,35 @@ export default function HostsPage() {
 				error={error}
 				isLoading={isLoading}
 				columns={columns}
-				data={hosts}
-				emptyMessage="No hosts found."
-				onRowClick={canApprove ? row => setSelectedHost(row) : undefined}
+				data={filtered}
+				emptyMessage="No hosts match the current filters."
+				onRowClick={canApprove ? openDrawer : undefined}
 				pagination={{ page, totalPages, total, pageSize: PAGE_LIMIT, onPageChange: setPage }}
 			/>
 
-			{/* Review drawer */}
-			{canApprove && (
-				<HostReviewDrawer
-					open={!!selectedHost}
-					onClose={() => setSelectedHost(null)}
-					host={selectedHost}
-					onAction={handleAction}
-				/>
-			)}
+			<HostReviewDrawer
+				open={drawerOpen}
+				onClose={closeDrawer}
+				host={selectedHost}
+				onAction={handleAction}
+			/>
+
+			<InviteSingleDrawer
+				open={singleOpen}
+				onClose={() => setSingleOpen(false)}
+				onOpenBulk={() => {
+					setSingleOpen(false)
+					setBulkOpen(true)
+				}}
+			/>
+			<InviteBulkDrawer
+				open={bulkOpen}
+				onClose={() => setBulkOpen(false)}
+				onOpenSingle={() => {
+					setBulkOpen(false)
+					setSingleOpen(true)
+				}}
+			/>
 		</div>
 	)
 }

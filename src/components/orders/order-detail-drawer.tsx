@@ -30,7 +30,7 @@ function formatDate(iso: string): string {
 }
 
 function formatCurrency(amount: number): string {
-	return `â‚¹${amount.toLocaleString("en-IN")}`
+	return `र ${amount.toLocaleString("en-IN")}`
 }
 
 // â”€â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

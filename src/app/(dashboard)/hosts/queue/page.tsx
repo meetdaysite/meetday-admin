@@ -1,81 +1,53 @@
-﻿"use client"
+"use client"
 
 import { HostReviewDrawer, type HostAction } from "@/components/hosts/host-review-drawer"
-import { InviteBulkDrawer } from "@/components/hosts/invite-bulk-drawer"
-import { InviteSingleDrawer } from "@/components/hosts/invite-single-drawer"
-import { Button } from "@/components/ui/Button"
-import { DataTable } from "@/components/ui/data-table"
+import { DataView } from "@/components/ui/data-view"
 import PageHeader from "@/components/ui/PageHeader"
+import { PermissionGuard } from "@/components/ui/permission-guard"
+import { SearchInput } from "@/components/ui/search-input"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { getHosts, approveHost, rejectHost, suspendHost, restoreHost } from "@/lib/api/hosts"
+import { approveHost, getHosts, rejectHost } from "@/lib/api/hosts"
+import { formatDate } from "@/lib/formatters"
 import { usePermission } from "@/lib/hooks/use-permission"
-import type { ApprovalStatus, Host, KycStatus, HostPlan } from "@/types"
+import type { Host } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
-import { Search, Upload, UserPlus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
-// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Helpers
 
-const PAGE_LIMIT = 20
-
-type StatusFilter = ApprovalStatus | "ALL"
-
-const STATUS_TABS: { label: string; value: StatusFilter }[] = [
-	{ label: "All", value: "ALL" },
-	{ label: "Pending", value: "PENDING" },
-	{ label: "Approved", value: "APPROVED" },
-	{ label: "Rejected", value: "REJECTED" },
-	{ label: "Suspended", value: "SUSPENDED" },
-]
-
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function getDaysSince(iso: string): number {
+	return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24))
+}
 
 function getRowTint(host: Host): string {
-	if (host.approvalStatus === "PENDING") return "bg-amber-50"
+	if (!host.createdAt) return ""
+	const days = getDaysSince(host.createdAt)
+	if (days >= 14) return "bg-orange-50"
+	if (days >= 7) return "bg-amber-50"
 	return ""
 }
 
-// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Page
 
 export default function HostQueuePage() {
 	const router = useRouter()
 	const canApprove = usePermission("host.approve")
-	const canInvite = usePermission("host.invite")
 
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 	const [hosts, setHosts] = useState<Host[]>([])
-	const [total, setTotal] = useState(0)
-	const [page, setPage] = useState(1)
-
-	const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL")
-	const [kycFilter, setKycFilter] = useState<KycStatus | "ALL">("ALL")
-	const [planFilter, setPlanFilter] = useState<HostPlan | "ALL">("ALL")
-	const [cityFilter, setCityFilter] = useState("")
-	const [cityInput, setCityInput] = useState("")
 	const [search, setSearch] = useState("")
-
 	const [selectedHost, setSelectedHost] = useState<Host | null>(null)
 	const [drawerOpen, setDrawerOpen] = useState(false)
-	const [singleOpen, setSingleOpen] = useState(false)
-	const [bulkOpen, setBulkOpen] = useState(false)
 
 	const fetchHosts = useCallback(async () => {
 		setIsLoading(true)
 		setError(null)
 		try {
-			const res = await getHosts({
-				page,
-				limit: PAGE_LIMIT,
-				...(statusFilter !== "ALL" && { approvalStatus: statusFilter }),
-				...(kycFilter !== "ALL" && { kycStatus: kycFilter }),
-				...(planFilter !== "ALL" && { plan: planFilter }),
-				...(cityFilter && { city: cityFilter }),
-			})
+			const res = await getHosts({ approvalStatus: "PENDING" })
 			setHosts(res.hosts)
-			setTotal(res.total)
 		} catch (err: unknown) {
 			const status = (err as { response?: { status?: number } })?.response?.status
 			if (status === 401) {
@@ -91,11 +63,22 @@ export default function HostQueuePage() {
 		} finally {
 			setIsLoading(false)
 		}
-	}, [page, statusFilter, kycFilter, planFilter, cityFilter, router])
+	}, [router])
 
 	useEffect(() => {
 		fetchHosts()
 	}, [fetchHosts])
+
+	const filtered = useMemo(() => {
+		const q = search.toLowerCase()
+		if (!q) return hosts
+		return hosts.filter(
+			h =>
+				h.displayName.toLowerCase().includes(q) ||
+				(h.user.email ?? "").toLowerCase().includes(q) ||
+				`${h.user.firstName} ${h.user.lastName}`.toLowerCase().includes(q),
+		)
+	}, [hosts, search])
 
 	function openDrawer(host: Host) {
 		setSelectedHost(host)
@@ -103,21 +86,17 @@ export default function HostQueuePage() {
 	}
 
 	async function handleAction(hostId: string, action: HostAction, reason?: string) {
-		const callMap: Record<HostAction, () => Promise<void>> = {
-			approve: () => approveHost(hostId),
-			reject: () => rejectHost(hostId, reason!),
-			suspend: () => suspendHost(hostId, reason!),
-			restore: () => restoreHost(hostId),
-		}
-		const successMap: Record<HostAction, string> = {
-			approve: "Host approved",
-			reject: "Host rejected",
-			suspend: "Host suspended",
-			restore: "Host restored",
-		}
 		try {
-			await callMap[action]()
-			toast.success(successMap[action])
+			if (action === "approve") await approveHost(hostId)
+			else if (action === "reject") await rejectHost(hostId, reason!)
+
+			const labels: Record<HostAction, string> = {
+				approve: "Host approved",
+				reject: "Host rejected",
+				suspend: "Host suspended",
+				restore: "Host restored",
+			}
+			toast.success(labels[action])
 			fetchHosts()
 		} catch (err: unknown) {
 			const axiosErr = err as { response?: { status?: number; data?: { message?: string } } }
@@ -146,24 +125,6 @@ export default function HostQueuePage() {
 		}
 	}
 
-	function handleCitySearch(e: React.SyntheticEvent<HTMLFormElement>) {
-		e.preventDefault()
-		setPage(1)
-		setCityFilter(cityInput.trim())
-	}
-
-	// Client-side search on the already-loaded page of results
-	const filtered = useMemo(() => {
-		const q = search.toLowerCase()
-		if (!q) return hosts
-		return hosts.filter(
-			h =>
-				h.displayName.toLowerCase().includes(q) ||
-				(h.user.email ?? "").toLowerCase().includes(q) ||
-				`${h.user.firstName} ${h.user.lastName}`.toLowerCase().includes(q),
-		)
-	}, [hosts, search])
-
 	const columns = useMemo<ColumnDef<Host>[]>(
 		() => [
 			{
@@ -184,11 +145,20 @@ export default function HostQueuePage() {
 				},
 			},
 			{
+				id: "type",
+				header: "Type",
+				cell: ({ row }) => (
+					<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
+						{row.original.hostType}
+					</span>
+				),
+			},
+			{
 				id: "cities",
 				header: "Cities",
 				cell: ({ row }) => {
 					const cities = row.original.operatingCities
-					if (!cities?.length) return <span className="text-[11px] text-text-tertiary">â€”</span>
+					if (!cities?.length) return <span className="text-[11px] text-text-tertiary">—</span>
 					return (
 						<span className="text-xs text-text-primary">
 							{cities.slice(0, 2).join(", ")}
@@ -200,230 +170,76 @@ export default function HostQueuePage() {
 				},
 			},
 			{
-				id: "plan",
-				header: "Plan",
-				cell: ({ row }) => (
-					<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
-						{row.original.currentPlan}
-					</span>
-				),
-			},
-			{
 				id: "kycStatus",
 				header: "KYC",
 				cell: ({ row }) => <StatusBadge status={row.original.kycStatus} />,
 			},
 			{
-				id: "status",
-				header: "Status",
-				enableSorting: true,
-				cell: ({ row }) => <StatusBadge status={row.original.approvalStatus} />,
+				id: "submitted",
+				header: "Submitted",
+				cell: ({ row }) => {
+					const iso = row.original.createdAt
+					if (!iso) return <span className="text-xs text-text-tertiary">—</span>
+					const days = getDaysSince(iso)
+					const ageColor =
+						days >= 14 ? "text-orange-600" : days >= 7 ? "text-amber-600" : "text-text-tertiary"
+					return (
+						<div>
+							<p className="text-xs text-text-secondary">{formatDate(iso)}</p>
+							<p className={`text-[11px] font-medium ${ageColor}`}>
+								{days === 0 ? "Today" : days === 1 ? "Yesterday" : `${days} days ago`}
+							</p>
+						</div>
+					)
+				},
 			},
 		],
 		[],
 	)
 
-	const totalPages = Math.ceil(total / PAGE_LIMIT)
-
-	if (!canApprove) {
-		return (
-			<div className="p-6 max-w-7xl mx-auto">
-				<p className="text-sm text-text-tertiary">
-					You don&apos;t have permission to view the host queue.
-				</p>
-			</div>
-		)
-	}
+	if (!canApprove) return <PermissionGuard message="You don't have permission to view the host queue." />
 
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
 			<PageHeader
 				title="Host Queue"
-				description="Review and manage hosts who have applied to join the platform."
-				buttons={
-					canInvite && (
-						<>
-							<Button
-								variant="secondary"
-								leftIcon={<UserPlus size={13} />}
-								onClick={() => setSingleOpen(true)}
-							>
-								Invite Host
-							</Button>
-
-							<Button
-								onClick={() => setBulkOpen(true)}
-								variant="primary"
-								leftIcon={<Upload size={13} />}
-							>
-								Bulk Upload
-							</Button>
-						</>
-					)
-				}
+				description="Review and approve hosts who have applied to join the platform."
 			/>
 
-			{/* Filters */}
-			<div className="space-y-3">
-				{/* Status tabs */}
-				<div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
-					{STATUS_TABS.map(tab => {
-						const active = statusFilter === tab.value
-						const count = active ? total : null
-						return (
-							<button
-								key={tab.value}
-								onClick={() => {
-									setStatusFilter(tab.value)
-									setPage(1)
-								}}
-								className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-									active
-										? "bg-action-primary text-white"
-										: "bg-neutral-100 text-text-secondary hover:bg-neutral-200"
-								}`}
-							>
-								{tab.label}
-								{count !== null && (
-									<span
-										className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
-											active
-												? "bg-surface-canvas/20 text-white"
-												: "bg-surface-canvas text-text-secondary"
-										}`}
-									>
-										{count}
-									</span>
-								)}
-							</button>
-						)
-					})}
+			{/* Search */}
+			<SearchInput
+				value={search}
+				onChange={setSearch}
+				placeholder="Search by name or email…"
+				className="max-w-xs"
+			/>
+
+			<DataView
+				error={error}
+				isLoading={isLoading}
+				columns={columns}
+				data={filtered}
+				emptyMessage="No hosts pending review."
+				onRowClick={openDrawer}
+				getRowClassName={getRowTint}
+			/>
+
+			{/* Age tint legend */}
+			{!error && !isLoading && filtered.length > 0 && (
+				<div className="flex items-center gap-4 text-[11px] text-text-tertiary">
+					<span className="font-medium">Row colour:</span>
+					<span className="flex items-center gap-1.5">
+						<span className="w-3 h-3 rounded-sm bg-amber-100 border border-amber-200" />
+						7–13 days pending
+					</span>
+					<span className="flex items-center gap-1.5">
+						<span className="w-3 h-3 rounded-sm bg-orange-100 border border-orange-200" />
+						14+ days pending
+					</span>
 				</div>
-
-				{/* Search + dropdowns + city filter */}
-				<div className="flex items-center gap-2 flex-wrap">
-					<div className="relative flex-1 min-w-48 max-w-xs">
-						<Search
-							size={13}
-							className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
-						/>
-						<input
-							type="text"
-							value={search}
-							onChange={e => setSearch(e.target.value)}
-							placeholder="Search by name or email…"
-							className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
-						/>
-					</div>
-
-					<select
-						value={kycFilter}
-						onChange={e => {
-							setKycFilter(e.target.value as KycStatus | "ALL")
-							setPage(1)
-						}}
-						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
-					>
-						<option value="ALL">KYC: All</option>
-						<option value="NOT_SUBMITTED">Not Submitted</option>
-						<option value="PENDING">Pending</option>
-						<option value="VERIFIED">Verified</option>
-						<option value="FAILED">Failed</option>
-					</select>
-
-					<select
-						value={planFilter}
-						onChange={e => {
-							setPlanFilter(e.target.value as HostPlan | "ALL")
-							setPage(1)
-						}}
-						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
-					>
-						<option value="ALL">Plan: All</option>
-						<option value="DISCOVER">Discover</option>
-						<option value="SELL">Sell</option>
-						<option value="COMMUNITY">Community</option>
-					</select>
-
-					<form onSubmit={handleCitySearch} className="flex items-center gap-1.5">
-						<input
-							type="text"
-							value={cityInput}
-							onChange={e => setCityInput(e.target.value)}
-							placeholder="Filter by city…"
-							className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors w-36"
-						/>
-						{cityFilter && (
-							<button
-								type="button"
-								onClick={() => {
-									setCityInput("")
-									setCityFilter("")
-									setPage(1)
-								}}
-								className="rounded-lg border border-border-default px-2.5 py-2 text-xs text-text-secondary hover:bg-neutral-50 transition-colors"
-							>
-								Clear
-							</button>
-						)}
-					</form>
-				</div>
-			</div>
-
-			{/* Error state */}
-			{error ? (
-				<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-					{error}
-				</div>
-			) : (
-				<>
-					{/* Table */}
-					<DataTable
-						columns={columns}
-						data={filtered}
-						isLoading={isLoading}
-						onRowClick={openDrawer}
-						getRowClassName={getRowTint}
-						emptyState={
-							<div className="py-12 text-center text-sm text-text-tertiary">
-								No hosts match the current filters.
-							</div>
-						}
-					/>
-
-					{/* Pagination */}
-					{totalPages > 1 && (
-						<div className="flex items-center justify-between text-xs text-text-tertiary">
-							<span>
-								Showing {(page - 1) * PAGE_LIMIT + 1}â€“{Math.min(page * PAGE_LIMIT, total)}{" "}
-								of {total}
-							</span>
-							<div className="flex items-center gap-2">
-								<button
-									disabled={page === 1}
-									onClick={() => setPage(p => p - 1)}
-									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-								>
-									Previous
-								</button>
-								<span className="font-medium text-text-primary">
-									{page} / {totalPages}
-								</span>
-								<button
-									disabled={page >= totalPages}
-									onClick={() => setPage(p => p + 1)}
-									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-								>
-									Next
-								</button>
-							</div>
-						</div>
-					)}
-				</>
 			)}
 
-			{/* Review drawer */}
 			<HostReviewDrawer
 				open={drawerOpen}
 				onClose={() => {
@@ -432,24 +248,6 @@ export default function HostQueuePage() {
 				}}
 				host={selectedHost}
 				onAction={handleAction}
-			/>
-
-			{/* Invite drawers */}
-			<InviteSingleDrawer
-				open={singleOpen}
-				onClose={() => setSingleOpen(false)}
-				onOpenBulk={() => {
-					setSingleOpen(false)
-					setBulkOpen(true)
-				}}
-			/>
-			<InviteBulkDrawer
-				open={bulkOpen}
-				onClose={() => setBulkOpen(false)}
-				onOpenSingle={() => {
-					setBulkOpen(false)
-					setSingleOpen(true)
-				}}
 			/>
 		</div>
 	)

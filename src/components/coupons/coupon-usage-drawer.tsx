@@ -207,7 +207,7 @@ export function CouponUsageDrawer({ open, onClose, coupon, onDisableSuccess }: C
 								value={
 									displayCoupon.discountType === "PERCENTAGE"
 										? `${displayCoupon.discountValue}% off`
-										: `â‚¹${displayCoupon.discountValue} flat`
+										: `र ${displayCoupon.discountValue} flat`
 								}
 							/>
 							<Stat

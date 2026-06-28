@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { DataView } from "@/components/ui/data-view"
-import { FilterTabs } from "@/components/ui/filter-tabs"
+import { FilterSelect } from "@/components/ui/filter-select"
 import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
@@ -230,23 +230,20 @@ export default function ReviewsPage() {
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
-			<PageHeader
-				title="Reviews"
-				description="Manage the reviews for your events."
-			/>
+			<PageHeader title="Reviews" description="Manage the reviews for your events." />
 
 			{/* Filters */}
 			<div className="flex items-center gap-2 flex-wrap">
-				<FilterTabs
-					options={VISIBILITY_TABS}
-					value={visibilityFilter}
-					onChange={setVisibilityFilter}
-				/>
 				<SearchInput
 					value={search}
 					onChange={setSearch}
 					placeholder="Search by reviewer, event, or content…"
-					className="flex-1 min-w-48 max-w-xs ml-auto"
+					className="w-full max-w-xs"
+				/>
+				<FilterSelect
+					options={VISIBILITY_TABS}
+					value={visibilityFilter}
+					onChange={v => setVisibilityFilter(v as "ALL" | "VISIBLE" | "HIDDEN")}
 				/>
 			</div>
 

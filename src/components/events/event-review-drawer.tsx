@@ -112,7 +112,7 @@ function TicketPricingTable({ tickets }: { tickets: EventTicket[] }) {
 										{price === 0 ? (
 											<span className="text-green-600 font-semibold">Free</span>
 										) : (
-											`â‚¹${price.toLocaleString("en-IN")}`
+											`र ${price.toLocaleString("en-IN")}`
 										)}
 									</td>
 									<td className="px-3 py-2.5 text-right text-text-secondary">

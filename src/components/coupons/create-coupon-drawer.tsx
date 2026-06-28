@@ -249,12 +249,12 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 							className={inputCls()}
 						>
 							<option value="PERCENTAGE">Percentage (%)</option>
-							<option value="FLAT">Flat amount (â‚¹)</option>
+							<option value="FLAT">Flat amount (र )</option>
 						</select>
 					</div>
 					<div className="space-y-1.5">
 						<label htmlFor={`${uid}-value`} className="block text-xs font-medium text-text-primary">
-							{discountType === "PERCENTAGE" ? "Percentage *" : "Amount (â‚¹) *"}
+							{discountType === "PERCENTAGE" ? "Percentage *" : "Amount (र ) *"}
 						</label>
 						<input
 							id={`${uid}-value`}

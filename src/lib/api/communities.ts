@@ -1,5 +1,3 @@
-// TODO: Replace all mock data and simulated delays with real API calls via apiClient
-// import { apiClient } from "./client"
 import { apiClient } from "./client"
 import type {
 	Community,
@@ -22,7 +20,6 @@ export type CommunityStats = {
 	totalMembers: number
 	upcomingEvents: number
 	avgEngagementRate: number
-	// TODO: add trend fields (e.g. totalCommunitiesGrowth, totalMembersGrowth) from API
 }
 
 export type GetCommunitiesParams = {
@@ -41,23 +38,29 @@ export type CommunitiesListResponse = {
 	limit: number
 }
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
-
-const MOCK_STATS: CommunityStats = {
-	totalCommunities: 24,
-	activeCommunities: 18,
-	totalMembers: 18600,
-	upcomingEvents: 96,
-	avgEngagementRate: 72,
-}
-
 // ─── API functions ────────────────────────────────────────────────────────────
 
+type ApiCommunityStats = {
+	totalCommunities: number | { value: number; deltaPct: number }
+	activeCommunities: number | { value: number; deltaPct: number }
+	totalMembers: number | { value: number; deltaPct: number }
+	upcomingEvents: number | { value: number; deltaPct: number }
+	avgEngagementRate: number | { value: number; deltaPct: number }
+}
+
+function unwrapStat(v: number | { value: number; deltaPct: number }): number {
+	return typeof v === "object" ? v.value : v
+}
+
 export async function getCommunityStats(): Promise<CommunityStats> {
-	// TODO: const { data } = await apiClient.get<CommunityStats>("/admin/communities/stats")
-	// TODO: return data
-	await new Promise(r => setTimeout(r, 400))
-	return MOCK_STATS
+	const { data } = await apiClient.get<ApiCommunityStats>("/admin/communities/stats")
+	return {
+		totalCommunities:  unwrapStat(data.totalCommunities),
+		activeCommunities: unwrapStat(data.activeCommunities),
+		totalMembers:      unwrapStat(data.totalMembers),
+		upcomingEvents:    unwrapStat(data.upcomingEvents),
+		avgEngagementRate: unwrapStat(data.avgEngagementRate),
+	}
 }
 
 export async function getCommunities(params?: GetCommunitiesParams): Promise<CommunitiesListResponse> {
@@ -71,14 +74,6 @@ export async function getCommunities(params?: GetCommunitiesParams): Promise<Com
 		page: data.page,
 		limit: data.limit,
 	}
-}
-
-export async function updateCommunityStatus(
-	_id: string,
-	_status: CommunityStatus,
-): Promise<void> {
-	// TODO: await apiClient.patch(`/admin/communities/${_id}/status`, { status: _status })
-	await new Promise(r => setTimeout(r, 400))
 }
 
 // ─── Queue types ──────────────────────────────────────────────────────────────
@@ -130,98 +125,34 @@ export type CommunityQueueResponse = {
 	limit: number
 }
 
-// ─── Queue mock data ──────────────────────────────────────────────────────────
-
 import type { CommunityQueueItem } from "@/types"
-
-const MOCK_QUEUE_STATS: CommunityQueueStats = {
-	pendingReview: 12,
-	approvedToday: 5,
-	rejectedToday: 2,
-	avgReviewTimeHours: 8,
-}
-
-export const MOCK_QUEUE_INSIGHTS: CommunityQueueInsight[] = [
-	{ label: "Music",       pct: 42, color: "#9333ea" },
-	{ label: "Networking",  pct: 24, color: "#3b82f6" },
-	{ label: "Wellness",    pct: 18, color: "#22c55e" },
-	{ label: "Creative",    pct: 16, color: "#f59e0b" },
-]
-
-export const MOCK_QUEUE_REVIEWERS: CommunityQueueReviewer[] = [
-	{ id: "r-1", name: "Rishav Sharma", role: "Lead Reviewer", initial: "R", reviewed: 18, quota: 25 },
-	{ id: "r-2", name: "Priya Mehta",   role: "Reviewer",      initial: "P", reviewed: 12, quota: 25 },
-	{ id: "r-3", name: "Aniket Verma",  role: "Reviewer",      initial: "A", reviewed: 15, quota: 25 },
-]
-
-export const MOCK_QUEUE_ACTIVITY: CommunityQueueActivity[] = [
-	{ id: "a-1", actorName: "Priya Mehta",   actorInitial: "P", action: "approved",           targetName: "Meetday Wellness Circle", timeAgo: "1 hour ago",  type: "approve" },
-	{ id: "a-2", actorName: "Aniket Verma",  actorInitial: "A", action: "requested changes on", targetName: "Startup Founders Hub",  timeAgo: "2 hours ago", type: "changes" },
-	{ id: "a-3", actorName: "Rishav Sharma", actorInitial: "R", action: "approved",           targetName: "Music Nights Kolkata",   timeAgo: "3 hours ago", type: "approve" },
-]
-
-const h = (n: number) => new Date(Date.now() - n * 3_600_000).toISOString()
-const d = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString()
-
-const MOCK_QUEUE: CommunityQueueItem[] = [
-	{ id: "q-1",  name: "Meetday Music Nights",  thumbnailUrl: null, category: { id: "cat-music",      name: "Music"          }, visibility: "PUBLIC",      memberCount: 1600, submittedBy: { id: "u-1",  name: "Rishav Sharma" }, submittedAt: h(2),  status: "PENDING_ADMIN_REVIEW" },
-	{ id: "q-2",  name: "Founder's Huddle",       thumbnailUrl: null, category: { id: "cat-net",        name: "Networking"     }, visibility: "PRIVATE",     memberCount: 680,  submittedBy: { id: "u-2",  name: "Priya Mehta"   }, submittedAt: h(5),  status: "PENDING_ADMIN_REVIEW" },
-	{ id: "q-3",  name: "Wellness Circle",        thumbnailUrl: null, category: { id: "cat-well",       name: "Wellness"       }, visibility: "PUBLIC",      memberCount: 940,  submittedBy: { id: "u-3",  name: "Anjali Verma"  }, submittedAt: d(1),  status: "PENDING_ADMIN_REVIEW" },
-	{ id: "q-4",  name: "Street Photographers",   thumbnailUrl: null, category: { id: "cat-creat",      name: "Creative"       }, visibility: "PUBLIC",      memberCount: 420,  submittedBy: { id: "u-4",  name: "Karan Das"     }, submittedAt: d(1),  status: "PENDING_ADMIN_REVIEW" },
-	{ id: "q-5",  name: "Code & Coffee",          thumbnailUrl: null, category: { id: "cat-tech",       name: "Tech"           }, visibility: "PRIVATE",     memberCount: 560,  submittedBy: { id: "u-5",  name: "Arjun Nair"    }, submittedAt: d(2),  status: "PENDING_ADMIN_REVIEW" },
-	{ id: "q-6",  name: "Goal Getters",           thumbnailUrl: null, category: { id: "cat-pg",         name: "Personal Growth"}, visibility: "PUBLIC",      memberCount: 310,  submittedBy: { id: "u-6",  name: "Neha Kapoor"   }, submittedAt: d(2),  status: "PENDING_ADMIN_REVIEW" },
-	{ id: "q-7",  name: "Travel Buddies India",   thumbnailUrl: null, category: { id: "cat-travel",     name: "Travel"         }, visibility: "PUBLIC",      memberCount: 1100, submittedBy: { id: "u-7",  name: "Mohit Bansal"  }, submittedAt: d(3),  status: "PENDING_ADMIN_REVIEW" },
-	{ id: "q-8",  name: "Book Club Mumbai",       thumbnailUrl: null, category: { id: "cat-lifestyle",  name: "Lifestyle"      }, visibility: "PUBLIC",      memberCount: 450,  submittedBy: { id: "u-8",  name: "Sneha Pillai"  }, submittedAt: d(4),  status: "PENDING_ADMIN_REVIEW" },
-	{ id: "q-9",  name: "Fitness First",          thumbnailUrl: null, category: { id: "cat-well",       name: "Wellness"       }, visibility: "PUBLIC",      memberCount: 720,  submittedBy: { id: "u-9",  name: "Rahul Gupta"   }, submittedAt: d(4),  status: "PENDING_ADMIN_REVIEW" },
-	{ id: "q-10", name: "Design Talks",           thumbnailUrl: null, category: { id: "cat-creat",      name: "Creative"       }, visibility: "PRIVATE",     memberCount: 280,  submittedBy: { id: "u-10", name: "Aditi Shah"    }, submittedAt: d(5),  status: "PENDING_ADMIN_REVIEW" },
-	{ id: "q-11", name: "Poets Corner",           thumbnailUrl: null, category: { id: "cat-arts",       name: "Arts"           }, visibility: "PUBLIC",      memberCount: 190,  submittedBy: { id: "u-11", name: "Vijay Kumar"   }, submittedAt: d(5),  status: "PENDING_ADMIN_REVIEW" },
-	{ id: "q-12", name: "Startup Founders Club",  thumbnailUrl: null, category: { id: "cat-business",   name: "Business"       }, visibility: "INVITE_ONLY", memberCount: 850,  submittedBy: { id: "u-12", name: "Deepak Mehta"  }, submittedAt: d(6),  status: "PENDING_ADMIN_REVIEW" },
-]
 
 // ─── Queue API functions ───────────────────────────────────────────────────────
 
 export async function getCommunityQueueStats(): Promise<CommunityQueueStats> {
-	// TODO: const { data } = await apiClient.get<CommunityQueueStats>("/admin/communities/queue/stats")
-	// TODO: return data
-	await new Promise(r => setTimeout(r, 400))
-	return MOCK_QUEUE_STATS
+	const { data } = await apiClient.get<CommunityQueueStats>("/admin/communities/queue/stats")
+	return data
 }
 
 export async function getCommunityQueue(params?: GetCommunityQueueParams): Promise<CommunityQueueResponse> {
-	// TODO: const { data } = await apiClient.get<CommunityQueueResponse>("/admin/communities/queue", { params })
-	// TODO: return data
-	await new Promise(r => setTimeout(r, 600))
-
-	let filtered = [...MOCK_QUEUE]
-	if (params?.status)     filtered = filtered.filter(c => c.status === params.status)
-	if (params?.visibility) filtered = filtered.filter(c => c.visibility === params.visibility)
-	if (params?.categoryId) filtered = filtered.filter(c => c.category?.id === params.categoryId)
-
-	const limit = params?.limit ?? 10
-	const page  = params?.page  ?? 1
-	const start = (page - 1) * limit
-
-	return { items: filtered.slice(start, start + limit), total: filtered.length, page, limit }
+	const { data } = await apiClient.get<CommunityQueueResponse>("/admin/communities/queue", { params })
+	return data
 }
 
-export async function approveCommunity(_id: string): Promise<void> {
-	// TODO: await apiClient.post(`/admin/communities/${_id}/approve`)
-	await new Promise(r => setTimeout(r, 500))
+export async function approveCommunity(id: string): Promise<void> {
+	await apiClient.post(`/admin/communities/${id}/approve`)
 }
 
-export async function rejectCommunity(_id: string, _reason: string): Promise<void> {
-	// TODO: await apiClient.post(`/admin/communities/${_id}/reject`, { reason: _reason })
-	await new Promise(r => setTimeout(r, 500))
+export async function rejectCommunity(id: string, reason: string): Promise<void> {
+	await apiClient.post(`/admin/communities/${id}/reject`, { reason })
 }
 
-export async function bulkApproveCommunities(_ids: string[]): Promise<void> {
-	// TODO: await apiClient.post("/admin/communities/bulk-approve", { ids: _ids })
-	await new Promise(r => setTimeout(r, 700))
+export async function bulkApproveCommunities(ids: string[]): Promise<void> {
+	await apiClient.post("/admin/communities/bulk-approve", { ids })
 }
 
-export async function bulkRejectCommunities(_ids: string[], _reason: string): Promise<void> {
-	// TODO: await apiClient.post("/admin/communities/bulk-reject", { ids: _ids, reason: _reason })
-	await new Promise(r => setTimeout(r, 700))
+export async function bulkRejectCommunities(ids: string[], reason: string): Promise<void> {
+	await apiClient.post("/admin/communities/bulk-reject", { ids, reason })
 }
 
 // ─── Community Detail — API response types ────────────────────────────────────
@@ -698,11 +629,6 @@ export type CommunityMembersTabData = {
 	members: CommunityMemberItem[]
 }
 
-// ─── Members Tab mock data ──────────────────────────────────────────────────────
-
-const MOCK_TOP_CITIES: CommunityMembersTabData["topCities"] = []
-const MOCK_MEMBER_SEGMENTS: CommunityMembersTabData["segments"] = []
-
 const INSIGHTS_CITY_COLORS    = ["#9333ea", "#3b82f6", "#22c55e", "#f59e0b", "#9ca3af", "#f43f5e", "#06b6d4"]
 const INSIGHTS_SEGMENT_COLORS = ["#9333ea", "#3b82f6", "#22c55e", "#f59e0b", "#f43f5e", "#06b6d4"]
 
@@ -1086,7 +1012,6 @@ export type CommunityFeedTabData = {
 	stats:         CommunityFeedStats
 	overview:      CommunityFeedOverviewItem[]
 	recentReports: CommunityRecentReport[]
-	tip:           string
 }
 
 // ─── Feed Overview API ────────────────────────────────────────────────────────
@@ -1457,7 +1382,6 @@ export async function getCommunityFeedTab(communityId: string): Promise<Communit
 		stats:         statsData,
 		overview,
 		recentReports,
-		tip:           "Use pinned posts to highlight important updates or community guidelines.",
 	}
 }
 

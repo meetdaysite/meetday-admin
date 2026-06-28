@@ -8,6 +8,8 @@ import { CheckCircle2, Loader2 } from "lucide-react"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { TextField } from "@/components/ui/TextField"
 import { Button } from "@/components/ui/Button"
+import { inviteHost } from "@/lib/api/hosts"
+import { toast } from "sonner"
 
 const schema = z.object({
 	name:  z.string().min(1, "Name is required"),
@@ -46,10 +48,13 @@ export function InviteSingleDrawer({ open, onClose, onOpenBulk }: Props) {
 		}, 300)
 	}
 
-	async function onSubmit(_values: FormValues) {
-		// TODO: replace with real API call
-		await new Promise((r) => setTimeout(r, 900))
-		setSent(true)
+	async function onSubmit(values: FormValues) {
+		try {
+			await inviteHost({ name: values.name, email: values.email, phone: values.phone || undefined, city: values.city })
+			setSent(true)
+		} catch {
+			toast.error("Failed to send invitation. Please try again.")
+		}
 	}
 
 	return (

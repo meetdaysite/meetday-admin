@@ -358,46 +358,35 @@ export default function CommunitiesPage() {
 			/>
 
 			{/* Stat cards */}
-			{/* TODO: replace hardcoded trend percentages with values from getCommunityStats API */}
 			<div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
 				<StatCard
 					icon={LayoutGrid}
 					label="Total Communities"
 					value={statsLoading ? "—" : (stats?.totalCommunities ?? 0)}
-					trend={stats ? { value: 12, direction: "up", label: "%" } : undefined}
-					sub="vs last month"
 					accent="brand"
 				/>
 				<StatCard
 					icon={UserCheck}
 					label="Active Communities"
 					value={statsLoading ? "—" : (stats?.activeCommunities ?? 0)}
-					trend={stats ? { value: 8, direction: "up", label: "%" } : undefined}
-					sub="vs last month"
 					accent="green"
 				/>
 				<StatCard
 					icon={Users}
 					label="Total Members"
 					value={statsLoading ? "—" : formatCount(stats?.totalMembers ?? 0)}
-					trend={stats ? { value: 15, direction: "up", label: "%" } : undefined}
-					sub="vs last month"
 					accent="amber"
 				/>
 				<StatCard
 					icon={CalendarDays}
 					label="Upcoming Events"
 					value={statsLoading ? "—" : (stats?.upcomingEvents ?? 0)}
-					trend={stats ? { value: 10, direction: "up", label: "%" } : undefined}
-					sub="vs last month"
 					accent="sky"
 				/>
 				<StatCard
 					icon={TrendingUp}
 					label="Avg. Engagement"
 					value={statsLoading ? "—" : `${stats?.avgEngagementRate ?? 0}%`}
-					trend={stats ? { value: 6, direction: "up", label: "%" } : undefined}
-					sub="vs last month"
 					accent="purple"
 				/>
 			</div>

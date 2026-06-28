@@ -1,5 +1,6 @@
 ﻿﻿"use client"
 
+import { ClearableInput } from "@/components/ui/clearable-input"
 import { DataView } from "@/components/ui/data-view"
 import { DateRangeFilter } from "@/components/ui/date-range-filter"
 import { FilterSelect } from "@/components/ui/filter-select"
@@ -66,9 +67,7 @@ export default function AuditLogsPage() {
 	const [page, setPage] = useState(1)
 	const [actionFilter, setActionFilter] = useState("")
 	const [entityTypeFilter, setEntityTypeFilter] = useState("")
-	const [entityIdInput, setEntityIdInput] = useState("")
 	const [entityIdFilter, setEntityIdFilter] = useState("")
-	const [actorIdInput, setActorIdInput] = useState("")
 	const [actorIdFilter, setActorIdFilter] = useState("")
 	const [fromDate, setFromDate] = useState("")
 	const [toDate, setToDate] = useState("")
@@ -98,13 +97,6 @@ export default function AuditLogsPage() {
 				(l.entityType ?? "").toLowerCase().includes(q),
 		)
 	}, [logs, search])
-
-	function handleEntitySearch(e: React.FormEvent) {
-		e.preventDefault()
-		setPage(1)
-		setEntityIdFilter(entityIdInput.trim())
-		setActorIdFilter(actorIdInput.trim())
-	}
 
 	const totalPages = Math.ceil(total / PAGE_LIMIT)
 
@@ -182,91 +174,81 @@ export default function AuditLogsPage() {
 			<PageHeader title="Audit Logs" description="View a log of all actions performed in the system." />
 
 			{/* Filters */}
-			<div className="space-y-3">
-				{/* Row 1: action + entity type + date range */}
-				<div className="flex items-center gap-2 flex-wrap">
-					<FilterSelect
-						value={actionFilter}
-						onChange={v => {
-							setActionFilter(v)
-							setPage(1)
-						}}
-						options={[
-							{ value: "", label: "All actions" },
-							...AUDIT_ACTIONS.map(a => ({ value: a, label: actionLabel(a) })),
-						]}
-						className="max-w-55"
-					/>
+			<div className="flex items-center gap-2 flex-wrap">
+				<SearchInput
+					value={search}
+					onChange={setSearch}
+					placeholder="Search action, actor, entity…"
+					className="flex-1 min-w-48 max-w-xs"
+				/>
 
-					<input
-						type="text"
-						value={entityTypeFilter}
-						onChange={e => {
-							setEntityTypeFilter(e.target.value)
-							setPage(1)
-						}}
-						placeholder="Entity type…"
-						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors w-32"
-					/>
+				<FilterSelect
+					value={actionFilter}
+					onChange={v => {
+						setActionFilter(v)
+						setPage(1)
+					}}
+					options={[
+						{ value: "", label: "All actions" },
+						...AUDIT_ACTIONS.map(a => ({ value: a, label: actionLabel(a) })),
+					]}
+					className="max-w-55"
+				/>
 
-					<DateRangeFilter
-						from={fromDate}
-						to={toDate}
-						onFromChange={v => {
-							setFromDate(v)
-							setPage(1)
-						}}
-						onToChange={v => {
-							setToDate(v)
-							setPage(1)
-						}}
-					/>
-				</div>
+				<DateRangeFilter
+					from={fromDate}
+					to={toDate}
+					onFromChange={v => {
+						setFromDate(v)
+						setPage(1)
+					}}
+					onToChange={v => {
+						setToDate(v)
+						setPage(1)
+					}}
+				/>
 
-				{/* Row 2: actor ID + entity ID + search */}
-				<form onSubmit={handleEntitySearch} className="flex items-center gap-2 flex-wrap">
-					<SearchInput
-						value={search}
-						onChange={setSearch}
-						placeholder="Search action, actor, entity…"
-						className="flex-1 min-w-48 max-w-xs"
-					/>
-					<input
-						type="text"
-						value={actorIdInput}
-						onChange={e => setActorIdInput(e.target.value)}
-						placeholder="Actor ID…"
-						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs placeholder:text-text-tertiary font-mono focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors w-40"
-					/>
-					<input
-						type="text"
-						value={entityIdInput}
-						onChange={e => setEntityIdInput(e.target.value)}
-						placeholder="Entity ID…"
-						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs placeholder:text-text-tertiary font-mono focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors w-40"
-					/>
-					<button
-						type="submit"
-						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors"
-					>
-						Apply
-					</button>
-					{(actorIdFilter || entityIdFilter) && (
-						<button
-							type="button"
-							onClick={() => {
-								setActorIdInput("")
-								setActorIdFilter("")
-								setEntityIdInput("")
-								setEntityIdFilter("")
-								setPage(1)
-							}}
-							className="text-xs text-text-tertiary hover:text-text-primary transition-colors"
-						>
-							Clear
-						</button>
-					)}
-				</form>
+				<ClearableInput
+					value={actorIdFilter}
+					onChange={v => {
+						setActorIdFilter(v)
+						setPage(1)
+					}}
+					showClear={!!actorIdFilter}
+					onClear={() => {
+						setActorIdFilter("")
+						setPage(1)
+					}}
+					placeholder="Actor ID…"
+				/>
+
+				<ClearableInput
+					value={entityIdFilter}
+					onChange={v => {
+						setEntityIdFilter(v)
+						setPage(1)
+					}}
+					showClear={!!entityIdFilter}
+					onClear={() => {
+						setEntityIdFilter("")
+						setPage(1)
+					}}
+					placeholder="Entity ID…"
+				/>
+
+				<ClearableInput
+					value={entityTypeFilter}
+					onChange={v => {
+						setEntityTypeFilter(v)
+						setPage(1)
+					}}
+					showClear={!!entityTypeFilter}
+					onClear={() => {
+						setEntityTypeFilter("")
+						setPage(1)
+					}}
+					placeholder="Entity type…"
+				/>
 			</div>
 
 			<DataView

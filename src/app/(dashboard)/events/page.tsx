@@ -3,7 +3,7 @@
 import { EventReviewDrawer, type EventAction } from "@/components/events/event-review-drawer"
 import { ClearableInput } from "@/components/ui/clearable-input"
 import { DataView } from "@/components/ui/data-view"
-import { FilterTabs } from "@/components/ui/filter-tabs"
+import { FilterSelect } from "@/components/ui/filter-select"
 import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
@@ -190,45 +190,37 @@ export default function EventsPage() {
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
-			<PageHeader
-				title="Events"
-				description="Manage and review all events on the platform."
-			/>
+			<PageHeader title="Events" description="Manage and review all events on the platform." />
 
 			{/* Filters */}
-			<div className="space-y-3">
-				{/* Status tabs */}
-				<FilterTabs
+			<div className="flex items-center gap-2 flex-wrap">
+				<SearchInput
+					value={search}
+					onChange={setSearch}
+					placeholder="Search by title or host…"
+					className="flex-1 min-w-48 max-w-xs"
+				/>
+				<FilterSelect
 					options={STATUS_TABS}
 					value={statusFilter}
 					onChange={v => {
-						setStatusFilter(v)
+						setStatusFilter(v as StatusFilter)
 						setPage(1)
 					}}
 				/>
-
-				{/* Search + city */}
-				<div className="flex items-center gap-2 flex-wrap">
-					<SearchInput
-						value={search}
-						onChange={setSearch}
-						placeholder="Search by title or host…"
-						className="flex-1 min-w-48 max-w-xs"
+				<form onSubmit={handleCitySearch}>
+					<ClearableInput
+						value={cityInput}
+						onChange={setCityInput}
+						showClear={!!cityFilter}
+						onClear={() => {
+							setCityInput("")
+							setCityFilter("")
+							setPage(1)
+						}}
+						placeholder="Filter by city…"
 					/>
-					<form onSubmit={handleCitySearch}>
-						<ClearableInput
-							value={cityInput}
-							onChange={setCityInput}
-							showClear={!!cityFilter}
-							onClear={() => {
-								setCityInput("")
-								setCityFilter("")
-								setPage(1)
-							}}
-							placeholder="Filter by city…"
-						/>
-					</form>
-				</div>
+				</form>
 			</div>
 
 			<DataView

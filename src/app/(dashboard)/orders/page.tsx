@@ -4,7 +4,7 @@ import { OrderDetailDrawer } from "@/components/orders/order-detail-drawer"
 import { ClearableInput } from "@/components/ui/clearable-input"
 import { DataView } from "@/components/ui/data-view"
 import { DateRangeFilter } from "@/components/ui/date-range-filter"
-import { FilterTabs } from "@/components/ui/filter-tabs"
+import { FilterSelect } from "@/components/ui/filter-select"
 import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
@@ -142,54 +142,51 @@ export default function OrdersPage() {
 			<PageHeader title="Orders" description="Manage the orders for your payments." />
 
 			{/* Filters */}
-			<div className="space-y-3">
-				{/* Status tabs */}
-				<FilterTabs
+			{/* Search + booking ID + date range */}
+			<div className="flex items-center gap-2 flex-wrap">
+				<SearchInput
+					value={search}
+					onChange={setSearch}
+					placeholder="Search by event, attendee…"
+					className="flex-1 min-w-48 max-w-xs"
+				/>
+
+				<FilterSelect
 					options={STATUS_TABS}
 					value={statusFilter}
 					onChange={v => {
-						setStatusFilter(v)
+						setStatusFilter(v as StatusFilter)
 						setPage(1)
 					}}
 				/>
 
-				{/* Search + booking ID + date range */}
-				<div className="flex items-center gap-2 flex-wrap">
-					<SearchInput
-						value={search}
-						onChange={setSearch}
-						placeholder="Search by event, attendee…"
-						className="flex-1 min-w-48 max-w-xs"
-					/>
-
-					<form onSubmit={handleBookingSearch}>
-						<ClearableInput
-							value={bookingIdInput}
-							onChange={setBookingIdInput}
-							showClear={!!bookingIdFilter}
-							onClear={() => {
-								setBookingIdInput("")
-								setBookingIdFilter("")
-								setPage(1)
-							}}
-							placeholder="Booking ID…"
-							inputClassName="font-mono"
-						/>
-					</form>
-
-					<DateRangeFilter
-						from={fromDate}
-						to={toDate}
-						onFromChange={v => {
-							setFromDate(v)
+				<form onSubmit={handleBookingSearch}>
+					<ClearableInput
+						value={bookingIdInput}
+						onChange={setBookingIdInput}
+						showClear={!!bookingIdFilter}
+						onClear={() => {
+							setBookingIdInput("")
+							setBookingIdFilter("")
 							setPage(1)
 						}}
-						onToChange={v => {
-							setToDate(v)
-							setPage(1)
-						}}
+						placeholder="Booking ID…"
+						
 					/>
-				</div>
+				</form>
+
+				<DateRangeFilter
+					from={fromDate}
+					to={toDate}
+					onFromChange={v => {
+						setFromDate(v)
+						setPage(1)
+					}}
+					onToChange={v => {
+						setToDate(v)
+						setPage(1)
+					}}
+				/>
 			</div>
 
 			<DataView

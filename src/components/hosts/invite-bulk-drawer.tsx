@@ -21,6 +21,8 @@ import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/Button"
 import { parseHostFile, downloadErrorReport, downloadTemplate } from "@/lib/parse-host-file"
 import type { BulkHostRow } from "@/types"
+import { inviteHostsBulk } from "@/lib/api/hosts"
+import { toast } from "sonner"
 
 // ─── Step indicator ──────────────────────────────────────────────────────────
 
@@ -448,12 +450,19 @@ export function InviteBulkDrawer({ open, onClose, onOpenSingle }: Props) {
 
 	async function handleSend() {
 		setIsSending(true)
-		// TODO: replace with real API — send only rows where _valid === true
-		await new Promise((r) => setTimeout(r, 1200))
-		setSentCount(rows.filter((r) => r._valid).length)
-		setFailedRows(rows.filter((r) => !r._valid))
-		setIsSending(false)
-		setStep(2)
+		try {
+			const validRows = rows.filter((r) => r._valid)
+			const result = await inviteHostsBulk({
+				hosts: validRows.map((r) => ({ name: r.name, email: r.email, phone: r.phone, city: r.city })),
+			})
+			setSentCount(result.sent)
+			setFailedRows(rows.filter((r) => result.failed.some((f) => f.email === r.email)))
+			setStep(2)
+		} catch {
+			toast.error("Failed to send invitations. Please try again.")
+		} finally {
+			setIsSending(false)
+		}
 	}
 
 	function handleReset() {
