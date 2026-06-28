@@ -36,6 +36,8 @@ import {
 } from "@/lib/api/communities"
 import type { Community, CommunityStatus, CommunityType } from "@/types"
 import { cn } from "@/lib/utils"
+import { formatCount } from "@/lib/formatters"
+import { extractApiErrorMessage } from "@/lib/error-handler"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -70,14 +72,6 @@ const TYPE_BADGE: Record<CommunityType, { label: string; className: string }> = 
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatCount(n: number): string {
-	if (n >= 1000) {
-		const v = n / 1000
-		return `${v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)}K`
-	}
-	return String(n)
-}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -161,10 +155,6 @@ export default function CommunitiesPage() {
 		setPage(1)
 	}
 
-	function extractApiMessage(err: unknown, fallback: string): string {
-		return (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? fallback
-	}
-
 	async function handleArchive() {
 		if (!archiveTargetId) return
 		setIsArchiving(true)
@@ -174,7 +164,7 @@ export default function CommunitiesPage() {
 			setArchiveTargetId(null)
 			fetchCommunities()
 		} catch (err: unknown) {
-			toast.error(extractApiMessage(err, "Failed to archive community"))
+			toast.error(extractApiErrorMessage(err, "Failed to archive community"))
 		} finally {
 			setIsArchiving(false)
 		}
@@ -189,7 +179,7 @@ export default function CommunitiesPage() {
 			setRestoreTargetId(null)
 			fetchCommunities()
 		} catch (err: unknown) {
-			toast.error(extractApiMessage(err, "Failed to restore community"))
+			toast.error(extractApiErrorMessage(err, "Failed to restore community"))
 		} finally {
 			setIsRestoring(false)
 		}
@@ -204,7 +194,7 @@ export default function CommunitiesPage() {
 			setDeleteTargetId(null)
 			fetchCommunities()
 		} catch (err: unknown) {
-			toast.error(extractApiMessage(err, "Failed to delete community"))
+			toast.error(extractApiErrorMessage(err, "Failed to delete community"))
 		} finally {
 			setIsDeleting(false)
 		}
@@ -298,47 +288,56 @@ export default function CommunitiesPage() {
 				cell: ({ row }) => {
 					const c = row.original
 					return (
-					<div className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
-						<button
-							className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-neutral-100"
-							title="View"
-							onClick={() => router.push(`/communities/${c.id}`)}
-						>
-							<Eye size={14} />
-						</button>
-						<button
-							className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-neutral-100"
-							title="Edit"
-							onClick={() => router.push(`/communities/${c.id}/edit`)}
-						>
-							<Pencil size={14} />
-						</button>
-						{c.status === "PUBLISHED" && (
+						<div className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
 							<button
-								className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-amber-50 hover:text-amber-600"
-								title="Archive community"
-								onClick={() => { setArchiveTargetId(c.id); setArchiveTargetName(c.name) }}
+								className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-neutral-100"
+								title="View"
+								onClick={() => router.push(`/communities/${c.id}`)}
 							>
-								<Archive size={14} />
+								<Eye size={14} />
 							</button>
-						)}
-						{c.status === "ARCHIVED" && (
 							<button
-								className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-green-50 hover:text-green-600"
-								title="Restore community"
-								onClick={() => { setRestoreTargetId(c.id); setRestoreTargetName(c.name) }}
+								className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-neutral-100"
+								title="Edit"
+								onClick={() => router.push(`/communities/${c.id}/edit`)}
 							>
-								<ArchiveRestore size={14} />
+								<Pencil size={14} />
 							</button>
-						)}
-						<button
-							className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-red-50 hover:text-red-600"
-							title="Delete community"
-							onClick={() => { setDeleteTargetId(c.id); setDeleteTargetName(c.name) }}
-						>
-							<Trash2 size={14} />
-						</button>
-					</div>
+							{c.status === "PUBLISHED" && (
+								<button
+									className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-amber-50 hover:text-amber-600"
+									title="Archive community"
+									onClick={() => {
+										setArchiveTargetId(c.id)
+										setArchiveTargetName(c.name)
+									}}
+								>
+									<Archive size={14} />
+								</button>
+							)}
+							{c.status === "ARCHIVED" && (
+								<button
+									className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-green-50 hover:text-green-600"
+									title="Restore community"
+									onClick={() => {
+										setRestoreTargetId(c.id)
+										setRestoreTargetName(c.name)
+									}}
+								>
+									<ArchiveRestore size={14} />
+								</button>
+							)}
+							<button
+								className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-red-50 hover:text-red-600"
+								title="Delete community"
+								onClick={() => {
+									setDeleteTargetId(c.id)
+									setDeleteTargetName(c.name)
+								}}
+							>
+								<Trash2 size={14} />
+							</button>
+						</div>
 					)
 				},
 			},

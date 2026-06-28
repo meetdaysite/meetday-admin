@@ -9,16 +9,13 @@ import { usePermission } from "@/lib/hooks/use-permission"
 import { DataTable } from "@/components/ui/data-table"
 import { getReviews, updateReviewVisibility } from "@/lib/api/reviews"
 import type { Review } from "@/types"
+import { formatDate } from "@/lib/formatters"
 
-// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Constants
 
 const PAGE_LIMIT = 20
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-function formatDate(iso: string): string {
-	return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-}
+// Helpers
 
 function StarRating({ rating }: { rating: number }) {
 	return (
@@ -35,19 +32,19 @@ function StarRating({ rating }: { rating: number }) {
 	)
 }
 
-// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Page
 
 export default function ReviewsPage() {
-	const router    = useRouter()
-	const canRead   = usePermission("moderation.read")
+	const router = useRouter()
+	const canRead = usePermission("moderation.read")
 	const canAction = usePermission("moderation.action")
 
 	const [isLoading, setIsLoading] = useState(true)
-	const [error, setError]         = useState<string | null>(null)
-	const [reviews, setReviews]     = useState<Review[]>([])
-	const [total, setTotal]         = useState(0)
-	const [page, setPage]           = useState(1)
-	const [search, setSearch]       = useState("")
+	const [error, setError] = useState<string | null>(null)
+	const [reviews, setReviews] = useState<Review[]>([])
+	const [total, setTotal] = useState(0)
+	const [page, setPage] = useState(1)
+	const [search, setSearch] = useState("")
 	const [togglingId, setTogglingId] = useState<string | null>(null)
 	const [visibilityFilter, setVisibilityFilter] = useState<"ALL" | "VISIBLE" | "HIDDEN">("ALL")
 
@@ -60,7 +57,10 @@ export default function ReviewsPage() {
 			setTotal(res.total ?? res.reviews.length)
 		} catch (err: unknown) {
 			const status = (err as { response?: { status?: number } })?.response?.status
-			if (status === 401) { router.replace("/login"); return }
+			if (status === 401) {
+				router.replace("/login")
+				return
+			}
 			if (status === 403) {
 				setError("You don't have permission to view reviews.")
 			} else {
@@ -81,11 +81,14 @@ export default function ReviewsPage() {
 		setTogglingId(review.id)
 		try {
 			const updated = await updateReviewVisibility(review.id, !review.isVisible)
-			setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
+			setReviews(prev => prev.map(r => (r.id === updated.id ? updated : r)))
 			toast.success(updated.isVisible ? "Review shown" : "Review hidden")
 		} catch (err: unknown) {
 			const status = (err as { response?: { status?: number } })?.response?.status
-			if (status === 401) { router.replace("/login"); return }
+			if (status === 401) {
+				router.replace("/login")
+				return
+			}
 			toast.error("Failed to update review visibility")
 		} finally {
 			setTogglingId(null)
@@ -95,16 +98,18 @@ export default function ReviewsPage() {
 	const filtered = useMemo(() => {
 		const q = search.toLowerCase()
 		return reviews
-			.filter((r) => {
+			.filter(r => {
 				if (visibilityFilter === "VISIBLE") return r.isVisible
-				if (visibilityFilter === "HIDDEN")  return !r.isVisible
+				if (visibilityFilter === "HIDDEN") return !r.isVisible
 				return true
 			})
 			.filter(
-				(r) =>
+				r =>
 					!q ||
 					r.event.title.toLowerCase().includes(q) ||
-					(r.reviewer ? `${r.reviewer.firstName} ${r.reviewer.lastName}`.toLowerCase().includes(q) : false) ||
+					(r.reviewer
+						? `${r.reviewer.firstName} ${r.reviewer.lastName}`.toLowerCase().includes(q)
+						: false) ||
 					(r.content ?? "").toLowerCase().includes(q),
 			)
 	}, [reviews, search, visibilityFilter])
@@ -186,7 +191,10 @@ export default function ReviewsPage() {
 					const isBusy = togglingId === r.id
 					return (
 						<button
-							onClick={(e) => { e.stopPropagation(); handleToggleVisibility(r) }}
+							onClick={e => {
+								e.stopPropagation()
+								handleToggleVisibility(r)
+							}}
 							disabled={!canAction || isBusy}
 							title={r.isVisible ? "Hide review" : "Show review"}
 							className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
@@ -226,7 +234,7 @@ export default function ReviewsPage() {
 			{/* Filters */}
 			<div className="flex items-center gap-2 flex-wrap">
 				{/* Visibility tabs */}
-				{(["ALL", "VISIBLE", "HIDDEN"] as const).map((v) => (
+				{(["ALL", "VISIBLE", "HIDDEN"] as const).map(v => (
 					<button
 						key={v}
 						onClick={() => setVisibilityFilter(v)}
@@ -248,7 +256,7 @@ export default function ReviewsPage() {
 					<input
 						type="text"
 						value={search}
-						onChange={(e) => setSearch(e.target.value)}
+						onChange={e => setSearch(e.target.value)}
 						placeholder="Search by reviewer, event, or content…"
 						className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 					/>
@@ -276,20 +284,23 @@ export default function ReviewsPage() {
 					{totalPages > 1 && (
 						<div className="flex items-center justify-between text-xs text-text-tertiary">
 							<span>
-								Showing {(page - 1) * PAGE_LIMIT + 1}â€“{Math.min(page * PAGE_LIMIT, total)} of {total}
+								Showing {(page - 1) * PAGE_LIMIT + 1}â€“{Math.min(page * PAGE_LIMIT, total)}{" "}
+								of {total}
 							</span>
 							<div className="flex items-center gap-2">
 								<button
 									disabled={page === 1}
-									onClick={() => setPage((p) => p - 1)}
+									onClick={() => setPage(p => p - 1)}
 									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 								>
 									Previous
 								</button>
-								<span className="font-medium text-text-primary">{page} / {totalPages}</span>
+								<span className="font-medium text-text-primary">
+									{page} / {totalPages}
+								</span>
 								<button
 									disabled={page >= totalPages}
-									onClick={() => setPage((p) => p + 1)}
+									onClick={() => setPage(p => p + 1)}
 									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 								>
 									Next

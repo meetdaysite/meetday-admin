@@ -12,8 +12,10 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { InviteAdminDrawer, type InviteAdminSubmitValues } from "@/components/admins/invite-admin-drawer"
 import { inviteAdmin, getAdmins, deactivateAdmin, reactivateAdmin } from "@/lib/api/admins"
 import type { Admin, Role } from "@/types"
+import { formatDate } from "@/lib/formatters"
+import { ROLE_STYLE, ROLE_LABEL } from "@/lib/constants/roles"
 
-// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Constants
 
 const PAGE_LIMIT = 20
 
@@ -21,33 +23,19 @@ type RoleFilter = Exclude<Role, "SUPER_ADMIN"> | "ALL"
 type ActiveFilter = "ALL" | "true" | "false"
 
 const ROLE_FILTER_OPTIONS: { label: string; value: RoleFilter }[] = [
-	{ label: "All roles",   value: "ALL" },
-	{ label: "City Admin",  value: "CITY_ADMIN" },
-	{ label: "Moderator",   value: "MODERATOR" },
-	{ label: "Support",     value: "SUPPORT" },
+	{ label: "All roles", value: "ALL" },
+	{ label: "City Admin", value: "CITY_ADMIN" },
+	{ label: "Moderator", value: "MODERATOR" },
+	{ label: "Support", value: "SUPPORT" },
 ]
 
 const ACTIVE_FILTER_OPTIONS: { label: string; value: ActiveFilter }[] = [
-	{ label: "All",      value: "ALL" },
-	{ label: "Active",   value: "true" },
+	{ label: "All", value: "ALL" },
+	{ label: "Active", value: "true" },
 	{ label: "Inactive", value: "false" },
 ]
 
-// â”€â”€â”€ Role badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-const ROLE_STYLE: Record<Role, string> = {
-	SUPER_ADMIN: "bg-violet-50 text-violet-700",
-	CITY_ADMIN:  "bg-blue-50 text-blue-700",
-	MODERATOR:   "bg-amber-50 text-amber-700",
-	SUPPORT:     "bg-teal-50 text-teal-700",
-}
-
-const ROLE_LABEL: Record<Role, string> = {
-	SUPER_ADMIN: "Super Admin",
-	CITY_ADMIN:  "City Admin",
-	MODERATOR:   "Moderator",
-	SUPPORT:     "Support",
-}
+// Role badge
 
 function RoleBadge({ role }: { role: Role }) {
 	return (
@@ -59,20 +47,12 @@ function RoleBadge({ role }: { role: Role }) {
 	)
 }
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Helpers
 
-function formatDate(iso: string): string {
-	return new Date(iso).toLocaleDateString("en-IN", {
-		day: "numeric",
-		month: "short",
-		year: "numeric",
-	})
-}
-
-// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Page
 
 export default function AdminsPage() {
-	const currentUserId = useAuthStore((s) => s.user?.id)
+	const currentUserId = useAuthStore(s => s.user?.id)
 	const canInvite = usePermission("admin.invite")
 
 	const [isLoading, setIsLoading] = useState(true)
@@ -144,9 +124,7 @@ export default function AdminsPage() {
 		setIsDeactivating(true)
 		try {
 			await deactivateAdmin(deactivateTarget.id)
-			setAdmins((prev) =>
-				prev.map((a) => (a.id === deactivateTarget.id ? { ...a, isActive: false } : a)),
-			)
+			setAdmins(prev => prev.map(a => (a.id === deactivateTarget.id ? { ...a, isActive: false } : a)))
 			setDeactivateTarget(null)
 			toast.success("Admin deactivated", {
 				description: `${deactivateTarget.firstName} ${deactivateTarget.lastName}'s access has been revoked.`,
@@ -165,9 +143,7 @@ export default function AdminsPage() {
 		setIsReactivating(true)
 		try {
 			await reactivateAdmin(reactivateTarget.id)
-			setAdmins((prev) =>
-				prev.map((a) => (a.id === reactivateTarget.id ? { ...a, isActive: true } : a)),
-			)
+			setAdmins(prev => prev.map(a => (a.id === reactivateTarget.id ? { ...a, isActive: true } : a)))
 			setReactivateTarget(null)
 			toast.success("Admin reactivated", {
 				description: `${reactivateTarget.firstName} ${reactivateTarget.lastName}'s access has been restored.`,
@@ -225,9 +201,7 @@ export default function AdminsPage() {
 			{
 				id: "status",
 				header: "Status",
-				cell: ({ row }) => (
-					<StatusBadge status={row.original.isActive ? "ACTIVE" : "DISABLED"} />
-				),
+				cell: ({ row }) => <StatusBadge status={row.original.isActive ? "ACTIVE" : "DISABLED"} />,
 			},
 			{
 				id: "joined",
@@ -235,9 +209,7 @@ export default function AdminsPage() {
 				accessorKey: "createdAt",
 				enableSorting: true,
 				cell: ({ row }) => (
-					<span className="text-xs text-text-secondary">
-						{formatDate(row.original.createdAt)}
-					</span>
+					<span className="text-xs text-text-secondary">{formatDate(row.original.createdAt)}</span>
 				),
 			},
 			...(canInvite
@@ -255,7 +227,7 @@ export default function AdminsPage() {
 								if (admin.isActive) {
 									return (
 										<button
-											onClick={(e) => {
+											onClick={e => {
 												e.stopPropagation()
 												setDeactivateTarget(admin)
 											}}
@@ -268,7 +240,7 @@ export default function AdminsPage() {
 
 								return (
 									<button
-										onClick={(e) => {
+										onClick={e => {
 											e.stopPropagation()
 											setReactivateTarget(admin)
 										}}
@@ -315,27 +287,31 @@ export default function AdminsPage() {
 			<div className="flex items-center gap-3">
 				<select
 					value={roleFilter}
-					onChange={(e) => {
+					onChange={e => {
 						setRoleFilter(e.target.value as RoleFilter)
 						setPage(1)
 					}}
 					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 				>
-					{ROLE_FILTER_OPTIONS.map((o) => (
-						<option key={o.value} value={o.value}>{o.label}</option>
+					{ROLE_FILTER_OPTIONS.map(o => (
+						<option key={o.value} value={o.value}>
+							{o.label}
+						</option>
 					))}
 				</select>
 
 				<select
 					value={activeFilter}
-					onChange={(e) => {
+					onChange={e => {
 						setActiveFilter(e.target.value as ActiveFilter)
 						setPage(1)
 					}}
 					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 				>
-					{ACTIVE_FILTER_OPTIONS.map((o) => (
-						<option key={o.value} value={o.value}>{o.label}</option>
+					{ACTIVE_FILTER_OPTIONS.map(o => (
+						<option key={o.value} value={o.value}>
+							{o.label}
+						</option>
 					))}
 				</select>
 			</div>
@@ -346,9 +322,7 @@ export default function AdminsPage() {
 				data={admins}
 				isLoading={isLoading}
 				emptyState={
-					<div className="py-12 text-center text-sm text-text-tertiary">
-						No admins found.
-					</div>
+					<div className="py-12 text-center text-sm text-text-tertiary">No admins found.</div>
 				}
 			/>
 
@@ -356,12 +330,13 @@ export default function AdminsPage() {
 			{totalPages > 1 && (
 				<div className="flex items-center justify-between text-xs text-text-tertiary">
 					<span>
-						Showing {(page - 1) * PAGE_LIMIT + 1}â€“{Math.min(page * PAGE_LIMIT, total)} of {total}
+						Showing {(page - 1) * PAGE_LIMIT + 1}â€“{Math.min(page * PAGE_LIMIT, total)} of{" "}
+						{total}
 					</span>
 					<div className="flex items-center gap-2">
 						<button
 							disabled={page === 1}
-							onClick={() => setPage((p) => p - 1)}
+							onClick={() => setPage(p => p - 1)}
 							className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 						>
 							Previous
@@ -371,7 +346,7 @@ export default function AdminsPage() {
 						</span>
 						<button
 							disabled={page >= totalPages}
-							onClick={() => setPage((p) => p + 1)}
+							onClick={() => setPage(p => p + 1)}
 							className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 						>
 							Next

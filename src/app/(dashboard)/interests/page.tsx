@@ -10,25 +10,22 @@ import { DataTable } from "@/components/ui/data-table"
 import { InterestDrawer } from "@/components/interests/interest-drawer"
 import { getInterests } from "@/lib/api/interests"
 import type { Interest } from "@/types"
+import { formatDate } from "@/lib/formatters"
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Helpers
 
-function formatDate(iso: string): string {
-	return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-}
-
-// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Page
 
 export default function InterestsPage() {
-	const router     = useRouter()
-	const canManage  = usePermission("interest.manage")
+	const router = useRouter()
+	const canManage = usePermission("interest.manage")
 
-	const [isLoading, setIsLoading]   = useState(true)
-	const [error, setError]           = useState<string | null>(null)
-	const [interests, setInterests]   = useState<Interest[]>([])
-	const [search, setSearch]         = useState("")
+	const [isLoading, setIsLoading] = useState(true)
+	const [error, setError] = useState<string | null>(null)
+	const [interests, setInterests] = useState<Interest[]>([])
+	const [search, setSearch] = useState("")
 	const [drawerOpen, setDrawerOpen] = useState(false)
-	const [selected, setSelected]     = useState<Interest | null>(null)
+	const [selected, setSelected] = useState<Interest | null>(null)
 
 	const fetchInterests = useCallback(async () => {
 		setIsLoading(true)
@@ -38,7 +35,10 @@ export default function InterestsPage() {
 			setInterests(data)
 		} catch (err: unknown) {
 			const status = (err as { response?: { status?: number } })?.response?.status
-			if (status === 401) { router.replace("/login"); return }
+			if (status === 401) {
+				router.replace("/login")
+				return
+			}
 			if (status === 403) {
 				setError("You don't have permission to view interests.")
 			} else {
@@ -58,7 +58,7 @@ export default function InterestsPage() {
 		const q = search.toLowerCase()
 		if (!q) return interests
 		return interests.filter(
-			(i) =>
+			i =>
 				i.name.toLowerCase().includes(q) ||
 				(i.description ?? "").toLowerCase().includes(q) ||
 				i.slug.toLowerCase().includes(q),
@@ -76,8 +76,8 @@ export default function InterestsPage() {
 	}
 
 	function handleSaved(saved: Interest) {
-		setInterests((prev) => {
-			const idx = prev.findIndex((i) => i.id === saved.id)
+		setInterests(prev => {
+			const idx = prev.findIndex(i => i.id === saved.id)
 			if (idx >= 0) {
 				const next = [...prev]
 				next[idx] = saved
@@ -133,7 +133,9 @@ export default function InterestsPage() {
 	if (!canManage) {
 		return (
 			<div className="p-6 max-w-7xl mx-auto">
-				<p className="text-sm text-text-tertiary">You don&apos;t have permission to view interests.</p>
+				<p className="text-sm text-text-tertiary">
+					You don&apos;t have permission to view interests.
+				</p>
 			</div>
 		)
 	}
@@ -164,7 +166,7 @@ export default function InterestsPage() {
 				<input
 					type="text"
 					value={search}
-					onChange={(e) => setSearch(e.target.value)}
+					onChange={e => setSearch(e.target.value)}
 					placeholder="Search interests…"
 					className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 				/>

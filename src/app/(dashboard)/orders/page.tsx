@@ -11,48 +11,45 @@ import { StatusBadge } from "@/components/ui/status-badge"
 import { OrderDetailDrawer } from "@/components/orders/order-detail-drawer"
 import { getOrders, type GetOrdersParams } from "@/lib/api/orders"
 import type { Order, OrderStatus } from "@/types"
+import { formatDate } from "@/lib/formatters"
 
-// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Constants
 
 const PAGE_LIMIT = 20
 
 type StatusFilter = OrderStatus | "ALL"
 
 const STATUS_TABS: { label: string; value: StatusFilter }[] = [
-	{ label: "All",             value: "ALL" },
-	{ label: "Confirmed",       value: "CONFIRMED" },
+	{ label: "All", value: "ALL" },
+	{ label: "Confirmed", value: "CONFIRMED" },
 	{ label: "Pending Payment", value: "PENDING_PAYMENT" },
-	{ label: "Cancelled",       value: "CANCELLED" },
-	{ label: "Refunded",        value: "REFUNDED" },
+	{ label: "Cancelled", value: "CANCELLED" },
+	{ label: "Refunded", value: "REFUNDED" },
 ]
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Helpers
 
-function formatDate(iso: string): string {
-	return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-}
-
-// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Page
 
 export default function OrdersPage() {
 	const router = useRouter()
 	const canView = usePermission("order.view")
 
 	const [isLoading, setIsLoading] = useState(true)
-	const [error, setError]         = useState<string | null>(null)
-	const [orders, setOrders]       = useState<Order[]>([])
-	const [total, setTotal]         = useState(0)
-	const [page, setPage]           = useState(1)
+	const [error, setError] = useState<string | null>(null)
+	const [orders, setOrders] = useState<Order[]>([])
+	const [total, setTotal] = useState(0)
+	const [page, setPage] = useState(1)
 
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL")
-	const [search, setSearch]             = useState("")
+	const [search, setSearch] = useState("")
 	const [bookingIdFilter, setBookingIdFilter] = useState("")
-	const [bookingIdInput, setBookingIdInput]   = useState("")
-	const [fromDate, setFromDate]               = useState("")
-	const [toDate, setToDate]                   = useState("")
+	const [bookingIdInput, setBookingIdInput] = useState("")
+	const [fromDate, setFromDate] = useState("")
+	const [toDate, setToDate] = useState("")
 
 	const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-	const [drawerOpen, setDrawerOpen]       = useState(false)
+	const [drawerOpen, setDrawerOpen] = useState(false)
 
 	const fetchOrders = useCallback(async () => {
 		setIsLoading(true)
@@ -68,7 +65,10 @@ export default function OrdersPage() {
 			setTotal(res.total ?? res.orders.length)
 		} catch (err: unknown) {
 			const status = (err as { response?: { status?: number } })?.response?.status
-			if (status === 401) { router.replace("/login"); return }
+			if (status === 401) {
+				router.replace("/login")
+				return
+			}
 			if (status === 403) {
 				setError("You don't have permission to view orders.")
 			} else {
@@ -88,7 +88,7 @@ export default function OrdersPage() {
 		const q = search.toLowerCase()
 		if (!q) return orders
 		return orders.filter(
-			(o) =>
+			o =>
 				o.bookingId.toLowerCase().includes(q) ||
 				o.event.title.toLowerCase().includes(q) ||
 				`${o.user.firstName} ${o.user.lastName}`.toLowerCase().includes(q) ||
@@ -180,12 +180,15 @@ export default function OrdersPage() {
 			<div className="space-y-3">
 				{/* Status tabs */}
 				<div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
-					{STATUS_TABS.map((tab) => {
+					{STATUS_TABS.map(tab => {
 						const active = statusFilter === tab.value
 						return (
 							<button
 								key={tab.value}
-								onClick={() => { setStatusFilter(tab.value); setPage(1) }}
+								onClick={() => {
+									setStatusFilter(tab.value)
+									setPage(1)
+								}}
 								className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
 									active
 										? "bg-action-primary text-white"
@@ -208,7 +211,7 @@ export default function OrdersPage() {
 						<input
 							type="text"
 							value={search}
-							onChange={(e) => setSearch(e.target.value)}
+							onChange={e => setSearch(e.target.value)}
 							placeholder="Search by event, attendee…"
 							className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 						/>
@@ -218,14 +221,18 @@ export default function OrdersPage() {
 						<input
 							type="text"
 							value={bookingIdInput}
-							onChange={(e) => setBookingIdInput(e.target.value)}
+							onChange={e => setBookingIdInput(e.target.value)}
 							placeholder="Booking ID…"
 							className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors w-36 font-mono"
 						/>
 						{bookingIdFilter && (
 							<button
 								type="button"
-								onClick={() => { setBookingIdInput(""); setBookingIdFilter(""); setPage(1) }}
+								onClick={() => {
+									setBookingIdInput("")
+									setBookingIdFilter("")
+									setPage(1)
+								}}
 								className="rounded-lg border border-border-default px-2.5 py-2 text-xs text-text-secondary hover:bg-neutral-50 transition-colors"
 							>
 								Clear
@@ -236,14 +243,20 @@ export default function OrdersPage() {
 					<input
 						type="date"
 						value={fromDate}
-						onChange={(e) => { setFromDate(e.target.value); setPage(1) }}
+						onChange={e => {
+							setFromDate(e.target.value)
+							setPage(1)
+						}}
 						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 					/>
 					<span className="text-xs text-text-tertiary">to</span>
 					<input
 						type="date"
 						value={toDate}
-						onChange={(e) => { setToDate(e.target.value); setPage(1) }}
+						onChange={e => {
+							setToDate(e.target.value)
+							setPage(1)
+						}}
 						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 					/>
 				</div>
@@ -260,7 +273,10 @@ export default function OrdersPage() {
 						columns={columns}
 						data={filtered}
 						isLoading={isLoading}
-						onRowClick={(order) => { setSelectedOrder(order); setDrawerOpen(true) }}
+						onRowClick={order => {
+							setSelectedOrder(order)
+							setDrawerOpen(true)
+						}}
 						emptyState={
 							<div className="py-12 text-center text-sm text-text-tertiary">
 								No orders match the current filters.
@@ -271,20 +287,23 @@ export default function OrdersPage() {
 					{totalPages > 1 && (
 						<div className="flex items-center justify-between text-xs text-text-tertiary">
 							<span>
-								Showing {(page - 1) * PAGE_LIMIT + 1}â€“{Math.min(page * PAGE_LIMIT, total)} of {total}
+								Showing {(page - 1) * PAGE_LIMIT + 1}â€“{Math.min(page * PAGE_LIMIT, total)}{" "}
+								of {total}
 							</span>
 							<div className="flex items-center gap-2">
 								<button
 									disabled={page === 1}
-									onClick={() => setPage((p) => p - 1)}
+									onClick={() => setPage(p => p - 1)}
 									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 								>
 									Previous
 								</button>
-								<span className="font-medium text-text-primary">{page} / {totalPages}</span>
+								<span className="font-medium text-text-primary">
+									{page} / {totalPages}
+								</span>
 								<button
 									disabled={page >= totalPages}
-									onClick={() => setPage((p) => p + 1)}
+									onClick={() => setPage(p => p + 1)}
 									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
 								>
 									Next
@@ -297,7 +316,10 @@ export default function OrdersPage() {
 
 			<OrderDetailDrawer
 				open={drawerOpen}
-				onClose={() => { setDrawerOpen(false); setSelectedOrder(null) }}
+				onClose={() => {
+					setDrawerOpen(false)
+					setSelectedOrder(null)
+				}}
 				order={selectedOrder}
 			/>
 		</div>

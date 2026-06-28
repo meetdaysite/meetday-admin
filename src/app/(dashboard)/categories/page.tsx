@@ -11,25 +11,22 @@ import { StatusBadge } from "@/components/ui/status-badge"
 import { CategoryDrawer } from "@/components/categories/category-drawer"
 import { getCategories } from "@/lib/api/categories"
 import type { Category } from "@/types"
+import { formatDate } from "@/lib/formatters"
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Helpers
 
-function formatDate(iso: string): string {
-	return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-}
-
-// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Page
 
 export default function CategoriesPage() {
 	const router = useRouter()
 	const canManage = usePermission("category.manage")
 
-	const [isLoading, setIsLoading]     = useState(true)
-	const [error, setError]             = useState<string | null>(null)
-	const [categories, setCategories]   = useState<Category[]>([])
-	const [search, setSearch]           = useState("")
-	const [drawerOpen, setDrawerOpen]   = useState(false)
-	const [selected, setSelected]       = useState<Category | null>(null)
+	const [isLoading, setIsLoading] = useState(true)
+	const [error, setError] = useState<string | null>(null)
+	const [categories, setCategories] = useState<Category[]>([])
+	const [search, setSearch] = useState("")
+	const [drawerOpen, setDrawerOpen] = useState(false)
+	const [selected, setSelected] = useState<Category | null>(null)
 
 	const fetchCategories = useCallback(async () => {
 		setIsLoading(true)
@@ -39,7 +36,10 @@ export default function CategoriesPage() {
 			setCategories(data)
 		} catch (err: unknown) {
 			const status = (err as { response?: { status?: number } })?.response?.status
-			if (status === 401) { router.replace("/login"); return }
+			if (status === 401) {
+				router.replace("/login")
+				return
+			}
 			if (status === 403) {
 				setError("You don't have permission to view categories.")
 			} else {
@@ -59,7 +59,7 @@ export default function CategoriesPage() {
 		const q = search.toLowerCase()
 		if (!q) return categories
 		return categories.filter(
-			(c) => c.name.toLowerCase().includes(q) || (c.description ?? "").toLowerCase().includes(q),
+			c => c.name.toLowerCase().includes(q) || (c.description ?? "").toLowerCase().includes(q),
 		)
 	}, [categories, search])
 
@@ -74,8 +74,8 @@ export default function CategoriesPage() {
 	}
 
 	function handleSaved(saved: Category) {
-		setCategories((prev) => {
-			const idx = prev.findIndex((c) => c.id === saved.id)
+		setCategories(prev => {
+			const idx = prev.findIndex(c => c.id === saved.id)
 			if (idx >= 0) {
 				const next = [...prev]
 				next[idx] = saved
@@ -108,9 +108,7 @@ export default function CategoriesPage() {
 			{
 				id: "status",
 				header: "Status",
-				cell: ({ row }) => (
-					<StatusBadge status={row.original.isActive ? "ACTIVE" : "DISABLED"} />
-				),
+				cell: ({ row }) => <StatusBadge status={row.original.isActive ? "ACTIVE" : "DISABLED"} />,
 			},
 			{
 				id: "createdAt",
@@ -151,7 +149,7 @@ export default function CategoriesPage() {
 				<input
 					type="text"
 					value={search}
-					onChange={(e) => setSearch(e.target.value)}
+					onChange={e => setSearch(e.target.value)}
 					placeholder="Search categories…"
 					className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 				/>

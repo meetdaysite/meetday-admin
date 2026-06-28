@@ -36,6 +36,9 @@ import {
 	type CommunityDetailStatCard,
 } from "@/lib/api/communities"
 import { cn } from "@/lib/utils"
+import { formatDate } from "@/lib/formatters"
+import { COMMUNITY_MANAGER_ROLE_BADGE } from "@/lib/constants/roles"
+import { extractApiErrorMessage } from "@/lib/error-handler"
 import { ExperiencesTab } from "./experiences-tab"
 import { MembersTab } from "./members-tab"
 import { FeedTab } from "./feed-tab"
@@ -68,12 +71,6 @@ const TABS: { id: Tab; label: string }[] = [
 	{ id: "analytics", label: "Analytics" },
 	{ id: "managers", label: "Managers" },
 ]
-
-const ROLE_BADGE: Record<string, string> = {
-	Owner: "bg-green-100 text-green-700",
-	Manager: "bg-blue-100 text-blue-700",
-	Moderator: "bg-purple-100 text-purple-700",
-}
 
 const ACTIVITY_ICON: Record<string, { icon: LucideIcon; bg: string; color: string }> = {
 	member: { icon: Users, bg: "bg-blue-50", color: "text-blue-500" },
@@ -206,10 +203,6 @@ export default function CommunityDetailPage() {
 	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 	const [isDeleting, setIsDeleting] = useState(false)
 
-	function extractApiMessage(err: unknown, fallback: string): string {
-		return (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? fallback
-	}
-
 	async function handleArchive() {
 		setIsArchiving(true)
 		try {
@@ -218,7 +211,7 @@ export default function CommunityDetailPage() {
 			setArchiveConfirmOpen(false)
 			load()
 		} catch (err: unknown) {
-			toast.error(extractApiMessage(err, "Failed to archive community"))
+			toast.error(extractApiErrorMessage(err, "Failed to archive community"))
 		} finally {
 			setIsArchiving(false)
 		}
@@ -232,7 +225,7 @@ export default function CommunityDetailPage() {
 			setRestoreConfirmOpen(false)
 			load()
 		} catch (err: unknown) {
-			toast.error(extractApiMessage(err, "Failed to restore community"))
+			toast.error(extractApiErrorMessage(err, "Failed to restore community"))
 		} finally {
 			setIsRestoring(false)
 		}
@@ -245,7 +238,7 @@ export default function CommunityDetailPage() {
 			toast.success("Community deleted")
 			router.replace("/communities")
 		} catch (err: unknown) {
-			toast.error(extractApiMessage(err, "Failed to delete community"))
+			toast.error(extractApiErrorMessage(err, "Failed to delete community"))
 			setDeleteConfirmOpen(false)
 		} finally {
 			setIsDeleting(false)
@@ -287,11 +280,7 @@ export default function CommunityDetailPage() {
 		)
 	}
 
-	const createdDate = new Date(community.createdAt).toLocaleDateString("en-GB", {
-		day: "numeric",
-		month: "short",
-		year: "numeric",
-	})
+	const createdDate = formatDate(community.createdAt)
 
 	const accessLabel =
 		community.access === "PUBLIC"
@@ -677,7 +666,8 @@ export default function CommunityDetailPage() {
 										<span
 											className={cn(
 												"inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold",
-												ROLE_BADGE[mgr.role] ?? "bg-neutral-100 text-text-secondary",
+												COMMUNITY_MANAGER_ROLE_BADGE[mgr.role] ??
+													"bg-neutral-100 text-text-secondary",
 											)}
 										>
 											{mgr.role}

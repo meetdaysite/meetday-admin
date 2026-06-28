@@ -10,21 +10,14 @@ import { DataTable } from "@/components/ui/data-table"
 import { EventReviewDrawer, type EventAction } from "@/components/events/event-review-drawer"
 import { getPendingEvents, approveEvent, rejectEvent, forceCancelEvent } from "@/lib/api/events"
 import type { Event } from "@/types"
+import { formatDate } from "@/lib/formatters"
 
-// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Constants
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Helpers
 
 function getDaysSince(iso: string): number {
 	return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24))
-}
-
-function formatDate(iso: string): string {
-	return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-}
-
-function formatEventDate(iso: string): string {
-	return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
 }
 
 function getRowTint(event: Event): string {
@@ -35,7 +28,7 @@ function getRowTint(event: Event): string {
 	return ""
 }
 
-// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Page
 
 export default function EventQueuePage() {
 	const router = useRouter()
@@ -59,7 +52,10 @@ export default function EventQueuePage() {
 			setTotal(res.total ?? res.events.length)
 		} catch (err: unknown) {
 			const status = (err as { response?: { status?: number } })?.response?.status
-			if (status === 401) { router.replace("/login"); return }
+			if (status === 401) {
+				router.replace("/login")
+				return
+			}
 			if (status === 403) {
 				setError("You don't have permission to view the event queue.")
 			} else {
@@ -79,7 +75,7 @@ export default function EventQueuePage() {
 		const q = search.toLowerCase()
 		if (!q) return events
 		return events.filter(
-			(e) =>
+			e =>
 				e.title.toLowerCase().includes(q) ||
 				e.hostProfile.displayName.toLowerCase().includes(q) ||
 				e.hostProfile.user.email.toLowerCase().includes(q),
@@ -107,16 +103,25 @@ export default function EventQueuePage() {
 		} catch (err: unknown) {
 			const axiosErr = err as { response?: { status?: number; data?: { message?: string } } }
 			const status = axiosErr?.response?.status
-			if (status === 401) { router.replace("/login"); throw err }
+			if (status === 401) {
+				router.replace("/login")
+				throw err
+			}
 			if (status === 403) {
-				toast.error("Permission denied", { description: `You don't have permission to ${action} events.` })
+				toast.error("Permission denied", {
+					description: `You don't have permission to ${action} events.`,
+				})
 			} else if (status === 404) {
 				toast.error("Event not found")
 			} else if (status === 400) {
 				const msg = axiosErr?.response?.data?.message
-				toast.error(`Cannot ${action} event`, { description: msg ?? "Event is not in the required state." })
+				toast.error(`Cannot ${action} event`, {
+					description: msg ?? "Event is not in the required state.",
+				})
 			} else {
-				toast.error(`Failed to ${action} event`, { description: "Something went wrong. Please try again." })
+				toast.error(`Failed to ${action} event`, {
+					description: "Something went wrong. Please try again.",
+				})
 			}
 			throw err
 		}
@@ -131,7 +136,9 @@ export default function EventQueuePage() {
 					const e = row.original
 					return (
 						<div>
-							<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">{e.title}</p>
+							<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
+								{e.title}
+							</p>
 							<p className="text-[11px] text-text-tertiary">{e.hostProfile.displayName}</p>
 						</div>
 					)
@@ -149,15 +156,13 @@ export default function EventQueuePage() {
 			{
 				id: "city",
 				header: "City",
-				cell: ({ row }) => (
-					<span className="text-xs text-text-primary">{row.original.city}</span>
-				),
+				cell: ({ row }) => <span className="text-xs text-text-primary">{row.original.city}</span>,
 			},
 			{
 				id: "eventDate",
 				header: "Event Date",
 				cell: ({ row }) => (
-					<span className="text-xs text-text-primary">{formatEventDate(row.original.eventDate)}</span>
+					<span className="text-xs text-text-primary">{formatDate(row.original.eventDate)}</span>
 				),
 			},
 			{
@@ -169,7 +174,9 @@ export default function EventQueuePage() {
 						days >= 14 ? "text-orange-600" : days >= 7 ? "text-amber-600" : "text-text-tertiary"
 					return (
 						<div>
-							<p className="text-xs text-text-secondary">{row.original.updatedAt ? formatDate(row.original.updatedAt) : "â€”"}</p>
+							<p className="text-xs text-text-secondary">
+								{row.original.updatedAt ? formatDate(row.original.updatedAt) : "â€”"}
+							</p>
 							<p className={`text-[11px] font-medium ${ageColor}`}>
 								{days === 0 ? "Today" : days === 1 ? "Yesterday" : `${days} days ago`}
 							</p>
@@ -212,7 +219,7 @@ export default function EventQueuePage() {
 				<input
 					type="text"
 					value={search}
-					onChange={(e) => setSearch(e.target.value)}
+					onChange={e => setSearch(e.target.value)}
 					placeholder="Search by title or host…"
 					className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 				/>
@@ -257,7 +264,10 @@ export default function EventQueuePage() {
 
 			<EventReviewDrawer
 				open={drawerOpen}
-				onClose={() => { setDrawerOpen(false); setSelectedEvent(null) }}
+				onClose={() => {
+					setDrawerOpen(false)
+					setSelectedEvent(null)
+				}}
 				event={selectedEvent}
 				onAction={handleAction}
 			/>
