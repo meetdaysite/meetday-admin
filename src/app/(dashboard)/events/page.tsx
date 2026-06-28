@@ -16,11 +16,13 @@ import {
 	type GetEventsParams,
 } from "@/lib/api/events"
 import { formatDate } from "@/lib/formatters"
+import { useDrawer } from "@/lib/hooks/use-drawer"
+import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { Event, EventStatus } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
 import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { toast } from "sonner"
 
 // Constants
@@ -45,50 +47,28 @@ export default function EventsPage() {
 	const router = useRouter()
 	const canApprove = usePermission("event.approve")
 
-	const [isLoading, setIsLoading] = useState(true)
-	const [error, setError] = useState<string | null>(null)
-	const [events, setEvents] = useState<Event[]>([])
-	const [total, setTotal] = useState(0)
 	const [page, setPage] = useState(1)
-
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL")
 	const [cityInput, setCityInput] = useState("")
 	const [cityFilter, setCityFilter] = useState("")
 	const [search, setSearch] = useState("")
 
-	const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
-	const [drawerOpen, setDrawerOpen] = useState(false)
+	const { item: selectedEvent, open: drawerOpen, openDrawer, closeDrawer } = useDrawer<Event>()
 
-	const fetchEvents = useCallback(async () => {
-		setIsLoading(true)
-		setError(null)
-		try {
-			const params: GetEventsParams = { page, limit: PAGE_LIMIT }
-			if (statusFilter !== "ALL") params.status = statusFilter
-			if (cityFilter) params.city = cityFilter
-			const res = await getEvents(params)
-			setEvents(res.events)
-			setTotal(res.total ?? res.events.length)
-		} catch (err: unknown) {
-			const status = (err as { response?: { status?: number } })?.response?.status
-			if (status === 401) {
-				router.replace("/login")
-				return
-			}
-			if (status === 403) {
-				setError("You don't have permission to view events.")
-			} else {
-				toast.error("Failed to load events")
-				setError("Something went wrong. Please try again.")
-			}
-		} finally {
-			setIsLoading(false)
-		}
-	}, [page, statusFilter, cityFilter, router])
+	const fetcher = useCallback(() => {
+		const params: GetEventsParams = { page, limit: PAGE_LIMIT }
+		if (statusFilter !== "ALL") params.status = statusFilter
+		if (cityFilter) params.city = cityFilter
+		return getEvents(params).then(r => ({ items: r.events, total: r.total ?? r.events.length }))
+	}, [page, statusFilter, cityFilter])
 
-	useEffect(() => {
-		fetchEvents()
-	}, [fetchEvents])
+	const {
+		items: events,
+		total,
+		isLoading,
+		error,
+		refresh: fetchEvents,
+	} = usePaginatedFetch(fetcher, "Failed to load events")
 
 	const filtered = useMemo(() => {
 		const q = search.toLowerCase()
@@ -100,11 +80,6 @@ export default function EventsPage() {
 				e.hostProfile.user.email.toLowerCase().includes(q),
 		)
 	}, [events, search])
-
-	function openDrawer(event: Event) {
-		setSelectedEvent(event)
-		setDrawerOpen(true)
-	}
 
 	function handleCitySearch(e: React.FormEvent) {
 		e.preventDefault()
@@ -297,10 +272,7 @@ export default function EventsPage() {
 
 			<EventReviewDrawer
 				open={drawerOpen}
-				onClose={() => {
-					setDrawerOpen(false)
-					setSelectedEvent(null)
-				}}
+				onClose={closeDrawer}
 				event={selectedEvent}
 				onAction={handleAction}
 			/>

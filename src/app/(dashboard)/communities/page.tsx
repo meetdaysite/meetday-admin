@@ -19,6 +19,7 @@ import {
 } from "@/lib/api/communities"
 import { extractApiErrorMessage } from "@/lib/error-handler"
 import { formatCount } from "@/lib/formatters"
+import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
 import { cn } from "@/lib/utils"
 import type { Community, CommunityStatus, CommunityType } from "@/types"
@@ -81,12 +82,8 @@ export default function CommunitiesPage() {
 	const router = useRouter()
 	const canManage = usePermission("community.manage")
 
-	const [isLoading, setIsLoading] = useState(true)
 	const [statsLoading, setStatsLoading] = useState(true)
-	const [error, setError] = useState<string | null>(null)
-	const [communities, setCommunities] = useState<Community[]>([])
 	const [stats, setStats] = useState<CommunityStats | null>(null)
-	const [total, setTotal] = useState(0)
 	const [page, setPage] = useState(1)
 
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL")
@@ -115,39 +112,27 @@ export default function CommunitiesPage() {
 		}
 	}, [])
 
-	const fetchCommunities = useCallback(async () => {
-		setIsLoading(true)
-		setError(null)
-		try {
-			const params: GetCommunitiesParams = { page, limit: PAGE_LIMIT }
-			if (statusFilter !== "ALL") params.status = statusFilter
-			if (search.trim()) params.search = search.trim()
-			const res = await getCommunities(params)
-			setCommunities(res.communities)
-			setTotal(res.total ?? res.communities.length)
-		} catch (err: unknown) {
-			const status = (err as { response?: { status?: number } })?.response?.status
-			if (status === 401) {
-				router.replace("/login")
-				return
-			}
-			if (status === 403) {
-				setError("You don't have permission to view communities.")
-			} else {
-				toast.error("Failed to load communities")
-				setError("Something went wrong. Please try again.")
-			}
-		} finally {
-			setIsLoading(false)
-		}
-	}, [page, statusFilter, search, router])
+	const communityFetcher = useCallback(() => {
+		const params: GetCommunitiesParams = { page, limit: PAGE_LIMIT }
+		if (statusFilter !== "ALL") params.status = statusFilter
+		if (search.trim()) params.search = search.trim()
+		return getCommunities(params).then(r => ({
+			items: r.communities,
+			total: r.total ?? r.communities.length,
+		}))
+	}, [page, statusFilter, search])
+
+	const {
+		items: communities,
+		total,
+		isLoading,
+		error,
+		refresh: fetchCommunities,
+	} = usePaginatedFetch(communityFetcher, "Failed to load communities")
 
 	useEffect(() => {
 		fetchStats()
 	}, [fetchStats])
-	useEffect(() => {
-		fetchCommunities()
-	}, [fetchCommunities])
 
 	const hasActiveFilters = statusFilter !== "ALL" || search !== ""
 

@@ -10,12 +10,12 @@ import { SearchInput } from "@/components/ui/search-input"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { getOrders, type GetOrdersParams } from "@/lib/api/orders"
 import { formatDate } from "@/lib/formatters"
+import { useDrawer } from "@/lib/hooks/use-drawer"
+import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { Order, OrderStatus } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
-import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { toast } from "sonner"
+import { useCallback, useMemo, useState } from "react"
 
 // Constants
 
@@ -36,15 +36,9 @@ const STATUS_TABS: { label: string; value: StatusFilter }[] = [
 // Page
 
 export default function OrdersPage() {
-	const router = useRouter()
 	const canView = usePermission("order.view")
 
-	const [isLoading, setIsLoading] = useState(true)
-	const [error, setError] = useState<string | null>(null)
-	const [orders, setOrders] = useState<Order[]>([])
-	const [total, setTotal] = useState(0)
 	const [page, setPage] = useState(1)
-
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL")
 	const [search, setSearch] = useState("")
 	const [bookingIdFilter, setBookingIdFilter] = useState("")
@@ -52,41 +46,18 @@ export default function OrdersPage() {
 	const [fromDate, setFromDate] = useState("")
 	const [toDate, setToDate] = useState("")
 
-	const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-	const [drawerOpen, setDrawerOpen] = useState(false)
+	const { item: selectedOrder, open: drawerOpen, openDrawer, closeDrawer } = useDrawer<Order>()
 
-	const fetchOrders = useCallback(async () => {
-		setIsLoading(true)
-		setError(null)
-		try {
-			const params: GetOrdersParams = { page, limit: PAGE_LIMIT }
-			if (statusFilter !== "ALL") params.status = statusFilter
-			if (bookingIdFilter) params.bookingId = bookingIdFilter
-			if (fromDate) params.from = fromDate
-			if (toDate) params.to = toDate
-			const res = await getOrders(params)
-			setOrders(res.orders)
-			setTotal(res.total ?? res.orders.length)
-		} catch (err: unknown) {
-			const status = (err as { response?: { status?: number } })?.response?.status
-			if (status === 401) {
-				router.replace("/login")
-				return
-			}
-			if (status === 403) {
-				setError("You don't have permission to view orders.")
-			} else {
-				toast.error("Failed to load orders")
-				setError("Something went wrong. Please try again.")
-			}
-		} finally {
-			setIsLoading(false)
-		}
-	}, [page, statusFilter, bookingIdFilter, fromDate, toDate, router])
+	const fetcher = useCallback(() => {
+		const params: GetOrdersParams = { page, limit: PAGE_LIMIT }
+		if (statusFilter !== "ALL") params.status = statusFilter
+		if (bookingIdFilter) params.bookingId = bookingIdFilter
+		if (fromDate) params.from = fromDate
+		if (toDate) params.to = toDate
+		return getOrders(params).then(r => ({ items: r.orders, total: r.total ?? r.orders.length }))
+	}, [page, statusFilter, bookingIdFilter, fromDate, toDate])
 
-	useEffect(() => {
-		fetchOrders()
-	}, [fetchOrders])
+	const { items: orders, total, isLoading, error } = usePaginatedFetch(fetcher, "Failed to load orders")
 
 	const filtered = useMemo(() => {
 		const q = search.toLowerCase()
@@ -250,10 +221,7 @@ export default function OrdersPage() {
 						columns={columns}
 						data={filtered}
 						isLoading={isLoading}
-						onRowClick={order => {
-							setSelectedOrder(order)
-							setDrawerOpen(true)
-						}}
+						onRowClick={openDrawer}
 						emptyState={
 							<div className="py-12 text-center text-sm text-text-tertiary">
 								No orders match the current filters.
@@ -271,14 +239,7 @@ export default function OrdersPage() {
 				</>
 			)}
 
-			<OrderDetailDrawer
-				open={drawerOpen}
-				onClose={() => {
-					setDrawerOpen(false)
-					setSelectedOrder(null)
-				}}
-				order={selectedOrder}
-			/>
+			<OrderDetailDrawer open={drawerOpen} onClose={closeDrawer} order={selectedOrder} />
 		</div>
 	)
 }

@@ -8,12 +8,12 @@ import { SearchInput } from "@/components/ui/search-input"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { getCategories } from "@/lib/api/categories"
 import { formatDate } from "@/lib/formatters"
+import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { Category } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Plus } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { toast } from "sonner"
 
 // Helpers
@@ -21,42 +21,20 @@ import { toast } from "sonner"
 // Page
 
 export default function CategoriesPage() {
-	const router = useRouter()
 	const canManage = usePermission("category.manage")
 
-	const [isLoading, setIsLoading] = useState(true)
-	const [error, setError] = useState<string | null>(null)
-	const [categories, setCategories] = useState<Category[]>([])
 	const [search, setSearch] = useState("")
 	const [drawerOpen, setDrawerOpen] = useState(false)
 	const [selected, setSelected] = useState<Category | null>(null)
 
-	const fetchCategories = useCallback(async () => {
-		setIsLoading(true)
-		setError(null)
-		try {
-			const data = await getCategories()
-			setCategories(data)
-		} catch (err: unknown) {
-			const status = (err as { response?: { status?: number } })?.response?.status
-			if (status === 401) {
-				router.replace("/login")
-				return
-			}
-			if (status === 403) {
-				setError("You don't have permission to view categories.")
-			} else {
-				toast.error("Failed to load categories")
-				setError("Something went wrong. Please try again.")
-			}
-		} finally {
-			setIsLoading(false)
-		}
-	}, [router])
+	const fetcher = useCallback(() => getCategories().then(data => ({ items: data, total: data.length })), [])
 
-	useEffect(() => {
-		fetchCategories()
-	}, [fetchCategories])
+	const {
+		items: categories,
+		isLoading,
+		error,
+		refresh: fetchCategories,
+	} = usePaginatedFetch(fetcher, "Failed to load categories")
 
 	const filtered = useMemo(() => {
 		const q = search.toLowerCase()
@@ -76,18 +54,10 @@ export default function CategoriesPage() {
 		setDrawerOpen(true)
 	}
 
-	function handleSaved(saved: Category) {
-		setCategories(prev => {
-			const idx = prev.findIndex(c => c.id === saved.id)
-			if (idx >= 0) {
-				const next = [...prev]
-				next[idx] = saved
-				return next
-			}
-			return [...prev, saved]
-		})
+	function handleSaved() {
 		toast.success(selected ? "Category updated" : "Category created")
 		setDrawerOpen(false)
+		fetchCategories()
 	}
 
 	const columns = useMemo<ColumnDef<Category>[]>(

@@ -9,12 +9,13 @@ import { StatusBadge } from "@/components/ui/status-badge"
 import { deactivateAdmin, getAdmins, inviteAdmin, reactivateAdmin } from "@/lib/api/admins"
 import { ROLE_LABEL, ROLE_STYLE } from "@/lib/constants/roles"
 import { formatDate } from "@/lib/formatters"
+import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
 import { useAuthStore } from "@/stores/auth.store"
 import type { Admin, Role } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Globe, MapPin, UserPlus } from "lucide-react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { toast } from "sonner"
 
 // Constants
@@ -57,9 +58,6 @@ export default function AdminsPage() {
 	const currentUserId = useAuthStore(s => s.user?.id)
 	const canInvite = usePermission("admin.invite")
 
-	const [isLoading, setIsLoading] = useState(true)
-	const [admins, setAdmins] = useState<Admin[]>([])
-	const [total, setTotal] = useState(0)
 	const [page, setPage] = useState(1)
 	const [roleFilter, setRoleFilter] = useState<RoleFilter>("ALL")
 	const [activeFilter, setActiveFilter] = useState<ActiveFilter>("ALL")
@@ -71,27 +69,23 @@ export default function AdminsPage() {
 	const [reactivateTarget, setReactivateTarget] = useState<Admin | null>(null)
 	const [isReactivating, setIsReactivating] = useState(false)
 
-	const fetchAdmins = useCallback(async () => {
-		setIsLoading(true)
-		try {
-			const res = await getAdmins({
+	const fetcher = useCallback(
+		() =>
+			getAdmins({
 				page,
 				limit: PAGE_LIMIT,
 				...(roleFilter !== "ALL" && { role: roleFilter }),
 				...(activeFilter !== "ALL" && { isActive: activeFilter === "true" }),
-			})
-			setAdmins(res.admins)
-			setTotal(res.total)
-		} catch {
-			toast.error("Failed to load admins")
-		} finally {
-			setIsLoading(false)
-		}
-	}, [page, roleFilter, activeFilter])
+			}).then(r => ({ items: r.admins, total: r.total })),
+		[page, roleFilter, activeFilter],
+	)
 
-	useEffect(() => {
-		fetchAdmins()
-	}, [fetchAdmins])
+	const {
+		items: admins,
+		total,
+		isLoading,
+		refresh: fetchAdmins,
+	} = usePaginatedFetch(fetcher, "Failed to load admins")
 
 	async function handleInvite(values: InviteAdminSubmitValues) {
 		setIsInviting(true)
@@ -126,7 +120,7 @@ export default function AdminsPage() {
 		setIsDeactivating(true)
 		try {
 			await deactivateAdmin(deactivateTarget.id)
-			setAdmins(prev => prev.map(a => (a.id === deactivateTarget.id ? { ...a, isActive: false } : a)))
+			fetchAdmins()
 			setDeactivateTarget(null)
 			toast.success("Admin deactivated", {
 				description: `${deactivateTarget.firstName} ${deactivateTarget.lastName}'s access has been revoked.`,
@@ -145,7 +139,7 @@ export default function AdminsPage() {
 		setIsReactivating(true)
 		try {
 			await reactivateAdmin(reactivateTarget.id)
-			setAdmins(prev => prev.map(a => (a.id === reactivateTarget.id ? { ...a, isActive: true } : a)))
+			fetchAdmins()
 			setReactivateTarget(null)
 			toast.success("Admin reactivated", {
 				description: `${reactivateTarget.firstName} ${reactivateTarget.lastName}'s access has been restored.`,

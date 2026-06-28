@@ -8,12 +8,13 @@ import { PageHeader } from "@/components/ui/page-header"
 import { Pagination } from "@/components/ui/pagination"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { approveHost, getHosts, rejectHost } from "@/lib/api/hosts"
+import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { ApprovalStatus, Host, HostPlan, KycStatus } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
 import { MapPin } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { toast } from "sonner"
 
 // â"€â"€â"€ Constants â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
@@ -52,12 +53,7 @@ export default function HostsPage() {
 	const router = useRouter()
 	const canApprove = usePermission("host.approve")
 
-	const [isLoading, setIsLoading] = useState(true)
-	const [error, setError] = useState<string | null>(null)
-	const [hosts, setHosts] = useState<Host[]>([])
-	const [total, setTotal] = useState(0)
 	const [page, setPage] = useState(1)
-
 	const [approvalFilter, setApprovalFilter] = useState<ApprovalFilter>("ALL")
 	const [kycFilter, setKycFilter] = useState<KycFilter>("ALL")
 	const [planFilter, setPlanFilter] = useState<PlanFilter>("ALL")
@@ -66,40 +62,26 @@ export default function HostsPage() {
 
 	const [selectedHost, setSelectedHost] = useState<Host | null>(null)
 
-	const fetchHosts = useCallback(async () => {
-		setIsLoading(true)
-		setError(null)
-		try {
-			const res = await getHosts({
+	const fetcher = useCallback(
+		() =>
+			getHosts({
 				page,
 				limit: PAGE_LIMIT,
 				...(approvalFilter !== "ALL" && { approvalStatus: approvalFilter }),
 				...(kycFilter !== "ALL" && { kycStatus: kycFilter }),
 				...(planFilter !== "ALL" && { plan: planFilter }),
 				...(cityFilter && { city: cityFilter }),
-			})
-			setHosts(res.hosts)
-			setTotal(res.total)
-		} catch (err: unknown) {
-			const status = (err as { response?: { status?: number } })?.response?.status
-			if (status === 401) {
-				router.replace("/login")
-				return
-			}
-			if (status === 403) {
-				setError("You don't have permission to view hosts.")
-			} else {
-				toast.error("Failed to load hosts")
-				setError("Something went wrong. Please try again.")
-			}
-		} finally {
-			setIsLoading(false)
-		}
-	}, [page, approvalFilter, kycFilter, planFilter, cityFilter, router])
+			}).then(r => ({ items: r.hosts, total: r.total })),
+		[page, approvalFilter, kycFilter, planFilter, cityFilter],
+	)
 
-	useEffect(() => {
-		fetchHosts()
-	}, [fetchHosts])
+	const {
+		items: hosts,
+		total,
+		isLoading,
+		error,
+		refresh: fetchHosts,
+	} = usePaginatedFetch(fetcher, "Failed to load hosts")
 
 	async function handleAction(hostId: string, action: HostAction, reason?: string) {
 		const call = action === "approve" ? approveHost(hostId) : rejectHost(hostId, reason!)

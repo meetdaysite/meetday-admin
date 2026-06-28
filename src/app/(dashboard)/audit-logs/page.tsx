@@ -8,12 +8,11 @@ import { SearchInput } from "@/components/ui/search-input"
 import { getAuditLogs, type GetAuditLogsParams } from "@/lib/api/audit-logs"
 import { actionColor } from "@/lib/constants/action-colors"
 import { actionLabel, formatDateTime } from "@/lib/formatters"
+import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { AuditLog } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
-import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { toast } from "sonner"
+import { useCallback, useMemo, useState } from "react"
 
 // Constants
 
@@ -61,15 +60,9 @@ const AUDIT_ACTIONS = [
 // Page
 
 export default function AuditLogsPage() {
-	const router = useRouter()
 	const canRead = usePermission("audit.read")
 
-	const [isLoading, setIsLoading] = useState(true)
-	const [error, setError] = useState<string | null>(null)
-	const [logs, setLogs] = useState<AuditLog[]>([])
-	const [total, setTotal] = useState(0)
 	const [page, setPage] = useState(1)
-
 	const [actionFilter, setActionFilter] = useState("")
 	const [entityTypeFilter, setEntityTypeFilter] = useState("")
 	const [entityIdInput, setEntityIdInput] = useState("")
@@ -80,40 +73,18 @@ export default function AuditLogsPage() {
 	const [toDate, setToDate] = useState("")
 	const [search, setSearch] = useState("")
 
-	const fetchLogs = useCallback(async () => {
-		setIsLoading(true)
-		setError(null)
-		try {
-			const params: GetAuditLogsParams = { page, limit: PAGE_LIMIT }
-			if (actionFilter) params.action = actionFilter
-			if (entityTypeFilter) params.entityType = entityTypeFilter
-			if (entityIdFilter) params.entityId = entityIdFilter
-			if (actorIdFilter) params.actorId = actorIdFilter
-			if (fromDate) params.from = fromDate
-			if (toDate) params.to = toDate
-			const res = await getAuditLogs(params)
-			setLogs(res.data)
-			setTotal(res.total ?? res.data.length)
-		} catch (err: unknown) {
-			const status = (err as { response?: { status?: number } })?.response?.status
-			if (status === 401) {
-				router.replace("/login")
-				return
-			}
-			if (status === 403) {
-				setError("You don't have permission to view audit logs.")
-			} else {
-				toast.error("Failed to load audit logs")
-				setError("Something went wrong. Please try again.")
-			}
-		} finally {
-			setIsLoading(false)
-		}
-	}, [page, actionFilter, entityTypeFilter, entityIdFilter, actorIdFilter, fromDate, toDate, router])
+	const fetcher = useCallback(() => {
+		const params: GetAuditLogsParams = { page, limit: PAGE_LIMIT }
+		if (actionFilter) params.action = actionFilter
+		if (entityTypeFilter) params.entityType = entityTypeFilter
+		if (entityIdFilter) params.entityId = entityIdFilter
+		if (actorIdFilter) params.actorId = actorIdFilter
+		if (fromDate) params.from = fromDate
+		if (toDate) params.to = toDate
+		return getAuditLogs(params).then(r => ({ items: r.data, total: r.total ?? r.data.length }))
+	}, [page, actionFilter, entityTypeFilter, entityIdFilter, actorIdFilter, fromDate, toDate])
 
-	useEffect(() => {
-		fetchLogs()
-	}, [fetchLogs])
+	const { items: logs, total, isLoading, error } = usePaginatedFetch(fetcher, "Failed to load audit logs")
 
 	const filtered = useMemo(() => {
 		const q = search.toLowerCase()

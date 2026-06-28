@@ -7,12 +7,12 @@ import { PageHeader } from "@/components/ui/page-header"
 import { SearchInput } from "@/components/ui/search-input"
 import { getInterests } from "@/lib/api/interests"
 import { formatDate } from "@/lib/formatters"
+import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { Interest } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Plus } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { toast } from "sonner"
 
 // Helpers
@@ -20,42 +20,21 @@ import { toast } from "sonner"
 // Page
 
 export default function InterestsPage() {
-	const router = useRouter()
 	const canManage = usePermission("interest.manage")
 
-	const [isLoading, setIsLoading] = useState(true)
-	const [error, setError] = useState<string | null>(null)
-	const [interests, setInterests] = useState<Interest[]>([])
 	const [search, setSearch] = useState("")
 	const [drawerOpen, setDrawerOpen] = useState(false)
 	const [selected, setSelected] = useState<Interest | null>(null)
 
-	const fetchInterests = useCallback(async () => {
-		setIsLoading(true)
-		setError(null)
-		try {
-			const data = await getInterests()
-			setInterests(data)
-		} catch (err: unknown) {
-			const status = (err as { response?: { status?: number } })?.response?.status
-			if (status === 401) {
-				router.replace("/login")
-				return
-			}
-			if (status === 403) {
-				setError("You don't have permission to view interests.")
-			} else {
-				toast.error("Failed to load interests")
-				setError("Something went wrong. Please try again.")
-			}
-		} finally {
-			setIsLoading(false)
-		}
-	}, [router])
+	const fetcher = useCallback(
+		() => getInterests().then(data => ({ items: data, total: data.length })),
+		[],
+	)
 
-	useEffect(() => {
-		fetchInterests()
-	}, [fetchInterests])
+	const { items: interests, isLoading, error, refresh: fetchInterests } = usePaginatedFetch(
+		fetcher,
+		"Failed to load interests",
+	)
 
 	const filtered = useMemo(() => {
 		const q = search.toLowerCase()
@@ -78,18 +57,10 @@ export default function InterestsPage() {
 		setDrawerOpen(true)
 	}
 
-	function handleSaved(saved: Interest) {
-		setInterests(prev => {
-			const idx = prev.findIndex(i => i.id === saved.id)
-			if (idx >= 0) {
-				const next = [...prev]
-				next[idx] = saved
-				return next
-			}
-			return [...prev, saved].sort((a, b) => a.name.localeCompare(b.name))
-		})
+	function handleSaved() {
 		toast.success(selected ? "Interest updated" : "Interest created")
 		setDrawerOpen(false)
+		fetchInterests()
 	}
 
 	const columns = useMemo<ColumnDef<Interest>[]>(
