@@ -8,6 +8,7 @@ import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { getInterests } from "@/lib/api/interests"
 import { formatDate } from "@/lib/formatters"
+import { DateCell, ImageCell, TwoLineCell } from "@/components/ui/table-cells"
 import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { Interest } from "@/types"
@@ -66,39 +67,28 @@ export default function InterestsPage() {
 	const columns = useMemo<ColumnDef<Interest>[]>(
 		() => [
 			{
+				id: "image",
+				header: "Image",
+				cell: ({ row }) => <ImageCell src={row.original.image} alt={row.original.name} />,
+			},
+			{
 				id: "name",
 				header: "Name",
-				cell: ({ row }) => (
-					<div>
-						<p className="text-xs font-semibold text-text-primary">{row.original.name}</p>
-						<p className="text-[11px] text-text-tertiary font-mono">{row.original.slug}</p>
-					</div>
-				),
+				cell: ({ row }) => <TwoLineCell primary={row.original.name} secondary={row.original.slug} />,
 			},
 			{
 				id: "description",
 				header: "Description",
 				cell: ({ row }) => (
-					<p className="text-xs text-text-tertiary max-w-xs truncate">
+					<p className="text-xs text-text-tertiary max-w-xs line-clamp-3">
 						{row.original.description ?? <span className="italic">-</span>}
 					</p>
 				),
 			},
 			{
-				id: "image",
-				header: "Image",
-				cell: ({ row }) => (
-					<span className="text-[11px] font-mono text-text-tertiary truncate max-w-40 block">
-						{row.original.image ?? <span className="not-italic">-</span>}
-					</span>
-				),
-			},
-			{
 				id: "createdAt",
 				header: "Created",
-				cell: ({ row }) => (
-					<span className="text-xs text-text-secondary">{formatDate(row.original.createdAt)}</span>
-				),
+				cell: ({ row }) => <DateCell value={row.original.createdAt} format={formatDate} secondary />,
 			},
 		],
 		[],

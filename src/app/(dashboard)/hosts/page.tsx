@@ -6,10 +6,10 @@ import { InviteSingleDrawer } from "@/components/hosts/invite-single-drawer"
 import { ClearableInput } from "@/components/ui/clearable-input"
 import { DataView } from "@/components/ui/data-view"
 import { FilterSelect } from "@/components/ui/filter-select"
+import { ChipCell, DateCell, StatusCell, TwoLineCell } from "@/components/ui/table-cells"
 import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
-import { StatusBadge } from "@/components/ui/status-badge"
 import { approveHost, getHosts, rejectHost, suspendHost, restoreHost } from "@/lib/api/hosts"
 import { formatDate } from "@/lib/formatters"
 import { useDrawer } from "@/lib/hooks/use-drawer"
@@ -156,25 +156,17 @@ export default function HostsPage() {
 				cell: ({ row }) => {
 					const h = row.original
 					return (
-						<div>
-							<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
-								{h.displayName}
-							</p>
-							<p className="text-[11px] text-text-tertiary">
-								{h.user.firstName} {h.user.lastName} · {h.user.email}
-							</p>
-						</div>
+						<TwoLineCell
+							primary={h.displayName}
+							secondary={`${h.user.firstName} ${h.user.lastName} · ${h.user.email}`}
+						/>
 					)
 				},
 			},
 			{
 				id: "type",
 				header: "Type",
-				cell: ({ row }) => (
-					<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
-						{row.original.hostType}
-					</span>
-				),
+				cell: ({ row }) => <ChipCell>{row.original.hostType}</ChipCell>,
 			},
 			{
 				id: "cities",
@@ -195,30 +187,22 @@ export default function HostsPage() {
 			{
 				id: "plan",
 				header: "Plan",
-				cell: ({ row }) => (
-					<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
-						{row.original.currentPlan}
-					</span>
-				),
+				cell: ({ row }) => <ChipCell>{row.original.currentPlan}</ChipCell>,
 			},
 			{
 				id: "kycStatus",
 				header: "KYC",
-				cell: ({ row }) => <StatusBadge status={row.original.kycStatus} />,
+				cell: ({ row }) => <StatusCell status={row.original.kycStatus} />,
 			},
 			{
 				id: "approvalStatus",
 				header: "Status",
-				cell: ({ row }) => <StatusBadge status={row.original.approvalStatus} />,
+				cell: ({ row }) => <StatusCell status={row.original.approvalStatus} />,
 			},
 			{
 				id: "joined",
 				header: "Joined",
-				cell: ({ row }) => (
-					<span className="text-xs text-text-secondary">
-						{row.original.createdAt ? formatDate(row.original.createdAt) : "—"}
-					</span>
-				),
+				cell: ({ row }) => <DateCell value={row.original.createdAt} format={formatDate} secondary />,
 			},
 		],
 		[],

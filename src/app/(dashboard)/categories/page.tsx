@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/Button"
 import { DataView } from "@/components/ui/data-view"
 import PageHeader from "@/components/ui/PageHeader"
 import { SearchInput } from "@/components/ui/search-input"
-import { StatusBadge } from "@/components/ui/status-badge"
 import { getCategories } from "@/lib/api/categories"
 import { formatDate } from "@/lib/formatters"
+import { DateCell, StatusCell, TwoLineCell } from "@/components/ui/table-cells"
 import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { Category } from "@/types"
@@ -65,9 +65,7 @@ export default function CategoriesPage() {
 			{
 				id: "name",
 				header: "Name",
-				cell: ({ row }) => (
-					<p className="text-xs font-semibold text-text-primary">{row.original.name}</p>
-				),
+				cell: ({ row }) => <TwoLineCell primary={row.original.name} />,
 			},
 			{
 				id: "description",
@@ -81,14 +79,12 @@ export default function CategoriesPage() {
 			{
 				id: "status",
 				header: "Status",
-				cell: ({ row }) => <StatusBadge status={row.original.isActive ? "ACTIVE" : "DISABLED"} />,
+				cell: ({ row }) => <StatusCell status={row.original.isActive ? "ACTIVE" : "DISABLED"} />,
 			},
 			{
 				id: "createdAt",
 				header: "Created",
-				cell: ({ row }) => (
-					<span className="text-xs text-text-secondary">{formatDate(row.original.createdAt)}</span>
-				),
+				cell: ({ row }) => <DateCell value={row.original.createdAt} format={formatDate} secondary />,
 			},
 		],
 		[],

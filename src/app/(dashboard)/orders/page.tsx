@@ -5,10 +5,10 @@ import { ClearableInput } from "@/components/ui/clearable-input"
 import { DataView } from "@/components/ui/data-view"
 import { DateRangeFilter } from "@/components/ui/date-range-filter"
 import { FilterSelect } from "@/components/ui/filter-select"
+import { DateCell, StatusCell, TwoLineCell } from "@/components/ui/table-cells"
 import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
-import { StatusBadge } from "@/components/ui/status-badge"
 import { getOrders, type GetOrdersParams } from "@/lib/api/orders"
 import { formatDate } from "@/lib/formatters"
 import { useDrawer } from "@/lib/hooks/use-drawer"
@@ -85,22 +85,13 @@ export default function OrdersPage() {
 			{
 				id: "booking",
 				header: "Booking ID",
-				cell: ({ row }) => (
-					<span className="font-mono text-xs font-semibold text-text-primary">
-						{row.original.bookingId}
-					</span>
-				),
+				cell: ({ row }) => <DateCell value={row.original.bookingId} format={v => v} />,
 			},
 			{
 				id: "event",
 				header: "Event",
 				cell: ({ row }) => (
-					<div>
-						<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
-							{row.original.event.title}
-						</p>
-						<p className="text-[11px] text-text-tertiary">{row.original.event.city}</p>
-					</div>
+					<TwoLineCell primary={row.original.event.title} secondary={row.original.event.city} />
 				),
 			},
 			{
@@ -108,27 +99,18 @@ export default function OrdersPage() {
 				header: "Attendee",
 				cell: ({ row }) => {
 					const u = row.original.user
-					return (
-						<div>
-							<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
-								{u.firstName} {u.lastName}
-							</p>
-							<p className="text-[11px] text-text-tertiary">{u.email}</p>
-						</div>
-					)
+					return <TwoLineCell primary={`${u.firstName} ${u.lastName}`} secondary={u.email} />
 				},
 			},
 			{
 				id: "status",
 				header: "Status",
-				cell: ({ row }) => <StatusBadge status={row.original.status} />,
+				cell: ({ row }) => <StatusCell status={row.original.status} />,
 			},
 			{
 				id: "createdAt",
 				header: "Date",
-				cell: ({ row }) => (
-					<span className="text-xs text-text-secondary">{formatDate(row.original.createdAt)}</span>
-				),
+				cell: ({ row }) => <DateCell value={row.original.createdAt} format={formatDate} secondary />,
 			},
 		],
 		[],

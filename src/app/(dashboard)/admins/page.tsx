@@ -6,10 +6,9 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { DataView } from "@/components/ui/data-view"
 import { FilterSelect } from "@/components/ui/filter-select"
 import PageHeader from "@/components/ui/PageHeader"
-import { StatusBadge } from "@/components/ui/status-badge"
 import { deactivateAdmin, getAdmins, inviteAdmin, reactivateAdmin } from "@/lib/api/admins"
-import { ROLE_LABEL, ROLE_STYLE } from "@/lib/constants/roles"
 import { formatDate } from "@/lib/formatters"
+import { DateCell, StatusCell, TwoLineCell } from "@/components/ui/table-cells"
 import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
 import { useAuthStore } from "@/stores/auth.store"
@@ -38,22 +37,6 @@ const ACTIVE_FILTER_OPTIONS: { label: string; value: ActiveFilter }[] = [
 	{ label: "Active", value: "true" },
 	{ label: "Inactive", value: "false" },
 ]
-
-// Role badge
-
-function RoleBadge({ role }: { role: Role }) {
-	return (
-		<span
-			className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${ROLE_STYLE[role]}`}
-		>
-			{ROLE_LABEL[role]}
-		</span>
-	)
-}
-
-// Helpers
-
-// Page
 
 export default function AdminsPage() {
 	const currentUserId = useAuthStore(s => s.user?.id)
@@ -160,12 +143,10 @@ export default function AdminsPage() {
 				id: "admin",
 				header: "Admin",
 				cell: ({ row }) => (
-					<div>
-						<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
-							{row.original.firstName} {row.original.lastName}
-						</p>
-						<p className="text-[11px] text-text-tertiary">{row.original.email}</p>
-					</div>
+					<TwoLineCell
+						primary={`${row.original.firstName} ${row.original.lastName}`}
+						secondary={row.original.email}
+					/>
 				),
 			},
 			{
@@ -173,7 +154,7 @@ export default function AdminsPage() {
 				header: "Role",
 				accessorKey: "role",
 				enableSorting: true,
-				cell: ({ row }) => <RoleBadge role={row.original.role.name} />,
+				cell: ({ row }) => <StatusCell status={row.original.role.name} />,
 			},
 			{
 				id: "scope",
@@ -198,16 +179,14 @@ export default function AdminsPage() {
 			{
 				id: "status",
 				header: "Status",
-				cell: ({ row }) => <StatusBadge status={row.original.isActive ? "ACTIVE" : "DISABLED"} />,
+				cell: ({ row }) => <StatusCell status={row.original.isActive ? "ACTIVE" : "DISABLED"} />,
 			},
 			{
 				id: "joined",
 				header: "Member since",
 				accessorKey: "createdAt",
 				enableSorting: true,
-				cell: ({ row }) => (
-					<span className="text-xs text-text-secondary">{formatDate(row.original.createdAt)}</span>
-				),
+				cell: ({ row }) => <DateCell value={row.original.createdAt} format={formatDate} secondary />,
 			},
 			...(canInvite
 				? ([

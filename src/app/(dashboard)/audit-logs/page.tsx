@@ -10,6 +10,7 @@ import { SearchInput } from "@/components/ui/search-input"
 import { getAuditLogs, type GetAuditLogsParams } from "@/lib/api/audit-logs"
 import { actionColor } from "@/lib/constants/action-colors"
 import { actionLabel, formatDateTime } from "@/lib/formatters"
+import { ChipCell, DateCell, TwoLineCell } from "@/components/ui/table-cells"
 import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { AuditLog } from "@/types"
@@ -106,11 +107,9 @@ export default function AuditLogsPage() {
 				id: "action",
 				header: "Action",
 				cell: ({ row }) => (
-					<span
-						className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${actionColor(row.original.action)}`}
-					>
+					<ChipCell className={actionColor(row.original.action)}>
 						{actionLabel(row.original.action)}
-					</span>
+					</ChipCell>
 				),
 			},
 			{
@@ -120,12 +119,10 @@ export default function AuditLogsPage() {
 					const actor = row.original.actor
 					if (!actor) return <span className="text-[11px] text-text-tertiary">System</span>
 					return (
-						<div>
-							<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
-								{actor.firstName} {actor.lastName}
-							</p>
-							<p className="text-[11px] text-text-tertiary">{actor.email}</p>
-						</div>
+						<TwoLineCell
+							primary={`${actor.firstName} ${actor.lastName}`}
+							secondary={actor.email}
+						/>
 					)
 				},
 			},
@@ -134,32 +131,15 @@ export default function AuditLogsPage() {
 				header: "Entity",
 				cell: ({ row }) => {
 					const l = row.original
-					if (!l.entityType && !l.entityId) {
-						return <span className="text-[11px] text-text-tertiary">-</span>
-					}
-					return (
-						<div>
-							{l.entityType && (
-								<p className="text-[11px] font-semibold text-text-secondary">
-									{l.entityType}
-								</p>
-							)}
-							{l.entityId && (
-								<p className="text-[11px] font-mono text-text-tertiary truncate max-w-30">
-									{l.entityId}
-								</p>
-							)}
-						</div>
-					)
+					if (!l.entityType && !l.entityId) return <span className="text-[11px] text-text-tertiary">-</span>
+					return <TwoLineCell primary={l.entityType ?? ""} secondary={l.entityId} />
 				},
 			},
 			{
 				id: "timestamp",
 				header: "Timestamp",
 				cell: ({ row }) => (
-					<span className="text-xs text-text-secondary whitespace-nowrap">
-						{formatDateTime(row.original.createdAt)}
-					</span>
+					<DateCell value={row.original.createdAt} format={formatDateTime} secondary />
 				),
 			},
 		],

@@ -10,6 +10,7 @@ import { Pagination } from "@/components/ui/pagination"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { FilterSelect } from "@/components/ui/filter-select"
 import { SearchInput } from "@/components/ui/search-input"
+import { ChipCell, ProgressCell, TwoLineCell } from "@/components/ui/table-cells"
 import { disableCoupon, getCoupons } from "@/lib/api/coupons"
 import { extractApiErrorMessage } from "@/lib/error-handler"
 import { usePermission } from "@/lib/hooks/use-permission"
@@ -144,16 +145,7 @@ export default function CouponsPage() {
 				id: "code",
 				header: "Code",
 				cell: ({ row }) => (
-					<div>
-						<p className="text-xs font-mono font-semibold text-text-primary tracking-wide">
-							{row.original.code}
-						</p>
-						{row.original.description && (
-							<p className="text-[11px] text-text-tertiary mt-0.5 truncate max-w-50">
-								{row.original.description}
-							</p>
-						)}
-					</div>
+					<TwoLineCell primary={row.original.code} secondary={row.original.description} />
 				),
 			},
 			{
@@ -162,13 +154,15 @@ export default function CouponsPage() {
 				cell: ({ row }) => {
 					const t = row.original.target
 					return (
-						<span
-							className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-								t === "HOST" ? "bg-purple-50 text-purple-700" : "bg-sky-50 text-sky-700"
-							}`}
+						<ChipCell
+							className={
+								t === "HOST"
+									? "bg-violet-50 text-violet-700 border border-violet-200"
+									: "bg-sky-50 text-sky-700 border border-sky-200"
+							}
 						>
 							{t === "HOST" ? "Host" : "Attendee"}
-						</span>
+						</ChipCell>
 					)
 				},
 			},
@@ -176,9 +170,9 @@ export default function CouponsPage() {
 				id: "discount",
 				header: "Discount",
 				cell: ({ row }) => (
-					<span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-primary">
+					<ChipCell className="bg-surface-info-soft text-blue-700 border border-blue-200">
 						{discountLabel(row.original)}
-					</span>
+					</ChipCell>
 				),
 			},
 			{
@@ -187,25 +181,7 @@ export default function CouponsPage() {
 				cell: ({ row }) => {
 					const c = row.original
 					const used = c.usageCount ?? c.redemptions?.length ?? 0
-					const pct = c.maxUsages != null ? Math.round((used / c.maxUsages) * 100) : null
-					return (
-						<div className="space-y-1 min-w-24">
-							<p className="text-xs text-text-primary">
-								{used}
-								<span className="text-text-tertiary">
-									{c.maxUsages != null ? ` / ${c.maxUsages}` : " / âˆž"}
-								</span>
-							</p>
-							{pct !== null && (
-								<div className="h-1 w-16 rounded-full bg-neutral-100 overflow-hidden">
-									<div
-										className="h-full rounded-full bg-action-primary/70 transition-all"
-										style={{ width: `${Math.min(pct, 100)}%` }}
-									/>
-								</div>
-							)}
-						</div>
-					)
+					return <ProgressCell used={used} max={c.maxUsages} />
 				},
 			},
 			{
@@ -214,13 +190,15 @@ export default function CouponsPage() {
 				cell: ({ row }) => {
 					const active = row.original.isActive
 					return (
-						<span
-							className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-								active ? "bg-green-50 text-green-700" : "bg-neutral-100 text-text-secondary"
-							}`}
+						<ChipCell
+							className={
+								active
+									? "bg-green-50 text-green-700 border border-green-200"
+									: "bg-neutral-50 text-neutral-700 border border-neutral-200"
+							}
 						>
 							{active ? "Active" : "Inactive"}
-						</span>
+						</ChipCell>
 					)
 				},
 			},
@@ -231,15 +209,16 @@ export default function CouponsPage() {
 					const c = row.original
 					if (!c.isActive) return null
 					return (
-						<button
+						<Button
+							variant="secondary"
+							size="sm"
 							onClick={e => {
 								e.stopPropagation()
 								setDisableTarget(c)
 							}}
-							className="rounded-md px-2.5 py-1 text-[11px] font-semibold text-text-secondary border border-border-default hover:bg-neutral-50 hover:border-border-strong transition-colors"
 						>
 							Disable
-						</button>
+						</Button>
 					)
 				},
 			},

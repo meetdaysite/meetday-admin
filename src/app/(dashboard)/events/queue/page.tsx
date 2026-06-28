@@ -7,6 +7,7 @@ import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { approveEvent, forceCancelEvent, getPendingEvents, rejectEvent } from "@/lib/api/events"
 import { formatDate } from "@/lib/formatters"
+import { AgeDateCell, ChipCell, DateCell, TwoLineCell } from "@/components/ui/table-cells"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { Event } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
@@ -25,9 +26,10 @@ function getDaysSince(iso: string): number {
 function getRowTint(event: Event): string {
 	if (!event.updatedAt) return ""
 	const days = getDaysSince(event.updatedAt)
-	if (days >= 14) return "bg-orange-50"
-	if (days >= 7) return "bg-amber-50"
-	return ""
+	if (days <= 7) return ""
+	if (days <= 21) return "border-l-4 border-amber-500"
+	if (days <= 35) return "border-l-4 border-orange-500"
+	return "border-l-4 border-red-500"
 }
 
 // Page
@@ -132,57 +134,31 @@ export default function EventQueuePage() {
 			{
 				id: "event",
 				header: "Event",
-				cell: ({ row }) => {
-					const e = row.original
-					return (
-						<div>
-							<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
-								{e.title}
-							</p>
-							<p className="text-[11px] text-text-tertiary">{e.hostProfile.displayName}</p>
-						</div>
-					)
-				},
+				cell: ({ row }) => (
+					<TwoLineCell primary={row.original.title} secondary={row.original.hostProfile.displayName} />
+				),
 			},
 			{
 				id: "type",
 				header: "Type",
-				cell: ({ row }) => (
-					<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
-						{row.original.eventType}
-					</span>
-				),
+				cell: ({ row }) => <ChipCell>{row.original.eventType}</ChipCell>,
 			},
 			{
 				id: "city",
 				header: "City",
-				cell: ({ row }) => <span className="text-xs text-text-primary">{row.original.city}</span>,
+				cell: ({ row }) => <DateCell value={row.original.city} format={v => v} />,
 			},
 			{
 				id: "eventDate",
 				header: "Event Date",
-				cell: ({ row }) => (
-					<span className="text-xs text-text-primary">{formatDate(row.original.eventDate)}</span>
-				),
+				cell: ({ row }) => <DateCell value={row.original.eventDate} format={formatDate} />,
 			},
 			{
 				id: "submitted",
 				header: "Updated",
-				cell: ({ row }) => {
-					const days = row.original.updatedAt ? getDaysSince(row.original.updatedAt) : 0
-					const ageColor =
-						days >= 14 ? "text-orange-600" : days >= 7 ? "text-amber-600" : "text-text-tertiary"
-					return (
-						<div>
-							<p className="text-xs text-text-secondary">
-								{row.original.updatedAt ? formatDate(row.original.updatedAt) : "—"}
-							</p>
-							<p className={`text-[11px] font-medium ${ageColor}`}>
-								{days === 0 ? "Today" : days === 1 ? "Yesterday" : `${days} days ago`}
-							</p>
-						</div>
-					)
-				},
+				cell: ({ row }) => (
+					<AgeDateCell iso={row.original.updatedAt ?? undefined} getDaysSince={getDaysSince} format={formatDate} />
+				),
 			},
 		],
 		[],

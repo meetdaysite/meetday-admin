@@ -4,10 +4,10 @@ import { EventReviewDrawer, type EventAction } from "@/components/events/event-r
 import { ClearableInput } from "@/components/ui/clearable-input"
 import { DataView } from "@/components/ui/data-view"
 import { FilterSelect } from "@/components/ui/filter-select"
+import { ChipCell, DateCell, StatusCell, TwoLineCell } from "@/components/ui/table-cells"
 import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
-import { StatusBadge } from "@/components/ui/status-badge"
 import {
 	approveEvent,
 	forceCancelEvent,
@@ -134,52 +134,34 @@ export default function EventsPage() {
 			{
 				id: "event",
 				header: "Event",
-				cell: ({ row }) => {
-					const e = row.original
-					return (
-						<div>
-							<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
-								{e.title}
-							</p>
-							<p className="text-[11px] text-text-tertiary">{e.hostProfile.displayName}</p>
-						</div>
-					)
-				},
+				cell: ({ row }) => (
+					<TwoLineCell primary={row.original.title} secondary={row.original.hostProfile.displayName} />
+				),
 			},
 			{
 				id: "type",
 				header: "Type",
-				cell: ({ row }) => (
-					<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
-						{row.original.eventType}
-					</span>
-				),
+				cell: ({ row }) => <ChipCell>{row.original.eventType}</ChipCell>,
 			},
 			{
 				id: "city",
 				header: "City",
-				cell: ({ row }) => <span className="text-xs text-text-primary">{row.original.city}</span>,
+				cell: ({ row }) => <DateCell value={row.original.city} format={v => v} />,
 			},
 			{
 				id: "eventDate",
 				header: "Event Date",
-				cell: ({ row }) => (
-					<span className="text-xs text-text-primary">{formatDate(row.original.eventDate)}</span>
-				),
+				cell: ({ row }) => <DateCell value={row.original.eventDate} format={formatDate} />,
 			},
 			{
 				id: "created",
 				header: "Created",
-				cell: ({ row }) => (
-					<span className="text-xs text-text-secondary">
-						{row.original.createdAt ? formatDate(row.original.createdAt) : "-"}
-					</span>
-				),
+				cell: ({ row }) => <DateCell value={row.original.createdAt} format={formatDate} secondary />,
 			},
 			{
 				id: "status",
 				header: "Status",
-				cell: ({ row }) => (row.original.status ? <StatusBadge status={row.original.status} /> : "-"),
+				cell: ({ row }) => <StatusCell status={row.original.status} />,
 			},
 		],
 		[],

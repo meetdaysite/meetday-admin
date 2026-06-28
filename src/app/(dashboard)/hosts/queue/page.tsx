@@ -5,9 +5,9 @@ import { DataView } from "@/components/ui/data-view"
 import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
-import { StatusBadge } from "@/components/ui/status-badge"
 import { approveHost, getHosts, rejectHost } from "@/lib/api/hosts"
 import { formatDate } from "@/lib/formatters"
+import { AgeDateCell, ChipCell, StatusCell, TwoLineCell } from "@/components/ui/table-cells"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { Host } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
@@ -24,9 +24,10 @@ function getDaysSince(iso: string): number {
 function getRowTint(host: Host): string {
 	if (!host.createdAt) return ""
 	const days = getDaysSince(host.createdAt)
-	if (days >= 14) return "bg-orange-50"
-	if (days >= 7) return "bg-amber-50"
-	return ""
+	if (days <=7) return ""
+	if (days <=21) return "border-l-4 border-amber-500"
+	if (days <= 35) return "border-l-4 border-orange-500"
+	return "border-l-4 border-red-500"
 }
 
 // Page
@@ -133,25 +134,17 @@ export default function HostQueuePage() {
 				cell: ({ row }) => {
 					const h = row.original
 					return (
-						<div>
-							<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
-								{h.displayName}
-							</p>
-							<p className="text-[11px] text-text-tertiary">
-								{h.user.firstName} {h.user.lastName} · {h.user.email}
-							</p>
-						</div>
+						<TwoLineCell
+							primary={h.displayName}
+							secondary={`${h.user.firstName} ${h.user.lastName} · ${h.user.email}`}
+						/>
 					)
 				},
 			},
 			{
 				id: "type",
 				header: "Type",
-				cell: ({ row }) => (
-					<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
-						{row.original.hostType}
-					</span>
-				),
+				cell: ({ row }) => <ChipCell>{row.original.hostType}</ChipCell>,
 			},
 			{
 				id: "cities",
@@ -172,26 +165,14 @@ export default function HostQueuePage() {
 			{
 				id: "kycStatus",
 				header: "KYC",
-				cell: ({ row }) => <StatusBadge status={row.original.kycStatus} />,
+				cell: ({ row }) => <StatusCell status={row.original.kycStatus} />,
 			},
 			{
 				id: "submitted",
 				header: "Submitted",
-				cell: ({ row }) => {
-					const iso = row.original.createdAt
-					if (!iso) return <span className="text-xs text-text-tertiary">—</span>
-					const days = getDaysSince(iso)
-					const ageColor =
-						days >= 14 ? "text-orange-600" : days >= 7 ? "text-amber-600" : "text-text-tertiary"
-					return (
-						<div>
-							<p className="text-xs text-text-secondary">{formatDate(iso)}</p>
-							<p className={`text-[11px] font-medium ${ageColor}`}>
-								{days === 0 ? "Today" : days === 1 ? "Yesterday" : `${days} days ago`}
-							</p>
-						</div>
-					)
-				},
+				cell: ({ row }) => (
+					<AgeDateCell iso={row.original.createdAt} getDaysSince={getDaysSince} format={formatDate} />
+				),
 			},
 		],
 		[],

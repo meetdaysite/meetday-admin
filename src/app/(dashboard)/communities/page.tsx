@@ -8,7 +8,7 @@ import { FilterSelect } from "@/components/ui/filter-select"
 import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
-import { StatusBadge } from "@/components/ui/status-badge"
+import { ChipCell, StatusCell, TwoLineCell } from "@/components/ui/table-cells"
 import {
 	archiveCommunity,
 	deleteCommunity,
@@ -22,7 +22,6 @@ import { extractApiErrorMessage } from "@/lib/error-handler"
 import { formatCount } from "@/lib/formatters"
 import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
-import { cn } from "@/lib/utils"
 import type { Community, CommunityStatus, CommunityType } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
@@ -57,22 +56,22 @@ const STATUS_OPTIONS: { label: string; value: StatusFilter }[] = [
 ]
 
 const CATEGORY_COLORS: Record<string, string> = {
-	Music: "bg-purple-100 text-purple-700",
-	Networking: "bg-blue-100 text-blue-700",
-	Wellness: "bg-green-100 text-green-700",
-	Creative: "bg-orange-100 text-orange-700",
-	Tech: "bg-indigo-100 text-indigo-700",
-	"Personal Growth": "bg-pink-100 text-pink-700",
-	Travel: "bg-teal-100 text-teal-700",
-	Business: "bg-sky-100 text-sky-700",
-	Arts: "bg-rose-100 text-rose-700",
-	Lifestyle: "bg-amber-100 text-amber-700",
+	Music: "bg-purple-100 text-purple-700 border-purple-200",
+	Networking: "bg-blue-100 text-blue-700 border-blue-200",
+	Wellness: "bg-green-100 text-green-700 border-green-200",
+	Creative: "bg-orange-100 text-orange-700 border-orange-200",
+	Tech: "bg-indigo-100 text-indigo-700 border-indigo-200",
+	"Personal Growth": "bg-pink-100 text-pink-700 border-pink-200",
+	Travel: "bg-teal-100 text-teal-700 border-teal-200",
+	Business: "bg-sky-100 text-sky-700 border-sky-200",
+	Arts: "bg-rose-100 text-rose-700 border-rose-200",
+	Lifestyle: "bg-amber-100 text-amber-700 border-amber-200",
 }
 
 const TYPE_BADGE: Record<CommunityType, { label: string; className: string }> = {
-	MEETDAY_MANAGED_PUBLIC: { label: "Managed", className: "bg-blue-50 text-blue-700" },
-	HOST_LED: { label: "Host Led", className: "bg-amber-50 text-amber-700" },
-	PRIVATE_INVITE_ONLY: { label: "Private", className: "bg-purple-50 text-purple-700" },
+	MEETDAY_MANAGED_PUBLIC: { label: "Managed", className: "bg-blue-50 text-blue-700 border-blue-200" },
+	HOST_LED: { label: "Host Led", className: "bg-amber-50 text-amber-700 border-amber-200" },
+	PRIVATE_INVITE_ONLY: { label: "Private", className: "bg-purple-50 text-purple-700 border-purple-200" },
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -221,14 +220,9 @@ export default function CommunitiesPage() {
 					const cat = row.original.category
 					if (!cat) return <span className="text-xs text-text-tertiary">—</span>
 					return (
-						<span
-							className={cn(
-								"inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-								CATEGORY_COLORS[cat.name] ?? "bg-neutral-100 text-text-secondary",
-							)}
-						>
+						<ChipCell className={CATEGORY_COLORS[cat.name] ?? "bg-neutral-100 text-text-secondary border-neutral-200"}>
 							{cat.name}
-						</span>
+						</ChipCell>
 					)
 				},
 			},
@@ -237,38 +231,23 @@ export default function CommunitiesPage() {
 				header: "Type",
 				cell: ({ row }) => {
 					const cfg = TYPE_BADGE[row.original.type]
-					return (
-						<span
-							className={cn(
-								"inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-								cfg.className,
-							)}
-						>
-							{cfg.label}
-						</span>
-					)
+					return <ChipCell className={cfg.className}>{cfg.label}</ChipCell>
 				},
 			},
 			{
 				id: "members",
 				header: "Members",
-				cell: ({ row }) => (
-					<p className="text-xs font-semibold text-text-primary">
-						{formatCount(row.original.memberCount)}
-					</p>
-				),
+				cell: ({ row }) => <TwoLineCell primary={formatCount(row.original.memberCount)} />,
 			},
 			{
 				id: "experiences",
 				header: "Experiences",
-				cell: ({ row }) => (
-					<p className="text-xs font-semibold text-text-primary">{row.original.experienceCount}</p>
-				),
+				cell: ({ row }) => <TwoLineCell primary={String(row.original.experienceCount)} />,
 			},
 			{
 				id: "status",
 				header: "Status",
-				cell: ({ row }) => <StatusBadge status={row.original.status} />,
+				cell: ({ row }) => <StatusCell status={row.original.status} />,
 			},
 			{
 				id: "actions",

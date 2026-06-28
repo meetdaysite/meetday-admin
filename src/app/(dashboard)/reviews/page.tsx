@@ -2,6 +2,7 @@
 
 import { DataView } from "@/components/ui/data-view"
 import { FilterSelect } from "@/components/ui/filter-select"
+import { DateCell, RatingCell, TwoLineCell } from "@/components/ui/table-cells"
 import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
@@ -10,7 +11,7 @@ import { formatDate } from "@/lib/formatters"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { Review } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
-import { Eye, EyeOff, Star } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
@@ -18,23 +19,6 @@ import { toast } from "sonner"
 // Constants
 
 const PAGE_LIMIT = 20
-
-// Helpers
-
-function StarRating({ rating }: { rating: number }) {
-	return (
-		<span className="flex items-center gap-0.5">
-			{Array.from({ length: 5 }).map((_, i) => (
-				<Star
-					key={i}
-					size={11}
-					className={i < rating ? "fill-amber-400 text-amber-400" : "text-neutral-200"}
-				/>
-			))}
-			<span className="ml-1 text-[11px] font-semibold text-text-secondary">{rating}</span>
-		</span>
-	)
-}
 
 // Constants
 
@@ -136,29 +120,18 @@ export default function ReviewsPage() {
 				cell: ({ row }) => {
 					const u = row.original.reviewer
 					if (!u) return <span className="text-xs text-text-tertiary italic">Unknown</span>
-					return (
-						<div>
-							<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
-								{u.firstName} {u.lastName}
-							</p>
-							<p className="text-[11px] text-text-tertiary">{u.email}</p>
-						</div>
-					)
+					return <TwoLineCell primary={`${u.firstName} ${u.lastName}`} secondary={u.email} />
 				},
 			},
 			{
 				id: "event",
 				header: "Event",
-				cell: ({ row }) => (
-					<p className="text-xs font-semibold text-text-primary max-w-40 truncate">
-						{row.original.event.title}
-					</p>
-				),
+				cell: ({ row }) => <TwoLineCell primary={row.original.event.title} />,
 			},
 			{
 				id: "rating",
 				header: "Rating",
-				cell: ({ row }) => <StarRating rating={row.original.rating} />,
+				cell: ({ row }) => <RatingCell rating={row.original.rating} />,
 			},
 			{
 				id: "content",
@@ -191,9 +164,7 @@ export default function ReviewsPage() {
 			{
 				id: "date",
 				header: "Date",
-				cell: ({ row }) => (
-					<span className="text-xs text-text-secondary">{formatDate(row.original.createdAt)}</span>
-				),
+				cell: ({ row }) => <DateCell value={row.original.createdAt} format={formatDate} secondary />,
 			},
 			{
 				id: "visibility",
