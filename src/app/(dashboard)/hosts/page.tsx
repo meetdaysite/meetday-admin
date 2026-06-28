@@ -2,10 +2,10 @@
 
 import type { HostAction } from "@/components/hosts/host-review-drawer"
 import { HostReviewDrawer } from "@/components/hosts/host-review-drawer"
-import { DataTable } from "@/components/ui/data-table"
-import { ErrorBanner } from "@/components/ui/error-banner"
+import { ClearableInput } from "@/components/ui/clearable-input"
+import { DataView } from "@/components/ui/data-view"
+import { FilterSelect } from "@/components/ui/filter-select"
 import { PageHeader } from "@/components/ui/page-header"
-import { Pagination } from "@/components/ui/pagination"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { approveHost, getHosts, rejectHost } from "@/lib/api/hosts"
 import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
@@ -216,103 +216,57 @@ export default function HostsPage() {
 
 			{/* Filters */}
 			<div className="flex items-center gap-3 flex-wrap">
-				<select
+				<FilterSelect
 					value={approvalFilter}
-					onChange={e => {
-						setApprovalFilter(e.target.value as ApprovalFilter)
+					onChange={v => {
+						setApprovalFilter(v as ApprovalFilter)
 						setPage(1)
 					}}
-					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
-				>
-					{APPROVAL_FILTER_OPTIONS.map(o => (
-						<option key={o.value} value={o.value}>
-							{o.label}
-						</option>
-					))}
-				</select>
+					options={APPROVAL_FILTER_OPTIONS}
+				/>
 
-				<select
+				<FilterSelect
 					value={kycFilter}
-					onChange={e => {
-						setKycFilter(e.target.value as KycFilter)
+					onChange={v => {
+						setKycFilter(v as KycFilter)
 						setPage(1)
 					}}
-					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
-				>
-					{KYC_FILTER_OPTIONS.map(o => (
-						<option key={o.value} value={o.value}>
-							{o.label}
-						</option>
-					))}
-				</select>
+					options={KYC_FILTER_OPTIONS}
+				/>
 
-				<select
+				<FilterSelect
 					value={planFilter}
-					onChange={e => {
-						setPlanFilter(e.target.value as PlanFilter)
+					onChange={v => {
+						setPlanFilter(v as PlanFilter)
 						setPage(1)
 					}}
-					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
-				>
-					{PLAN_FILTER_OPTIONS.map(o => (
-						<option key={o.value} value={o.value}>
-							{o.label}
-						</option>
-					))}
-				</select>
+					options={PLAN_FILTER_OPTIONS}
+				/>
 
-				<form onSubmit={handleCitySearch} className="flex items-center gap-1.5">
-					<input
-						type="text"
+				<form onSubmit={handleCitySearch}>
+					<ClearableInput
 						value={cityInput}
-						onChange={e => setCityInput(e.target.value)}
+						onChange={setCityInput}
+						showClear={!!cityFilter}
+						onClear={() => {
+							setCityInput("")
+							setCityFilter("")
+							setPage(1)
+						}}
 						placeholder="Filter by city…"
-						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors w-36"
 					/>
-					{cityFilter && (
-						<button
-							type="button"
-							onClick={() => {
-								setCityInput("")
-								setCityFilter("")
-								setPage(1)
-							}}
-							className="rounded-lg border border-border-default px-2.5 py-2 text-xs text-text-secondary hover:bg-neutral-50 transition-colors"
-						>
-							Clear
-						</button>
-					)}
 				</form>
 			</div>
 
-			{/* Error state */}
-			{error ? (
-				<ErrorBanner>{error}</ErrorBanner>
-			) : (
-				<>
-					{/* Table */}
-					<DataTable
-						columns={columns}
-						data={hosts}
-						isLoading={isLoading}
-						onRowClick={canApprove ? row => setSelectedHost(row) : undefined}
-						emptyState={
-							<div className="py-12 text-center text-sm text-text-tertiary">
-								No hosts found.
-							</div>
-						}
-					/>
-
-					{/* Pagination */}
-					<Pagination
-						page={page}
-						totalPages={totalPages}
-						total={total}
-						pageSize={PAGE_LIMIT}
-						onPageChange={setPage}
-					/>
-				</>
-			)}
+			<DataView
+				error={error}
+				isLoading={isLoading}
+				columns={columns}
+				data={hosts}
+				emptyMessage="No hosts found."
+				onRowClick={canApprove ? row => setSelectedHost(row) : undefined}
+				pagination={{ page, totalPages, total, pageSize: PAGE_LIMIT, onPageChange: setPage }}
+			/>
 
 			{/* Review drawer */}
 			{canApprove && (

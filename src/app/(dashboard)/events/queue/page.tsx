@@ -1,8 +1,8 @@
-﻿"use client"
+﻿﻿"use client"
 
 import { EventReviewDrawer, type EventAction } from "@/components/events/event-review-drawer"
-import { DataTable } from "@/components/ui/data-table"
-import { ErrorBanner } from "@/components/ui/error-banner"
+import { DataView } from "@/components/ui/data-view"
+import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { approveEvent, forceCancelEvent, getPendingEvents, rejectEvent } from "@/lib/api/events"
 import { formatDate } from "@/lib/formatters"
@@ -176,7 +176,7 @@ export default function EventQueuePage() {
 					return (
 						<div>
 							<p className="text-xs text-text-secondary">
-								{row.original.updatedAt ? formatDate(row.original.updatedAt) : "â€”"}
+								{row.original.updatedAt ? formatDate(row.original.updatedAt) : "—"}
 							</p>
 							<p className={`text-[11px] font-medium ${ageColor}`}>
 								{days === 0 ? "Today" : days === 1 ? "Yesterday" : `${days} days ago`}
@@ -189,15 +189,7 @@ export default function EventQueuePage() {
 		[],
 	)
 
-	if (!canApprove) {
-		return (
-			<div className="p-6 max-w-7xl mx-auto">
-				<p className="text-sm text-text-tertiary">
-					You don&apos;t have permission to view the event queue.
-				</p>
-			</div>
-		)
-	}
+	if (!canApprove) return <PermissionGuard message="You don't have permission to view the event queue." />
 
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
@@ -219,39 +211,29 @@ export default function EventQueuePage() {
 				className="max-w-xs"
 			/>
 
-			{/* Error state */}
-			{error ? (
-				<ErrorBanner>{error}</ErrorBanner>
-			) : (
-				<>
-					<DataTable
-						columns={columns}
-						data={filtered}
-						isLoading={isLoading}
-						onRowClick={openDrawer}
-						getRowClassName={getRowTint}
-						emptyState={
-							<div className="py-12 text-center text-sm text-text-tertiary">
-								No events pending review.
-							</div>
-						}
-					/>
+			<DataView
+				error={error}
+				isLoading={isLoading}
+				columns={columns}
+				data={filtered}
+				emptyMessage="No events pending review."
+				onRowClick={openDrawer}
+				getRowClassName={getRowTint}
+			/>
 
-					{/* Age tint legend */}
-					{!isLoading && filtered.length > 0 && (
-						<div className="flex items-center gap-4 text-[11px] text-text-tertiary">
-							<span className="font-medium">Row colour:</span>
-							<span className="flex items-center gap-1.5">
-								<span className="w-3 h-3 rounded-sm bg-amber-100 border border-amber-200" />
-								7â€“13 days pending
-							</span>
-							<span className="flex items-center gap-1.5">
-								<span className="w-3 h-3 rounded-sm bg-orange-100 border border-orange-200" />
-								14+ days pending
-							</span>
-						</div>
-					)}
-				</>
+			{/* Age tint legend */}
+			{!error && !isLoading && filtered.length > 0 && (
+				<div className="flex items-center gap-4 text-[11px] text-text-tertiary">
+					<span className="font-medium">Row colour:</span>
+					<span className="flex items-center gap-1.5">
+						<span className="w-3 h-3 rounded-sm bg-amber-100 border border-amber-200" />
+						7–13 days pending
+					</span>
+					<span className="flex items-center gap-1.5">
+						<span className="w-3 h-3 rounded-sm bg-orange-100 border border-orange-200" />
+						14+ days pending
+					</span>
+				</div>
 			)}
 
 			<EventReviewDrawer

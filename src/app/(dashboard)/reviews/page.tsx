@@ -1,9 +1,9 @@
 ﻿"use client"
 
-import { DataTable } from "@/components/ui/data-table"
+import { DataView } from "@/components/ui/data-view"
 import { FilterTabs } from "@/components/ui/filter-tabs"
 import { PageHeader } from "@/components/ui/page-header"
-import { Pagination } from "@/components/ui/pagination"
+import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { getReviews, updateReviewVisibility } from "@/lib/api/reviews"
 import { formatDate } from "@/lib/formatters"
@@ -225,13 +225,7 @@ export default function ReviewsPage() {
 		[togglingId, canAction], // eslint-disable-line react-hooks/exhaustive-deps
 	)
 
-	if (!canRead) {
-		return (
-			<div className="p-6 max-w-7xl mx-auto">
-				<p className="text-sm text-text-tertiary">You don&apos;t have permission to view reviews.</p>
-			</div>
-		)
-	}
+	if (!canRead) return <PermissionGuard message="You don't have permission to view reviews." />
 
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
@@ -253,33 +247,14 @@ export default function ReviewsPage() {
 				/>
 			</div>
 
-			{/* Error */}
-			{error ? (
-				<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-					{error}
-				</div>
-			) : (
-				<>
-					<DataTable
-						columns={columns}
-						data={filtered}
-						isLoading={isLoading}
-						emptyState={
-							<div className="py-12 text-center text-sm text-text-tertiary">
-								No reviews match the current filters.
-							</div>
-						}
-					/>
-
-					<Pagination
-						page={page}
-						totalPages={totalPages}
-						total={total}
-						pageSize={PAGE_LIMIT}
-						onPageChange={setPage}
-					/>
-				</>
-			)}
+			<DataView
+				error={error}
+				isLoading={isLoading}
+				columns={columns}
+				data={filtered}
+				emptyMessage="No reviews match the current filters."
+				pagination={{ page, totalPages, total, pageSize: PAGE_LIMIT, onPageChange: setPage }}
+			/>
 		</div>
 	)
 }

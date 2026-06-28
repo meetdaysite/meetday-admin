@@ -1,9 +1,9 @@
-﻿"use client"
+﻿﻿"use client"
 
 import { InterestDrawer } from "@/components/interests/interest-drawer"
-import { DataTable } from "@/components/ui/data-table"
-import { ErrorBanner } from "@/components/ui/error-banner"
+import { DataView } from "@/components/ui/data-view"
 import { PageHeader } from "@/components/ui/page-header"
+import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { getInterests } from "@/lib/api/interests"
 import { formatDate } from "@/lib/formatters"
@@ -26,15 +26,14 @@ export default function InterestsPage() {
 	const [drawerOpen, setDrawerOpen] = useState(false)
 	const [selected, setSelected] = useState<Interest | null>(null)
 
-	const fetcher = useCallback(
-		() => getInterests().then(data => ({ items: data, total: data.length })),
-		[],
-	)
+	const fetcher = useCallback(() => getInterests().then(data => ({ items: data, total: data.length })), [])
 
-	const { items: interests, isLoading, error, refresh: fetchInterests } = usePaginatedFetch(
-		fetcher,
-		"Failed to load interests",
-	)
+	const {
+		items: interests,
+		isLoading,
+		error,
+		refresh: fetchInterests,
+	} = usePaginatedFetch(fetcher, "Failed to load interests")
 
 	const filtered = useMemo(() => {
 		const q = search.toLowerCase()
@@ -80,7 +79,7 @@ export default function InterestsPage() {
 				header: "Description",
 				cell: ({ row }) => (
 					<p className="text-xs text-text-tertiary max-w-xs truncate">
-						{row.original.description ?? <span className="italic">â€”</span>}
+						{row.original.description ?? <span className="italic">-</span>}
 					</p>
 				),
 			},
@@ -89,7 +88,7 @@ export default function InterestsPage() {
 				header: "Image",
 				cell: ({ row }) => (
 					<span className="text-[11px] font-mono text-text-tertiary truncate max-w-40 block">
-						{row.original.image ?? <span className="not-italic">â€”</span>}
+						{row.original.image ?? <span className="not-italic">-</span>}
 					</span>
 				),
 			},
@@ -104,15 +103,7 @@ export default function InterestsPage() {
 		[],
 	)
 
-	if (!canManage) {
-		return (
-			<div className="p-6 max-w-7xl mx-auto">
-				<p className="text-sm text-text-tertiary">
-					You don&apos;t have permission to view interests.
-				</p>
-			</div>
-		)
-	}
+	if (!canManage) return <PermissionGuard message="You don't have permission to view interests." />
 
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
@@ -135,22 +126,14 @@ export default function InterestsPage() {
 				className="max-w-xs"
 			/>
 
-			{/* Error */}
-			{error ? (
-				<ErrorBanner>{error}</ErrorBanner>
-			) : (
-				<DataTable
-					columns={columns}
-					data={filtered}
-					isLoading={isLoading}
-					onRowClick={openEdit}
-					emptyState={
-						<div className="py-12 text-center text-sm text-text-tertiary">
-							No interests found.
-						</div>
-					}
-				/>
-			)}
+			<DataView
+				error={error}
+				isLoading={isLoading}
+				columns={columns}
+				data={filtered}
+				emptyMessage="No interests found."
+				onRowClick={openEdit}
+			/>
 
 			<InterestDrawer
 				open={drawerOpen}

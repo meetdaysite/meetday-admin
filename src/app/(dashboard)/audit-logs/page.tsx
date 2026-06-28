@@ -1,9 +1,10 @@
 ﻿﻿"use client"
 
-import { DataTable } from "@/components/ui/data-table"
-import { ErrorBanner } from "@/components/ui/error-banner"
+import { DataView } from "@/components/ui/data-view"
+import { DateRangeFilter } from "@/components/ui/date-range-filter"
+import { FilterSelect } from "@/components/ui/filter-select"
 import { PageHeader } from "@/components/ui/page-header"
-import { Pagination } from "@/components/ui/pagination"
+import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { getAuditLogs, type GetAuditLogsParams } from "@/lib/api/audit-logs"
 import { actionColor } from "@/lib/constants/action-colors"
@@ -173,15 +174,7 @@ export default function AuditLogsPage() {
 		[],
 	)
 
-	if (!canRead) {
-		return (
-			<div className="p-6 max-w-7xl mx-auto">
-				<p className="text-sm text-text-tertiary">
-					You don&apos;t have permission to view audit logs.
-				</p>
-			</div>
-		)
-	}
+	if (!canRead) return <PermissionGuard message="You don't have permission to view audit logs." />
 
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
@@ -192,21 +185,18 @@ export default function AuditLogsPage() {
 			<div className="space-y-3">
 				{/* Row 1: action + entity type + date range */}
 				<div className="flex items-center gap-2 flex-wrap">
-					<select
+					<FilterSelect
 						value={actionFilter}
-						onChange={e => {
-							setActionFilter(e.target.value)
+						onChange={v => {
+							setActionFilter(v)
 							setPage(1)
 						}}
-						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors max-w-55"
-					>
-						<option value="">All actions</option>
-						{AUDIT_ACTIONS.map(a => (
-							<option key={a} value={a}>
-								{actionLabel(a)}
-							</option>
-						))}
-					</select>
+						options={[
+							{ value: "", label: "All actions" },
+							...AUDIT_ACTIONS.map(a => ({ value: a, label: actionLabel(a) })),
+						]}
+						className="max-w-55"
+					/>
 
 					<input
 						type="text"
@@ -219,24 +209,17 @@ export default function AuditLogsPage() {
 						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors w-32"
 					/>
 
-					<input
-						type="date"
-						value={fromDate}
-						onChange={e => {
-							setFromDate(e.target.value)
+					<DateRangeFilter
+						from={fromDate}
+						to={toDate}
+						onFromChange={v => {
+							setFromDate(v)
 							setPage(1)
 						}}
-						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
-					/>
-					<span className="text-xs text-text-tertiary">to</span>
-					<input
-						type="date"
-						value={toDate}
-						onChange={e => {
-							setToDate(e.target.value)
+						onToChange={v => {
+							setToDate(v)
 							setPage(1)
 						}}
-						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 					/>
 				</div>
 
@@ -286,31 +269,14 @@ export default function AuditLogsPage() {
 				</form>
 			</div>
 
-			{/* Error */}
-			{error ? (
-				<ErrorBanner>{error}</ErrorBanner>
-			) : (
-				<>
-					<DataTable
-						columns={columns}
-						data={filtered}
-						isLoading={isLoading}
-						emptyState={
-							<div className="py-12 text-center text-sm text-text-tertiary">
-								No audit log entries match the current filters.
-							</div>
-						}
-					/>
-
-					<Pagination
-						page={page}
-						totalPages={totalPages}
-						total={total}
-						pageSize={PAGE_LIMIT}
-						onPageChange={setPage}
-					/>
-				</>
-			)}
+			<DataView
+				error={error}
+				isLoading={isLoading}
+				columns={columns}
+				data={filtered}
+				emptyMessage="No audit log entries match the current filters."
+				pagination={{ page, totalPages, total, pageSize: PAGE_LIMIT, onPageChange: setPage }}
+			/>
 		</div>
 	)
 }

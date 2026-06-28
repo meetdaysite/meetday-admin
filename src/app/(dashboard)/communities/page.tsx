@@ -3,9 +3,9 @@
 import { StatCard } from "@/components/dashboard/stat-card"
 import { Button } from "@/components/ui/Button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { DataTable } from "@/components/ui/data-table"
-import { ErrorBanner } from "@/components/ui/error-banner"
-import { Pagination } from "@/components/ui/pagination"
+import { DataView } from "@/components/ui/data-view"
+import { FilterSelect } from "@/components/ui/filter-select"
+import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { StatusBadge } from "@/components/ui/status-badge"
 import {
@@ -334,15 +334,7 @@ export default function CommunitiesPage() {
 
 	// ─── Permission guard ─────────────────────────────────────────────────────
 
-	if (!canManage) {
-		return (
-			<div className="p-6 max-w-7xl mx-auto">
-				<p className="text-sm text-text-tertiary">
-					You don&apos;t have permission to view communities.
-				</p>
-			</div>
-		)
-	}
+	if (!canManage) return <PermissionGuard message="You don't have permission to view communities." />
 
 	// ─── Render ───────────────────────────────────────────────────────────────
 
@@ -431,20 +423,14 @@ export default function CommunitiesPage() {
 					className="flex-1 min-w-48 max-w-xs"
 				/>
 
-				<select
+				<FilterSelect
 					value={statusFilter}
-					onChange={e => {
-						setStatusFilter(e.target.value as StatusFilter)
+					onChange={v => {
+						setStatusFilter(v as StatusFilter)
 						setPage(1)
 					}}
-					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
-				>
-					{STATUS_OPTIONS.map(o => (
-						<option key={o.value} value={o.value}>
-							{o.label}
-						</option>
-					))}
-				</select>
+					options={STATUS_OPTIONS}
+				/>
 
 				{hasActiveFilters && (
 					<button
@@ -457,31 +443,14 @@ export default function CommunitiesPage() {
 				)}
 			</div>
 
-			{/* Error */}
-			{error ? (
-				<ErrorBanner>{error}</ErrorBanner>
-			) : (
-				<>
-					<DataTable
-						columns={columns}
-						data={communities}
-						isLoading={isLoading}
-						emptyState={
-							<div className="py-12 text-center text-sm text-text-tertiary">
-								No communities match the current filters.
-							</div>
-						}
-					/>
-
-					<Pagination
-						page={page}
-						totalPages={totalPages}
-						total={total}
-						pageSize={PAGE_LIMIT}
-						onPageChange={setPage}
-					/>
-				</>
-			)}
+			<DataView
+				error={error}
+				isLoading={isLoading}
+				columns={columns}
+				data={communities}
+				emptyMessage="No communities match the current filters."
+				pagination={{ page, totalPages, total, pageSize: PAGE_LIMIT, onPageChange: setPage }}
+			/>
 
 			<ConfirmDialog
 				open={archiveTargetId !== null}

@@ -2,9 +2,9 @@
 
 import { InviteAdminDrawer, type InviteAdminSubmitValues } from "@/components/admins/invite-admin-drawer"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { DataTable } from "@/components/ui/data-table"
+import { DataView } from "@/components/ui/data-view"
+import { FilterSelect } from "@/components/ui/filter-select"
 import { PageHeader } from "@/components/ui/page-header"
-import { Pagination } from "@/components/ui/pagination"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { deactivateAdmin, getAdmins, inviteAdmin, reactivateAdmin } from "@/lib/api/admins"
 import { ROLE_LABEL, ROLE_STYLE } from "@/lib/constants/roles"
@@ -272,54 +272,32 @@ export default function AdminsPage() {
 
 			{/* Filters */}
 			<div className="flex items-center gap-3">
-				<select
+				<FilterSelect
 					value={roleFilter}
-					onChange={e => {
-						setRoleFilter(e.target.value as RoleFilter)
+					onChange={v => {
+						setRoleFilter(v as RoleFilter)
 						setPage(1)
 					}}
-					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
-				>
-					{ROLE_FILTER_OPTIONS.map(o => (
-						<option key={o.value} value={o.value}>
-							{o.label}
-						</option>
-					))}
-				</select>
+					options={ROLE_FILTER_OPTIONS}
+				/>
 
-				<select
+				<FilterSelect
 					value={activeFilter}
-					onChange={e => {
-						setActiveFilter(e.target.value as ActiveFilter)
+					onChange={v => {
+						setActiveFilter(v as ActiveFilter)
 						setPage(1)
 					}}
-					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
-				>
-					{ACTIVE_FILTER_OPTIONS.map(o => (
-						<option key={o.value} value={o.value}>
-							{o.label}
-						</option>
-					))}
-				</select>
+					options={ACTIVE_FILTER_OPTIONS}
+				/>
 			</div>
 
-			{/* Table */}
-			<DataTable
+			<DataView
+				error={null}
+				isLoading={isLoading}
 				columns={columns}
 				data={admins}
-				isLoading={isLoading}
-				emptyState={
-					<div className="py-12 text-center text-sm text-text-tertiary">No admins found.</div>
-				}
-			/>
-
-			{/* Pagination */}
-			<Pagination
-				page={page}
-				totalPages={totalPages}
-				total={total}
-				pageSize={PAGE_LIMIT}
-				onPageChange={setPage}
+				emptyMessage="No admins found."
+				pagination={{ page, totalPages, total, pageSize: PAGE_LIMIT, onPageChange: setPage }}
 			/>
 
 			{/* Invite drawer */}

@@ -1,8 +1,7 @@
 ﻿"use client"
 
 import { CategoryDrawer } from "@/components/categories/category-drawer"
-import { DataTable } from "@/components/ui/data-table"
-import { ErrorBanner } from "@/components/ui/error-banner"
+import { DataView } from "@/components/ui/data-view"
 import { PageHeader } from "@/components/ui/page-header"
 import { SearchInput } from "@/components/ui/search-input"
 import { StatusBadge } from "@/components/ui/status-badge"
@@ -117,22 +116,14 @@ export default function CategoriesPage() {
 				className="max-w-xs"
 			/>
 
-			{/* Error */}
-			{error ? (
-				<ErrorBanner>{error}</ErrorBanner>
-			) : (
-				<DataTable
-					columns={columns}
-					data={filtered}
-					isLoading={isLoading}
-					onRowClick={canManage ? openEdit : undefined}
-					emptyState={
-						<div className="py-12 text-center text-sm text-text-tertiary">
-							No categories found.
-						</div>
-					}
-				/>
-			)}
+			<DataView
+				error={error}
+				isLoading={isLoading}
+				columns={columns}
+				data={filtered}
+				emptyMessage="No categories found."
+				onRowClick={canManage ? openEdit : undefined}
+			/>
 
 			<CategoryDrawer
 				open={drawerOpen}

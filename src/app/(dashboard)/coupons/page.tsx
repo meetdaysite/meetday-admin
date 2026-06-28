@@ -1,10 +1,11 @@
-﻿"use client"
+﻿﻿"use client"
 
 import { CouponUsageDrawer } from "@/components/coupons/coupon-usage-drawer"
 import { CreateCouponDrawer } from "@/components/coupons/create-coupon-drawer"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { DataTable } from "@/components/ui/data-table"
 import { Pagination } from "@/components/ui/pagination"
+import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { disableCoupon, getCoupons } from "@/lib/api/coupons"
 import { extractApiErrorMessage } from "@/lib/error-handler"
@@ -48,30 +49,30 @@ export default function CouponsPage() {
 	const canView = usePermission("coupon.view")
 	const canCreate = usePermission("coupon.create")
 
-	// â”€â”€ List state â”€â”€
+	// â"€â"€ List state â"€â"€
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 	const [coupons, setCoupons] = useState<Coupon[]>([])
 	const [total, setTotal] = useState(0)
 	const [page, setPage] = useState(1)
 
-	// â”€â”€ Filter state â”€â”€
+	// â"€â"€ Filter state â"€â"€
 	const [activeFilter, setActiveFilter] = useState<ActiveFilter>("ALL")
 	const [targetFilter, setTargetFilter] = useState<TargetFilter>("ALL")
 	const [search, setSearch] = useState("")
 
-	// â”€â”€ Drawer state â”€â”€
+	// â"€â"€ Drawer state â"€â"€
 	const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null)
 	const [drawerOpen, setDrawerOpen] = useState(false)
 
-	// â”€â”€ Create drawer state â”€â”€
+	// â"€â"€ Create drawer state â"€â"€
 	const [createDrawerOpen, setCreateDrawerOpen] = useState(false)
 
-	// â”€â”€ Disable state â”€â”€
+	// â"€â"€ Disable state â"€â"€
 	const [disableTarget, setDisableTarget] = useState<Coupon | null>(null)
 	const [isDisabling, setIsDisabling] = useState(false)
 
-	// â”€â”€ Fetch â”€â”€
+	// â"€â"€ Fetch â"€â"€
 	const fetchCoupons = useCallback(async () => {
 		setIsLoading(true)
 		setError(null)
@@ -101,7 +102,7 @@ export default function CouponsPage() {
 		setPage(1)
 	}, [activeFilter, targetFilter])
 
-	// â”€â”€ Disable handler â”€â”€
+	// â"€â"€ Disable handler â"€â"€
 	async function handleDisable() {
 		if (!disableTarget) return
 		setIsDisabling(true)
@@ -124,7 +125,7 @@ export default function CouponsPage() {
 		}
 	}
 
-	// â”€â”€ Client-side search (code filter) â”€â”€
+	// â"€â"€ Client-side search (code filter) â"€â"€
 	const filtered = useMemo(() => {
 		if (!search.trim()) return coupons
 		const q = search.toLowerCase()
@@ -134,7 +135,7 @@ export default function CouponsPage() {
 	const activeCount = coupons.filter(c => c.isActive).length
 	const totalPages = Math.ceil(total / PAGE_LIMIT)
 
-	// â”€â”€ Columns â”€â”€
+	// â"€â"€ Columns â"€â"€
 	const columns = useMemo<ColumnDef<Coupon>[]>(
 		() => [
 			{
@@ -244,14 +245,8 @@ export default function CouponsPage() {
 		[],
 	)
 
-	// â”€â”€ Permission guard â”€â”€
-	if (!canView) {
-		return (
-			<div className="p-6 max-w-7xl mx-auto">
-				<p className="text-sm text-text-tertiary">Coupons are accessible to Super Admins only.</p>
-			</div>
-		)
-	}
+	// ── Permission guard ──
+	if (!canView) return <PermissionGuard message="Coupons are accessible to Super Admins only." />
 
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
