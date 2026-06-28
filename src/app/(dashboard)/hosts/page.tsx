@@ -1,19 +1,22 @@
-﻿"use client"
+﻿﻿"use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
+import type { HostAction } from "@/components/hosts/host-review-drawer"
+import { HostReviewDrawer } from "@/components/hosts/host-review-drawer"
+import { DataTable } from "@/components/ui/data-table"
+import { ErrorBanner } from "@/components/ui/error-banner"
+import { PageHeader } from "@/components/ui/page-header"
+import { Pagination } from "@/components/ui/pagination"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { approveHost, getHosts, rejectHost } from "@/lib/api/hosts"
+import { usePermission } from "@/lib/hooks/use-permission"
+import type { ApprovalStatus, Host, HostPlan, KycStatus } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
 import { MapPin } from "lucide-react"
-import { usePermission } from "@/lib/hooks/use-permission"
-import { DataTable } from "@/components/ui/data-table"
-import { StatusBadge } from "@/components/ui/status-badge"
-import { HostReviewDrawer } from "@/components/hosts/host-review-drawer"
-import type { HostAction } from "@/components/hosts/host-review-drawer"
-import { getHosts, approveHost, rejectHost } from "@/lib/api/hosts"
-import type { Host, ApprovalStatus, KycStatus, HostPlan } from "@/types"
+import { useRouter } from "next/navigation"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
 
-// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€â"€ Constants â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 const PAGE_LIMIT = 20
 
@@ -22,28 +25,28 @@ type KycFilter = KycStatus | "ALL"
 type PlanFilter = HostPlan | "ALL"
 
 const APPROVAL_FILTER_OPTIONS: { label: string; value: ApprovalFilter }[] = [
-	{ label: "All statuses",  value: "ALL" },
-	{ label: "Pending",       value: "PENDING" },
-	{ label: "Approved",      value: "APPROVED" },
-	{ label: "Rejected",      value: "REJECTED" },
+	{ label: "All statuses", value: "ALL" },
+	{ label: "Pending", value: "PENDING" },
+	{ label: "Approved", value: "APPROVED" },
+	{ label: "Rejected", value: "REJECTED" },
 ]
 
 const KYC_FILTER_OPTIONS: { label: string; value: KycFilter }[] = [
-	{ label: "All KYC",       value: "ALL" },
+	{ label: "All KYC", value: "ALL" },
 	{ label: "Not submitted", value: "NOT_SUBMITTED" },
-	{ label: "Pending",       value: "PENDING" },
-	{ label: "Verified",      value: "VERIFIED" },
-	{ label: "Failed",        value: "FAILED" },
+	{ label: "Pending", value: "PENDING" },
+	{ label: "Verified", value: "VERIFIED" },
+	{ label: "Failed", value: "FAILED" },
 ]
 
 const PLAN_FILTER_OPTIONS: { label: string; value: PlanFilter }[] = [
-	{ label: "All plans",  value: "ALL" },
-	{ label: "Discover",   value: "DISCOVER" },
-	{ label: "Sell",       value: "SELL" },
-	{ label: "Community",  value: "COMMUNITY" },
+	{ label: "All plans", value: "ALL" },
+	{ label: "Discover", value: "DISCOVER" },
+	{ label: "Sell", value: "SELL" },
+	{ label: "Community", value: "COMMUNITY" },
 ]
 
-// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€â"€ Page â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 export default function HostsPage() {
 	const router = useRouter()
@@ -207,8 +210,7 @@ export default function HostsPage() {
 				header: "Categories",
 				cell: ({ row }) => {
 					const cats = row.original.categories
-					if (cats.length === 0)
-						return <span className="text-xs text-text-tertiary">â€”</span>
+					if (cats.length === 0) return <span className="text-xs text-text-tertiary">-</span>
 					return (
 						<span className="text-xs text-text-primary">
 							{cats.slice(0, 2).join(", ")}
@@ -228,46 +230,52 @@ export default function HostsPage() {
 	return (
 		<div className="p-6 space-y-6 max-w-7xl mx-auto">
 			{/* Page header */}
-			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-3">
-					<h1 className="text-base font-semibold text-text-primary">Hosts</h1>
-					{total > 0 && (
-						<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
-							{total} total
-						</span>
-					)}
-				</div>
-			</div>
+			<PageHeader title="Hosts" count={total > 0 ? `${total} total` : undefined} />
 
 			{/* Filters */}
 			<div className="flex items-center gap-3 flex-wrap">
 				<select
 					value={approvalFilter}
-					onChange={(e) => { setApprovalFilter(e.target.value as ApprovalFilter); setPage(1) }}
+					onChange={e => {
+						setApprovalFilter(e.target.value as ApprovalFilter)
+						setPage(1)
+					}}
 					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 				>
-					{APPROVAL_FILTER_OPTIONS.map((o) => (
-						<option key={o.value} value={o.value}>{o.label}</option>
+					{APPROVAL_FILTER_OPTIONS.map(o => (
+						<option key={o.value} value={o.value}>
+							{o.label}
+						</option>
 					))}
 				</select>
 
 				<select
 					value={kycFilter}
-					onChange={(e) => { setKycFilter(e.target.value as KycFilter); setPage(1) }}
+					onChange={e => {
+						setKycFilter(e.target.value as KycFilter)
+						setPage(1)
+					}}
 					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 				>
-					{KYC_FILTER_OPTIONS.map((o) => (
-						<option key={o.value} value={o.value}>{o.label}</option>
+					{KYC_FILTER_OPTIONS.map(o => (
+						<option key={o.value} value={o.value}>
+							{o.label}
+						</option>
 					))}
 				</select>
 
 				<select
 					value={planFilter}
-					onChange={(e) => { setPlanFilter(e.target.value as PlanFilter); setPage(1) }}
+					onChange={e => {
+						setPlanFilter(e.target.value as PlanFilter)
+						setPage(1)
+					}}
 					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
 				>
-					{PLAN_FILTER_OPTIONS.map((o) => (
-						<option key={o.value} value={o.value}>{o.label}</option>
+					{PLAN_FILTER_OPTIONS.map(o => (
+						<option key={o.value} value={o.value}>
+							{o.label}
+						</option>
 					))}
 				</select>
 
@@ -275,14 +283,18 @@ export default function HostsPage() {
 					<input
 						type="text"
 						value={cityInput}
-						onChange={(e) => setCityInput(e.target.value)}
+						onChange={e => setCityInput(e.target.value)}
 						placeholder="Filter by city…"
 						className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors w-36"
 					/>
 					{cityFilter && (
 						<button
 							type="button"
-							onClick={() => { setCityInput(""); setCityFilter(""); setPage(1) }}
+							onClick={() => {
+								setCityInput("")
+								setCityFilter("")
+								setPage(1)
+							}}
 							className="rounded-lg border border-border-default px-2.5 py-2 text-xs text-text-secondary hover:bg-neutral-50 transition-colors"
 						>
 							Clear
@@ -293,9 +305,7 @@ export default function HostsPage() {
 
 			{/* Error state */}
 			{error ? (
-				<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-					{error}
-				</div>
+				<ErrorBanner>{error}</ErrorBanner>
 			) : (
 				<>
 					{/* Table */}
@@ -303,7 +313,7 @@ export default function HostsPage() {
 						columns={columns}
 						data={hosts}
 						isLoading={isLoading}
-						onRowClick={canApprove ? (row) => setSelectedHost(row) : undefined}
+						onRowClick={canApprove ? row => setSelectedHost(row) : undefined}
 						emptyState={
 							<div className="py-12 text-center text-sm text-text-tertiary">
 								No hosts found.
@@ -312,32 +322,13 @@ export default function HostsPage() {
 					/>
 
 					{/* Pagination */}
-					{totalPages > 1 && (
-						<div className="flex items-center justify-between text-xs text-text-tertiary">
-							<span>
-								Showing {(page - 1) * PAGE_LIMIT + 1}â€“{Math.min(page * PAGE_LIMIT, total)} of {total}
-							</span>
-							<div className="flex items-center gap-2">
-								<button
-									disabled={page === 1}
-									onClick={() => setPage((p) => p - 1)}
-									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-								>
-									Previous
-								</button>
-								<span className="font-medium text-text-primary">
-									{page} / {totalPages}
-								</span>
-								<button
-									disabled={page >= totalPages}
-									onClick={() => setPage((p) => p + 1)}
-									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-								>
-									Next
-								</button>
-							</div>
-						</div>
-					)}
+					<Pagination
+						page={page}
+						totalPages={totalPages}
+						total={total}
+						pageSize={PAGE_LIMIT}
+						onPageChange={setPage}
+					/>
 				</>
 			)}
 

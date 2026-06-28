@@ -1,16 +1,17 @@
 ﻿"use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
-import { type ColumnDef } from "@tanstack/react-table"
-import { Search } from "lucide-react"
-import { toast } from "sonner"
-import { usePermission } from "@/lib/hooks/use-permission"
-import { DataTable } from "@/components/ui/data-table"
 import { EventReviewDrawer, type EventAction } from "@/components/events/event-review-drawer"
-import { getPendingEvents, approveEvent, rejectEvent, forceCancelEvent } from "@/lib/api/events"
-import type { Event } from "@/types"
+import { DataTable } from "@/components/ui/data-table"
+import { ErrorBanner } from "@/components/ui/error-banner"
+import { SearchInput } from "@/components/ui/search-input"
+import { approveEvent, forceCancelEvent, getPendingEvents, rejectEvent } from "@/lib/api/events"
 import { formatDate } from "@/lib/formatters"
+import { usePermission } from "@/lib/hooks/use-permission"
+import type { Event } from "@/types"
+import { type ColumnDef } from "@tanstack/react-table"
+import { useRouter } from "next/navigation"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
 
 // Constants
 
@@ -211,25 +212,16 @@ export default function EventQueuePage() {
 			</div>
 
 			{/* Search */}
-			<div className="relative max-w-xs">
-				<Search
-					size={13}
-					className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
-				/>
-				<input
-					type="text"
-					value={search}
-					onChange={e => setSearch(e.target.value)}
-					placeholder="Search by title or host…"
-					className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
-				/>
-			</div>
+			<SearchInput
+				value={search}
+				onChange={setSearch}
+				placeholder="Search by title or host…"
+				className="max-w-xs"
+			/>
 
 			{/* Error state */}
 			{error ? (
-				<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-					{error}
-				</div>
+				<ErrorBanner>{error}</ErrorBanner>
 			) : (
 				<>
 					<DataTable

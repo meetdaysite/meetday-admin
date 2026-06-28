@@ -1,43 +1,45 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
-import { type ColumnDef } from "@tanstack/react-table"
-import {
-	Search,
-	LayoutGrid,
-	UserCheck,
-	Users,
-	CalendarDays,
-	TrendingUp,
-	Eye,
-	Pencil,
-	Trash2,
-	Archive,
-	ArchiveRestore,
-	Plus,
-	RotateCcw,
-} from "lucide-react"
-import { toast } from "sonner"
-import { usePermission } from "@/lib/hooks/use-permission"
-import { DataTable } from "@/components/ui/data-table"
-import { StatusBadge } from "@/components/ui/status-badge"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { Button } from "@/components/ui/Button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { DataTable } from "@/components/ui/data-table"
+import { ErrorBanner } from "@/components/ui/error-banner"
+import { Pagination } from "@/components/ui/pagination"
+import { SearchInput } from "@/components/ui/search-input"
+import { StatusBadge } from "@/components/ui/status-badge"
 import {
+	archiveCommunity,
+	deleteCommunity,
 	getCommunities,
 	getCommunityStats,
-	archiveCommunity,
 	restoreCommunity,
-	deleteCommunity,
 	type CommunityStats,
 	type GetCommunitiesParams,
 } from "@/lib/api/communities"
-import type { Community, CommunityStatus, CommunityType } from "@/types"
-import { cn } from "@/lib/utils"
-import { formatCount } from "@/lib/formatters"
 import { extractApiErrorMessage } from "@/lib/error-handler"
+import { formatCount } from "@/lib/formatters"
+import { usePermission } from "@/lib/hooks/use-permission"
+import { cn } from "@/lib/utils"
+import type { Community, CommunityStatus, CommunityType } from "@/types"
+import { type ColumnDef } from "@tanstack/react-table"
+import {
+	Archive,
+	ArchiveRestore,
+	CalendarDays,
+	Eye,
+	LayoutGrid,
+	Pencil,
+	Plus,
+	RotateCcw,
+	Trash2,
+	TrendingUp,
+	UserCheck,
+	Users,
+} from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -434,22 +436,15 @@ export default function CommunitiesPage() {
 
 			{/* Filters */}
 			<div className="flex items-center gap-2 flex-wrap">
-				<div className="relative flex-1 min-w-48 max-w-xs">
-					<Search
-						size={13}
-						className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
-					/>
-					<input
-						type="text"
-						value={search}
-						onChange={e => {
-							setSearch(e.target.value)
-							setPage(1)
-						}}
-						placeholder="Search communities by name…"
-						className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
-					/>
-				</div>
+				<SearchInput
+					value={search}
+					onChange={v => {
+						setSearch(v)
+						setPage(1)
+					}}
+					placeholder="Search communities by name…"
+					className="flex-1 min-w-48 max-w-xs"
+				/>
 
 				<select
 					value={statusFilter}
@@ -479,9 +474,7 @@ export default function CommunitiesPage() {
 
 			{/* Error */}
 			{error ? (
-				<div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-					{error}
-				</div>
+				<ErrorBanner>{error}</ErrorBanner>
 			) : (
 				<>
 					<DataTable
@@ -495,33 +488,13 @@ export default function CommunitiesPage() {
 						}
 					/>
 
-					{totalPages > 1 && (
-						<div className="flex items-center justify-between text-xs text-text-tertiary">
-							<span>
-								Showing {(page - 1) * PAGE_LIMIT + 1}–{Math.min(page * PAGE_LIMIT, total)} of{" "}
-								{total}
-							</span>
-							<div className="flex items-center gap-2">
-								<button
-									disabled={page === 1}
-									onClick={() => setPage(p => p - 1)}
-									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-								>
-									Previous
-								</button>
-								<span className="font-medium text-text-primary">
-									{page} / {totalPages}
-								</span>
-								<button
-									disabled={page >= totalPages}
-									onClick={() => setPage(p => p + 1)}
-									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-								>
-									Next
-								</button>
-							</div>
-						</div>
-					)}
+					<Pagination
+						page={page}
+						totalPages={totalPages}
+						total={total}
+						pageSize={PAGE_LIMIT}
+						onPageChange={setPage}
+					/>
 				</>
 			)}
 

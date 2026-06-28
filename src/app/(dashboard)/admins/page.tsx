@@ -1,19 +1,21 @@
 ﻿"use client"
 
+import { InviteAdminDrawer, type InviteAdminSubmitValues } from "@/components/admins/invite-admin-drawer"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { DataTable } from "@/components/ui/data-table"
+import { PageHeader } from "@/components/ui/page-header"
+import { Pagination } from "@/components/ui/pagination"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { deactivateAdmin, getAdmins, inviteAdmin, reactivateAdmin } from "@/lib/api/admins"
+import { ROLE_LABEL, ROLE_STYLE } from "@/lib/constants/roles"
+import { formatDate } from "@/lib/formatters"
+import { usePermission } from "@/lib/hooks/use-permission"
+import { useAuthStore } from "@/stores/auth.store"
+import type { Admin, Role } from "@/types"
+import { type ColumnDef } from "@tanstack/react-table"
+import { Globe, MapPin, UserPlus } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
-import { type ColumnDef } from "@tanstack/react-table"
-import { UserPlus, Globe, MapPin } from "lucide-react"
-import { useAuthStore } from "@/stores/auth.store"
-import { usePermission } from "@/lib/hooks/use-permission"
-import { DataTable } from "@/components/ui/data-table"
-import { StatusBadge } from "@/components/ui/status-badge"
-import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { InviteAdminDrawer, type InviteAdminSubmitValues } from "@/components/admins/invite-admin-drawer"
-import { inviteAdmin, getAdmins, deactivateAdmin, reactivateAdmin } from "@/lib/api/admins"
-import type { Admin, Role } from "@/types"
-import { formatDate } from "@/lib/formatters"
-import { ROLE_STYLE, ROLE_LABEL } from "@/lib/constants/roles"
 
 // Constants
 
@@ -262,16 +264,7 @@ export default function AdminsPage() {
 	return (
 		<div className="p-6 space-y-6 max-w-7xl mx-auto">
 			{/* Page header */}
-			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-3">
-					<h1 className="text-base font-semibold text-text-primary">Admins</h1>
-					{total > 0 && (
-						<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
-							{total} total
-						</span>
-					)}
-				</div>
-
+			<PageHeader title="Admins" count={total > 0 ? `${total} total` : undefined}>
 				{canInvite && (
 					<button
 						onClick={() => setDrawerOpen(true)}
@@ -281,7 +274,7 @@ export default function AdminsPage() {
 						Invite Admin
 					</button>
 				)}
-			</div>
+			</PageHeader>
 
 			{/* Filters */}
 			<div className="flex items-center gap-3">
@@ -327,33 +320,13 @@ export default function AdminsPage() {
 			/>
 
 			{/* Pagination */}
-			{totalPages > 1 && (
-				<div className="flex items-center justify-between text-xs text-text-tertiary">
-					<span>
-						Showing {(page - 1) * PAGE_LIMIT + 1}â€“{Math.min(page * PAGE_LIMIT, total)} of{" "}
-						{total}
-					</span>
-					<div className="flex items-center gap-2">
-						<button
-							disabled={page === 1}
-							onClick={() => setPage(p => p - 1)}
-							className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-						>
-							Previous
-						</button>
-						<span className="font-medium text-text-primary">
-							{page} / {totalPages}
-						</span>
-						<button
-							disabled={page >= totalPages}
-							onClick={() => setPage(p => p + 1)}
-							className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-						>
-							Next
-						</button>
-					</div>
-				</div>
-			)}
+			<Pagination
+				page={page}
+				totalPages={totalPages}
+				total={total}
+				pageSize={PAGE_LIMIT}
+				onPageChange={setPage}
+			/>
 
 			{/* Invite drawer */}
 			{canInvite && (

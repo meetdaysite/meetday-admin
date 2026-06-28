@@ -1,15 +1,19 @@
 ﻿"use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
-import { type ColumnDef } from "@tanstack/react-table"
-import { Eye, EyeOff, Search, Star } from "lucide-react"
-import { toast } from "sonner"
-import { usePermission } from "@/lib/hooks/use-permission"
 import { DataTable } from "@/components/ui/data-table"
+import { FilterTabs } from "@/components/ui/filter-tabs"
+import { PageHeader } from "@/components/ui/page-header"
+import { Pagination } from "@/components/ui/pagination"
+import { SearchInput } from "@/components/ui/search-input"
 import { getReviews, updateReviewVisibility } from "@/lib/api/reviews"
-import type { Review } from "@/types"
 import { formatDate } from "@/lib/formatters"
+import { usePermission } from "@/lib/hooks/use-permission"
+import type { Review } from "@/types"
+import { type ColumnDef } from "@tanstack/react-table"
+import { Eye, EyeOff, Star } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
 
 // Constants
 
@@ -31,6 +35,14 @@ function StarRating({ rating }: { rating: number }) {
 		</span>
 	)
 }
+
+// Constants
+
+const VISIBILITY_TABS: { label: string; value: "ALL" | "VISIBLE" | "HIDDEN" }[] = [
+	{ label: "All", value: "ALL" },
+	{ label: "Visible", value: "VISIBLE" },
+	{ label: "Hidden", value: "HIDDEN" },
+]
 
 // Page
 
@@ -224,43 +236,21 @@ export default function ReviewsPage() {
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
-			<div className="flex items-center gap-3">
-				<h1 className="text-base font-semibold text-text-primary">Reviews</h1>
-				<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
-					{total}
-				</span>
-			</div>
+			<PageHeader title="Reviews" count={total} />
 
 			{/* Filters */}
 			<div className="flex items-center gap-2 flex-wrap">
-				{/* Visibility tabs */}
-				{(["ALL", "VISIBLE", "HIDDEN"] as const).map(v => (
-					<button
-						key={v}
-						onClick={() => setVisibilityFilter(v)}
-						className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-							visibilityFilter === v
-								? "bg-action-primary text-white"
-								: "bg-neutral-100 text-text-secondary hover:bg-neutral-200"
-						}`}
-					>
-						{v === "ALL" ? "All" : v === "VISIBLE" ? "Visible" : "Hidden"}
-					</button>
-				))}
-
-				<div className="relative flex-1 min-w-48 max-w-xs ml-auto">
-					<Search
-						size={13}
-						className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
-					/>
-					<input
-						type="text"
-						value={search}
-						onChange={e => setSearch(e.target.value)}
-						placeholder="Search by reviewer, event, or content…"
-						className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
-					/>
-				</div>
+				<FilterTabs
+					options={VISIBILITY_TABS}
+					value={visibilityFilter}
+					onChange={setVisibilityFilter}
+				/>
+				<SearchInput
+					value={search}
+					onChange={setSearch}
+					placeholder="Search by reviewer, event, or content…"
+					className="flex-1 min-w-48 max-w-xs ml-auto"
+				/>
 			</div>
 
 			{/* Error */}
@@ -281,33 +271,13 @@ export default function ReviewsPage() {
 						}
 					/>
 
-					{totalPages > 1 && (
-						<div className="flex items-center justify-between text-xs text-text-tertiary">
-							<span>
-								Showing {(page - 1) * PAGE_LIMIT + 1}â€“{Math.min(page * PAGE_LIMIT, total)}{" "}
-								of {total}
-							</span>
-							<div className="flex items-center gap-2">
-								<button
-									disabled={page === 1}
-									onClick={() => setPage(p => p - 1)}
-									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-								>
-									Previous
-								</button>
-								<span className="font-medium text-text-primary">
-									{page} / {totalPages}
-								</span>
-								<button
-									disabled={page >= totalPages}
-									onClick={() => setPage(p => p + 1)}
-									className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-								>
-									Next
-								</button>
-							</div>
-						</div>
-					)}
+					<Pagination
+						page={page}
+						totalPages={totalPages}
+						total={total}
+						pageSize={PAGE_LIMIT}
+						onPageChange={setPage}
+					/>
 				</>
 			)}
 		</div>

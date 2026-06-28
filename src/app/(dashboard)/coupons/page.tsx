@@ -1,15 +1,17 @@
 ﻿"use client"
 
-import { CreateCouponDrawer } from "@/components/coupons/create-coupon-drawer"
 import { CouponUsageDrawer } from "@/components/coupons/coupon-usage-drawer"
+import { CreateCouponDrawer } from "@/components/coupons/create-coupon-drawer"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { DataTable } from "@/components/ui/data-table"
-import { getCoupons, disableCoupon } from "@/lib/api/coupons"
+import { Pagination } from "@/components/ui/pagination"
+import { SearchInput } from "@/components/ui/search-input"
+import { disableCoupon, getCoupons } from "@/lib/api/coupons"
+import { extractApiErrorMessage } from "@/lib/error-handler"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { Coupon, CouponTarget } from "@/types"
-import { extractApiErrorMessage } from "@/lib/error-handler"
 import { type ColumnDef } from "@tanstack/react-table"
-import { Plus, Search } from "lucide-react"
+import { Plus } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
@@ -277,24 +279,21 @@ export default function CouponsPage() {
 
 			{/* Filters */}
 			<div className="space-y-3">
-				{/* Active status tabs */}
+				{/* Active status tabs + target select */}
 				<div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
-					{ACTIVE_TABS.map(tab => {
-						const active = activeFilter === tab.value
-						return (
-							<button
-								key={tab.value}
-								onClick={() => setActiveFilter(tab.value)}
-								className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-									active
-										? "bg-action-primary text-white"
-										: "bg-neutral-100 text-text-secondary hover:bg-neutral-200"
-								}`}
-							>
-								{tab.label}
-							</button>
-						)
-					})}
+					{ACTIVE_TABS.map(tab => (
+						<button
+							key={tab.value}
+							onClick={() => setActiveFilter(tab.value)}
+							className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+								activeFilter === tab.value
+									? "bg-action-primary text-white"
+									: "bg-neutral-100 text-text-secondary hover:bg-neutral-200"
+							}`}
+						>
+							{tab.label}
+						</button>
+					))}
 
 					<div className="w-px h-4 bg-neutral-200 mx-1 shrink-0" />
 
@@ -313,19 +312,12 @@ export default function CouponsPage() {
 				</div>
 
 				{/* Search */}
-				<div className="relative max-w-xs">
-					<Search
-						size={13}
-						className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
-					/>
-					<input
-						type="text"
-						value={search}
-						onChange={e => setSearch(e.target.value)}
-						placeholder="Search by code…"
-						className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-2 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
-					/>
-				</div>
+				<SearchInput
+					value={search}
+					onChange={setSearch}
+					placeholder="Search by code…"
+					className="max-w-xs"
+				/>
 			</div>
 
 			{/* Error state */}
@@ -358,29 +350,13 @@ export default function CouponsPage() {
 			/>
 
 			{/* Pagination */}
-			{!isLoading && totalPages > 1 && (
-				<div className="flex items-center justify-between text-xs text-text-secondary pt-1">
-					<p>
-						Page {page} of {totalPages} · {total} total
-					</p>
-					<div className="flex items-center gap-2">
-						<button
-							onClick={() => setPage(p => p - 1)}
-							disabled={page <= 1}
-							className="rounded-lg border border-border-default px-3 py-1.5 font-semibold hover:bg-neutral-50 transition-colors disabled:opacity-40"
-						>
-							Previous
-						</button>
-						<button
-							onClick={() => setPage(p => p + 1)}
-							disabled={page >= totalPages}
-							className="rounded-lg border border-border-default px-3 py-1.5 font-semibold hover:bg-neutral-50 transition-colors disabled:opacity-40"
-						>
-							Next
-						</button>
-					</div>
-				</div>
-			)}
+			<Pagination
+				page={page}
+				totalPages={totalPages}
+				total={total}
+				pageSize={PAGE_LIMIT}
+				onPageChange={setPage}
+			/>
 
 			{/* Create coupon drawer */}
 			<CreateCouponDrawer
