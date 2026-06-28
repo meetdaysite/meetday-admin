@@ -9,6 +9,7 @@ import { CheckCircle2, Eye, EyeOff, Loader2, XCircle } from "lucide-react"
 import { AuthShell } from "@/components/auth/auth-shell"
 import { TextField } from "@/components/ui/TextField"
 import { Button } from "@/components/ui/Button"
+import { validateInviteToken, acceptInvite } from "@/lib/api/admins"
 
 const acceptSchema = z
 	.object({
@@ -39,22 +40,16 @@ export default function InvitePage() {
 	} = useForm<AcceptValues>({ resolver: zodResolver(acceptSchema) })
 
 	useEffect(() => {
-		// Mock token validation — replace with API call
-		const timer = setTimeout(() => {
-			if (token && token.length > 5) {
-				setInviteEmail("invited@meetday.com")
+		validateInviteToken(token)
+			.then(info => {
+				setInviteEmail(info.email)
 				setStage("valid")
-			} else {
-				setStage("invalid")
-			}
-		}, 1200)
-		return () => clearTimeout(timer)
+			})
+			.catch(() => setStage("invalid"))
 	}, [token])
 
 	async function onSubmit(values: AcceptValues) {
-		// Mock — replace with real API call
-		await new Promise(resolve => setTimeout(resolve, 900))
-		console.log("Accept invite:", { token, name: values.name })
+		await acceptInvite(token, values.name, values.password)
 		setStage("success")
 	}
 

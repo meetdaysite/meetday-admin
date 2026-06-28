@@ -148,6 +148,7 @@ export type Host = {
 		email: string | null
 	}
 	categories: HostCategory[]
+	createdAt?: string
 }
 
 export type TicketTier = {

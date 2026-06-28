@@ -579,25 +579,25 @@ export function MembersTab({ communityId }: { communityId: string }) {
 				<div className="grid grid-cols-3 gap-3 lg:grid-cols-5">
 					<StatCard
 						icon={Users}
-						label="Total Members"
+						label="Members"
 						value={isLoading ? "—" : (stats?.totalMembers ?? 0).toLocaleString("en-IN")}
 						sub="All time"
 						accent="brand"
 					/>
 					<StatCard
 						icon={Users}
-						label="Active Members (30 Days)"
+						label="Active"
 						value={isLoading ? "—" : (stats?.activeMembers ?? 0)}
 						trend={stats ? { value: Math.abs(stats.activeMembersGrowth), direction: stats.activeMembersGrowth >= 0 ? "up" : "down", label: "%" } : undefined}
-						sub="vs last 30 days"
+						sub="last 30 days"
 						accent="green"
 					/>
 					<StatCard
 						icon={Clock}
-						label="New Members (30 Days)"
+						label="New"
 						value={isLoading ? "—" : (stats?.newMembers ?? 0)}
 						trend={stats ? { value: Math.abs(stats.newMembersGrowth), direction: stats.newMembersGrowth >= 0 ? "up" : "down", label: "%" } : undefined}
-						sub="vs last 30 days"
+						sub="last 30 days"
 						accent="sky"
 					/>
 					<StatCard
@@ -605,7 +605,7 @@ export function MembersTab({ communityId }: { communityId: string }) {
 						label="Engagement Rate"
 						value={isLoading ? "—" : `${stats?.engagementRate ?? 0}%`}
 						trend={stats ? { value: Math.abs(stats.engagementRateGrowth), direction: stats.engagementRateGrowth >= 0 ? "up" : "down", label: "%" } : undefined}
-						sub="vs last 30 days"
+						sub="last 30 days"
 						accent="amber"
 					/>
 					<StatCard
@@ -613,7 +613,7 @@ export function MembersTab({ communityId }: { communityId: string }) {
 						label="Retention Rate"
 						value={isLoading ? "—" : `${stats?.retentionRate ?? 0}%`}
 						trend={stats ? { value: Math.abs(stats.retentionRateGrowth), direction: stats.retentionRateGrowth >= 0 ? "up" : "down", label: "%" } : undefined}
-						sub="vs last 30 days"
+						sub="last 30 days"
 						accent="rose"
 					/>
 				</div>

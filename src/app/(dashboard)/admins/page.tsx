@@ -1,19 +1,24 @@
 ﻿"use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { toast } from "sonner"
-import { type ColumnDef } from "@tanstack/react-table"
-import { UserPlus, Globe, MapPin } from "lucide-react"
-import { useAuthStore } from "@/stores/auth.store"
-import { usePermission } from "@/lib/hooks/use-permission"
-import { DataTable } from "@/components/ui/data-table"
-import { StatusBadge } from "@/components/ui/status-badge"
-import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { InviteAdminDrawer, type InviteAdminSubmitValues } from "@/components/admins/invite-admin-drawer"
-import { inviteAdmin, getAdmins, deactivateAdmin, reactivateAdmin } from "@/lib/api/admins"
+import { Button } from "@/components/ui/Button"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { DataView } from "@/components/ui/data-view"
+import { FilterSelect } from "@/components/ui/filter-select"
+import PageHeader from "@/components/ui/PageHeader"
+import { deactivateAdmin, getAdmins, inviteAdmin, reactivateAdmin } from "@/lib/api/admins"
+import { formatDate } from "@/lib/formatters"
+import { DateCell, StatusCell, TwoLineCell } from "@/components/ui/table-cells"
+import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
+import { usePermission } from "@/lib/hooks/use-permission"
+import { useAuthStore } from "@/stores/auth.store"
 import type { Admin, Role } from "@/types"
+import { type ColumnDef } from "@tanstack/react-table"
+import { Globe, MapPin, UserPlus } from "lucide-react"
+import { useCallback, useMemo, useState } from "react"
+import { toast } from "sonner"
 
-// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Constants
 
 const PAGE_LIMIT = 20
 
@@ -21,63 +26,22 @@ type RoleFilter = Exclude<Role, "SUPER_ADMIN"> | "ALL"
 type ActiveFilter = "ALL" | "true" | "false"
 
 const ROLE_FILTER_OPTIONS: { label: string; value: RoleFilter }[] = [
-	{ label: "All roles",   value: "ALL" },
-	{ label: "City Admin",  value: "CITY_ADMIN" },
-	{ label: "Moderator",   value: "MODERATOR" },
-	{ label: "Support",     value: "SUPPORT" },
+	{ label: "All roles", value: "ALL" },
+	{ label: "City Admin", value: "CITY_ADMIN" },
+	{ label: "Moderator", value: "MODERATOR" },
+	{ label: "Support", value: "SUPPORT" },
 ]
 
 const ACTIVE_FILTER_OPTIONS: { label: string; value: ActiveFilter }[] = [
-	{ label: "All",      value: "ALL" },
-	{ label: "Active",   value: "true" },
+	{ label: "All", value: "ALL" },
+	{ label: "Active", value: "true" },
 	{ label: "Inactive", value: "false" },
 ]
 
-// â”€â”€â”€ Role badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-const ROLE_STYLE: Record<Role, string> = {
-	SUPER_ADMIN: "bg-violet-50 text-violet-700",
-	CITY_ADMIN:  "bg-blue-50 text-blue-700",
-	MODERATOR:   "bg-amber-50 text-amber-700",
-	SUPPORT:     "bg-teal-50 text-teal-700",
-}
-
-const ROLE_LABEL: Record<Role, string> = {
-	SUPER_ADMIN: "Super Admin",
-	CITY_ADMIN:  "City Admin",
-	MODERATOR:   "Moderator",
-	SUPPORT:     "Support",
-}
-
-function RoleBadge({ role }: { role: Role }) {
-	return (
-		<span
-			className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${ROLE_STYLE[role]}`}
-		>
-			{ROLE_LABEL[role]}
-		</span>
-	)
-}
-
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-function formatDate(iso: string): string {
-	return new Date(iso).toLocaleDateString("en-IN", {
-		day: "numeric",
-		month: "short",
-		year: "numeric",
-	})
-}
-
-// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 export default function AdminsPage() {
-	const currentUserId = useAuthStore((s) => s.user?.id)
+	const currentUserId = useAuthStore(s => s.user?.id)
 	const canInvite = usePermission("admin.invite")
 
-	const [isLoading, setIsLoading] = useState(true)
-	const [admins, setAdmins] = useState<Admin[]>([])
-	const [total, setTotal] = useState(0)
 	const [page, setPage] = useState(1)
 	const [roleFilter, setRoleFilter] = useState<RoleFilter>("ALL")
 	const [activeFilter, setActiveFilter] = useState<ActiveFilter>("ALL")
@@ -89,27 +53,23 @@ export default function AdminsPage() {
 	const [reactivateTarget, setReactivateTarget] = useState<Admin | null>(null)
 	const [isReactivating, setIsReactivating] = useState(false)
 
-	const fetchAdmins = useCallback(async () => {
-		setIsLoading(true)
-		try {
-			const res = await getAdmins({
+	const fetcher = useCallback(
+		() =>
+			getAdmins({
 				page,
 				limit: PAGE_LIMIT,
 				...(roleFilter !== "ALL" && { role: roleFilter }),
 				...(activeFilter !== "ALL" && { isActive: activeFilter === "true" }),
-			})
-			setAdmins(res.admins)
-			setTotal(res.total)
-		} catch {
-			toast.error("Failed to load admins")
-		} finally {
-			setIsLoading(false)
-		}
-	}, [page, roleFilter, activeFilter])
+			}).then(r => ({ items: r.admins, total: r.total })),
+		[page, roleFilter, activeFilter],
+	)
 
-	useEffect(() => {
-		fetchAdmins()
-	}, [fetchAdmins])
+	const {
+		items: admins,
+		total,
+		isLoading,
+		refresh: fetchAdmins,
+	} = usePaginatedFetch(fetcher, "Failed to load admins")
 
 	async function handleInvite(values: InviteAdminSubmitValues) {
 		setIsInviting(true)
@@ -144,9 +104,7 @@ export default function AdminsPage() {
 		setIsDeactivating(true)
 		try {
 			await deactivateAdmin(deactivateTarget.id)
-			setAdmins((prev) =>
-				prev.map((a) => (a.id === deactivateTarget.id ? { ...a, isActive: false } : a)),
-			)
+			fetchAdmins()
 			setDeactivateTarget(null)
 			toast.success("Admin deactivated", {
 				description: `${deactivateTarget.firstName} ${deactivateTarget.lastName}'s access has been revoked.`,
@@ -165,9 +123,7 @@ export default function AdminsPage() {
 		setIsReactivating(true)
 		try {
 			await reactivateAdmin(reactivateTarget.id)
-			setAdmins((prev) =>
-				prev.map((a) => (a.id === reactivateTarget.id ? { ...a, isActive: true } : a)),
-			)
+			fetchAdmins()
 			setReactivateTarget(null)
 			toast.success("Admin reactivated", {
 				description: `${reactivateTarget.firstName} ${reactivateTarget.lastName}'s access has been restored.`,
@@ -187,12 +143,10 @@ export default function AdminsPage() {
 				id: "admin",
 				header: "Admin",
 				cell: ({ row }) => (
-					<div>
-						<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">
-							{row.original.firstName} {row.original.lastName}
-						</p>
-						<p className="text-[11px] text-text-tertiary">{row.original.email}</p>
-					</div>
+					<TwoLineCell
+						primary={`${row.original.firstName} ${row.original.lastName}`}
+						secondary={row.original.email}
+					/>
 				),
 			},
 			{
@@ -200,7 +154,7 @@ export default function AdminsPage() {
 				header: "Role",
 				accessorKey: "role",
 				enableSorting: true,
-				cell: ({ row }) => <RoleBadge role={row.original.role.name} />,
+				cell: ({ row }) => <StatusCell status={row.original.role.name} />,
 			},
 			{
 				id: "scope",
@@ -225,20 +179,14 @@ export default function AdminsPage() {
 			{
 				id: "status",
 				header: "Status",
-				cell: ({ row }) => (
-					<StatusBadge status={row.original.isActive ? "ACTIVE" : "DISABLED"} />
-				),
+				cell: ({ row }) => <StatusCell status={row.original.isActive ? "ACTIVE" : "DISABLED"} />,
 			},
 			{
 				id: "joined",
 				header: "Member since",
 				accessorKey: "createdAt",
 				enableSorting: true,
-				cell: ({ row }) => (
-					<span className="text-xs text-text-secondary">
-						{formatDate(row.original.createdAt)}
-					</span>
-				),
+				cell: ({ row }) => <DateCell value={row.original.createdAt} format={formatDate} secondary />,
 			},
 			...(canInvite
 				? ([
@@ -255,7 +203,7 @@ export default function AdminsPage() {
 								if (admin.isActive) {
 									return (
 										<button
-											onClick={(e) => {
+											onClick={e => {
 												e.stopPropagation()
 												setDeactivateTarget(admin)
 											}}
@@ -268,7 +216,7 @@ export default function AdminsPage() {
 
 								return (
 									<button
-										onClick={(e) => {
+										onClick={e => {
 											e.stopPropagation()
 											setReactivateTarget(admin)
 										}}
@@ -290,95 +238,47 @@ export default function AdminsPage() {
 	return (
 		<div className="p-6 space-y-6 max-w-7xl mx-auto">
 			{/* Page header */}
-			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-3">
-					<h1 className="text-base font-semibold text-text-primary">Admins</h1>
-					{total > 0 && (
-						<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
-							{total} total
-						</span>
-					)}
-				</div>
-
-				{canInvite && (
-					<button
-						onClick={() => setDrawerOpen(true)}
-						className="flex items-center gap-1.5 rounded-lg bg-action-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors"
-					>
-						<UserPlus size={13} />
-						Invite Admin
-					</button>
-				)}
-			</div>
-
-			{/* Filters */}
-			<div className="flex items-center gap-3">
-				<select
-					value={roleFilter}
-					onChange={(e) => {
-						setRoleFilter(e.target.value as RoleFilter)
-						setPage(1)
-					}}
-					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
-				>
-					{ROLE_FILTER_OPTIONS.map((o) => (
-						<option key={o.value} value={o.value}>{o.label}</option>
-					))}
-				</select>
-
-				<select
-					value={activeFilter}
-					onChange={(e) => {
-						setActiveFilter(e.target.value as ActiveFilter)
-						setPage(1)
-					}}
-					className="rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
-				>
-					{ACTIVE_FILTER_OPTIONS.map((o) => (
-						<option key={o.value} value={o.value}>{o.label}</option>
-					))}
-				</select>
-			</div>
-
-			{/* Table */}
-			<DataTable
-				columns={columns}
-				data={admins}
-				isLoading={isLoading}
-				emptyState={
-					<div className="py-12 text-center text-sm text-text-tertiary">
-						No admins found.
-					</div>
+			<PageHeader
+				title="Admins"
+				description="Manage the admins who have access to the admin panel."
+				buttons={
+					canInvite && (
+						<Button leftIcon={<UserPlus size={13} />} onClick={() => setDrawerOpen(true)}>
+							Invite Admin
+						</Button>
+					)
 				}
 			/>
 
-			{/* Pagination */}
-			{totalPages > 1 && (
-				<div className="flex items-center justify-between text-xs text-text-tertiary">
-					<span>
-						Showing {(page - 1) * PAGE_LIMIT + 1}â€“{Math.min(page * PAGE_LIMIT, total)} of {total}
-					</span>
-					<div className="flex items-center gap-2">
-						<button
-							disabled={page === 1}
-							onClick={() => setPage((p) => p - 1)}
-							className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-						>
-							Previous
-						</button>
-						<span className="font-medium text-text-primary">
-							{page} / {totalPages}
-						</span>
-						<button
-							disabled={page >= totalPages}
-							onClick={() => setPage((p) => p + 1)}
-							className="rounded-md px-2.5 py-1 text-xs font-medium border border-border-default hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-						>
-							Next
-						</button>
-					</div>
-				</div>
-			)}
+			{/* Filters */}
+			<div className="flex items-center gap-3">
+				<FilterSelect
+					value={roleFilter}
+					onChange={v => {
+						setRoleFilter(v as RoleFilter)
+						setPage(1)
+					}}
+					options={ROLE_FILTER_OPTIONS}
+				/>
+
+				<FilterSelect
+					value={activeFilter}
+					onChange={v => {
+						setActiveFilter(v as ActiveFilter)
+						setPage(1)
+					}}
+					options={ACTIVE_FILTER_OPTIONS}
+				/>
+			</div>
+
+			<DataView
+				error={null}
+				isLoading={isLoading}
+				columns={columns}
+				data={admins}
+				emptyMessage="No admins found."
+				pagination={{ page, totalPages, total, pageSize: PAGE_LIMIT, onPageChange: setPage }}
+			/>
 
 			{/* Invite drawer */}
 			{canInvite && (

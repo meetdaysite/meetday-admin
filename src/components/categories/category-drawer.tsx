@@ -6,7 +6,7 @@ import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { createCategory, updateCategory } from "@/lib/api/categories"
 import type { Category } from "@/types"
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Types
 
 type CategoryDrawerProps = {
 	open: boolean
@@ -16,7 +16,7 @@ type CategoryDrawerProps = {
 	category?: Category | null
 }
 
-// â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Component
 
 export function CategoryDrawer({ open, onClose, onSaved, category }: CategoryDrawerProps) {
 	const isEdit = !!category

@@ -40,3 +40,16 @@ export async function deactivateAdmin(id: string): Promise<void> {
 export async function reactivateAdmin(id: string): Promise<void> {
 	await apiClient.patch(`/admin/admins/${id}/reactivate`)
 }
+
+export type InviteTokenInfo = {
+	email: string
+}
+
+export async function validateInviteToken(token: string): Promise<InviteTokenInfo> {
+	const { data } = await apiClient.get<InviteTokenInfo>(`/auth/invite/validate`, { params: { token } })
+	return data
+}
+
+export async function acceptInvite(token: string, name: string, password: string): Promise<void> {
+	await apiClient.post("/auth/invite/accept", { token, name, password })
+}

@@ -135,13 +135,9 @@ export function Step5ReviewPublish() {
 							<p className="mt-3 text-sm text-text-secondary leading-relaxed">
 								{s1.description}
 							</p>
-							<div className="mt-4 grid grid-cols-4 gap-3 border-t border-border-subtle pt-4 text-center">
+							<div className="mt-4 grid grid-cols-3 gap-3 border-t border-border-subtle pt-4 text-center">
 								{[
 									{ label: "Members", value: "0" },
-									{
-										label: "Matched Experiences",
-										value: `${s3?.manualEvents.length ?? 0}`,
-									},
 									{ label: "Cities", value: s3?.cities.join(", ") ?? s1.primaryCity },
 									{ label: "Visibility", value: ACCESS_LABEL[communityType].label },
 								].map(stat => (
@@ -276,26 +272,10 @@ export function Step5ReviewPublish() {
 									<div className="flex flex-col gap-1.5 text-caption text-text-secondary">
 										<p>
 											{s3.interests.length} interest
-											{s3.interests.length !== 1 ? "s" : ""} matched
+											{s3.interests.length !== 1 ? "s" : ""} selected
 										</p>
-										<span className="inline-flex items-center gap-1 rounded-badge bg-[#dcfce7] px-1.5 py-0.5 text-[10px] font-semibold text-[#16a34a] w-fit">
-											Auto-matching On
-										</span>
-										{s3.manualEvents.length > 0 && (
-											<div className="mt-1 pt-2 border-t border-border-subtle flex flex-col gap-0.5">
-												<p className="font-medium">Manually added:</p>
-												{s3.manualEvents.slice(0, 3).map(e => (
-													<p key={e.id} className="truncate">
-														â€¢ {e.title}
-													</p>
-												))}
-												{s3.manualEvents.length > 3 && (
-													<p>+{s3.manualEvents.length - 3} more</p>
-												)}
-											</div>
-										)}
-									</div>
-								) : (
+										<p>{s3.cities.length} {s3.cities.length !== 1 ? "cities" : "city"}</p>
+									</div>) : (
 									<p className="text-caption text-text-secondary italic">Not configured</p>
 								)}
 							</div>
@@ -366,7 +346,6 @@ export function Step5ReviewPublish() {
 						<div className="flex flex-col gap-1.5">
 							{[
 								"Community becomes discoverable to users.",
-								"Matched events automatically appear.",
 								"Members can join and start interacting.",
 								"Chat, Feed and Announcements go live.",
 								"Community URL is created and active.",

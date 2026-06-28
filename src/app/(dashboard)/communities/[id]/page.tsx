@@ -36,6 +36,9 @@ import {
 	type CommunityDetailStatCard,
 } from "@/lib/api/communities"
 import { cn } from "@/lib/utils"
+import { formatDate } from "@/lib/formatters"
+import { COMMUNITY_MANAGER_ROLE_BADGE } from "@/lib/constants/roles"
+import { extractApiErrorMessage } from "@/lib/error-handler"
 import { ExperiencesTab } from "./experiences-tab"
 import { MembersTab } from "./members-tab"
 import { FeedTab } from "./feed-tab"
@@ -68,12 +71,6 @@ const TABS: { id: Tab; label: string }[] = [
 	{ id: "analytics", label: "Analytics" },
 	{ id: "managers", label: "Managers" },
 ]
-
-const ROLE_BADGE: Record<string, string> = {
-	Owner: "bg-green-100 text-green-700",
-	Manager: "bg-blue-100 text-blue-700",
-	Moderator: "bg-purple-100 text-purple-700",
-}
 
 const ACTIVITY_ICON: Record<string, { icon: LucideIcon; bg: string; color: string }> = {
 	member: { icon: Users, bg: "bg-blue-50", color: "text-blue-500" },
@@ -122,17 +119,17 @@ function DetailStatCard({ card }: { card: CommunityDetailStatCard }) {
 	return (
 		<div className="rounded-xl border border-border-default bg-surface-card p-4 flex flex-col gap-1.5">
 			<p className="text-xs text-text-tertiary font-medium">{card.label}</p>
-			<div className="flex items-baseline gap-2">
+			<div className="flex items-center justify-between gap-2">
 				<span className="text-2xl font-bold text-text-primary tabular-nums leading-none">
 					{card.value}
 				</span>
+			</div>
+			<div className="flex items-center gap-1">
 				{card.trend && (
 					<span
 						className={cn(
-							"flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold",
-							card.trend.direction === "up"
-								? "bg-green-50 text-green-700"
-								: "bg-red-50 text-red-600",
+							"flex items-center gap-0.5 text-[11px] font-semibold",
+							card.trend.direction === "up" ? "text-green-700" : "text-red-600",
 						)}
 					>
 						{card.trend.direction === "up" ? (
@@ -140,13 +137,12 @@ function DetailStatCard({ card }: { card: CommunityDetailStatCard }) {
 						) : (
 							<TrendingDown size={10} />
 						)}
-						{card.trend.value > 0 ? "+" : ""}
-						{card.trend.value}
-						{card.trend.label ?? ""}
+						{/* {card.trend.value > 0 ? "+" : ""} */}
+						{card.trend.value}%{/* {card.trend.label ?? ""} */}
 					</span>
 				)}
+				{card.sub && <p className="text-[11px] text-text-tertiary">{card.sub}</p>}
 			</div>
-			{card.sub && <p className="text-[11px] text-text-tertiary">{card.sub}</p>}
 			{card.spark.length > 0 && (
 				<div className="h-12 mt-1">
 					<ResponsiveContainer width="100%" height={48}>
@@ -206,10 +202,6 @@ export default function CommunityDetailPage() {
 	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 	const [isDeleting, setIsDeleting] = useState(false)
 
-	function extractApiMessage(err: unknown, fallback: string): string {
-		return (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? fallback
-	}
-
 	async function handleArchive() {
 		setIsArchiving(true)
 		try {
@@ -218,7 +210,7 @@ export default function CommunityDetailPage() {
 			setArchiveConfirmOpen(false)
 			load()
 		} catch (err: unknown) {
-			toast.error(extractApiMessage(err, "Failed to archive community"))
+			toast.error(extractApiErrorMessage(err, "Failed to archive community"))
 		} finally {
 			setIsArchiving(false)
 		}
@@ -232,7 +224,7 @@ export default function CommunityDetailPage() {
 			setRestoreConfirmOpen(false)
 			load()
 		} catch (err: unknown) {
-			toast.error(extractApiMessage(err, "Failed to restore community"))
+			toast.error(extractApiErrorMessage(err, "Failed to restore community"))
 		} finally {
 			setIsRestoring(false)
 		}
@@ -245,7 +237,7 @@ export default function CommunityDetailPage() {
 			toast.success("Community deleted")
 			router.replace("/communities")
 		} catch (err: unknown) {
-			toast.error(extractApiMessage(err, "Failed to delete community"))
+			toast.error(extractApiErrorMessage(err, "Failed to delete community"))
 			setDeleteConfirmOpen(false)
 		} finally {
 			setIsDeleting(false)
@@ -287,11 +279,7 @@ export default function CommunityDetailPage() {
 		)
 	}
 
-	const createdDate = new Date(community.createdAt).toLocaleDateString("en-GB", {
-		day: "numeric",
-		month: "short",
-		year: "numeric",
-	})
+	const createdDate = formatDate(community.createdAt)
 
 	const accessLabel =
 		community.access === "PUBLIC"
@@ -319,13 +307,15 @@ export default function CommunityDetailPage() {
 					)}
 					<div>
 						<div className="flex items-center gap-2 flex-wrap">
-							<h1 className="text-base font-semibold text-text-primary">{community.name}</h1>
+							<h1 className="text-heading-sm font-semibold text-text-primary">
+								{community.name}
+							</h1>
 							{community.isMeetdayManaged && (
-								<span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold bg-amber-100 text-amber-700">
+								<span className="inline-flex items-center rounded-full px-3 py-1.5 text-[11px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">
 									Meetday Managed
 								</span>
 							)}
-							<span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold bg-green-100 text-green-700">
+							<span className="inline-flex items-center rounded-full px-3 py-1.5 text-[11px] font-semibold bg-green-100 text-green-700  border border-green-200">
 								{accessLabel} Community
 							</span>
 						</div>
@@ -677,7 +667,8 @@ export default function CommunityDetailPage() {
 										<span
 											className={cn(
 												"inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold",
-												ROLE_BADGE[mgr.role] ?? "bg-neutral-100 text-text-secondary",
+												COMMUNITY_MANAGER_ROLE_BADGE[mgr.role] ??
+													"bg-neutral-100 text-text-secondary",
 											)}
 										>
 											{mgr.role}

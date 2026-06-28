@@ -1,43 +1,23 @@
 ﻿"use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Mail, Phone, ShieldCheck, Calendar, RefreshCw, AlertTriangle, UserX } from "lucide-react"
-import { useAuthStore } from "@/stores/auth.store"
+import PageHeader from "@/components/ui/PageHeader"
 import { getAdminProfile, type AdminProfile } from "@/lib/api/profile"
-import type { Role } from "@/types"
+import { ROLE_LABEL, ROLE_STYLE } from "@/lib/constants/roles"
+import { formatDateLong } from "@/lib/formatters"
+import { useAuthStore } from "@/stores/auth.store"
+import { AlertTriangle, Calendar, Mail, Phone, RefreshCw, ShieldCheck, UserX } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
-// â”€â”€â”€ Role badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Role badge
 
-const ROLE_STYLE: Record<Role, string> = {
-	SUPER_ADMIN: "bg-violet-50 text-violet-700",
-	CITY_ADMIN:  "bg-blue-50 text-blue-700",
-	MODERATOR:   "bg-amber-50 text-amber-700",
-	SUPPORT:     "bg-teal-50 text-teal-700",
-}
-
-const ROLE_LABEL: Record<Role, string> = {
-	SUPER_ADMIN: "Super Admin",
-	CITY_ADMIN:  "City Admin",
-	MODERATOR:   "Moderator",
-	SUPPORT:     "Support",
-}
-
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-function formatDate(iso: string): string {
-	return new Date(iso).toLocaleDateString("en-IN", {
-		day: "numeric",
-		month: "long",
-		year: "numeric",
-	})
-}
+// Helpers
 
 function getInitials(firstName: string, lastName: string): string {
 	return `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase()
 }
 
-// â”€â”€â”€ Skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Skeleton
 
 function ProfileSkeleton() {
 	return (
@@ -64,7 +44,7 @@ function ProfileSkeleton() {
 	)
 }
 
-// â”€â”€â”€ Info row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Info row
 
 function InfoRow({
 	icon: Icon,
@@ -88,13 +68,13 @@ function InfoRow({
 	)
 }
 
-// â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Page
 
 type PageState = "loading" | "done" | "error" | "access-denied" | "not-found"
 
 export default function ProfilePage() {
 	const router = useRouter()
-	const clearAuth = useAuthStore((s) => s.clearAuth)
+	const clearAuth = useAuthStore(s => s.clearAuth)
 
 	const [state, setState] = useState<PageState>("loading")
 	const [profile, setProfile] = useState<AdminProfile | null>(null)
@@ -109,7 +89,7 @@ export default function ProfilePage() {
 		setErrorMessage(null)
 
 		getAdminProfile()
-			.then((data) => {
+			.then(data => {
 				if (cancelled) return
 				setProfile(data)
 				setState("done")
@@ -134,7 +114,9 @@ export default function ProfilePage() {
 				setState("error")
 			})
 
-		return () => { cancelled = true }
+		return () => {
+			cancelled = true
+		}
 	}, [clearAuth, router])
 
 	if (state === "loading") return <ProfileSkeleton />
@@ -189,7 +171,7 @@ export default function ProfilePage() {
 	return (
 		<div className="p-6 space-y-6 max-w-2xl mx-auto">
 			{/* Page header */}
-			<h1 className="text-base font-semibold text-text-primary">My Profile</h1>
+			<PageHeader title="Profile" description="View your admin profile." />
 
 			{/* Profile card */}
 			<div className="bg-surface-card rounded-xl border border-border-default overflow-hidden">
@@ -251,16 +233,12 @@ export default function ProfilePage() {
 						}
 					/>
 
-					<InfoRow
-						icon={Calendar}
-						label="Member since"
-						value={formatDate(profile.createdAt)}
-					/>
+					<InfoRow icon={Calendar} label="Member since" value={formatDateLong(profile.createdAt)} />
 
 					<InfoRow
 						icon={RefreshCw}
 						label="Last updated"
-						value={formatDate(profile.updatedAt)}
+						value={formatDateLong(profile.updatedAt)}
 					/>
 				</div>
 			</div>
