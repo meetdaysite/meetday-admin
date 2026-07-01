@@ -18,6 +18,7 @@ import {
 	Star,
 	Sparkles,
 	Users,
+	LifeBuoy,
 	type LucideIcon,
 } from "lucide-react"
 import { useAuthStore } from "@/stores/auth.store"
@@ -91,6 +92,12 @@ const NAV: NavSection[] = [
 		items: [
 			{ label: "Reviews", href: "/reviews", icon: Star, permission: "moderation.read" },
 			{ label: "Audit Logs", href: "/audit-logs", icon: ScrollText, permission: "audit.read" },
+		],
+	},
+	{
+		title: "Support",
+		items: [
+			{ label: "Support Tickets", href: "/support-tickets", icon: LifeBuoy, permission: "support.view" },
 		],
 	},
 	{
