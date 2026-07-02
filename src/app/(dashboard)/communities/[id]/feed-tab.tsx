@@ -12,7 +12,6 @@ import {
 	CheckCircle,
 	XCircle,
 	ChevronDown,
-	Lightbulb,
 	Flag,
 	Pin,
 	PinOff,
@@ -858,16 +857,6 @@ export function FeedTab({ communityId }: { communityId: string }) {
 					)}
 				</div>
 
-				{/* Tip */}
-				<div className="rounded-xl border border-purple-100 bg-purple-50 p-4">
-					<div className="flex items-center gap-2 mb-1.5">
-						<Lightbulb size={13} className="text-purple-500 shrink-0" />
-						<h3 className="text-xs font-semibold text-purple-800">Tip</h3>
-					</div>
-					<p className="text-[11px] text-purple-700 leading-relaxed">
-						{data?.tip ?? "Use pinned posts to highlight important updates or community guidelines."}
-					</p>
-				</div>
 			</div>
 		</div>
 

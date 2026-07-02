@@ -10,9 +10,9 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
-	sm: "h-[var(--size-action-sm)] px-3 gap-1.5 text-label-sm",
-	md: "h-[var(--size-action-md)] px-4 gap-2 text-label-sm",
-	lg: "h-[var(--size-action-lg)] px-5 gap-2 text-label-md font-medium",
+	sm: "h-[var(--size-action-sm)] px-3 text-label-sm",
+	md: "h-[var(--size-action-md)] px-4 text-label-sm",
+	lg: "h-[var(--size-action-lg)] px-5 text-label-md font-medium",
 }
 
 const iconSizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
@@ -71,11 +71,11 @@ export function Button({
 			{...props}
 		>
 			{leftIcon && (
-				<span className={clsx("flex items-center shrink-0", iconSizeClasses[size])}>{leftIcon}</span>
+				<span className={clsx("flex items-center justify-start shrink-0", iconSizeClasses[size])}>{leftIcon}</span>
 			)}
 			{children}
 			{rightIcon && (
-				<span className={clsx("flex items-center shrink-0", iconSizeClasses[size])}>{rightIcon}</span>
+				<span className={clsx("flex items-center justify-end shrink-0", iconSizeClasses[size])}>{rightIcon}</span>
 			)}
 		</button>
 	)

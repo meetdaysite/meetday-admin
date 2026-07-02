@@ -5,5 +5,9 @@ export const metadata = {
 }
 
 export default function CreateCommunityPage() {
-	return <CreateCommunityWizard />
+	return (
+		<div className="p-6">
+			<CreateCommunityWizard />
+		</div>
+	)
 }

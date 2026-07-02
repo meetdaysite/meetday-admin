@@ -26,18 +26,13 @@ import {
 	type CommunityExperienceItem,
 } from "@/lib/api/communities"
 import { cn } from "@/lib/utils"
+import { FilterTabs } from "@/components/ui/filter-tabs"
+import { StatusCell } from "@/components/ui/table-cells"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 type StatusFilter = "ALL" | "UPCOMING" | "LIVE" | "COMPLETED" | "DRAFT" | "CANCELLED"
 
-const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-	UPCOMING:  { label: "Upcoming",  className: "bg-blue-100 text-blue-700" },
-	LIVE:      { label: "Live",      className: "bg-purple-100 text-purple-700" },
-	COMPLETED: { label: "Completed", className: "bg-green-100 text-green-700" },
-	DRAFT:     { label: "Draft",     className: "bg-neutral-100 text-text-secondary" },
-	CANCELLED: { label: "Cancelled", className: "bg-red-50 text-red-600" },
-}
 
 const BOOKING_BAR_COLOR: Record<string, string> = {
 	UPCOMING: "#3b82f6", LIVE: "#9333ea", COMPLETED: "#22c55e",
@@ -323,17 +318,7 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 			{
 				id: "status",
 				header: "Status",
-				cell: ({ row }) => {
-					const cfg = STATUS_BADGE[row.original.status] ?? {
-						label: row.original.status,
-						className: "bg-neutral-100 text-text-secondary",
-					}
-					return (
-						<span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold", cfg.className)}>
-							{cfg.label}
-						</span>
-					)
-				},
+				cell: ({ row }) => <StatusCell status={row.original.status} />,
 			},
 			{
 				id: "bookings",
@@ -468,7 +453,7 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 				<div className="grid grid-cols-3 gap-3 lg:grid-cols-5">
 					<StatCard
 						icon={LayoutGrid}
-						label="Total Experiences"
+						label="Total"
 						value={isLoading ? "—" : (counts?.all ?? 0)}
 						sub="All time"
 						accent="purple"
@@ -489,48 +474,27 @@ export function ExperiencesTab({ communityId }: { communityId: string }) {
 					/>
 					<StatCard
 						icon={Users}
-						label="Total Bookings"
+						label="Bookings"
 						value={isLoading ? "—" : (stats?.totalBookings ?? 0).toLocaleString("en-IN")}
 						sub="All time"
 						accent="brand"
 					/>
 					<StatCard
 						icon={Banknote}
-						label="Total Revenue"
+						label="Revenue"
 						value={isLoading ? "—" : fmtRevenue(stats?.totalRevenue ?? 0)}
 						sub="All time"
 						accent="green"
 					/>
 				</div>
 
-				{/* Filter tabs + sort */}
+				{/* Filter + sort */}
 				<div className="flex items-center justify-between gap-3 flex-wrap">
-					<div className="flex items-center gap-1.5 flex-wrap">
-						{FILTER_TABS.map(tab => (
-							<button
-								key={tab.id}
-								onClick={() => { setActiveFilter(tab.id); setPage(1) }}
-								className={cn(
-									"inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors",
-									activeFilter === tab.id
-										? "bg-action-primary text-action-primary-text"
-										: "bg-neutral-100 text-text-secondary hover:bg-neutral-200",
-								)}
-							>
-								{tab.label}
-								<span
-									className={cn(
-										"rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none",
-										activeFilter === tab.id
-											? "bg-white/20 text-white"
-											: "bg-white text-text-secondary",
-									)}
-								>
-									{tab.count}
-								</span>
-							</button>
-						))}
-					</div>
+					<FilterTabs
+						value={activeFilter}
+						onChange={v => { setActiveFilter(v); setPage(1) }}
+						options={FILTER_TABS.map(t => ({ value: t.id, label: t.count > 0 ? `${t.label} (${t.count})` : t.label }))}
+					/>
 					<select
 						value={sort}
 						onChange={e => { setSort(e.target.value); setPage(1) }}

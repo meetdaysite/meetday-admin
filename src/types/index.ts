@@ -27,6 +27,7 @@ export type Permission =
 	| "order.view"
 	| "audit.read"
 	| "community.manage"
+	| "support.view"
 
 export type InviteStatus = "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED"
 
@@ -148,6 +149,7 @@ export type Host = {
 		email: string | null
 	}
 	categories: HostCategory[]
+	createdAt?: string
 }
 
 export type TicketTier = {
@@ -475,4 +477,37 @@ export type Review = {
 	createdAt: string
 	event: { id: string; title: string }
 	reviewer: { id: string; firstName: string; lastName: string; email: string } | null
+}
+
+// ─── Support Tickets ──────────────────────────────────────────────────────────
+
+export type TicketStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED"
+export type TicketPriority = "LOW" | "NORMAL" | "HIGH" | "URGENT"
+export type TicketCategory =
+	| "REFUND_REQUEST"
+	| "ACCOUNT_ISSUE"
+	| "EVENT_ISSUE"
+	| "PAYMENT_ISSUE"
+	| "COMMUNITY_ISSUE"
+	| "HOST_ISSUE"
+	| "OTHER"
+export type TicketEntityType = "USER" | "HOST" | "EVENT" | "ORDER" | "COMMUNITY"
+
+export type SupportTicket = {
+	id: string
+	ticketNumber: string
+	subject: string
+	body: string
+	category: TicketCategory
+	priority: TicketPriority
+	status: TicketStatus
+	entityType: TicketEntityType | null
+	entityId: string | null
+	resolution: string | null
+	resolvedAt: string | null
+	createdAt: string
+	updatedAt: string
+	reporter: { id: string; firstName: string; lastName: string; email: string }
+	assignee: { id: string; firstName: string; lastName: string } | null
+	resolver: { id: string; firstName: string; lastName: string } | null
 }

@@ -2,17 +2,14 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import {
-	AlertTriangle, User, Calendar, Hash, Ticket,
-	Tag, Users,
-} from "lucide-react"
+import { AlertTriangle, User, Calendar, Hash, Ticket, Tag, Users } from "lucide-react"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getOrderById } from "@/lib/api/orders"
 import type { Order, OrderDetail } from "@/types"
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Types
 
 type OrderDetailDrawerProps = {
 	open: boolean
@@ -20,20 +17,23 @@ type OrderDetailDrawerProps = {
 	order: Order | null
 }
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Helpers
 
 function formatDate(iso: string): string {
 	return new Date(iso).toLocaleDateString("en-IN", {
-		day: "numeric", month: "short", year: "numeric",
-		hour: "2-digit", minute: "2-digit",
+		day: "numeric",
+		month: "short",
+		year: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
 	})
 }
 
 function formatCurrency(amount: number): string {
-	return `â‚¹${amount.toLocaleString("en-IN")}`
+	return `र ${amount.toLocaleString("en-IN")}`
 }
 
-// â”€â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Sub-components
 
 function SectionLabel({ children }: { children: string }) {
 	return (
@@ -65,7 +65,7 @@ function DetailRow({
 	)
 }
 
-// â”€â”€â”€ Skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Skeleton
 
 function DrawerSkeleton() {
 	return (
@@ -95,7 +95,7 @@ function DrawerSkeleton() {
 	)
 }
 
-// â”€â”€â”€ Detail content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Detail content
 
 function OrderDetailContent({ detail }: { detail: OrderDetail }) {
 	const attendeeName = `${detail.user.firstName} ${detail.user.lastName}`
@@ -105,9 +105,7 @@ function OrderDetailContent({ detail }: { detail: OrderDetail }) {
 			{/* Status */}
 			<div className="flex items-center gap-2 flex-wrap">
 				<StatusBadge status={detail.status} />
-				<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary font-mono">
-					{detail.bookingId}
-				</span>
+				<StatusBadge status={detail.bookingId} />
 			</div>
 
 			{/* Order info */}
@@ -135,9 +133,11 @@ function OrderDetailContent({ detail }: { detail: OrderDetail }) {
 						}
 					/>
 					<DetailRow icon={Calendar} label="Ordered" value={formatDate(detail.createdAt)} />
-					<DetailRow icon={Hash} label="Order ID" value={
-						<span className="font-mono text-xs">{detail.id}</span>
-					} />
+					<DetailRow
+						icon={Hash}
+						label="Order ID"
+						value={<span className="font-mono text-xs">{detail.id}</span>}
+					/>
 				</div>
 			</div>
 
@@ -159,20 +159,27 @@ function OrderDetailContent({ detail }: { detail: OrderDetail }) {
 								Coupon ({detail.couponCode})
 							</span>
 							<span className="text-xs font-semibold text-green-600">
-								-{detail.discountAmount !== undefined ? formatCurrency(detail.discountAmount) : "â€”"}
+								-
+								{detail.discountAmount !== undefined
+									? formatCurrency(detail.discountAmount)
+									: "â€”"}
 							</span>
 						</div>
 					)}
 					{detail.platformFee !== undefined && (
 						<div className="flex items-center justify-between px-3.5 py-2.5">
 							<span className="text-xs text-text-secondary">Platform fee</span>
-							<span className="text-xs text-text-primary">{formatCurrency(detail.platformFee)}</span>
+							<span className="text-xs text-text-primary">
+								{formatCurrency(detail.platformFee)}
+							</span>
 						</div>
 					)}
 					{detail.hostPayout !== undefined && (
 						<div className="flex items-center justify-between px-3.5 py-2.5">
 							<span className="text-xs text-text-secondary">Host payout</span>
-							<span className="text-xs text-text-primary">{formatCurrency(detail.hostPayout)}</span>
+							<span className="text-xs text-text-primary">
+								{formatCurrency(detail.hostPayout)}
+							</span>
 						</div>
 					)}
 				</div>
@@ -190,26 +197,41 @@ function OrderDetailContent({ detail }: { detail: OrderDetail }) {
 									<tr className="bg-neutral-50 border-b border-border-subtle">
 										<th className="px-3 py-2 text-left text-[11px] font-semibold text-text-secondary">
 											<span className="flex items-center gap-1">
-												<Users size={11} />Attendee
+												<Users size={11} />
+												Attendee
 											</span>
 										</th>
-										<th className="px-3 py-2 text-left text-[11px] font-semibold text-text-secondary">Tier</th>
+										<th className="px-3 py-2 text-left text-[11px] font-semibold text-text-secondary">
+											Tier
+										</th>
 										<th className="px-3 py-2 text-left text-[11px] font-semibold text-text-secondary">
 											<span className="flex items-center gap-1">
-												<Ticket size={11} />Code
+												<Ticket size={11} />
+												Code
 											</span>
 										</th>
 									</tr>
 								</thead>
 								<tbody>
 									{detail.attendees.map((a, i) => (
-										<tr key={a.id} className={i < detail.attendees.length - 1 ? "border-b border-border-subtle" : ""}>
+										<tr
+											key={a.id}
+											className={
+												i < detail.attendees.length - 1
+													? "border-b border-border-subtle"
+													: ""
+											}
+										>
 											<td className="px-3 py-2.5">
-												<p className="font-medium text-text-primary">{a.firstName} {a.lastName}</p>
+												<p className="font-medium text-text-primary">
+													{a.firstName} {a.lastName}
+												</p>
 												<p className="text-[11px] text-text-tertiary">{a.email}</p>
 											</td>
 											<td className="px-3 py-2.5 text-text-secondary">{a.tierName}</td>
-											<td className="px-3 py-2.5 font-mono text-text-secondary text-[11px]">{a.ticketCode}</td>
+											<td className="px-3 py-2.5 font-mono text-text-secondary text-[11px]">
+												{a.ticketCode}
+											</td>
 										</tr>
 									))}
 								</tbody>
@@ -222,11 +244,11 @@ function OrderDetailContent({ detail }: { detail: OrderDetail }) {
 	)
 }
 
-// â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Component
 
 export function OrderDetailDrawer({ open, onClose, order }: OrderDetailDrawerProps) {
 	const router = useRouter()
-	const [detail, setDetail]       = useState<OrderDetail | null>(null)
+	const [detail, setDetail] = useState<OrderDetail | null>(null)
 	const [fetchState, setFetchState] = useState<"loading" | "error" | "done">("loading")
 	const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -238,20 +260,28 @@ export function OrderDetailDrawer({ open, onClose, order }: OrderDetailDrawerPro
 		setErrorMessage(null)
 
 		getOrderById(order.id)
-			.then((data) => {
-				if (!cancelled) { setDetail(data); setFetchState("done") }
+			.then(data => {
+				if (!cancelled) {
+					setDetail(data)
+					setFetchState("done")
+				}
 			})
 			.catch((err: unknown) => {
 				if (cancelled) return
 				const status = (err as { response?: { status?: number } })?.response?.status
-				if (status === 401) { router.replace("/login"); return }
+				if (status === 401) {
+					router.replace("/login")
+					return
+				}
 				setFetchState("error")
 				if (status === 404) setErrorMessage("Order not found.")
 				else setErrorMessage("Failed to load order details. Please try again.")
 			})
 
-		return () => { cancelled = true }
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		return () => {
+			cancelled = true
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [open, order?.id, router])
 
 	function handleClose() {

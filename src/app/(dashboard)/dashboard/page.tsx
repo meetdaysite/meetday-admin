@@ -24,15 +24,7 @@ import {
 	type LucideIcon,
 } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
-import {
-	AreaChart,
-	Area,
-	XAxis,
-	YAxis,
-	CartesianGrid,
-	Tooltip,
-	ResponsiveContainer,
-} from "recharts"
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { Button } from "@/components/ui/Button"
 import { Dropdown, type DropdownOption } from "@/components/ui/Dropdown"
 import { ActivityFeed, type ActivityItem } from "@/components/dashboard/activity-feed"
@@ -51,7 +43,7 @@ import {
 	type DashboardRevenueResponse,
 } from "@/lib/api/dashboard"
 
-type Accent = "rose" | "violet" | "amber" | "green"
+type Accent = "rose" | "violet" | "amber" | "green" | "blue" | "neutral"
 type HealthTone = "operational" | "degraded" | "down" | "maintenance"
 
 type SectionErrorProps = {
@@ -99,6 +91,20 @@ const HERO_ACCENTS: Record<
 		icon: "text-icon-success",
 		border: "border-green-200",
 		cta: "text-text-success",
+	},
+	blue: {
+		panel: "bg-surface-info-soft/60",
+		iconBox: "bg-sky-100",
+		icon: "text-icon-info",
+		border: "border-sky-200",
+		cta: "text-text-info",
+	},
+	neutral: {
+		panel: "bg-surface-card",
+		iconBox: "bg-gray-100",
+		icon: "text-icon-tertiary",
+		border: "border-gray-200",
+		cta: "text-text-tertiary",
 	},
 }
 
@@ -184,7 +190,7 @@ function SectionShell({
 	return (
 		<section
 			className={cn(
-				"rounded-panel border border-border-default bg-surface-canvas shadow-card",
+				"rounded-action border border-border-default bg-surface-canvas shadow-card",
 				className,
 			)}
 		>
@@ -240,7 +246,7 @@ function HeroStatCard({
 	const card = (
 		<div
 			className={cn(
-				"flex h-full flex-col rounded-panel border p-5 shadow-card transition-all duration-150 hover:shadow-card-hover",
+				"flex h-full flex-col rounded-action border p-5 shadow-card transition-all duration-150 hover:shadow-card-hover",
 				theme.panel,
 				theme.border,
 			)}
@@ -248,8 +254,9 @@ function HeroStatCard({
 			<div className="flex items-start gap-4">
 				<div
 					className={cn(
-						"flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl",
+						"flex h-16 w-16 shrink-0 items-center justify-center rounded-action border",
 						theme.iconBox,
+						theme.border,
 					)}
 				>
 					<Icon size={28} className={theme.icon} />
@@ -305,8 +312,9 @@ function QueueRow({
 		<div className="flex items-center gap-4 py-4">
 			<div
 				className={cn(
-					"flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+					"flex h-10 w-10 shrink-0 items-center justify-center rounded-action border",
 					theme.iconBox,
+					theme.border,
 				)}
 			>
 				<Icon size={18} className={theme.icon} />
@@ -318,9 +326,9 @@ function QueueRow({
 			<div className="flex items-center gap-3">
 				<span
 					className={cn(
-						"rounded-full px-3 py-1 text-sm font-semibold tabular-nums",
-						theme.iconBox,
-						theme.icon,
+						"rounded-full size-6 p-1 text-xs font-medium tabular-nums flex items-center justify-center",
+						HERO_ACCENTS.neutral.iconBox,
+						HERO_ACCENTS.neutral.icon,
 					)}
 				>
 					{formatCount(count)}
@@ -334,7 +342,7 @@ function QueueRow({
 	return (
 		<Link
 			href={href}
-			className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-border-focus/30"
+			className="block rounded-action outline-none focus-visible:ring-2 focus-visible:ring-border-focus/30"
 		>
 			{row}
 		</Link>
@@ -359,8 +367,9 @@ function LiveRow({
 		<div className="flex items-center gap-4 py-4">
 			<div
 				className={cn(
-					"flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+					"flex h-10 w-10 shrink-0 items-center justify-center rounded-action border",
 					theme.iconBox,
+					theme.border,
 				)}
 			>
 				<Icon size={18} className={theme.icon} />
@@ -369,7 +378,7 @@ function LiveRow({
 				<p className="text-sm font-semibold text-text-primary">{title}</p>
 				<p className="mt-0.5 text-xs text-text-secondary">{subtitle}</p>
 			</div>
-			<div className={cn("text-2xl font-semibold tabular-nums tracking-[-0.03em]", theme.cta)}>
+			<div className={cn("text-xl font-semibold tabular-nums tracking-[-0.03em]")}>
 				{formatCount(value)}
 			</div>
 		</div>
@@ -378,21 +387,21 @@ function LiveRow({
 
 function HealthChip({ status }: { status: HealthTone }) {
 	const statusClasses: Record<HealthTone, string> = {
-		operational: "bg-green-50 text-green-700",
-		degraded: "bg-amber-50 text-amber-700",
-		down: "bg-red-50 text-red-600",
-		maintenance: "bg-sky-50 text-sky-700",
+		operational: "bg-green-50 text-green-700 border-green-200",
+		degraded: "bg-amber-50 text-amber-700 border-amber-200",
+		down: "bg-red-50 text-red-600 border-red-200",
+		maintenance: "bg-sky-50 text-sky-700 border-sky-200",
 	}
 
 	return (
 		<span
 			className={cn(
-				"inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
+				"inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold border",
 				statusClasses[status],
 			)}
 		>
 			<span className="h-1.5 w-1.5 rounded-full bg-current" />
-			{status === "operational" ? "Operational" : status}
+			{status.charAt(0).toUpperCase() + status.slice(1).replace("-", " ")}
 		</span>
 	)
 }
@@ -415,7 +424,7 @@ function HealthRow({
 		<div className="flex items-center gap-4 py-3.5">
 			<div
 				className={cn(
-					"flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl",
+					"flex h-11 w-11 shrink-0 items-center justify-center rounded-action",
 					theme.iconBox,
 				)}
 			>
@@ -433,7 +442,7 @@ function HealthRow({
 function RevenueLineChart({ points }: { points: DashboardRevenueResponse["timeSeries"] }) {
 	if (points.length === 0) {
 		return (
-			<div className="flex h-60 items-center justify-center rounded-card border border-dashed border-border-default bg-surface-card text-sm text-text-tertiary">
+			<div className="flex h-60 items-center justify-center rounded-action border border-dashed border-border-default bg-surface-card text-sm text-text-tertiary">
 				No revenue data for this period.
 			</div>
 		)
@@ -445,12 +454,9 @@ function RevenueLineChart({ points }: { points: DashboardRevenueResponse["timeSe
 	}))
 
 	return (
-		<div className="rounded-card border border-border-default bg-surface-card p-4">
+		<div className="rounded-action border border-border-default bg-surface-card p-4">
 			<div className="mb-4 flex items-center gap-3 text-[11px] text-text-tertiary">
-				<span className="inline-flex items-center gap-1.5">
-					<span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-					Total revenue
-				</span>
+				<span className="inline-flex items-center gap-1.5">Total revenue</span>
 			</div>
 			<ResponsiveContainer width="100%" height={240}>
 				<AreaChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
@@ -476,7 +482,7 @@ function RevenueLineChart({ points }: { points: DashboardRevenueResponse["timeSe
 						width={52}
 					/>
 					<Tooltip
-						formatter={(value) => [formatCurrency(Number(value)), "Total"]}
+						formatter={value => [formatCurrency(Number(value)), "Total"]}
 						labelStyle={{ fontSize: 11, color: "#374151" }}
 						contentStyle={{
 							fontSize: 11,
@@ -502,7 +508,7 @@ function RevenueLineChart({ points }: { points: DashboardRevenueResponse["timeSe
 
 function RevenueSectionError({ title, message, onRetry }: SectionErrorProps) {
 	return (
-		<div className="rounded-card border border-border-default bg-surface-card p-5">
+		<div className="rounded-action border border-border-default bg-surface-card p-5">
 			<div className="flex items-start gap-3">
 				<AlertTriangle size={18} className="mt-0.5 text-text-warning" />
 				<div className="min-w-0">
@@ -615,7 +621,7 @@ export default function DashboardPage() {
 	if (criticalError) {
 		return (
 			<div className="p-6 max-w-7xl mx-auto">
-				<div className="rounded-panel border border-border-default bg-surface-canvas p-5 shadow-card">
+				<div className="rounded-action border border-border-default bg-surface-canvas p-5 shadow-card">
 					<div className="flex items-start gap-3">
 						<AlertTriangle size={18} className="mt-0.5 text-text-warning" />
 						<div>
@@ -685,7 +691,7 @@ export default function DashboardPage() {
 
 			{/* Row 2: Revenue Overview (2/3) + Recent Activity (1/3) */}
 			<div className="mt-6 grid gap-4 xl:grid-cols-3">
-				<section className="rounded-panel border border-border-default bg-surface-canvas shadow-card xl:col-span-2">
+				<section className="rounded-action border border-border-default bg-surface-canvas shadow-card xl:col-span-2">
 					<div className="flex flex-wrap items-start justify-between gap-4 px-5 pt-5">
 						<div>
 							<h2 className="text-[18px] font-semibold tracking-[-0.02em] text-text-primary">
@@ -735,7 +741,7 @@ export default function DashboardPage() {
 								</div>
 
 								{revenueQuery.isFetching && !revenue ? (
-									<div className="flex h-60 items-center justify-center rounded-2xl border border-dashed border-border-default bg-surface-card text-sm text-text-tertiary">
+									<div className="flex h-60 items-center justify-center rounded-action border border-dashed border-border-default bg-surface-card text-sm text-text-tertiary">
 										Loading chart...
 									</div>
 								) : (
@@ -752,7 +758,7 @@ export default function DashboardPage() {
 							</div>
 
 							<div className="lg:col-span-4">
-								<div className="rounded-2xl border border-border-default bg-surface-card">
+								<div className="rounded-action border border-border-default bg-surface-card">
 									<div className="divide-y divide-border-subtle px-4">
 										<div className="flex items-center justify-between py-3.5">
 											<span className="text-sm font-medium text-text-secondary">
@@ -822,7 +828,7 @@ export default function DashboardPage() {
 							subtitle="New host applications to review"
 							count={reviewQueue.hostApprovals}
 							href={reviewLinks.hostApprovals}
-							accent="rose"
+							accent="blue"
 						/>
 						<QueueRow
 							icon={CalendarDays}
@@ -830,7 +836,7 @@ export default function DashboardPage() {
 							subtitle="Events awaiting admin approval"
 							count={reviewQueue.eventApprovals}
 							href={reviewLinks.eventApprovals}
-							accent="rose"
+							accent="blue"
 						/>
 						<QueueRow
 							icon={ShieldCheck}
@@ -838,7 +844,7 @@ export default function DashboardPage() {
 							subtitle="Requests to join as community contributors"
 							count={reviewQueue.contributorRequests}
 							href={reviewLinks.contributorRequests}
-							accent="rose"
+							accent="blue"
 						/>
 						<QueueRow
 							icon={Flag}
@@ -846,7 +852,7 @@ export default function DashboardPage() {
 							subtitle="Posts, profiles and moments reported"
 							count={reviewQueue.reportedContent}
 							href={reviewLinks.reportedContent}
-							accent="rose"
+							accent="blue"
 						/>
 					</div>
 				</SectionShell>
@@ -877,7 +883,7 @@ export default function DashboardPage() {
 					</div>
 				</SectionShell>
 
-				<section className="rounded-panel border border-border-default bg-surface-canvas shadow-card">
+				<section className="rounded-action border border-border-default bg-surface-canvas shadow-card">
 					<div className="flex flex-wrap items-start justify-between gap-4 px-5 pt-5">
 						<div>
 							<h2 className="text-[18px] font-semibold tracking-[-0.02em] text-text-primary">
@@ -887,37 +893,35 @@ export default function DashboardPage() {
 					</div>
 
 					<div className="px-5 pb-5 pt-4">
-						<div className="rounded-2xl border border-border-subtle bg-surface-card px-4">
-							<div className="divide-y divide-border-subtle">
-								<HealthRow
-									icon={Server}
-									label="Server Status"
-									subtitle="All core systems operational"
-									status={health.server}
-									accent="violet"
-								/>
-								<HealthRow
-									icon={CreditCard}
-									label="Payment Gateway"
-									subtitle="All systems operational"
-									status={health.paymentGateway}
-									accent="green"
-								/>
-								<HealthRow
-									icon={ShieldCheck}
-									label="Inbox / Notifications"
-									subtitle="All systems operational"
-									status={health.notifications}
-									accent="amber"
-								/>
-								<HealthRow
-									icon={CircleCheckBig}
-									label="Check-in System"
-									subtitle="All systems operational"
-									status={health.checkInSystem}
-									accent="rose"
-								/>
-							</div>
+						<div className="divide-y divide-border-subtle">
+							<HealthRow
+								icon={Server}
+								label="Server Status"
+								subtitle="All core systems operational"
+								status={health.server}
+								accent="violet"
+							/>
+							<HealthRow
+								icon={CreditCard}
+								label="Payment Gateway"
+								subtitle="All systems operational"
+								status={health.paymentGateway}
+								accent="green"
+							/>
+							<HealthRow
+								icon={ShieldCheck}
+								label="Inbox / Notifications"
+								subtitle="All systems operational"
+								status={health.notifications}
+								accent="amber"
+							/>
+							<HealthRow
+								icon={CircleCheckBig}
+								label="Check-in System"
+								subtitle="All systems operational"
+								status={health.checkInSystem}
+								accent="rose"
+							/>
 						</div>
 					</div>
 				</section>

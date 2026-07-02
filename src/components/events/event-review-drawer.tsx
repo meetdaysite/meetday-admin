@@ -3,9 +3,22 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-	Loader2, MapPin, Mail, Calendar, Clock, AlertTriangle,
-	Users, Ticket, Image as ImageIcon, Tag, Globe, Languages, Info, ShieldAlert,
-	RotateCcw, Star,
+	Loader2,
+	MapPin,
+	Mail,
+	Calendar,
+	Clock,
+	AlertTriangle,
+	Users,
+	Ticket,
+	Image as ImageIcon,
+	Tag,
+	Globe,
+	Languages,
+	Info,
+	ShieldAlert,
+	RotateCcw,
+	Star,
 } from "lucide-react"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { StatusBadge } from "@/components/ui/status-badge"
@@ -13,7 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { getEventById } from "@/lib/api/events"
 import type { Event, EventDetail, EventTicket } from "@/types"
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Types
 
 export type EventAction = "approve" | "reject" | "force_cancel"
 
@@ -24,7 +37,7 @@ export type EventReviewDrawerProps = {
 	onAction: (eventId: string, action: EventAction, message?: string) => Promise<void>
 }
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Helpers
 
 function formatDate(iso: string): string {
 	return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
@@ -32,7 +45,10 @@ function formatDate(iso: string): string {
 
 function formatEventDate(iso: string): string {
 	return new Date(iso).toLocaleDateString("en-IN", {
-		weekday: "short", day: "numeric", month: "short", year: "numeric",
+		weekday: "short",
+		day: "numeric",
+		month: "short",
+		year: "numeric",
 	})
 }
 
@@ -46,7 +62,7 @@ function daysAgoLabel(days: number): string {
 	return `${days} days ago`
 }
 
-// â”€â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Sub-components
 
 function SectionLabel({ children }: { children: string }) {
 	return (
@@ -92,33 +108,45 @@ function TicketPricingTable({ tickets }: { tickets: EventTicket[] }) {
 				<table className="w-full text-xs">
 					<thead>
 						<tr className="bg-neutral-50 border-b border-border-subtle">
-							<th className="px-3 py-2 text-left text-[11px] font-semibold text-text-secondary">Tier</th>
-							<th className="px-3 py-2 text-right text-[11px] font-semibold text-text-secondary">Price</th>
-							<th className="px-3 py-2 text-right text-[11px] font-semibold text-text-secondary">Sold / Cap</th>
+							<th className="px-3 py-2 text-left text-[11px] font-semibold text-text-secondary">
+								Tier
+							</th>
+							<th className="px-3 py-2 text-right text-[11px] font-semibold text-text-secondary">
+								Price
+							</th>
+							<th className="px-3 py-2 text-right text-[11px] font-semibold text-text-secondary">
+								Sold / Cap
+							</th>
 						</tr>
 					</thead>
 					<tbody>
 						{tickets.map((ticket, i) => {
 							const price = parseFloat(ticket.price)
 							return (
-								<tr key={ticket.id} className={i < tickets.length - 1 ? "border-b border-border-subtle" : ""}>
+								<tr
+									key={ticket.id}
+									className={i < tickets.length - 1 ? "border-b border-border-subtle" : ""}
+								>
 									<td className="px-3 py-2.5 text-text-primary font-medium">
 										{ticket.name}
 										{ticket.maxPerPerson > 1 && (
-											<span className="ml-1.5 text-[10px] text-text-tertiary">(max {ticket.maxPerPerson}/person)</span>
+											<span className="ml-1.5 text-[10px] text-text-tertiary">
+												(max {ticket.maxPerPerson}/person)
+											</span>
 										)}
 									</td>
 									<td className="px-3 py-2.5 text-right text-text-primary">
 										{price === 0 ? (
 											<span className="text-green-600 font-semibold">Free</span>
 										) : (
-											`â‚¹${price.toLocaleString("en-IN")}`
+											`र ${price.toLocaleString("en-IN")}`
 										)}
 									</td>
 									<td className="px-3 py-2.5 text-right text-text-secondary">
 										<span className="flex items-center justify-end gap-1">
 											<Users size={10} className="text-text-tertiary" />
-											{ticket.soldCount} / {ticket.totalCapacity.toLocaleString("en-IN")}
+											{ticket.soldCount} /{" "}
+											{ticket.totalCapacity.toLocaleString("en-IN")}
 										</span>
 									</td>
 								</tr>
@@ -127,7 +155,10 @@ function TicketPricingTable({ tickets }: { tickets: EventTicket[] }) {
 					</tbody>
 					<tfoot>
 						<tr className="bg-neutral-50 border-t border-border-subtle">
-							<td colSpan={2} className="px-3 py-2 text-[11px] font-semibold text-text-secondary">
+							<td
+								colSpan={2}
+								className="px-3 py-2 text-[11px] font-semibold text-text-secondary"
+							>
 								Total
 							</td>
 							<td className="px-3 py-2 text-right text-[11px] font-semibold text-text-primary">
@@ -144,11 +175,17 @@ function TicketPricingTable({ tickets }: { tickets: EventTicket[] }) {
 	)
 }
 
-function TagList({ items, colorClass = "bg-neutral-100 text-text-secondary" }: { items: string[]; colorClass?: string }) {
+function TagList({
+	items,
+	colorClass = "bg-neutral-100 text-text-secondary",
+}: {
+	items: string[]
+	colorClass?: string
+}) {
 	if (!items.length) return null
 	return (
 		<div className="flex flex-wrap gap-1.5">
-			{items.map((item) => (
+			{items.map(item => (
 				<span key={item} className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${colorClass}`}>
 					{item}
 				</span>
@@ -157,7 +194,7 @@ function TagList({ items, colorClass = "bg-neutral-100 text-text-secondary" }: {
 	)
 }
 
-// â”€â”€â”€ Skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Skeleton
 
 function DrawerSkeleton() {
 	return (
@@ -183,12 +220,12 @@ function DrawerSkeleton() {
 	)
 }
 
-// â”€â”€â”€ Detail content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Detail content
 
 function RefundPolicyBadge({ type }: { type: string }) {
 	if (type === "NO_REFUND") {
 		return (
-			<span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-[11px] font-semibold text-red-700">
+			<span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-3 py-1.5 text-[11px] font-semibold text-red-700 border border-red-200">
 				<ShieldAlert size={10} />
 				No Refund
 			</span>
@@ -196,14 +233,14 @@ function RefundPolicyBadge({ type }: { type: string }) {
 	}
 	if (type === "FULL_REFUND") {
 		return (
-			<span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-0.5 text-[11px] font-semibold text-green-700">
+			<span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-3 py-1.5 text-[11px] font-semibold text-green-700 border border-green-200">
 				<RotateCcw size={10} />
 				Full Refund
 			</span>
 		)
 	}
 	return (
-		<span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700">
+		<span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1.5 text-[11px] font-semibold text-blue-700 border border-blue-200">
 			<RotateCcw size={10} />
 			Partial Refund
 		</span>
@@ -213,8 +250,8 @@ function RefundPolicyBadge({ type }: { type: string }) {
 function EventDetailContent({ detail }: { detail: EventDetail }) {
 	const days = getDaysSince(detail.updatedAt)
 	const hostFullName = `${detail.hostProfile.user.firstName} ${detail.hostProfile.user.lastName}`
-	const coverImage = detail.media.find((m) => m.type === "COVER")?.url
-	const galleryImages = detail.media.filter((m) => m.type === "GALLERY")
+	const coverImage = detail.media.find(m => m.type === "COVER")?.url
+	const galleryImages = detail.media.filter(m => m.type === "GALLERY")
 
 	return (
 		<div className="space-y-6">
@@ -222,27 +259,27 @@ function EventDetailContent({ detail }: { detail: EventDetail }) {
 			<div className="flex items-center gap-2 flex-wrap">
 				<StatusBadge status={detail.status} />
 				{detail.status === "UNDER_REVIEW" && days >= 7 && (
-					<span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700">
+					<span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1.5 text-[11px] font-semibold text-blue-700 border border-blue-200">
 						<Clock size={10} />
 						{daysAgoLabel(days)}
 					</span>
 				)}
-				<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
+				<span className="rounded-full bg-neutral-100 px-3 py-1.5 text-[11px] font-semibold text-text-secondary border border-neutral-200">
 					{detail.eventType}
 				</span>
 				{detail.visibility && detail.visibility !== "PUBLIC" && (
-					<span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-text-secondary">
+					<span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-3 py-1.5 text-[11px] font-semibold text-text-secondary border border-border-subtle">
 						<Globe size={10} />
 						{detail.visibility}
 					</span>
 				)}
 				{detail.isFree && (
-					<span className="rounded-full bg-green-50 px-2.5 py-0.5 text-[11px] font-semibold text-green-700">
+					<span className="rounded-full bg-green-50 px-3 py-1.5 text-[11px] font-semibold text-green-700 border border-green-200">
 						Free
 					</span>
 				)}
 				{detail.platformFeeWaived && (
-					<span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700">
+					<span className="rounded-full bg-blue-50 px-3 py-1.5 text-[11px] font-semibold text-blue-700 border border-blue-200">
 						Fee Waived
 					</span>
 				)}
@@ -252,7 +289,11 @@ function EventDetailContent({ detail }: { detail: EventDetail }) {
 			{coverImage && (
 				<div className="rounded-xl overflow-hidden border border-border-subtle">
 					{/* eslint-disable-next-line @next/next/no-img-element */}
-					<img src={coverImage} alt={`Cover for ${detail.title}`} className="w-full h-44 object-cover" />
+					<img
+						src={coverImage}
+						alt={`Cover for ${detail.title}`}
+						className="w-full h-44 object-cover"
+					/>
 				</div>
 			)}
 
@@ -279,7 +320,11 @@ function EventDetailContent({ detail }: { detail: EventDetail }) {
 							<span>
 								{detail.venueName && <span className="block">{detail.venueName}</span>}
 								{detail.fullAddress && (
-									<span className={detail.venueName ? "text-[11px] text-text-tertiary" : undefined}>
+									<span
+										className={
+											detail.venueName ? "text-[11px] text-text-tertiary" : undefined
+										}
+									>
 										{detail.fullAddress}
 									</span>
 								)}
@@ -294,7 +339,7 @@ function EventDetailContent({ detail }: { detail: EventDetail }) {
 						<DetailRow
 							icon={Clock}
 							label="Time"
-							value={[detail.startTime, detail.endTime].filter(Boolean).join(" â€“ ")}
+							value={[detail.startTime, detail.endTime].filter(Boolean).join(" - ")}
 						/>
 					)}
 					{detail.category && (
@@ -302,18 +347,14 @@ function EventDetailContent({ detail }: { detail: EventDetail }) {
 							icon={Tag}
 							label="Category"
 							value={
-								<span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-text-secondary">
+								<span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-medium text-text-primary border border-neutral-200">
 									{detail.category.name}
 								</span>
 							}
 						/>
 					)}
 					{detail.ageRestriction && (
-						<DetailRow
-							icon={Users}
-							label="Age restriction"
-							value={detail.ageRestriction}
-						/>
+						<DetailRow icon={Users} label="Age restriction" value={detail.ageRestriction} />
 					)}
 					{detail.languages.length > 0 && (
 						<DetailRow
@@ -326,7 +367,12 @@ function EventDetailContent({ detail }: { detail: EventDetail }) {
 						<DetailRow
 							icon={Tag}
 							label="Tags"
-							value={<TagList items={detail.tags} colorClass="bg-neutral-100 text-text-secondary" />}
+							value={
+								<TagList
+									items={detail.tags}
+									colorClass="bg-neutral-100 text-text-secondary"
+								/>
+							}
 						/>
 					)}
 					<DetailRow
@@ -362,7 +408,10 @@ function EventDetailContent({ detail }: { detail: EventDetail }) {
 								</p>
 								<ul className="space-y-1">
 									{detail.whatToExpect.map((item, i) => (
-										<li key={i} className="flex items-start gap-1.5 text-xs text-text-primary">
+										<li
+											key={i}
+											className="flex items-start gap-1.5 text-xs text-text-primary"
+										>
 											<Star size={9} className="mt-0.5 text-text-brand shrink-0" />
 											{item}
 										</li>
@@ -377,7 +426,10 @@ function EventDetailContent({ detail }: { detail: EventDetail }) {
 								</p>
 								<ul className="space-y-1">
 									{detail.whoShouldAttend.map((item, i) => (
-										<li key={i} className="flex items-start gap-1.5 text-xs text-text-primary">
+										<li
+											key={i}
+											className="flex items-start gap-1.5 text-xs text-text-primary"
+										>
 											<Users size={9} className="mt-0.5 text-text-tertiary shrink-0" />
 											{item}
 										</li>
@@ -397,7 +449,9 @@ function EventDetailContent({ detail }: { detail: EventDetail }) {
 						<SectionLabel>Special Instructions</SectionLabel>
 						<div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-100 px-3.5 py-3">
 							<Info size={13} className="mt-0.5 text-amber-600 shrink-0" />
-							<p className="text-xs text-amber-800 leading-relaxed">{detail.specialInstructions}</p>
+							<p className="text-xs text-amber-800 leading-relaxed">
+								{detail.specialInstructions}
+							</p>
 						</div>
 					</div>
 				</>
@@ -411,7 +465,9 @@ function EventDetailContent({ detail }: { detail: EventDetail }) {
 						<SectionLabel>Admin Rejection Remark</SectionLabel>
 						<div className="flex items-start gap-2 rounded-xl bg-red-50 border border-red-100 px-3.5 py-3">
 							<ShieldAlert size={13} className="mt-0.5 text-red-600 shrink-0" />
-							<p className="text-xs text-red-800 leading-relaxed">{detail.adminRejectionRemark}</p>
+							<p className="text-xs text-red-800 leading-relaxed">
+								{detail.adminRejectionRemark}
+							</p>
 						</div>
 					</div>
 				</>
@@ -423,7 +479,9 @@ function EventDetailContent({ detail }: { detail: EventDetail }) {
 					<div className="border-t border-border-subtle" />
 					<div>
 						<SectionLabel>Cancellation Reason</SectionLabel>
-						<p className="text-xs text-text-primary leading-relaxed">{detail.cancellationReason}</p>
+						<p className="text-xs text-text-primary leading-relaxed">
+							{detail.cancellationReason}
+						</p>
 					</div>
 				</>
 			)}
@@ -435,8 +493,11 @@ function EventDetailContent({ detail }: { detail: EventDetail }) {
 					<div>
 						<SectionLabel>{`Gallery (${galleryImages.length})`}</SectionLabel>
 						<div className="grid grid-cols-3 gap-2">
-							{galleryImages.slice(0, 6).map((m) => (
-								<div key={m.id} className="rounded-lg overflow-hidden border border-border-subtle aspect-square bg-neutral-50">
+							{galleryImages.slice(0, 6).map(m => (
+								<div
+									key={m.id}
+									className="rounded-lg overflow-hidden border border-border-subtle aspect-square bg-neutral-50"
+								>
 									{/* eslint-disable-next-line @next/next/no-img-element */}
 									<img src={m.url} alt="" className="w-full h-full object-cover" />
 								</div>
@@ -488,7 +549,7 @@ function EventDetailContent({ detail }: { detail: EventDetail }) {
 	)
 }
 
-// â”€â”€â”€ Reason dialog (shared for reject / force-cancel) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Reason dialog (shared for reject / force-cancel)
 
 function ReasonDialog({
 	open,
@@ -541,11 +602,14 @@ function ReasonDialog({
 				<form onSubmit={handleSubmit} className="mt-4 space-y-4">
 					<div>
 						<label className="block text-[11px] font-semibold text-text-secondary mb-1.5">
-							Reason <span className="text-red-500" aria-hidden>*</span>
+							Reason{" "}
+							<span className="text-red-500" aria-hidden>
+								*
+							</span>
 						</label>
 						<textarea
 							value={reason}
-							onChange={(e) => setReason(e.target.value)}
+							onChange={e => setReason(e.target.value)}
 							placeholder={placeholder}
 							rows={4}
 							disabled={isLoading}
@@ -577,7 +641,7 @@ function ReasonDialog({
 	)
 }
 
-// â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Component
 
 export function EventReviewDrawer({ open, onClose, event, onAction }: EventReviewDrawerProps) {
 	const router = useRouter()
@@ -596,7 +660,7 @@ export function EventReviewDrawer({ open, onClose, event, onAction }: EventRevie
 		setErrorMessage(null)
 
 		getEventById(event.id)
-			.then((data) => {
+			.then(data => {
 				if (!cancelled) {
 					setDetail(data)
 					setFetchState("done")
@@ -605,15 +669,20 @@ export function EventReviewDrawer({ open, onClose, event, onAction }: EventRevie
 			.catch((err: unknown) => {
 				if (cancelled) return
 				const status = (err as { response?: { status?: number } })?.response?.status
-				if (status === 401) { router.replace("/login"); return }
+				if (status === 401) {
+					router.replace("/login")
+					return
+				}
 				setFetchState("error")
 				if (status === 403) setErrorMessage("You don't have permission to view this event.")
 				else if (status === 404) setErrorMessage("Event not found.")
 				else setErrorMessage("Failed to load event details. Please try again.")
 			})
 
-		return () => { cancelled = true }
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		return () => {
+			cancelled = true
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [open, event?.id, router])
 
 	function handleClose() {
@@ -706,7 +775,9 @@ export function EventReviewDrawer({ open, onClose, event, onAction }: EventRevie
 									disabled={isBusy || fetchState !== "done"}
 									className="flex items-center gap-1.5 rounded-lg bg-action-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors disabled:opacity-70"
 								>
-									{actionLoading === "approve" && <Loader2 size={12} className="animate-spin" />}
+									{actionLoading === "approve" && (
+										<Loader2 size={12} className="animate-spin" />
+									)}
 									Approve
 								</button>
 							</div>
@@ -726,7 +797,9 @@ export function EventReviewDrawer({ open, onClose, event, onAction }: EventRevie
 								disabled={isBusy || fetchState !== "done"}
 								className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
 							>
-								{actionLoading === "force_cancel" && <Loader2 size={12} className="animate-spin" />}
+								{actionLoading === "force_cancel" && (
+									<Loader2 size={12} className="animate-spin" />
+								)}
 								Force Cancel
 							</button> */}
 						</>

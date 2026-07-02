@@ -94,7 +94,7 @@ function FeedRow({ item }: { item: ActivityItem }) {
 	return (
 		<li className="flex items-start gap-3 py-3">
 			<div className="relative shrink-0">
-				<div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl", cfg.iconBox)}>
+				<div className={cn("flex h-11 w-11 items-center justify-center rounded-action border border-amber-100", cfg.iconBox)}>
 					<Icon size={18} className={cfg.iconColor} />
 				</div>
 				<span

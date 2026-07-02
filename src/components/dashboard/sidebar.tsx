@@ -18,7 +18,7 @@ import {
 	Star,
 	Sparkles,
 	Users,
-	CirclePlus,
+	LifeBuoy,
 	type LucideIcon,
 } from "lucide-react"
 import { useAuthStore } from "@/stores/auth.store"
@@ -47,7 +47,10 @@ const NAV: NavSection[] = [
 	},
 	{
 		title: "Hosts",
-		items: [{ label: "Hosts", href: "/hosts/queue", icon: Clock, permission: "host.approve" }],
+		items: [
+			{ label: "Host Queue", href: "/hosts/queue", icon: Clock, permission: "host.approve" },
+			{ label: "All Hosts", href: "/hosts", icon: Users, permission: "host.approve", exact: true },
+		],
 	},
 	{
 		title: "Events",
@@ -72,12 +75,6 @@ const NAV: NavSection[] = [
 				permission: "community.manage",
 				exact: true,
 			},
-			{
-				label: "Create Community",
-				href: "/communities/create",
-				icon: CirclePlus,
-				permission: "community.manage",
-			},
 		],
 	},
 	{
@@ -95,6 +92,12 @@ const NAV: NavSection[] = [
 		items: [
 			{ label: "Reviews", href: "/reviews", icon: Star, permission: "moderation.read" },
 			{ label: "Audit Logs", href: "/audit-logs", icon: ScrollText, permission: "audit.read" },
+		],
+	},
+	{
+		title: "Support",
+		items: [
+			{ label: "Support Tickets", href: "/support-tickets", icon: LifeBuoy, permission: "support.view" },
 		],
 	},
 	{
@@ -203,10 +206,10 @@ export function Sidebar() {
 					{collapsed ? (
 						<Link href="/dashboard" className="shrink-0">
 							<Image
-								src="/brand_logo.svg"
+								src="/favicon.ico"
 								alt="Meetday"
-								width={28}
-								height={28}
+								width={30}
+								height={30}
 								className="object-contain"
 							/>
 						</Link>

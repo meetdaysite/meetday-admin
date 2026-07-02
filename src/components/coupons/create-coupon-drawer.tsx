@@ -8,7 +8,7 @@ import type { CouponTarget, DiscountType } from "@/types"
 import axios from "axios"
 import { toast } from "sonner"
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Helpers
 
 function generateCode(): string {
 	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -31,7 +31,7 @@ function getApiErrorMessage(err: unknown): string {
 	return err instanceof Error ? err.message : "Something went wrong"
 }
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Types
 
 export type CreateCouponDrawerProps = {
 	open: boolean
@@ -39,12 +39,12 @@ export type CreateCouponDrawerProps = {
 	onSuccess: () => void
 }
 
-// â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Component
 
 export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDrawerProps) {
 	const uid = useId()
 
-	// â”€â”€ Form state â”€â”€
+	//  Form state 
 	const [code, setCode]                         = useState("")
 	const [autoGenerate, setAutoGenerate]         = useState(false)
 	const [description, setDescription]           = useState("")
@@ -54,7 +54,7 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 	const [maxUsages, setMaxUsages]               = useState("")
 	const [maxUsagesPerUser, setMaxUsagesPerUser] = useState("")
 
-	// â”€â”€ UI state â”€â”€
+	//  UI state 
 	const [errors, setErrors]       = useState<Record<string, string>>({})
 	const [isSubmitting, setSubmitting] = useState(false)
 
@@ -89,7 +89,7 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 		if (!code.trim()) {
 			errs.code = "Coupon code is required."
 		} else if (!/^[A-Z0-9_-]{3,20}$/.test(code.trim())) {
-			errs.code = "Code must be 3â€“20 chars: uppercase letters, numbers, - or _."
+			errs.code = "Code must be 3-20 chars: uppercase letters, numbers, - or _."
 		}
 
 		const val = Number(discountValue)
@@ -156,7 +156,7 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 			width="max-w-md"
 		>
 			<form id="create-coupon-form" onSubmit={handleSubmit} className="space-y-5">
-				{/* â”€â”€ Code â”€â”€ */}
+				{/*  Code  */}
 				<div className="space-y-1.5">
 					<label htmlFor={`${uid}-code`} className="block text-xs font-medium text-text-primary">
 						Coupon Code *
@@ -188,7 +188,7 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 					)}
 				</div>
 
-				{/* â”€â”€ Description â”€â”€ */}
+				{/*  Description  */}
 				<div className="space-y-1.5">
 					<label htmlFor={`${uid}-desc`} className="block text-xs font-medium text-text-primary">
 						Description
@@ -202,7 +202,7 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 					/>
 				</div>
 
-				{/* â”€â”€ Target â”€â”€ */}
+				{/*  Target  */}
 				<div className="space-y-1.5">
 					<label htmlFor={`${uid}-target`} className="block text-xs font-medium text-text-primary">
 						Target *
@@ -236,7 +236,7 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 					</div>
 				</div>
 
-				{/* â”€â”€ Discount â”€â”€ */}
+				{/*  Discount  */}
 				<div className="grid grid-cols-2 gap-3">
 					<div className="space-y-1.5">
 						<label htmlFor={`${uid}-type`} className="block text-xs font-medium text-text-primary">
@@ -249,12 +249,12 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 							className={inputCls()}
 						>
 							<option value="PERCENTAGE">Percentage (%)</option>
-							<option value="FLAT">Flat amount (â‚¹)</option>
+							<option value="FLAT">Flat amount (र )</option>
 						</select>
 					</div>
 					<div className="space-y-1.5">
 						<label htmlFor={`${uid}-value`} className="block text-xs font-medium text-text-primary">
-							{discountType === "PERCENTAGE" ? "Percentage *" : "Amount (â‚¹) *"}
+							{discountType === "PERCENTAGE" ? "Percentage *" : "Amount (र ) *"}
 						</label>
 						<input
 							id={`${uid}-value`}
@@ -273,7 +273,7 @@ export function CreateCouponDrawer({ open, onClose, onSuccess }: CreateCouponDra
 					</div>
 				</div>
 
-				{/* â”€â”€ Usage limits â”€â”€ */}
+				{/*  Usage limits  */}
 				<div className="grid grid-cols-2 gap-3">
 					<div className="space-y-1.5">
 						<label htmlFor={`${uid}-maxUsages`} className="block text-xs font-medium text-text-primary">
