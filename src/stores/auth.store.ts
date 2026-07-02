@@ -20,6 +20,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
 		"order.view",
 		"audit.read",
 		"community.manage",
+		"support.view",
 	],
 	CITY_ADMIN: [
 		"host.invite",
@@ -30,9 +31,10 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
 		"order.view",
 		"audit.read",
 		"community.manage",
+		"support.view",
 	],
 	MODERATOR: ["moderation.read", "moderation.action", "order.view"],
-	SUPPORT:   ["moderation.read", "order.view"],
+	SUPPORT:   ["moderation.read", "order.view", "support.view"],
 }
 
 type AuthState = {

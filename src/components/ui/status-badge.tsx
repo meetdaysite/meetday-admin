@@ -59,6 +59,16 @@ const BADGE_CONFIG: Partial<Record<string, { label: string; className: string }>
 	LIVE:      { label: "Live",      className: "bg-purple-50 text-purple-700 border-purple-200" },
 	COMPLETED: { label: "Completed", className: "bg-green-50 text-green-700 border-green-200" },
 	ARCHIVED:  { label: "Archived",  className: "bg-neutral-100 text-text-secondary border-neutral-200" },
+	// Ticket statuses
+	OPEN:        { label: "Open",        className: "bg-blue-50 text-blue-700 border-blue-200" },
+	IN_PROGRESS: { label: "In Progress", className: "bg-amber-50 text-amber-700 border-amber-200" },
+	RESOLVED:    { label: "Resolved",    className: "bg-green-50 text-green-700 border-green-200" },
+	CLOSED:      { label: "Closed",      className: "bg-red-50 text-red-600 border-red-200" },
+	// Ticket priorities
+	URGENT: { label: "Urgent", className: "bg-red-50 text-red-600 border-red-200" },
+	HIGH:   { label: "High",   className: "bg-orange-50 text-orange-700 border-orange-200" },
+	NORMAL: { label: "Normal", className: "bg-blue-50 text-blue-700 border-blue-200" },
+	LOW:    { label: "Low",    className: "bg-green-50 text-green-700 border-green-200" },
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
