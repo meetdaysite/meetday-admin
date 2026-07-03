@@ -19,6 +19,7 @@ import {
 	Sparkles,
 	Users,
 	LifeBuoy,
+	Settings,
 	type LucideIcon,
 } from "lucide-react"
 import { useAuthStore } from "@/stores/auth.store"
@@ -98,6 +99,12 @@ const NAV: NavSection[] = [
 		title: "Support",
 		items: [
 			{ label: "Support Tickets", href: "/support-tickets", icon: LifeBuoy, permission: "support.view" },
+		],
+	},
+	{
+		title: "Platform",
+		items: [
+			{ label: "Platform Config", href: "/platform-config", icon: Settings, permission: "platform.config" },
 		],
 	},
 	{

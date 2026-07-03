@@ -94,6 +94,7 @@ export function ProgressCell({
 export function ImageCell({ src, alt }: { src: string | null | undefined; alt?: string }) {
 	if (!src) return <span className="text-xs text-text-tertiary">—</span>
 	return (
+		// eslint-disable-next-line @next/next/no-img-element
 		<img
 			src={src}
 			alt={alt ?? ""}

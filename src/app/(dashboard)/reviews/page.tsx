@@ -77,7 +77,10 @@ export default function ReviewsPage() {
 		setTogglingId(review.id)
 		try {
 			const updated = await updateReviewVisibility(review.id, !review.isVisible)
-			setReviews(prev => prev.map(r => (r.id === updated.id ? updated : r)))
+			// Merge only the visibility field — the PATCH response doesn't include
+			// the nested event/reviewer objects, so replacing the whole row would
+			// wipe them out and crash the event/reviewer column renderers.
+			setReviews(prev => prev.map(r => (r.id === review.id ? { ...r, isVisible: updated.isVisible } : r)))
 			toast.success(updated.isVisible ? "Review shown" : "Review hidden")
 		} catch (err: unknown) {
 			const status = (err as { response?: { status?: number } })?.response?.status

@@ -5,7 +5,7 @@ import { DataView } from "@/components/ui/data-view"
 import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
-import { approveEvent, forceCancelEvent, getPendingEvents, rejectEvent } from "@/lib/api/events"
+import { approveEvent, getPendingEvents, rejectEvent } from "@/lib/api/events"
 import { formatDate } from "@/lib/formatters"
 import { AgeDateCell, ChipCell, DateCell, TwoLineCell } from "@/components/ui/table-cells"
 import { usePermission } from "@/lib/hooks/use-permission"
@@ -93,12 +93,10 @@ export default function EventQueuePage() {
 		try {
 			if (action === "approve") await approveEvent(eventId)
 			else if (action === "reject") await rejectEvent(eventId, message!)
-			else if (action === "force_cancel") await forceCancelEvent(eventId, message!)
 
 			const labels: Record<EventAction, string> = {
 				approve: "Event approved",
 				reject: "Event rejected",
-				force_cancel: "Event force-cancelled",
 			}
 			toast.success(labels[action])
 			fetchEvents()

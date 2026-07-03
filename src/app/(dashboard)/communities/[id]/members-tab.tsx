@@ -908,6 +908,7 @@ export function MembersTab({ communityId }: { communityId: string }) {
 						{/* Avatar + name + badges */}
 						<div className="flex items-center gap-3">
 							{d.avatarUrl ? (
+								// eslint-disable-next-line @next/next/no-img-element
 								<img src={d.avatarUrl} alt={d.name} className="h-14 w-14 rounded-full object-cover shrink-0" />
 							) : (
 								<div

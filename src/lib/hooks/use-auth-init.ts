@@ -1,9 +1,12 @@
 "use client"
 
 import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { onIdTokenChanged } from "firebase/auth"
 import { useAuthStore } from "@/stores/auth.store"
 import { apiClient } from "@/lib/api/client"
 import { setAuthToken } from "@/lib/api/client"
+import { firebaseAuth } from "@/lib/firebase/config"
 import type { Role } from "@/types"
 
 type MeResponse = {
@@ -21,6 +24,22 @@ export function useAuthInit() {
 	const setAuth = useAuthStore((s) => s.setAuth)
 	const clearAuth = useAuthStore((s) => s.clearAuth)
 	const setInitialized = useAuthStore((s) => s.setInitialized)
+	const router = useRouter()
+
+	// Firebase revokes a user's refresh tokens when their password changes
+	// (e.g. via the reset-password flow completed on another device/tab).
+	// This fires once that revocation is detected on background token refresh,
+	// letting us log the user out here instead of waiting for the next failed
+	// API call.
+	useEffect(() => {
+		const unsubscribe = onIdTokenChanged(firebaseAuth, (firebaseUser) => {
+			if (!firebaseUser && useAuthStore.getState().token) {
+				clearAuth()
+				router.replace("/login")
+			}
+		})
+		return () => unsubscribe()
+	}, [clearAuth, router])
 
 	useEffect(() => {
 		if (!token) return

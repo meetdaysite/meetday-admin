@@ -28,6 +28,7 @@ export type Permission =
 	| "audit.read"
 	| "community.manage"
 	| "support.view"
+	| "platform.config"
 
 export type InviteStatus = "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED"
 
@@ -195,7 +196,7 @@ export type EventTicket = {
 	updatedAt: string
 }
 
-export type RefundPolicyType = "NO_REFUND" | "PARTIAL_REFUND" | "FULL_REFUND"
+export type RefundPolicyType = "NO_REFUND" | "PARTIAL" | "FULL"
 
 export type EventRefundPolicy = {
 	id: string

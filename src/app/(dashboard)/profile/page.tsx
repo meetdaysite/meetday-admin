@@ -1,13 +1,18 @@
 ﻿"use client"
 
 import PageHeader from "@/components/ui/PageHeader"
+import { Button } from "@/components/ui/Button"
 import { getAdminProfile, type AdminProfile } from "@/lib/api/profile"
 import { ROLE_LABEL, ROLE_STYLE } from "@/lib/constants/roles"
 import { formatDateLong } from "@/lib/formatters"
 import { useAuthStore } from "@/stores/auth.store"
-import { AlertTriangle, Calendar, Mail, Phone, RefreshCw, ShieldCheck, UserX } from "lucide-react"
+import { firebaseAuth } from "@/lib/firebase/config"
+import { sendPasswordResetEmail } from "firebase/auth"
+import { toast } from "sonner"
+import { AlertTriangle, Calendar, KeyRound, Loader2, Mail, Pencil, Phone, RefreshCw, ShieldCheck, UserX } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { EditProfileDrawer } from "@/components/profile/edit-profile-drawer"
 
 // Role badge
 
@@ -79,11 +84,12 @@ export default function ProfilePage() {
 	const [state, setState] = useState<PageState>("loading")
 	const [profile, setProfile] = useState<AdminProfile | null>(null)
 	const [errorMessage, setErrorMessage] = useState<string | null>(null)
+	const [resetting, setResetting] = useState(false)
+	const [editOpen, setEditOpen] = useState(false)
 
 	useEffect(() => {
 		let cancelled = false
 
-		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setState("loading")
 		setProfile(null)
 		setErrorMessage(null)
@@ -118,6 +124,19 @@ export default function ProfilePage() {
 			cancelled = true
 		}
 	}, [clearAuth, router])
+
+	async function handleResetPassword() {
+		if (!profile) return
+		setResetting(true)
+		try {
+			await sendPasswordResetEmail(firebaseAuth, profile.email)
+			toast.success("Password reset link sent to your email.")
+		} catch {
+			toast.error("Failed to send reset link. Please try again.")
+		} finally {
+			setResetting(false)
+		}
+	}
 
 	if (state === "loading") return <ProfileSkeleton />
 
@@ -171,7 +190,40 @@ export default function ProfilePage() {
 	return (
 		<div className="p-6 space-y-6 max-w-2xl mx-auto">
 			{/* Page header */}
-			<PageHeader title="Profile" description="View your admin profile." />
+			<PageHeader
+				title="Profile"
+				description="View your admin profile."
+				buttons={
+					<>
+						<Button
+							variant="primary"
+							size="sm"
+							onClick={() => setEditOpen(true)}
+							leftIcon={<Pencil size={14} />}
+						>
+							Edit profile
+						</Button>
+						<Button
+							variant="secondary"
+							size="sm"
+							disabled={resetting}
+							onClick={handleResetPassword}
+							leftIcon={
+								resetting ? <Loader2 size={14} className="animate-spin" /> : <KeyRound size={14} />
+							}
+						>
+							{resetting ? "Sending…" : "Reset password"}
+						</Button>
+					</>
+				}
+			/>
+
+			<EditProfileDrawer
+				open={editOpen}
+				profile={profile}
+				onClose={() => setEditOpen(false)}
+				onSaved={updated => setProfile(updated)}
+			/>
 
 			{/* Profile card */}
 			<div className="bg-surface-card rounded-xl border border-border-default overflow-hidden">

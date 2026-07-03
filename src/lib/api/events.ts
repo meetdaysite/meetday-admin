@@ -39,7 +39,3 @@ export async function approveEvent(id: string): Promise<void> {
 export async function rejectEvent(id: string, remark: string): Promise<void> {
 	await apiClient.post(`/admin/events/${id}/reject`, { remark })
 }
-
-export async function forceCancelEvent(id: string, reason: string): Promise<void> {
-	await apiClient.post(`/admin/events/${id}/force-cancel`, { reason })
-}

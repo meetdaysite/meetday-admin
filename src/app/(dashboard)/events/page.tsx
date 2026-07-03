@@ -10,7 +10,6 @@ import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import {
 	approveEvent,
-	forceCancelEvent,
 	getEvents,
 	rejectEvent,
 	type GetEventsParams,
@@ -91,12 +90,10 @@ export default function EventsPage() {
 		try {
 			if (action === "approve") await approveEvent(eventId)
 			else if (action === "reject") await rejectEvent(eventId, message!)
-			else if (action === "force_cancel") await forceCancelEvent(eventId, message!)
 
 			const labels: Record<EventAction, string> = {
 				approve: "Event approved",
 				reject: "Event rejected",
-				force_cancel: "Event force-cancelled",
 			}
 			toast.success(labels[action])
 			fetchEvents()

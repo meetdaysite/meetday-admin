@@ -1,5 +1,6 @@
 import axios from "axios"
 import { firebaseAuth } from "@/lib/firebase/config"
+import { useAuthStore } from "@/stores/auth.store"
 
 export const apiClient = axios.create({
 	baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api",
@@ -34,7 +35,18 @@ apiClient.interceptors.response.use(
 		}
 		return response
 	},
-	(error) => Promise.reject(error),
+	(error) => {
+		// A 401 means the token is missing/invalid/expired — most notably this
+		// catches sessions whose refresh token Firebase revoked elsewhere (e.g.
+		// after a password reset on another device). Force a clean logout.
+		if (error.response?.status === 401) {
+			useAuthStore.getState().clearAuth()
+			if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+				window.location.href = "/login"
+			}
+		}
+		return Promise.reject(error)
+	},
 )
 
 export function setAuthToken(token: string | null) {
