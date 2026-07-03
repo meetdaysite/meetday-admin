@@ -90,7 +90,6 @@ export default function ProfilePage() {
 	useEffect(() => {
 		let cancelled = false
 
-		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setState("loading")
 		setProfile(null)
 		setErrorMessage(null)

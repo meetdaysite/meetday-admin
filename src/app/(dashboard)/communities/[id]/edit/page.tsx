@@ -21,7 +21,7 @@ import { CommunityTypeCard, type CommunityTypeOption } from "@/components/commun
 import { ImageUploadZone } from "@/components/communities/create/ui/image-upload-zone"
 import { TagMultiSelect, type TagOption } from "@/components/communities/create/ui/tag-multi-select"
 import { usePermission } from "@/lib/hooks/use-permission"
-import type { Category, CommunityType, CommunityAccess } from "@/types"
+import type { Category, CommunityAccess } from "@/types"
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -471,7 +471,7 @@ export default function EditCommunityPage() {
 							<div>
 								<p className="text-sm font-medium text-text-primary">Auto-add Matching Events</p>
 								<p className="text-xs text-text-tertiary mt-0.5">
-									Automatically attach events that match this community's tags and city.
+									Automatically attach events that match this community&apos;s tags and city.
 								</p>
 							</div>
 							<Controller
