@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -100,12 +101,12 @@ export default function LoginPage() {
 						<label htmlFor="password" className="text-label-sm font-semibold text-text-primary">
 							Password
 						</label>
-						<a
-							href="#"
+						<Link
+							href="/forgot-password"
 							className="text-xs text-text-brand hover:text-action-primary-hover transition-colors"
 						>
 							Forgot password?
-						</a>
+						</Link>
 					</div>
 					<TextField
 						id="password"

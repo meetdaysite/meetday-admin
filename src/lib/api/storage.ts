@@ -52,6 +52,15 @@ export async function uploadCommunityImage(
 	return key
 }
 
+export async function uploadUserAvatar(file: File): Promise<string> {
+	const { uploadUrl, key } = await getPresignedUploadUrl({
+		context: "USER_AVATAR",
+		contentType: file.type as ImageContentType,
+	})
+	await uploadToStorage(uploadUrl, file)
+	return key
+}
+
 export async function uploadAnnouncementCoverImage(
 	communityId: string,
 	file: File,

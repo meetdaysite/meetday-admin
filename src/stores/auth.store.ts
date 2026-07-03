@@ -21,6 +21,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
 		"audit.read",
 		"community.manage",
 		"support.view",
+		"platform.config",
 	],
 	CITY_ADMIN: [
 		"host.invite",

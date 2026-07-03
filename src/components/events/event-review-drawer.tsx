@@ -28,7 +28,7 @@ import type { Event, EventDetail, EventTicket } from "@/types"
 
 //  Types
 
-export type EventAction = "approve" | "reject" | "force_cancel"
+export type EventAction = "approve" | "reject"
 
 export type EventReviewDrawerProps = {
 	open: boolean
@@ -231,7 +231,7 @@ function RefundPolicyBadge({ type }: { type: string }) {
 			</span>
 		)
 	}
-	if (type === "FULL_REFUND") {
+	if (type === "FULL") {
 		return (
 			<span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-3 py-1.5 text-[11px] font-semibold text-green-700 border border-green-200">
 				<RotateCcw size={10} />
@@ -650,7 +650,6 @@ export function EventReviewDrawer({ open, onClose, event, onAction }: EventRevie
 	const [errorMessage, setErrorMessage] = useState<string | null>(null)
 	const [actionLoading, setActionLoading] = useState<EventAction | null>(null)
 	const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
-	const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
 
 	useEffect(() => {
 		if (!open || !event) return
@@ -688,7 +687,6 @@ export function EventReviewDrawer({ open, onClose, event, onAction }: EventRevie
 	function handleClose() {
 		setActionLoading(null)
 		setRejectDialogOpen(false)
-		setCancelDialogOpen(false)
 		setDetail(null)
 		setFetchState("loading")
 		setErrorMessage(null)
@@ -713,16 +711,8 @@ export function EventReviewDrawer({ open, onClose, event, onAction }: EventRevie
 		handleClose()
 	}
 
-	async function handleForceCancelConfirm(reason: string) {
-		if (!event) return
-		await onAction(event.id, "force_cancel", reason)
-		setCancelDialogOpen(false)
-		handleClose()
-	}
-
 	const status = detail?.status ?? event?.status
 	const canReview = status === "UNDER_REVIEW"
-	const canForceCancel = status === "PUBLISHED" || status === "UNDER_REVIEW"
 	const isBusy = actionLoading !== null
 
 	const hostDisplay = event
@@ -750,8 +740,8 @@ export function EventReviewDrawer({ open, onClose, event, onAction }: EventRevie
 
 				{fetchState === "done" && detail && <EventDetailContent detail={detail} />}
 
-				<DrawerFooter className={canReview || canForceCancel ? "justify-between" : "justify-end"}>
-					{canReview && (
+				<DrawerFooter className={canReview ? "justify-between" : "justify-end"}>
+					{canReview ? (
 						<>
 							<button
 								onClick={() => setRejectDialogOpen(true)}
@@ -760,52 +750,18 @@ export function EventReviewDrawer({ open, onClose, event, onAction }: EventRevie
 							>
 								Reject
 							</button>
-							<div className="flex items-center gap-2">
-								{canForceCancel && status === "UNDER_REVIEW" && (
-									<button
-										onClick={() => setCancelDialogOpen(true)}
-										disabled={isBusy || fetchState !== "done"}
-										className="rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-secondary hover:bg-neutral-50 transition-colors disabled:opacity-50"
-									>
-										Force Cancel
-									</button>
-								)}
-								<button
-									onClick={handleApprove}
-									disabled={isBusy || fetchState !== "done"}
-									className="flex items-center gap-1.5 rounded-lg bg-action-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors disabled:opacity-70"
-								>
-									{actionLoading === "approve" && (
-										<Loader2 size={12} className="animate-spin" />
-									)}
-									Approve
-								</button>
-							</div>
-						</>
-					)}
-
-					{!canReview && canForceCancel && (
-						<>
 							<button
-								onClick={handleClose}
-								className="rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors"
-							>
-								Close
-							</button>
-							<button
-								onClick={() => setCancelDialogOpen(true)}
+								onClick={handleApprove}
 								disabled={isBusy || fetchState !== "done"}
-								className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+								className="flex items-center gap-1.5 rounded-lg bg-action-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors disabled:opacity-70"
 							>
-								{actionLoading === "force_cancel" && (
+								{actionLoading === "approve" && (
 									<Loader2 size={12} className="animate-spin" />
 								)}
-								Force Cancel
+								Approve
 							</button>
 						</>
-					)}
-
-					{!canReview && !canForceCancel && (
+					) : (
 						<button
 							onClick={handleClose}
 							className="rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors"
@@ -825,17 +781,6 @@ export function EventReviewDrawer({ open, onClose, event, onAction }: EventRevie
 				confirmClassName="bg-red-600 hover:bg-red-700"
 				onClose={() => setRejectDialogOpen(false)}
 				onConfirm={handleRejectConfirm}
-			/>
-
-			<ReasonDialog
-				open={cancelDialogOpen}
-				title="Force Cancel Event"
-				description="This will immediately cancel the event and cancel all pending orders. The host will be notified. Use only for policy violations, fraud, or safety concerns."
-				placeholder="e.g. Event violates platform safety guidelines."
-				confirmLabel="Force Cancel"
-				confirmClassName="bg-red-600 hover:bg-red-700"
-				onClose={() => setCancelDialogOpen(false)}
-				onConfirm={handleForceCancelConfirm}
 			/>
 		</>
 	)

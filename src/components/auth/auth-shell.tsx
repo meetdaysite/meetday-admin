@@ -14,13 +14,18 @@ export function AuthShell({ children }: AuthShellProps) {
 				<div className="absolute -bottom-20 -right-20 w-[320px] h-80 rounded-full border border-white/10 pointer-events-none" />
 
 				{/* Logo */}
-				<Image src="/brand_logo.svg" alt="Meetday" width={160} height={43} className="brightness-0 invert" />
+				<Image
+					src="/brand_logo.svg"
+					alt="Meetday"
+					width={160}
+					height={43}
+					className="brightness-0 invert"
+				/>
 
 				{/* Tagline */}
 				<div className="space-y-4 relative">
 					<p className="text-white text-[2.6rem] xl:text-[3rem] font-extrabold leading-[1.1]">
-						Managing great events,{" "}
-						<span className="text-white/55">one city at a time.</span>
+						Managing great events, <span className="text-white/55">one city at a time.</span>
 					</p>
 					<p className="text-white/55 text-sm leading-relaxed max-w-75">
 						Internal operations tooling. Restricted to authorized Meetday personnel only.
@@ -29,8 +34,9 @@ export function AuthShell({ children }: AuthShellProps) {
 
 				{/* Footer */}
 				<div className="flex items-center gap-2 relative">
-					<div className="w-1.5 h-1.5 rounded-full bg-white/35" />
-					<span className="text-white/35 text-xs">Meetday Inc. Â© {new Date().getFullYear()}</span>
+					<span className="text-white text-xs">
+						{new Date().getFullYear()} &nbsp; &copy; Meetday Global. All rights reserved.
+					</span>
 				</div>
 			</div>
 
