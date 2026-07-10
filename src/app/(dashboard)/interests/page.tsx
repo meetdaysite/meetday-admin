@@ -1,0 +1,139 @@
+﻿﻿"use client"
+
+import { InterestDrawer } from "@/components/interests/interest-drawer"
+import { Button } from "@/components/ui/Button"
+import { DataView } from "@/components/ui/data-view"
+import PageHeader from "@/components/ui/PageHeader"
+import { PermissionGuard } from "@/components/ui/permission-guard"
+import { SearchInput } from "@/components/ui/search-input"
+import { getInterests } from "@/lib/api/interests"
+import { formatDate } from "@/lib/formatters"
+import { DateCell, ImageCell, TwoLineCell } from "@/components/ui/table-cells"
+import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
+import { usePermission } from "@/lib/hooks/use-permission"
+import type { Interest } from "@/types"
+import { type ColumnDef } from "@tanstack/react-table"
+import { Plus } from "lucide-react"
+import { useCallback, useMemo, useState } from "react"
+import { toast } from "sonner"
+
+// Helpers
+
+// Page
+
+export default function InterestsPage() {
+	const canManage = usePermission("interest.manage")
+
+	const [search, setSearch] = useState("")
+	const [drawerOpen, setDrawerOpen] = useState(false)
+	const [selected, setSelected] = useState<Interest | null>(null)
+
+	const fetcher = useCallback(() => getInterests().then(data => ({ items: data, total: data.length })), [])
+
+	const {
+		items: interests,
+		isLoading,
+		error,
+		refresh: fetchInterests,
+	} = usePaginatedFetch(fetcher, "Failed to load interests")
+
+	const filtered = useMemo(() => {
+		const q = search.toLowerCase()
+		if (!q) return interests
+		return interests.filter(
+			i =>
+				i.name.toLowerCase().includes(q) ||
+				(i.description ?? "").toLowerCase().includes(q) ||
+				i.slug.toLowerCase().includes(q),
+		)
+	}, [interests, search])
+
+	function openCreate() {
+		setSelected(null)
+		setDrawerOpen(true)
+	}
+
+	function openEdit(interest: Interest) {
+		setSelected(interest)
+		setDrawerOpen(true)
+	}
+
+	function handleSaved() {
+		toast.success(selected ? "Interest updated" : "Interest created")
+		setDrawerOpen(false)
+		fetchInterests()
+	}
+
+	const columns = useMemo<ColumnDef<Interest>[]>(
+		() => [
+			{
+				id: "image",
+				header: "Image",
+				cell: ({ row }) => <ImageCell src={row.original.image} alt={row.original.name} />,
+			},
+			{
+				id: "name",
+				header: "Name",
+				cell: ({ row }) => <TwoLineCell primary={row.original.name} secondary={row.original.slug} />,
+			},
+			{
+				id: "description",
+				header: "Description",
+				cell: ({ row }) => (
+					<p className="text-xs text-text-tertiary max-w-xs line-clamp-3">
+						{row.original.description ?? <span className="italic">-</span>}
+					</p>
+				),
+			},
+			{
+				id: "createdAt",
+				header: "Created",
+				cell: ({ row }) => <DateCell value={row.original.createdAt} format={formatDate} secondary />,
+			},
+		],
+		[],
+	)
+
+	if (!canManage) return <PermissionGuard message="You don't have permission to view interests." />
+
+	return (
+		<div className="p-6 space-y-5 max-w-7xl mx-auto">
+			{/* Header */}
+			<PageHeader
+				title="Interests"
+				description="Manage the interests for your users."
+				buttons={
+					canManage && (
+						<Button leftIcon={<Plus size={13} />} onClick={openCreate}>
+							Add Interest
+						</Button>
+					)
+				}
+			/>
+
+			{/* Search */}
+			<SearchInput
+				value={search}
+				onChange={setSearch}
+				placeholder="Search interests…"
+				className="max-w-xs"
+			/>
+
+			<DataView
+				error={error}
+				isLoading={isLoading}
+				columns={columns}
+				data={filtered}
+				emptyMessage="No interests found."
+				onRowClick={openEdit}
+			/>
+
+			<InterestDrawer
+				open={drawerOpen}
+				onClose={() => setDrawerOpen(false)}
+				onSaved={handleSaved}
+				interest={selected}
+			/>
+		</div>
+	)
+}

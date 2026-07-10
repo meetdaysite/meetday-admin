@@ -1,0 +1,299 @@
+﻿"use client"
+
+import PageHeader from "@/components/ui/PageHeader"
+import { Button } from "@/components/ui/Button"
+import { getAdminProfile, type AdminProfile } from "@/lib/api/profile"
+import { ROLE_LABEL, ROLE_STYLE } from "@/lib/constants/roles"
+import { formatDateLong } from "@/lib/formatters"
+import { useAuthStore } from "@/stores/auth.store"
+import { firebaseAuth } from "@/lib/firebase/config"
+import { sendPasswordResetEmail } from "firebase/auth"
+import { toast } from "sonner"
+import { AlertTriangle, Calendar, KeyRound, Loader2, Mail, Pencil, Phone, RefreshCw, ShieldCheck, UserX } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { EditProfileDrawer } from "@/components/profile/edit-profile-drawer"
+
+// Role badge
+
+// Helpers
+
+function getInitials(firstName: string, lastName: string): string {
+	return `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase()
+}
+
+// Skeleton
+
+function ProfileSkeleton() {
+	return (
+		<div className="p-6 space-y-6 max-w-2xl mx-auto animate-pulse">
+			<div className="h-5 w-32 bg-neutral-200 rounded" />
+			<div className="bg-surface-canvas rounded-xl border border-border-default p-6 space-y-6">
+				<div className="flex items-center gap-4">
+					<div className="w-16 h-16 rounded-full bg-neutral-200 shrink-0" />
+					<div className="space-y-2">
+						<div className="h-4 w-40 bg-neutral-200 rounded" />
+						<div className="h-3 w-24 bg-neutral-100 rounded" />
+					</div>
+				</div>
+				<div className="divide-y divide-neutral-100">
+					{Array.from({ length: 5 }).map((_, i) => (
+						<div key={i} className="py-3 flex items-center gap-3">
+							<div className="w-4 h-4 bg-neutral-200 rounded shrink-0" />
+							<div className="h-3 w-48 bg-neutral-100 rounded" />
+						</div>
+					))}
+				</div>
+			</div>
+		</div>
+	)
+}
+
+// Info row
+
+function InfoRow({
+	icon: Icon,
+	label,
+	value,
+}: {
+	icon: React.ElementType
+	label: string
+	value: React.ReactNode
+}) {
+	return (
+		<div className="py-3 flex items-start gap-3">
+			<Icon size={14} className="mt-0.5 shrink-0 text-text-tertiary" />
+			<div className="min-w-0 flex-1">
+				<p className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary mb-0.5">
+					{label}
+				</p>
+				<div className="text-xs text-text-primary">{value}</div>
+			</div>
+		</div>
+	)
+}
+
+// Page
+
+type PageState = "loading" | "done" | "error" | "access-denied" | "not-found"
+
+export default function ProfilePage() {
+	const router = useRouter()
+	const clearAuth = useAuthStore(s => s.clearAuth)
+
+	const [state, setState] = useState<PageState>("loading")
+	const [profile, setProfile] = useState<AdminProfile | null>(null)
+	const [errorMessage, setErrorMessage] = useState<string | null>(null)
+	const [resetting, setResetting] = useState(false)
+	const [editOpen, setEditOpen] = useState(false)
+
+	useEffect(() => {
+		let cancelled = false
+
+		setState("loading")
+		setProfile(null)
+		setErrorMessage(null)
+
+		getAdminProfile()
+			.then(data => {
+				if (cancelled) return
+				setProfile(data)
+				setState("done")
+			})
+			.catch((err: unknown) => {
+				if (cancelled) return
+				const status = (err as { response?: { status?: number } })?.response?.status
+				if (status === 401) {
+					clearAuth()
+					router.replace("/login")
+					return
+				}
+				if (status === 403) {
+					setState("access-denied")
+					return
+				}
+				if (status === 404) {
+					setState("not-found")
+					return
+				}
+				setErrorMessage("Something went wrong. Please try again.")
+				setState("error")
+			})
+
+		return () => {
+			cancelled = true
+		}
+	}, [clearAuth, router])
+
+	async function handleResetPassword() {
+		if (!profile) return
+		setResetting(true)
+		try {
+			await sendPasswordResetEmail(firebaseAuth, profile.email)
+			toast.success("Password reset link sent to your email.")
+		} catch {
+			toast.error("Failed to send reset link. Please try again.")
+		} finally {
+			setResetting(false)
+		}
+	}
+
+	if (state === "loading") return <ProfileSkeleton />
+
+	if (state === "access-denied") {
+		return (
+			<div className="p-6 max-w-2xl mx-auto">
+				<div className="flex flex-col items-center justify-center py-20 text-center">
+					<ShieldCheck size={32} className="mb-3 text-neutral-300" />
+					<p className="text-sm font-semibold text-text-primary">Access Denied</p>
+					<p className="mt-1 text-xs text-text-tertiary">
+						You don&apos;t have permission to view this profile.
+					</p>
+				</div>
+			</div>
+		)
+	}
+
+	if (state === "not-found") {
+		return (
+			<div className="p-6 max-w-2xl mx-auto">
+				<div className="flex flex-col items-center justify-center py-20 text-center">
+					<UserX size={32} className="mb-3 text-neutral-300" />
+					<p className="text-sm font-semibold text-text-primary">Profile Not Found</p>
+					<p className="mt-1 text-xs text-text-tertiary">
+						Your admin profile could not be located.
+					</p>
+				</div>
+			</div>
+		)
+	}
+
+	if (state === "error") {
+		return (
+			<div className="p-6 max-w-2xl mx-auto">
+				<div className="flex flex-col items-center justify-center py-20 text-center">
+					<AlertTriangle size={32} className="mb-3 text-neutral-300" />
+					<p className="text-sm font-semibold text-text-primary">Something went wrong</p>
+					<p className="mt-1 text-xs text-text-tertiary">
+						{errorMessage ?? "Unable to load your profile."}
+					</p>
+				</div>
+			</div>
+		)
+	}
+
+	if (!profile) return null
+
+	const initials = getInitials(profile.firstName, profile.lastName)
+	const roleName = profile.role.name
+
+	return (
+		<div className="p-6 space-y-6 max-w-2xl mx-auto">
+			{/* Page header */}
+			<PageHeader
+				title="Profile"
+				description="View your admin profile."
+				buttons={
+					<>
+						<Button
+							variant="primary"
+							size="sm"
+							onClick={() => setEditOpen(true)}
+							leftIcon={<Pencil size={14} />}
+						>
+							Edit profile
+						</Button>
+						<Button
+							variant="secondary"
+							size="sm"
+							disabled={resetting}
+							onClick={handleResetPassword}
+							leftIcon={
+								resetting ? <Loader2 size={14} className="animate-spin" /> : <KeyRound size={14} />
+							}
+						>
+							{resetting ? "Sending…" : "Reset password"}
+						</Button>
+					</>
+				}
+			/>
+
+			<EditProfileDrawer
+				open={editOpen}
+				profile={profile}
+				onClose={() => setEditOpen(false)}
+				onSaved={updated => setProfile(updated)}
+			/>
+
+			{/* Profile card */}
+			<div className="bg-surface-card rounded-xl border border-border-default overflow-hidden">
+				{/* Avatar + name */}
+				<div className="p-6 flex items-center gap-4 border-b border-border-subtle">
+					{profile.avatarUrl ? (
+						// eslint-disable-next-line @next/next/no-img-element
+						<img
+							src={profile.avatarUrl}
+							alt={`${profile.firstName} ${profile.lastName}`}
+							className="w-16 h-16 rounded-full object-cover shrink-0 border border-border-default"
+						/>
+					) : (
+						<div className="w-16 h-16 rounded-full bg-action-primary text-white text-lg font-bold flex items-center justify-center shrink-0 select-none">
+							{initials}
+						</div>
+					)}
+
+					<div className="min-w-0">
+						<p className="text-sm font-semibold text-text-primary leading-none">
+							{profile.firstName} {profile.lastName}
+						</p>
+						<div className="mt-1.5 flex items-center gap-2 flex-wrap">
+							<span
+								className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${ROLE_STYLE[roleName]}`}
+							>
+								{ROLE_LABEL[roleName]}
+							</span>
+							<span
+								className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+									profile.isActive
+										? "bg-green-50 text-green-700"
+										: "bg-neutral-100 text-neutral-500"
+								}`}
+							>
+								{profile.isActive ? "Active" : "Inactive"}
+							</span>
+						</div>
+					</div>
+				</div>
+
+				{/* Info rows */}
+				<div className="px-6 divide-y divide-border-subtle">
+					<InfoRow
+						icon={Mail}
+						label="Email"
+						value={<span className="font-medium">{profile.email}</span>}
+					/>
+
+					<InfoRow
+						icon={Phone}
+						label="Phone"
+						value={
+							profile.phone ? (
+								<span className="font-medium">{profile.phone}</span>
+							) : (
+								<span className="text-text-tertiary italic">Not provided</span>
+							)
+						}
+					/>
+
+					<InfoRow icon={Calendar} label="Member since" value={formatDateLong(profile.createdAt)} />
+
+					<InfoRow
+						icon={RefreshCw}
+						label="Last updated"
+						value={formatDateLong(profile.updatedAt)}
+					/>
+				</div>
+			</div>
+		</div>
+	)
+}
