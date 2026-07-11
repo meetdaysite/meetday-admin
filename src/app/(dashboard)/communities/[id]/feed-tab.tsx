@@ -162,6 +162,8 @@ function PostCard({
 						<img
 							src={post.authorAvatarUrl}
 							alt={post.authorName}
+							loading="lazy"
+							decoding="async"
 							className="h-9 w-9 shrink-0 rounded-full object-cover"
 						/>
 					) : (
@@ -196,6 +198,8 @@ function PostCard({
 					<img
 						src={post.mediaThumbnail}
 						alt=""
+						loading="lazy"
+						decoding="async"
 						className="h-16 w-24 shrink-0 rounded-lg object-cover"
 					/>
 				)}
@@ -804,6 +808,8 @@ export function FeedTab({ communityId }: { communityId: string }) {
 											<img
 												src={report.reporterAvatarUrl}
 												alt={report.reporterName}
+												loading="lazy"
+												decoding="async"
 												className="h-7 w-7 shrink-0 rounded-full object-cover"
 											/>
 										) : (

@@ -152,6 +152,8 @@ export function ManagersTab({
 											<img
 												src={m.avatarUrl}
 												alt={m.name}
+												loading="lazy"
+												decoding="async"
 												className="h-8 w-8 shrink-0 rounded-full object-cover"
 											/>
 										) : (

@@ -205,6 +205,8 @@ export default function CommunitiesPage() {
 								<img
 									src={c.iconUrl}
 									alt={c.name}
+									loading="lazy"
+									decoding="async"
 									className="h-9 w-9 shrink-0 rounded-lg object-cover"
 								/>
 							) : (
