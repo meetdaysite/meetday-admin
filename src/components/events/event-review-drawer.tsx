@@ -499,7 +499,7 @@ function EventDetailContent({ detail }: { detail: EventDetail }) {
 									className="rounded-lg overflow-hidden border border-border-subtle aspect-square bg-neutral-50"
 								>
 									{/* eslint-disable-next-line @next/next/no-img-element */}
-									<img src={m.url} alt="" className="w-full h-full object-cover" />
+									<img src={m.url} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
 								</div>
 							))}
 							{galleryImages.length > 6 && (

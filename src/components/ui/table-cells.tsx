@@ -98,6 +98,8 @@ export function ImageCell({ src, alt }: { src: string | null | undefined; alt?: 
 		<img
 			src={src}
 			alt={alt ?? ""}
+			loading="lazy"
+			decoding="async"
 			className="h-12 w-12 rounded-md object-cover bg-neutral-100"
 			onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none" }}
 		/>

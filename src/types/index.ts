@@ -407,6 +407,7 @@ export type Community = {
 	createdAt: string
 	publishedAt: string | null
 	category: { id: string; name: string } | null
+	iconUrl: string | null
 }
 
 export type CommunityQueueItem = {

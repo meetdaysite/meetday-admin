@@ -100,7 +100,7 @@ function AnnouncementRow({
 		<div className="flex items-start gap-4 rounded-xl border border-border-default bg-surface-card p-4">
 			{item.imageUrl ? (
 				// eslint-disable-next-line @next/next/no-img-element
-				<img src={item.imageUrl} alt="" className="h-24 w-20 shrink-0 rounded-lg object-cover" />
+				<img src={item.imageUrl} alt="" loading="lazy" decoding="async" className="h-24 w-20 shrink-0 rounded-lg object-cover" />
 			) : (
 				<div className="h-24 w-20 shrink-0 rounded-lg" style={{ background: item.imageGradient }} />
 			)}

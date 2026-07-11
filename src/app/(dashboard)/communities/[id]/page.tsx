@@ -478,6 +478,8 @@ export default function CommunityDetailPage() {
 													<img
 														src={exp.coverUrl}
 														alt={exp.title}
+														loading="lazy"
+														decoding="async"
 														className="absolute inset-0 w-full h-full object-cover"
 													/>
 												) : (

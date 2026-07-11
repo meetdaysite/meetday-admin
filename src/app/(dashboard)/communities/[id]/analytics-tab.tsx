@@ -643,7 +643,7 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 								</span>
 								{c.avatarUrl ? (
 									// eslint-disable-next-line @next/next/no-img-element
-									<img src={c.avatarUrl} alt={c.name} className="h-7 w-7 shrink-0 rounded-full object-cover" />
+									<img src={c.avatarUrl} alt={c.name} loading="lazy" decoding="async" className="h-7 w-7 shrink-0 rounded-full object-cover" />
 								) : (
 									<div
 										className="h-7 w-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
@@ -680,7 +680,7 @@ export function AnalyticsTab({ communityId }: { communityId: string }) {
 							<div key={h.id} className="flex items-center gap-2.5">
 								{h.avatarUrl ? (
 									// eslint-disable-next-line @next/next/no-img-element
-									<img src={h.avatarUrl} alt={h.name} className="h-9 w-9 shrink-0 rounded-xl object-cover" />
+									<img src={h.avatarUrl} alt={h.name} loading="lazy" decoding="async" className="h-9 w-9 shrink-0 rounded-xl object-cover" />
 								) : (
 									<div
 										className="h-9 w-9 shrink-0 rounded-xl flex items-center justify-center text-xs font-bold text-white"
