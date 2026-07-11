@@ -50,10 +50,14 @@ const PAGE_SIZE = 10
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function trimTrailingZeros(n: number): string {
+	return n.toFixed(2).replace(/\.?0+$/, "")
+}
+
 function fmtRevenue(n: number): string {
 	if (n === 0) return "₹0"
-	if (n >= 100_000) return `₹${(n / 100_000).toFixed(1)}L`
-	if (n >= 1_000)   return `₹${(n / 1_000).toFixed(0)}K`
+	if (n >= 100_000) return `₹${trimTrailingZeros(n / 100_000)}L`
+	if (n >= 1_000)   return `₹${trimTrailingZeros(n / 1_000)}K`
 	return `₹${n.toLocaleString("en-IN")}`
 }
 
