@@ -52,6 +52,16 @@ export async function uploadCommunityImage(
 	return key
 }
 
+export async function uploadInterestImage(file: File, interestId: string): Promise<string> {
+	const { uploadUrl, key } = await getPresignedUploadUrl({
+		context: "INTEREST_IMAGE",
+		contentType: file.type as ImageContentType,
+		resourceId: interestId,
+	})
+	await uploadToStorage(uploadUrl, file)
+	return key
+}
+
 export async function uploadUserAvatar(file: File): Promise<string> {
 	const { uploadUrl, key } = await getPresignedUploadUrl({
 		context: "USER_AVATAR",

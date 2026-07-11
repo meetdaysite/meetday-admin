@@ -3,7 +3,6 @@
 import { useCallback, useRef, useState } from "react"
 import { ImageIcon, Upload, X, Pencil, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { uploadCommunityImage } from "@/lib/api/storage"
 import { toast } from "sonner"
 
 interface ImageUploadZoneProps {
@@ -11,12 +10,13 @@ interface ImageUploadZoneProps {
 	previewUrl: string | null
 	onChange: (key: string, previewUrl: string) => void
 	onClear: () => void
-	mediaType: "COVER" | "ICON"
+	onUpload: (file: File) => Promise<string>
 	label: string
 	hint: string
 	aspectClass?: string
 	shape?: "rect" | "circle"
 	required?: boolean
+	uploadLabel?: string
 }
 
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp"]
@@ -26,12 +26,13 @@ export function ImageUploadZone({
 	previewUrl,
 	onChange,
 	onClear,
-	mediaType,
+	onUpload,
 	label,
 	hint,
 	aspectClass = "aspect-video",
 	shape = "rect",
 	required,
+	uploadLabel,
 }: ImageUploadZoneProps) {
 	const inputRef = useRef<HTMLInputElement>(null)
 	const [uploading, setUploading] = useState(false)
@@ -50,7 +51,7 @@ export function ImageUploadZone({
 			const localUrl = URL.createObjectURL(file)
 			setUploading(true)
 			try {
-				const key = await uploadCommunityImage(file, mediaType)
+				const key = await onUpload(file)
 				onChange(key, localUrl)
 			} catch {
 				URL.revokeObjectURL(localUrl)
@@ -59,7 +60,7 @@ export function ImageUploadZone({
 				setUploading(false)
 			}
 		},
-		[mediaType, onChange],
+		[onUpload, onChange],
 	)
 
 	const onDrop = useCallback(
@@ -161,7 +162,7 @@ export function ImageUploadZone({
 								</div>
 								<div className="text-center">
 									<p className="text-label-sm text-text-secondary">
-										{shape === "circle" ? "Upload icon" : "Upload cover image"}
+										{uploadLabel ?? (shape === "circle" ? "Upload icon" : "Upload cover image")}
 									</p>
 									<p className="text-caption text-text-secondary mt-0.5">{hint}</p>
 								</div>
@@ -178,8 +179,6 @@ export function ImageUploadZone({
 				className="hidden"
 				onChange={onInputChange}
 			/>
-
-			{value && !uploading && <p className="text-caption text-text-tertiary truncate">Key: {value}</p>}
 		</div>
 	)
 }
