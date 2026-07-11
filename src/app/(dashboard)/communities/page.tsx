@@ -200,9 +200,18 @@ export default function CommunitiesPage() {
 					const c = row.original
 					return (
 						<div className="flex items-center gap-3 min-w-0">
-							<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-brand-soft text-xs font-bold text-text-brand">
-								{c.name.charAt(0)}
-							</div>
+							{c.iconUrl ? (
+								// eslint-disable-next-line @next/next/no-img-element
+								<img
+									src={c.iconUrl}
+									alt={c.name}
+									className="h-9 w-9 shrink-0 rounded-lg object-cover"
+								/>
+							) : (
+								<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-brand-soft text-xs font-bold text-text-brand">
+									{c.name.charAt(0)}
+								</div>
+							)}
 							<div className="min-w-0">
 								<p className="text-xs font-semibold text-text-primary leading-none truncate">
 									{c.name}
