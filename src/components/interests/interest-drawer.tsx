@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Check, Loader2 } from "lucide-react"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ImageUploadZone } from "@/components/communities/create/ui/image-upload-zone"
 import {
 	getInterestById,
 	createInterest,
@@ -11,6 +12,7 @@ import {
 	replaceInterestCategories,
 } from "@/lib/api/interests"
 import { getCategories } from "@/lib/api/categories"
+import { uploadInterestImage } from "@/lib/api/storage"
 import type { Category, Interest } from "@/types"
 
 //  Types
@@ -30,7 +32,9 @@ export function InterestDrawer({ open, onClose, onSaved, interest }: InterestDra
 
 	const [name, setName]               = useState("")
 	const [description, setDescription] = useState("")
-	const [image, setImage]             = useState("")
+	// imageKey: undefined = unchanged (don't resend the signed preview URL), "" = explicitly cleared, else = newly uploaded storage key
+	const [imageKey, setImageKey]       = useState<string | undefined>(undefined)
+	const [imagePreview, setImagePreview] = useState<string | null>(null)
 
 	// category multi-select state
 	const [allCategories, setAllCategories]       = useState<Category[]>([])
@@ -46,7 +50,8 @@ export function InterestDrawer({ open, onClose, onSaved, interest }: InterestDra
 
 		setName(interest?.name ?? "")
 		setDescription(interest?.description ?? "")
-		setImage(interest?.image ?? "")
+		setImageKey(undefined)
+		setImagePreview(interest?.image ?? null)
 		setError(null)
 
 		if (isEdit && interest) {
@@ -54,10 +59,11 @@ export function InterestDrawer({ open, onClose, onSaved, interest }: InterestDra
 			Promise.all([getInterestById(interest.id), getCategories()])
 				.then(([detail, cats]) => {
 					setAllCategories(cats)
-					setSelectedCategoryIds(new Set(detail.categories.map((c) => c.categoryId)))
+					setSelectedCategoryIds(new Set(detail.categoryMappings.map((c) => c.categoryId)))
 				})
-				.catch(() => {
+				.catch((err) => {
 					// non-fatal: category list degrades gracefully
+					console.error("Failed to load interest categories", err)
 				})
 				.finally(() => setLoadingDetail(false))
 		} else {
@@ -93,7 +99,7 @@ export function InterestDrawer({ open, onClose, onSaved, interest }: InterestDra
 				saved = await updateInterest(interest.id, {
 					name: name.trim(),
 					description: description.trim() || undefined,
-					image: image.trim() || undefined,
+					image: imageKey,
 				})
 				// replace category mappings
 				await replaceInterestCategories(interest.id, Array.from(selectedCategoryIds))
@@ -101,7 +107,6 @@ export function InterestDrawer({ open, onClose, onSaved, interest }: InterestDra
 				saved = await createInterest({
 					name: name.trim(),
 					description: description.trim() || undefined,
-					image: image.trim() || undefined,
 				})
 			}
 			onSaved(saved)
@@ -162,20 +167,30 @@ export function InterestDrawer({ open, onClose, onSaved, interest }: InterestDra
 					/>
 				</div>
 
-				{/* Image path */}
-				<div>
-					<label className="block text-xs font-semibold text-text-secondary mb-1.5">
-						Image path <span className="text-text-tertiary font-normal">(optional)</span>
-					</label>
-					<input
-						type="text"
-						value={image}
-						onChange={(e) => setImage(e.target.value)}
-						placeholder="e.g. interests/founders-huddle.jpg"
-						disabled={isLoading}
-						className="w-full rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-sm font-mono placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors disabled:opacity-50"
+				{/* Image */}
+				{isEdit ? (
+					<ImageUploadZone
+						value={imageKey ?? null}
+						previewUrl={imagePreview}
+						onChange={(key, url) => {
+							setImageKey(key)
+							setImagePreview(url)
+						}}
+						onClear={() => {
+							setImageKey("")
+							setImagePreview(null)
+						}}
+						onUpload={(file) => uploadInterestImage(file, interest!.id)}
+						label="Image (optional)"
+						hint="JPEG, PNG, or WebP"
+						aspectClass="aspect-video"
+						shape="rect"
 					/>
-				</div>
+				) : (
+					<p className="text-xs text-text-tertiary">
+						Image upload is available after the interest is created.
+					</p>
+				)}
 
 				{/* Category mappings â€” edit mode only */}
 				{isEdit && (
