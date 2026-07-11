@@ -378,7 +378,7 @@ export type InterestCategory = {
 }
 
 export type InterestDetail = Interest & {
-	categories: InterestCategory[]
+	categoryMappings: InterestCategory[]
 }
 
 // ─── Communities ─────────────────────────────────────────────────────────────

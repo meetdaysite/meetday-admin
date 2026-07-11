@@ -11,6 +11,7 @@ import { TextField } from "@/components/ui/TextField"
 import { Button } from "@/components/ui/Button"
 import { getCategories } from "@/lib/api/categories"
 import { getInterests } from "@/lib/api/interests"
+import { uploadCommunityImage } from "@/lib/api/storage"
 import { createCommunityDraft, updateCommunityDraft } from "@/lib/api/communities"
 import { useCreateCommunityStore } from "@/stores/create-community.store"
 import { CommunityTypeCard, type CommunityTypeOption } from "../ui/community-type-card"
@@ -411,7 +412,7 @@ export function Step1BasicDetails() {
 									setCoverPreview(null)
 									store.updatePreview({ coverImageUrl: null })
 								}}
-								mediaType="COVER"
+								onUpload={(file) => uploadCommunityImage(file, "COVER")}
 								label="Upload Cover Image"
 								hint="Recommended: 1920×720 px"
 								aspectClass="aspect-video"
@@ -441,7 +442,7 @@ export function Step1BasicDetails() {
 									setIconPreview(null)
 									store.updatePreview({ iconUrl: null })
 								}}
-								mediaType="ICON"
+								onUpload={(file) => uploadCommunityImage(file, "ICON")}
 								label="Upload Community Icon"
 								hint="Recommended: 512×512 px"
 								aspectClass="aspect-square"
