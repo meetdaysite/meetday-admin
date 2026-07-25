@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useEffect, useState } from "react"
+import * as Dialog from "@radix-ui/react-dialog"
 import { useRouter } from "next/navigation"
 import {
 	Loader2,
@@ -591,53 +592,55 @@ function ReasonDialog({
 		onClose()
 	}
 
-	if (!open) return null
-
 	return (
-		<div className="fixed inset-0 z-60 flex items-center justify-center p-4">
-			<div className="absolute inset-0 bg-black/40" onClick={handleClose} />
-			<div className="relative w-full max-w-sm rounded-xl bg-surface-canvas p-6 shadow-xl">
-				<p className="text-sm font-semibold text-text-primary">{title}</p>
-				<p className="mt-1.5 text-xs text-text-secondary leading-relaxed">{description}</p>
-				<form onSubmit={handleSubmit} className="mt-4 space-y-4">
-					<div>
-						<label className="block text-[11px] font-semibold text-text-secondary mb-1.5">
-							Reason{" "}
-							<span className="text-red-500" aria-hidden>
-								*
-							</span>
-						</label>
-						<textarea
-							value={reason}
-							onChange={e => setReason(e.target.value)}
-							placeholder={placeholder}
-							rows={4}
-							disabled={isLoading}
-							autoFocus
-							className="w-full rounded-lg border border-border-default bg-surface-canvas px-3 py-2.5 text-xs text-text-primary placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors resize-none disabled:opacity-50"
-						/>
-					</div>
-					<div className="flex items-center justify-end gap-3">
-						<button
-							type="button"
-							onClick={handleClose}
-							disabled={isLoading}
-							className="rounded-lg border border-border-default px-4 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors disabled:opacity-50"
-						>
-							Cancel
-						</button>
-						<button
-							type="submit"
-							disabled={isLoading || !reason.trim()}
-							className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${confirmClassName}`}
-						>
-							{isLoading && <Loader2 size={13} className="animate-spin" />}
-							{confirmLabel}
-						</button>
-					</div>
-				</form>
-			</div>
-		</div>
+		<Dialog.Root open={open} onOpenChange={v => !v && handleClose()}>
+			<Dialog.Portal>
+				<Dialog.Overlay className="fixed inset-0 z-60 bg-black/40" />
+				<Dialog.Content className="fixed left-1/2 top-1/2 z-60 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl bg-surface-canvas p-6 shadow-xl focus:outline-none">
+					<Dialog.Title className="text-sm font-semibold text-text-primary">{title}</Dialog.Title>
+					<Dialog.Description className="mt-1.5 text-xs text-text-secondary leading-relaxed">
+						{description}
+					</Dialog.Description>
+					<form onSubmit={handleSubmit} className="mt-4 space-y-4">
+						<div>
+							<label className="block text-[11px] font-semibold text-text-secondary mb-1.5">
+								Reason{" "}
+								<span className="text-red-500" aria-hidden>
+									*
+								</span>
+							</label>
+							<textarea
+								value={reason}
+								onChange={e => setReason(e.target.value)}
+								placeholder={placeholder}
+								rows={4}
+								disabled={isLoading}
+								autoFocus
+								className="w-full rounded-lg border border-border-default bg-surface-canvas px-3 py-2.5 text-xs text-text-primary placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors resize-none disabled:opacity-50"
+							/>
+						</div>
+						<div className="flex items-center justify-end gap-3">
+							<button
+								type="button"
+								onClick={handleClose}
+								disabled={isLoading}
+								className="rounded-lg border border-border-default px-4 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors disabled:opacity-50"
+							>
+								Cancel
+							</button>
+							<button
+								type="submit"
+								disabled={isLoading || !reason.trim()}
+								className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${confirmClassName}`}
+							>
+								{isLoading && <Loader2 size={13} className="animate-spin" />}
+								{confirmLabel}
+							</button>
+						</div>
+					</form>
+				</Dialog.Content>
+			</Dialog.Portal>
+		</Dialog.Root>
 	)
 }
 
