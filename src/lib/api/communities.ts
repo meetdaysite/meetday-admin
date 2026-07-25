@@ -1727,11 +1727,14 @@ const ENGAGEMENT_CONFIG: { key: keyof ApiAnalyticsData["engagement"]; label: str
 	{ key: "announcementReach", label: "Announcement Reach", color: "#06b6d4" },
 ]
 
-function formatRevenue(paise: number): string {
-	const rs = paise / 100
-	if (rs >= 10_000_000) return `₹${(rs / 10_000_000).toFixed(1)}Cr`
-	if (rs >= 100_000) return `₹${(rs / 100_000).toFixed(1)}L`
-	if (rs >= 1_000) return `₹${(rs / 1_000).toFixed(0)}K`
+function trimTrailingZeros(n: number): string {
+	return n.toFixed(2).replace(/\.?0+$/, "")
+}
+
+function formatRevenue(rs: number): string {
+	if (rs >= 10_000_000) return `₹${trimTrailingZeros(rs / 10_000_000)}Cr`
+	if (rs >= 100_000) return `₹${trimTrailingZeros(rs / 100_000)}L`
+	if (rs >= 1_000) return `₹${trimTrailingZeros(rs / 1_000)}K`
 	return `₹${rs}`
 }
 

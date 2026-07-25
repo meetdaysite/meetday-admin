@@ -12,6 +12,7 @@ import { TextField } from "@/components/ui/TextField"
 import { Button } from "@/components/ui/Button"
 import { getCategories } from "@/lib/api/categories"
 import { getInterests } from "@/lib/api/interests"
+import { uploadCommunityImage } from "@/lib/api/storage"
 import {
 	getCommunityById,
 	updateCommunity,
@@ -517,7 +518,7 @@ export default function EditCommunityPage() {
 												field.onChange("")
 												setCoverPreview(null)
 											}}
-											mediaType="COVER"
+											onUpload={(file) => uploadCommunityImage(file, "COVER")}
 											label="Cover Image"
 											hint="Recommended: 1920×720 px"
 											aspectClass="aspect-video"
@@ -544,7 +545,7 @@ export default function EditCommunityPage() {
 												field.onChange("")
 												setIconPreview(null)
 											}}
-											mediaType="ICON"
+											onUpload={(file) => uploadCommunityImage(file, "ICON")}
 											label="Community Icon"
 											hint="Recommended: 512×512 px"
 											aspectClass="aspect-square"
