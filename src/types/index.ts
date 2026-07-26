@@ -18,6 +18,7 @@ export type Permission =
 	| "host.invite"
 	| "host.approve"
 	| "event.approve"
+	| "event.revision.review"
 	| "coupon.create"
 	| "coupon.view"
 	| "moderation.read"
@@ -114,7 +115,7 @@ export type HostDetail = {
 	payoutAccount: PayoutAccount | null
 }
 
-export type EventStatus = "DRAFT" | "UNDER_REVIEW" | "PUBLISHED" | "CANCELLED"
+export type EventStatus = "DRAFT" | "UNDER_REVIEW" | "PUBLISHED" | "CANCELLED" | "COMPLETED"
 
 export type CouponStatus = "ACTIVE" | "EXPIRED" | "DISABLED"
 
@@ -248,6 +249,82 @@ export type EventDetail = Omit<Event, "status" | "updatedAt"> & {
 	media: EventMediaItem[]
 	tickets: EventTicket[]
 	refundPolicy: EventRefundPolicy | null
+}
+
+// ─── Event revisions (edits to published events) ──────────────────────────────
+
+export type RevisionStatus = "PENDING" | "APPROVED" | "REJECTED"
+
+export type RevisionListItem = {
+	id: string
+	eventId: string
+	touchesVenue: boolean
+	submittedBy: string
+	createdAt: string
+	updatedAt: string
+	event: {
+		id: string
+		title: string
+		city: string
+		status: EventStatus
+		eventDate: string
+		hostProfile: EventHostProfile
+	}
+}
+
+export type RevisionsListResponse = {
+	revisions: RevisionListItem[]
+	total: number
+	page: number
+	limit: number
+}
+
+// Fields the revision endpoint accepts — a subset of EventDetail's editable fields.
+export type RevisionFieldSet = Partial<{
+	categoryId: string
+	title: string
+	description: string
+	eventType: string
+	languages: string[]
+	tags: string[]
+	whatToExpect: string[]
+	whoShouldAttend: string[]
+	specialInstructions: string
+	venueName: string
+	fullAddress: string
+	city: string
+}>
+
+// `current` always includes the full touched tier (all Tier-2 venue fields when
+// touchesVenue) plus media — decimal fields come back as strings from the DB.
+export type RevisionCurrent = RevisionFieldSet & {
+	latitude?: string
+	longitude?: string
+	media?: EventMediaItem[]
+}
+
+// `proposed` includes only the fields present in the pending revision, as
+// originally submitted — numeric fields stay numbers, media only if touched.
+export type RevisionProposed = RevisionFieldSet & {
+	latitude?: number
+	longitude?: number
+	media?: { key: string; type: "COVER" | "GALLERY"; order: number; url: string }[]
+}
+
+export type RevisionReviewDetail = {
+	eventId: string
+	status: EventStatus
+	touchesVenue: boolean
+	hostProfile: EventHostProfile
+	current: RevisionCurrent
+	proposed: RevisionProposed
+	revision: {
+		id: string
+		status: RevisionStatus
+		submittedBy: string
+		createdAt: string
+		updatedAt: string
+	}
 }
 
 export type BulkHostRow = {

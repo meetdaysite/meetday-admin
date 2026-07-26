@@ -6,7 +6,7 @@ import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { approveHost, getHosts, rejectHost } from "@/lib/api/hosts"
-import { formatDate } from "@/lib/formatters"
+import { formatDate, getDaysSince } from "@/lib/formatters"
 import { AgeDateCell, ChipCell, StatusCell, TwoLineCell } from "@/components/ui/table-cells"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { Host } from "@/types"
@@ -16,10 +16,6 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
 // Helpers
-
-function getDaysSince(iso: string): number {
-	return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24))
-}
 
 function getRowTint(host: Host): string {
 	if (!host.createdAt) return ""

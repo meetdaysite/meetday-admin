@@ -4,6 +4,8 @@ export type NotificationType =
 	| "event_under_review"
 	| "event_review_requested"
 	| "event_cancelled"
+	| "event_revision_pending"
+	| "event_revision_pending_venue"
 	| "booking_confirmed"
 	| "booking_cancelled"
 	| "subscription_upgraded"
