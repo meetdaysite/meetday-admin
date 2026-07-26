@@ -29,6 +29,20 @@ export function formatDateTime(iso: string): string {
 	})
 }
 
+/**
+ * Whole calendar days between an ISO timestamp and now, in the local timezone.
+ * Compares midnight-to-midnight rather than raw elapsed milliseconds, so a
+ * timestamp from late yesterday reads as 1 day old (not 0 → "Today") even if
+ * fewer than 24 hours have actually elapsed.
+ */
+export function getDaysSince(iso: string): number {
+	const then = new Date(iso)
+	const now = new Date()
+	const startOfThen = new Date(then.getFullYear(), then.getMonth(), then.getDate())
+	const startOfNow = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+	return Math.round((startOfNow.getTime() - startOfThen.getTime()) / (1000 * 60 * 60 * 24))
+}
+
 // ─── Number formatters ────────────────────────────────────────────────────────
 
 /** 1500 → "1.5K", 2000 → "2K" */

@@ -11,6 +11,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
 		"host.invite",
 		"host.approve",
 		"event.approve",
+		"event.revision.review",
 		"coupon.create",
 		"coupon.view",
 		"moderation.read",
@@ -27,6 +28,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
 		"host.invite",
 		"host.approve",
 		"event.approve",
+		"event.revision.review",
 		"moderation.read",
 		"moderation.action",
 		"order.view",
@@ -34,7 +36,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
 		"community.manage",
 		"support.view",
 	],
-	MODERATOR: ["moderation.read", "moderation.action", "order.view"],
+	MODERATOR: ["moderation.read", "moderation.action", "order.view", "event.revision.review"],
 	SUPPORT:   ["moderation.read", "order.view", "support.view"],
 }
 

@@ -25,6 +25,7 @@ import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getEventById } from "@/lib/api/events"
+import { getDaysSince } from "@/lib/formatters"
 import type { Event, EventDetail, EventTicket } from "@/types"
 
 //  Types
@@ -51,10 +52,6 @@ function formatEventDate(iso: string): string {
 		month: "short",
 		year: "numeric",
 	})
-}
-
-function getDaysSince(iso: string): number {
-	return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24))
 }
 
 function daysAgoLabel(days: number): string {
@@ -552,7 +549,7 @@ function EventDetailContent({ detail }: { detail: EventDetail }) {
 
 //  Reason dialog (shared for reject / force-cancel)
 
-function ReasonDialog({
+export function ReasonDialog({
 	open,
 	title,
 	description,
