@@ -115,7 +115,7 @@ export type HostDetail = {
 	payoutAccount: PayoutAccount | null
 }
 
-export type EventStatus = "DRAFT" | "UNDER_REVIEW" | "PUBLISHED" | "CANCELLED"
+export type EventStatus = "DRAFT" | "UNDER_REVIEW" | "PUBLISHED" | "CANCELLED" | "COMPLETED"
 
 export type CouponStatus = "ACTIVE" | "EXPIRED" | "DISABLED"
 
