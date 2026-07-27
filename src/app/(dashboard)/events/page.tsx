@@ -35,6 +35,7 @@ const STATUS_TABS: { label: string; value: StatusFilter }[] = [
 	{ label: "Under Review", value: "UNDER_REVIEW" },
 	{ label: "Published", value: "PUBLISHED" },
 	{ label: "Draft", value: "DRAFT" },
+	{ label: "Completed", value: "COMPLETED" },
 	{ label: "Cancelled", value: "CANCELLED" },
 ]
 

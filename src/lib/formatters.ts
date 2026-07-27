@@ -9,6 +9,26 @@ export function formatDate(iso: string): string {
 	})
 }
 
+/**
+ * "26 – 28 Jan 2025" / "26 Jan – 3 Feb 2025" / "26 Jan 2025 – 3 Jan 2026" —
+ * collapses the shared month/year between two dates, used for multi-day events.
+ */
+export function formatDateRange(startIso: string, endIso: string): string {
+	const start = new Date(startIso)
+	const end = new Date(endIso)
+	const day = (d: Date) => d.toLocaleDateString("en-IN", { day: "numeric" })
+	const month = (d: Date) => d.toLocaleDateString("en-IN", { month: "short" })
+	const year = (d: Date) => d.toLocaleDateString("en-IN", { year: "numeric" })
+
+	if (start.getFullYear() !== end.getFullYear()) {
+		return `${day(start)} ${month(start)} ${year(start)} – ${day(end)} ${month(end)} ${year(end)}`
+	}
+	if (start.getMonth() !== end.getMonth()) {
+		return `${day(start)} ${month(start)} – ${day(end)} ${month(end)} ${year(end)}`
+	}
+	return `${day(start)} – ${day(end)} ${month(end)} ${year(end)}`
+}
+
 /** "12 January 2025" — long month form, used where extra formality is needed */
 export function formatDateLong(iso: string): string {
 	return new Date(iso).toLocaleDateString("en-IN", {
@@ -27,6 +47,20 @@ export function formatDateTime(iso: string): string {
 		hour: "2-digit",
 		minute: "2-digit",
 	})
+}
+
+/**
+ * Whole calendar days between an ISO timestamp and now, in the local timezone.
+ * Compares midnight-to-midnight rather than raw elapsed milliseconds, so a
+ * timestamp from late yesterday reads as 1 day old (not 0 → "Today") even if
+ * fewer than 24 hours have actually elapsed.
+ */
+export function getDaysSince(iso: string): number {
+	const then = new Date(iso)
+	const now = new Date()
+	const startOfThen = new Date(then.getFullYear(), then.getMonth(), then.getDate())
+	const startOfNow = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+	return Math.round((startOfNow.getTime() - startOfThen.getTime()) / (1000 * 60 * 60 * 24))
 }
 
 // ─── Number formatters ────────────────────────────────────────────────────────

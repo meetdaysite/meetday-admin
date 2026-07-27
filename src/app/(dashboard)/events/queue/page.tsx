@@ -6,7 +6,7 @@ import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { approveEvent, getPendingEvents, rejectEvent } from "@/lib/api/events"
-import { formatDate } from "@/lib/formatters"
+import { formatDate, getDaysSince } from "@/lib/formatters"
 import { AgeDateCell, ChipCell, DateCell, TwoLineCell } from "@/components/ui/table-cells"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { Event } from "@/types"
@@ -18,10 +18,6 @@ import { toast } from "sonner"
 // Constants
 
 // Helpers
-
-function getDaysSince(iso: string): number {
-	return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24))
-}
 
 function getRowTint(event: Event): string {
 	if (!event.updatedAt) return ""

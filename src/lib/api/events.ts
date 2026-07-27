@@ -1,5 +1,11 @@
 import { apiClient } from "./client"
-import type { Event, EventDetail, EventStatus } from "@/types"
+import type {
+	Event,
+	EventDetail,
+	EventStatus,
+	RevisionReviewDetail,
+	RevisionsListResponse,
+} from "@/types"
 
 export type GetEventsParams = {
 	status?: EventStatus
@@ -38,4 +44,31 @@ export async function approveEvent(id: string): Promise<void> {
 
 export async function rejectEvent(id: string, remark: string): Promise<void> {
 	await apiClient.post(`/admin/events/${id}/reject`, { remark })
+}
+
+export type GetPendingRevisionsParams = {
+	page?: number
+	limit?: number
+}
+
+export async function getPendingRevisions(
+	params?: GetPendingRevisionsParams,
+): Promise<RevisionsListResponse> {
+	const { data } = await apiClient.get<RevisionsListResponse>("/admin/events/revisions/pending", {
+		params,
+	})
+	return data
+}
+
+export async function getRevisionForReview(eventId: string): Promise<RevisionReviewDetail> {
+	const { data } = await apiClient.get<RevisionReviewDetail>(`/admin/events/${eventId}/revision`)
+	return data
+}
+
+export async function approveRevision(eventId: string): Promise<void> {
+	await apiClient.post(`/admin/events/${eventId}/revision/approve`)
+}
+
+export async function rejectRevision(eventId: string, remark: string): Promise<void> {
+	await apiClient.post(`/admin/events/${eventId}/revision/reject`, { remark })
 }
