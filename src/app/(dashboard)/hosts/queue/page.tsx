@@ -5,15 +5,21 @@ import { DataView } from "@/components/ui/data-view"
 import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
-import { approveHost, getHosts, rejectHost } from "@/lib/api/hosts"
+import { approveHost, getPendingHosts, rejectHost } from "@/lib/api/hosts"
 import { formatDate, getDaysSince } from "@/lib/formatters"
 import { AgeDateCell, ChipCell, StatusCell, TwoLineCell } from "@/components/ui/table-cells"
+import { useDrawer } from "@/lib/hooks/use-drawer"
+import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { Host } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
 import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { toast } from "sonner"
+
+// Constants
+
+const PAGE_LIMIT = 20
 
 // Helpers
 
@@ -32,39 +38,23 @@ export default function HostQueuePage() {
 	const router = useRouter()
 	const canApprove = usePermission("host.approve")
 
-	const [isLoading, setIsLoading] = useState(true)
-	const [error, setError] = useState<string | null>(null)
-	const [hosts, setHosts] = useState<Host[]>([])
+	const [page, setPage] = useState(1)
 	const [search, setSearch] = useState("")
-	const [selectedHost, setSelectedHost] = useState<Host | null>(null)
-	const [drawerOpen, setDrawerOpen] = useState(false)
 
-	const fetchHosts = useCallback(async () => {
-		setIsLoading(true)
-		setError(null)
-		try {
-			const res = await getHosts({ approvalStatus: "PENDING" })
-			setHosts(res.hosts)
-		} catch (err: unknown) {
-			const status = (err as { response?: { status?: number } })?.response?.status
-			if (status === 401) {
-				router.replace("/login")
-				return
-			}
-			if (status === 403) {
-				setError("You don't have permission to view the host queue.")
-			} else {
-				toast.error("Failed to load hosts")
-				setError("Something went wrong. Please try again.")
-			}
-		} finally {
-			setIsLoading(false)
-		}
-	}, [router])
+	const { item: selectedHost, open: drawerOpen, openDrawer, closeDrawer } = useDrawer<Host>()
 
-	useEffect(() => {
-		fetchHosts()
-	}, [fetchHosts])
+	const fetcher = useCallback(
+		() => getPendingHosts({ page, limit: PAGE_LIMIT }).then(r => ({ items: r.hosts, total: r.total })),
+		[page],
+	)
+
+	const {
+		items: hosts,
+		total,
+		isLoading,
+		error,
+		refresh: fetchHosts,
+	} = usePaginatedFetch(fetcher, "Failed to load hosts")
 
 	const filtered = useMemo(() => {
 		const q = search.toLowerCase()
@@ -76,11 +66,6 @@ export default function HostQueuePage() {
 				`${h.user.firstName} ${h.user.lastName}`.toLowerCase().includes(q),
 		)
 	}, [hosts, search])
-
-	function openDrawer(host: Host) {
-		setSelectedHost(host)
-		setDrawerOpen(true)
-	}
 
 	async function handleAction(hostId: string, action: HostAction, reason?: string) {
 		try {
@@ -174,6 +159,8 @@ export default function HostQueuePage() {
 		[],
 	)
 
+	const totalPages = Math.ceil(total / PAGE_LIMIT)
+
 	if (!canApprove) return <PermissionGuard message="You don't have permission to view the host queue." />
 
 	return (
@@ -200,6 +187,7 @@ export default function HostQueuePage() {
 				emptyMessage="No hosts pending review."
 				onRowClick={openDrawer}
 				getRowClassName={getRowTint}
+				pagination={{ page, totalPages, total, pageSize: PAGE_LIMIT, onPageChange: setPage }}
 			/>
 
 			{/* Age tint legend */}
@@ -219,10 +207,7 @@ export default function HostQueuePage() {
 
 			<HostReviewDrawer
 				open={drawerOpen}
-				onClose={() => {
-					setDrawerOpen(false)
-					setSelectedHost(null)
-				}}
+				onClose={closeDrawer}
 				host={selectedHost}
 				onAction={handleAction}
 			/>

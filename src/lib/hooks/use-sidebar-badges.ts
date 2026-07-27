@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { getHosts } from "@/lib/api/hosts"
+import { getPendingHosts } from "@/lib/api/hosts"
 import { getPendingEvents, getPendingRevisions } from "@/lib/api/events"
 import { getSupportTickets } from "@/lib/api/support-tickets"
 import { usePermission } from "@/lib/hooks/use-permission"
@@ -16,7 +16,7 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 
 	const hostQueue = useQuery({
 		queryKey: ["sidebar-badge", "host-queue"],
-		queryFn: () => getHosts({ approvalStatus: "PENDING", limit: 1 }).then(r => r.total),
+		queryFn: () => getPendingHosts({ limit: 1 }).then(r => r.total),
 		enabled: canSeeHostQueue,
 		refetchInterval: REFETCH_INTERVAL,
 	})
