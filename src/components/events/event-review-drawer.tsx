@@ -25,7 +25,7 @@ import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getEventById } from "@/lib/api/events"
-import { getDaysSince } from "@/lib/formatters"
+import { getDaysSince, formatDateRange } from "@/lib/formatters"
 import type { Event, EventDetail, EventTicket } from "@/types"
 
 //  Types
@@ -332,7 +332,15 @@ function EventDetailContent({ detail }: { detail: EventDetail }) {
 							</span>
 						}
 					/>
-					<DetailRow icon={Calendar} label="Event date" value={formatEventDate(detail.eventDate)} />
+					<DetailRow
+						icon={Calendar}
+						label="Event date"
+						value={
+							detail.endDate
+								? formatDateRange(detail.eventDate, detail.endDate)
+								: formatEventDate(detail.eventDate)
+						}
+					/>
 					{(detail.startTime || detail.endTime) && (
 						<DetailRow
 							icon={Clock}
