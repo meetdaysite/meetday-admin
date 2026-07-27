@@ -227,6 +227,7 @@ export type EventDetail = Omit<Event, "status" | "updatedAt"> & {
 	status: EventStatus
 	updatedAt: string
 	description: string | null
+	endDate: string | null
 	startTime: string | null
 	endTime: string | null
 	venueName: string | null

@@ -9,6 +9,26 @@ export function formatDate(iso: string): string {
 	})
 }
 
+/**
+ * "26 – 28 Jan 2025" / "26 Jan – 3 Feb 2025" / "26 Jan 2025 – 3 Jan 2026" —
+ * collapses the shared month/year between two dates, used for multi-day events.
+ */
+export function formatDateRange(startIso: string, endIso: string): string {
+	const start = new Date(startIso)
+	const end = new Date(endIso)
+	const day = (d: Date) => d.toLocaleDateString("en-IN", { day: "numeric" })
+	const month = (d: Date) => d.toLocaleDateString("en-IN", { month: "short" })
+	const year = (d: Date) => d.toLocaleDateString("en-IN", { year: "numeric" })
+
+	if (start.getFullYear() !== end.getFullYear()) {
+		return `${day(start)} ${month(start)} ${year(start)} – ${day(end)} ${month(end)} ${year(end)}`
+	}
+	if (start.getMonth() !== end.getMonth()) {
+		return `${day(start)} ${month(start)} – ${day(end)} ${month(end)} ${year(end)}`
+	}
+	return `${day(start)} – ${day(end)} ${month(end)} ${year(end)}`
+}
+
 /** "12 January 2025" — long month form, used where extra formality is needed */
 export function formatDateLong(iso: string): string {
 	return new Date(iso).toLocaleDateString("en-IN", {

@@ -26,6 +26,7 @@ import {
 import { useAuthStore } from "@/stores/auth.store"
 import { useUIStore } from "@/stores/ui.store"
 import { cn } from "@/lib/utils"
+import { useSidebarBadgeCounts, type SidebarBadgeKey } from "@/lib/hooks/use-sidebar-badges"
 import type { Permission } from "@/types"
 
 // Nav config
@@ -36,6 +37,7 @@ type NavItem = {
 	icon: LucideIcon
 	permission?: Permission
 	exact?: boolean
+	badgeKey?: SidebarBadgeKey
 }
 
 type NavSection = {
@@ -50,14 +52,26 @@ const NAV: NavSection[] = [
 	{
 		title: "Hosts",
 		items: [
-			{ label: "Host Queue", href: "/hosts/queue", icon: Clock, permission: "host.approve" },
+			{
+				label: "Host Queue",
+				href: "/hosts/queue",
+				icon: Clock,
+				permission: "host.approve",
+				badgeKey: "hostQueue",
+			},
 			{ label: "All Hosts", href: "/hosts", icon: Users, permission: "host.approve", exact: true },
 		],
 	},
 	{
 		title: "Events",
 		items: [
-			{ label: "Event Queue", href: "/events/queue", icon: CalendarDays, permission: "event.approve" },
+			{
+				label: "Event Queue",
+				href: "/events/queue",
+				icon: CalendarDays,
+				permission: "event.approve",
+				badgeKey: "eventQueue",
+			},
 			{
 				label: "All Events",
 				href: "/events",
@@ -70,6 +84,7 @@ const NAV: NavSection[] = [
 				href: "/events/revisions",
 				icon: FileEdit,
 				permission: "event.revision.review",
+				badgeKey: "revisions",
 			},
 		],
 	},
@@ -105,7 +120,13 @@ const NAV: NavSection[] = [
 	{
 		title: "Support",
 		items: [
-			{ label: "Support Tickets", href: "/support-tickets", icon: LifeBuoy, permission: "support.view" },
+			{
+				label: "Support Tickets",
+				href: "/support-tickets",
+				icon: LifeBuoy,
+				permission: "support.view",
+				badgeKey: "supportTickets",
+			},
 		],
 	},
 	{
@@ -122,18 +143,39 @@ const NAV: NavSection[] = [
 
 // Nav link
 
+function NavBadge({ count, collapsed }: { count: number; collapsed: boolean }) {
+	const display = count > 99 ? "99+" : count
+
+	if (collapsed) {
+		return (
+			<span className="absolute -top-1 -right-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-action-primary px-1 text-[9px] font-bold leading-none text-white">
+				{display}
+			</span>
+		)
+	}
+
+	return (
+		<span className="inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-action-primary px-1.5 text-[10px] font-bold leading-none text-white">
+			{display}
+		</span>
+	)
+}
+
 function NavLink({
 	item,
 	active,
 	collapsed,
 	onNavigate,
+	badgeCount,
 }: {
 	item: NavItem
 	active: boolean
 	collapsed: boolean
 	onNavigate: () => void
+	badgeCount?: number
 }) {
 	const Icon = item.icon
+	const showBadge = typeof badgeCount === "number" && badgeCount > 0
 
 	const link = (
 		<Link
@@ -141,14 +183,20 @@ function NavLink({
 			onClick={onNavigate}
 			className={cn(
 				"flex items-center gap-2.5 rounded-md text-sm font-medium transition-colors",
-				collapsed ? "justify-center w-9 h-9 mx-auto" : "px-3 py-2 mx-1",
+				collapsed ? "relative justify-center w-9 h-9 mx-auto" : "px-3 py-2 mx-1",
 				active
 					? "bg-surface-brand-soft text-text-brand"
 					: "text-text-primary hover:bg-surface-brand-soft hover:text-text-brand",
 			)}
 		>
 			<Icon size={15} className="shrink-0" />
-			{!collapsed && <span>{item.label}</span>}
+			{!collapsed && (
+				<span className="flex flex-1 items-center justify-between gap-2">
+					{item.label}
+					{showBadge && <NavBadge count={badgeCount} collapsed={false} />}
+				</span>
+			)}
+			{collapsed && showBadge && <NavBadge count={badgeCount} collapsed />}
 		</Link>
 	)
 
@@ -164,6 +212,7 @@ function NavLink({
 					className="z-50 rounded-md bg-text-primary px-2.5 py-1.5 text-xs text-white shadow-md animate-in fade-in-0 zoom-in-95"
 				>
 					{item.label}
+					{showBadge && ` (${badgeCount > 99 ? "99+" : badgeCount})`}
 				</Tooltip.Content>
 			</Tooltip.Portal>
 		</Tooltip.Root>
@@ -176,6 +225,7 @@ export function Sidebar() {
 	const pathname = usePathname()
 	const { hasPermission } = useAuthStore()
 	const { sidebarOpen, setSidebarOpen, sidebarCollapsed } = useUIStore()
+	const badgeCounts = useSidebarBadgeCounts()
 
 	const collapsed = sidebarCollapsed
 
@@ -264,6 +314,7 @@ export function Sidebar() {
 											active={isActive(item)}
 											collapsed={collapsed}
 											onNavigate={() => setSidebarOpen(false)}
+											badgeCount={item.badgeKey ? badgeCounts[item.badgeKey] : undefined}
 										/>
 									))}
 								</div>
