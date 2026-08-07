@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query"
 import { getPendingHosts } from "@/lib/api/hosts"
 import { getPendingEvents, getPendingRevisions } from "@/lib/api/events"
+import { getPendingSponsorships } from "@/lib/api/sponsorships"
 import { getSupportTickets } from "@/lib/api/support-tickets"
 import { usePermission } from "@/lib/hooks/use-permission"
 
 const REFETCH_INTERVAL = 60_000
 
-export type SidebarBadgeKey = "hostQueue" | "eventQueue" | "revisions" | "supportTickets"
+export type SidebarBadgeKey = "hostQueue" | "eventQueue" | "revisions" | "supportTickets" | "sponsorshipQueue"
 
 export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>> {
 	const canSeeHostQueue = usePermission("host.approve")
@@ -42,10 +43,19 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		refetchInterval: REFETCH_INTERVAL,
 	})
 
+	const canSeeSponsorshipQueue = usePermission("sponsorship.approve")
+	const sponsorshipQueue = useQuery({
+		queryKey: ["sidebar-badge", "sponsorship-queue"],
+		queryFn: () => getPendingSponsorships({ limit: 1 }).then(r => r.total),
+		enabled: canSeeSponsorshipQueue,
+		refetchInterval: REFETCH_INTERVAL,
+	})
+
 	return {
 		hostQueue: hostQueue.data,
 		eventQueue: eventQueue.data,
 		revisions: revisions.data,
 		supportTickets: supportTickets.data,
+		sponsorshipQueue: sponsorshipQueue.data,
 	}
 }

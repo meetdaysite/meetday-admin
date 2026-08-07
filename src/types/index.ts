@@ -19,6 +19,7 @@ export type Permission =
 	| "host.approve"
 	| "event.approve"
 	| "event.revision.review"
+	| "sponsorship.approve"
 	| "coupon.create"
 	| "coupon.view"
 	| "moderation.read"
@@ -326,6 +327,65 @@ export type RevisionReviewDetail = {
 		createdAt: string
 		updatedAt: string
 	}
+}
+
+// ─── Sponsorship proposals ─────────────────────────────────────────────────────
+
+export type SponsorshipStatus = "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED"
+
+export type SponsorTier = {
+	name: string
+	price: string
+}
+
+export type SponsorshipProposal = {
+	id: string
+	name: string | null
+	city: string | null
+	eventDate: string | null
+	status: SponsorshipStatus
+	submittedAt: string | null
+	createdAt: string
+	updatedAt: string
+	pendingRevision: Record<string, unknown> | null
+	hostProfile: EventHostProfile
+}
+
+export type SponsorshipsListResponse = {
+	proposals: SponsorshipProposal[]
+	total: number
+	page: number
+	limit: number
+}
+
+export type SponsorshipDetail = {
+	id: string
+	hostProfileId: string
+	name: string | null
+	about: string | null
+	imageKey: string | null
+	imageUrl: string | null
+	eventDate: string | null
+	venue: string | null
+	city: string | null
+	audienceProfile: string[]
+	ageGroup: string | null
+	guestCount: string | null
+	docKey: string | null
+	docUrl: string | null
+	docName: string | null
+	docType: string | null
+	docSize: number | null
+	sponsorTiers: SponsorTier[]
+	status: SponsorshipStatus
+	pendingRevision: (Record<string, unknown> & { imageUrl?: string | null; docUrl?: string | null }) | null
+	adminRejectionRemark: string | null
+	reviewedBy: string | null
+	reviewedAt: string | null
+	submittedAt: string | null
+	createdAt: string
+	updatedAt: string
+	hostProfile: EventHostProfile
 }
 
 export type BulkHostRow = {

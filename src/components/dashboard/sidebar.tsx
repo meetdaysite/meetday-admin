@@ -21,6 +21,7 @@ import {
 	Users,
 	LifeBuoy,
 	Settings,
+	HandCoins,
 	type LucideIcon,
 } from "lucide-react"
 import { useAuthStore } from "@/stores/auth.store"
@@ -97,6 +98,18 @@ const NAV: NavSection[] = [
 				icon: Users,
 				permission: "community.manage",
 				exact: true,
+			},
+		],
+	},
+	{
+		title: "Sponsorships",
+		items: [
+			{
+				label: "Sponsorship Queue",
+				href: "/sponsorships/queue",
+				icon: HandCoins,
+				permission: "sponsorship.approve",
+				badgeKey: "sponsorshipQueue",
 			},
 		],
 	},
