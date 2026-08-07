@@ -4,6 +4,12 @@ import { apiClient } from "./client"
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ImageContentType = "image/jpeg" | "image/png" | "image/webp"
+type PitchDocContentType =
+	| "application/pdf"
+	| "application/msword"
+	| "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+	| "application/vnd.ms-powerpoint"
+	| "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 
 type PresignRequest =
 	| { context: "EVENT_MEDIA";           contentType: ImageContentType | "video/mp4"; mediaType: "COVER" | "GALLERY" | "VIDEO"; resourceId?: string }
@@ -16,6 +22,8 @@ type PresignRequest =
 	| { context: "COMMUNITY_ANNOUNCEMENT"; contentType: ImageContentType; resourceId: string }
 	| { context: "COMMUNITY_DM_MEDIA";    contentType: ImageContentType; resourceId: string }
 	| { context: "COMMUNITY_FEED_MEDIA";  contentType: ImageContentType | "video/mp4"; resourceId: string }
+	| { context: "SPONSORSHIP_MEDIA";     contentType: ImageContentType }
+	| { context: "SPONSORSHIP_DOCUMENT";  contentType: PitchDocContentType }
 
 interface PresignResponse {
 	uploadUrl: string
@@ -92,6 +100,24 @@ export async function uploadFeedMedia(
 		context: "COMMUNITY_FEED_MEDIA",
 		contentType: file.type as ImageContentType | "video/mp4",
 		resourceId: communityId,
+	})
+	await uploadToStorage(uploadUrl, file)
+	return key
+}
+
+export async function uploadSponsorshipImage(file: File): Promise<string> {
+	const { uploadUrl, key } = await getPresignedUploadUrl({
+		context: "SPONSORSHIP_MEDIA",
+		contentType: file.type as ImageContentType,
+	})
+	await uploadToStorage(uploadUrl, file)
+	return key
+}
+
+export async function uploadSponsorshipDocument(file: File): Promise<string> {
+	const { uploadUrl, key } = await getPresignedUploadUrl({
+		context: "SPONSORSHIP_DOCUMENT",
+		contentType: file.type as PitchDocContentType,
 	})
 	await uploadToStorage(uploadUrl, file)
 	return key

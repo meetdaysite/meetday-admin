@@ -1,5 +1,5 @@
 import { apiClient } from "./client"
-import type { SponsorshipDetail, SponsorshipsListResponse, SponsorshipStatus } from "@/types"
+import type { CreateSponsorshipPayload, SponsorshipDetail, SponsorshipsListResponse, SponsorshipStatus } from "@/types"
 
 export type GetSponsorshipsParams = {
 	status?: SponsorshipStatus
@@ -7,6 +7,11 @@ export type GetSponsorshipsParams = {
 	hostProfileId?: string
 	page?: number
 	limit?: number
+}
+
+export async function createSponsorship(payload: CreateSponsorshipPayload): Promise<SponsorshipDetail> {
+	const { data } = await apiClient.post<SponsorshipDetail>("/admin/sponsorships", payload)
+	return data
 }
 
 export async function getPendingSponsorships(

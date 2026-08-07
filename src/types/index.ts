@@ -388,6 +388,23 @@ export type SponsorshipDetail = {
 	hostProfile: EventHostProfile
 }
 
+export type CreateSponsorshipPayload = {
+	name: string
+	about: string
+	imageKey: string
+	eventDate: string
+	venue: string
+	city: string
+	audienceProfile: string[]
+	ageGroup: string
+	guestCount: string
+	docKey: string
+	docName: string
+	docType: string
+	docSize: number
+	sponsorTiers: SponsorTier[]
+}
+
 export type BulkHostRow = {
 	_index: number
 	name: string

@@ -1,0 +1,461 @@
+"use client"
+
+import { useState } from "react"
+import { Loader2, Plus, X, FileText } from "lucide-react"
+import { toast } from "sonner"
+import { Drawer, DrawerFooter } from "@/components/ui/drawer"
+import { ImageUploadZone } from "@/components/communities/create/ui/image-upload-zone"
+import { createSponsorship } from "@/lib/api/sponsorships"
+import { uploadSponsorshipDocument, uploadSponsorshipImage } from "@/lib/api/storage"
+import type { SponsorshipDetail, SponsorTier } from "@/types"
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type CreateSponsorshipDrawerProps = {
+	open: boolean
+	onClose: () => void
+	onCreated: (proposal: SponsorshipDetail) => void
+}
+
+const ACCEPTED_DOC_TYPES = [
+	"application/pdf",
+	"application/msword",
+	"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+	"application/vnd.ms-powerpoint",
+	"application/vnd.openxmlformats-officedocument.presentationml.presentation",
+]
+
+const inputClass =
+	"w-full rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-sm placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors disabled:opacity-50"
+const labelClass = "block text-xs font-semibold text-text-secondary mb-1.5"
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSponsorshipDrawerProps) {
+	const [name, setName] = useState("")
+	const [about, setAbout] = useState("")
+	const [imageKey, setImageKey] = useState<string | null>(null)
+	const [imagePreview, setImagePreview] = useState<string | null>(null)
+	const [eventDate, setEventDate] = useState("")
+	const [venue, setVenue] = useState("")
+	const [city, setCity] = useState("")
+	const [ageGroup, setAgeGroup] = useState("")
+	const [guestCount, setGuestCount] = useState("")
+
+	const [audienceProfile, setAudienceProfile] = useState<string[]>([])
+	const [newAudience, setNewAudience] = useState("")
+
+	const [docKey, setDocKey] = useState<string | null>(null)
+	const [docName, setDocName] = useState<string | null>(null)
+	const [docType, setDocType] = useState<string | null>(null)
+	const [docSize, setDocSize] = useState<number | null>(null)
+	const [uploadingDoc, setUploadingDoc] = useState(false)
+
+	const [sponsorTiers, setSponsorTiers] = useState<SponsorTier[]>([{ name: "", price: "" }])
+
+	const [isLoading, setIsLoading] = useState(false)
+	const [error, setError] = useState<string | null>(null)
+
+	function reset() {
+		setName("")
+		setAbout("")
+		setImageKey(null)
+		setImagePreview(null)
+		setEventDate("")
+		setVenue("")
+		setCity("")
+		setAgeGroup("")
+		setGuestCount("")
+		setAudienceProfile([])
+		setNewAudience("")
+		setDocKey(null)
+		setDocName(null)
+		setDocType(null)
+		setDocSize(null)
+		setSponsorTiers([{ name: "", price: "" }])
+		setError(null)
+	}
+
+	function handleClose() {
+		if (isLoading) return
+		reset()
+		onClose()
+	}
+
+	function addAudience() {
+		const trimmed = newAudience.trim()
+		if (trimmed && !audienceProfile.includes(trimmed)) {
+			setAudienceProfile([...audienceProfile, trimmed])
+			setNewAudience("")
+		}
+	}
+
+	async function handleDocFile(file: File) {
+		if (!ACCEPTED_DOC_TYPES.includes(file.type)) {
+			toast.error("Only PDF, Word, or PowerPoint files are allowed")
+			return
+		}
+		if (file.size > 20 * 1024 * 1024) {
+			toast.error("Document must be under 20 MB")
+			return
+		}
+		setUploadingDoc(true)
+		try {
+			const key = await uploadSponsorshipDocument(file)
+			setDocKey(key)
+			setDocName(file.name)
+			setDocType(file.type)
+			setDocSize(file.size)
+		} catch {
+			toast.error("Document upload failed. Please try again.")
+		} finally {
+			setUploadingDoc(false)
+		}
+	}
+
+	function updateTier(index: number, field: keyof SponsorTier, value: string) {
+		setSponsorTiers((prev) => prev.map((t, i) => (i === index ? { ...t, [field]: value } : t)))
+	}
+
+	function addTier() {
+		setSponsorTiers((prev) => [...prev, { name: "", price: "" }])
+	}
+
+	function removeTier(index: number) {
+		setSponsorTiers((prev) => prev.filter((_, i) => i !== index))
+	}
+
+	async function handleSubmit(e: React.FormEvent) {
+		e.preventDefault()
+		setError(null)
+
+		const validTiers = sponsorTiers.filter((t) => t.name.trim() && t.price.trim())
+
+		if (!name.trim()) return setError("Name is required.")
+		if (!about.trim()) return setError("About is required.")
+		if (!imageKey) return setError("Cover image is required.")
+		if (!eventDate) return setError("Event date is required.")
+		if (!venue.trim()) return setError("Venue is required.")
+		if (!city.trim()) return setError("City is required.")
+		if (audienceProfile.length === 0) return setError("At least one audience profile tag is required.")
+		if (!ageGroup.trim()) return setError("Age group is required.")
+		if (!guestCount.trim()) return setError("Guest count is required.")
+		if (!docKey || !docName || !docType || docSize == null) return setError("Pitch document is required.")
+		if (validTiers.length === 0) return setError("At least one sponsor tier is required.")
+
+		setIsLoading(true)
+		try {
+			const proposal = await createSponsorship({
+				name: name.trim(),
+				about: about.trim(),
+				imageKey,
+				eventDate: new Date(eventDate).toISOString(),
+				venue: venue.trim(),
+				city: city.trim(),
+				audienceProfile,
+				ageGroup: ageGroup.trim(),
+				guestCount: guestCount.trim(),
+				docKey,
+				docName,
+				docType,
+				docSize,
+				sponsorTiers: validTiers,
+			})
+			toast.success("Sponsorship proposal created and published")
+			onCreated(proposal)
+			reset()
+		} catch (err: unknown) {
+			const axiosErr = err as { response?: { status?: number; data?: { message?: string } } }
+			const status = axiosErr?.response?.status
+			if (status === 403) {
+				setError("You don't have permission to create sponsorship proposals.")
+			} else {
+				setError(axiosErr?.response?.data?.message ?? "Something went wrong. Please try again.")
+			}
+		} finally {
+			setIsLoading(false)
+		}
+	}
+
+	return (
+		<Drawer
+			open={open}
+			onClose={handleClose}
+			title="Create Sponsorship Proposal"
+			description="Published immediately under the Meetday Official host — no KYC or review required."
+			width="max-w-lg"
+		>
+			<form onSubmit={handleSubmit} className="space-y-5">
+				<div>
+					<label className={labelClass}>
+						Name <span className="text-red-500" aria-hidden>*</span>
+					</label>
+					<input
+						type="text"
+						value={name}
+						onChange={(e) => setName(e.target.value)}
+						placeholder="e.g. Sunset Music Festival"
+						disabled={isLoading}
+						className={inputClass}
+					/>
+				</div>
+
+				<div>
+					<label className={labelClass}>
+						About <span className="text-red-500" aria-hidden>*</span>
+					</label>
+					<textarea
+						value={about}
+						onChange={(e) => setAbout(e.target.value)}
+						rows={3}
+						disabled={isLoading}
+						className={`${inputClass} resize-none`}
+					/>
+				</div>
+
+				<ImageUploadZone
+					value={imageKey}
+					previewUrl={imagePreview}
+					onChange={(key, url) => {
+						setImageKey(key)
+						setImagePreview(url)
+					}}
+					onClear={() => {
+						setImageKey(null)
+						setImagePreview(null)
+					}}
+					onUpload={uploadSponsorshipImage}
+					label="Cover image"
+					hint="JPEG, PNG, or WebP"
+					aspectClass="aspect-video"
+					shape="rect"
+					required
+				/>
+
+				<div className="grid grid-cols-2 gap-3">
+					<div>
+						<label className={labelClass}>
+							Event date <span className="text-red-500" aria-hidden>*</span>
+						</label>
+						<input
+							type="date"
+							value={eventDate}
+							onChange={(e) => setEventDate(e.target.value)}
+							disabled={isLoading}
+							className={inputClass}
+						/>
+					</div>
+					<div>
+						<label className={labelClass}>
+							City <span className="text-red-500" aria-hidden>*</span>
+						</label>
+						<input
+							type="text"
+							value={city}
+							onChange={(e) => setCity(e.target.value)}
+							disabled={isLoading}
+							className={inputClass}
+						/>
+					</div>
+				</div>
+
+				<div>
+					<label className={labelClass}>
+						Venue <span className="text-red-500" aria-hidden>*</span>
+					</label>
+					<input
+						type="text"
+						value={venue}
+						onChange={(e) => setVenue(e.target.value)}
+						disabled={isLoading}
+						className={inputClass}
+					/>
+				</div>
+
+				<div className="grid grid-cols-2 gap-3">
+					<div>
+						<label className={labelClass}>
+							Age group <span className="text-red-500" aria-hidden>*</span>
+						</label>
+						<input
+							type="text"
+							value={ageGroup}
+							onChange={(e) => setAgeGroup(e.target.value)}
+							placeholder="e.g. 21-35"
+							disabled={isLoading}
+							className={inputClass}
+						/>
+					</div>
+					<div>
+						<label className={labelClass}>
+							Guest count <span className="text-red-500" aria-hidden>*</span>
+						</label>
+						<input
+							type="text"
+							value={guestCount}
+							onChange={(e) => setGuestCount(e.target.value)}
+							placeholder="e.g. 200-300"
+							disabled={isLoading}
+							className={inputClass}
+						/>
+					</div>
+				</div>
+
+				<div>
+					<label className={labelClass}>
+						Audience profile <span className="text-red-500" aria-hidden>*</span>
+					</label>
+					<div className="flex gap-2">
+						<input
+							type="text"
+							value={newAudience}
+							onChange={(e) => setNewAudience(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault()
+									addAudience()
+								}
+							}}
+							placeholder="e.g. Young professionals"
+							disabled={isLoading}
+							className={inputClass}
+						/>
+						<button
+							type="button"
+							onClick={addAudience}
+							disabled={isLoading}
+							className="shrink-0 rounded-lg border border-border-default px-3 text-xs font-semibold hover:bg-neutral-50 disabled:opacity-50"
+						>
+							Add
+						</button>
+					</div>
+					{audienceProfile.length > 0 && (
+						<div className="flex flex-wrap gap-1.5 mt-2">
+							{audienceProfile.map((aud, idx) => (
+								<span
+									key={idx}
+									className="inline-flex items-center gap-1 px-2 py-0.5 rounded-badge text-[11px] font-medium bg-surface-brand-soft text-text-brand border border-border-brand"
+								>
+									{aud}
+									<button type="button" onClick={() => setAudienceProfile(audienceProfile.filter((_, i) => i !== idx))}>
+										<X size={10} />
+									</button>
+								</span>
+							))}
+						</div>
+					)}
+				</div>
+
+				<div>
+					<label className={labelClass}>
+						Pitch document <span className="text-red-500" aria-hidden>*</span>
+					</label>
+					{docName ? (
+						<div className="flex items-center justify-between gap-2 rounded-lg border border-border-default px-3 py-2 text-xs">
+							<span className="flex items-center gap-1.5 truncate">
+								<FileText size={14} className="shrink-0 text-text-tertiary" />
+								{docName}
+							</span>
+							<button
+								type="button"
+								onClick={() => {
+									setDocKey(null)
+									setDocName(null)
+									setDocType(null)
+									setDocSize(null)
+								}}
+								disabled={isLoading}
+							>
+								<X size={14} />
+							</button>
+						</div>
+					) : (
+						<label className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border-default px-3 py-4 text-xs text-text-tertiary cursor-pointer hover:bg-neutral-50">
+							{uploadingDoc ? <Loader2 size={14} className="animate-spin" /> : "Upload PDF / Word / PPT"}
+							<input
+								type="file"
+								accept={ACCEPTED_DOC_TYPES.join(",")}
+								className="hidden"
+								disabled={isLoading || uploadingDoc}
+								onChange={(e) => {
+									const file = e.target.files?.[0]
+									if (file) handleDocFile(file)
+									e.target.value = ""
+								}}
+							/>
+						</label>
+					)}
+				</div>
+
+				<div>
+					<label className={labelClass}>
+						Sponsor tiers <span className="text-red-500" aria-hidden>*</span>
+					</label>
+					<div className="space-y-2">
+						{sponsorTiers.map((tier, idx) => (
+							<div key={idx} className="flex gap-2">
+								<input
+									type="text"
+									value={tier.name}
+									onChange={(e) => updateTier(idx, "name", e.target.value)}
+									placeholder="e.g. Gold Sponsor"
+									disabled={isLoading}
+									className={inputClass}
+								/>
+								<input
+									type="text"
+									value={tier.price}
+									onChange={(e) => updateTier(idx, "price", e.target.value)}
+									placeholder="e.g. 50000"
+									disabled={isLoading}
+									className={`${inputClass} max-w-[120px]`}
+								/>
+								<button
+									type="button"
+									onClick={() => removeTier(idx)}
+									disabled={isLoading || sponsorTiers.length === 1}
+									className="shrink-0 rounded-lg border border-border-default px-2 hover:bg-neutral-50 disabled:opacity-30"
+								>
+									<X size={14} />
+								</button>
+							</div>
+						))}
+					</div>
+					<button
+						type="button"
+						onClick={addTier}
+						disabled={isLoading}
+						className="mt-2 flex items-center gap-1 text-xs font-semibold text-text-brand hover:underline disabled:opacity-50"
+					>
+						<Plus size={12} /> Add tier
+					</button>
+				</div>
+
+				{error && (
+					<div className="rounded-xl border border-red-100 bg-red-50 px-3.5 py-3 text-xs text-red-700">
+						{error}
+					</div>
+				)}
+			</form>
+
+			<DrawerFooter className="justify-between">
+				<button
+					type="button"
+					onClick={handleClose}
+					disabled={isLoading}
+					className="rounded-lg border border-border-default px-4 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors disabled:opacity-50"
+				>
+					Cancel
+				</button>
+				<button
+					onClick={handleSubmit as unknown as React.MouseEventHandler}
+					disabled={isLoading}
+					className="flex items-center gap-1.5 rounded-lg bg-action-primary px-4 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+				>
+					{isLoading && <Loader2 size={13} className="animate-spin" />}
+					Create & Publish
+				</button>
+			</DrawerFooter>
+		</Drawer>
+	)
+}

@@ -1,6 +1,7 @@
 "use client"
 
 import { SponsorshipReviewDrawer, type SponsorshipAction } from "@/components/sponsorships/sponsorship-review-drawer"
+import { CreateSponsorshipDrawer } from "@/components/sponsorships/create-sponsorship-drawer"
 import { DataView } from "@/components/ui/data-view"
 import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
@@ -11,6 +12,7 @@ import { AgeDateCell, ChipCell, TwoLineCell } from "@/components/ui/table-cells"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { SponsorshipProposal } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
+import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
@@ -39,6 +41,7 @@ export default function SponsorshipQueuePage() {
 
 	const [selectedProposal, setSelectedProposal] = useState<SponsorshipProposal | null>(null)
 	const [drawerOpen, setDrawerOpen] = useState(false)
+	const [createOpen, setCreateOpen] = useState(false)
 
 	const fetchProposals = useCallback(async () => {
 		setIsLoading(true)
@@ -158,6 +161,14 @@ export default function SponsorshipQueuePage() {
 			<PageHeader
 				title="Sponsorship Queue"
 				description="Review and approve sponsorship proposals submitted by hosts before they go live."
+				buttons={
+					<button
+						onClick={() => setCreateOpen(true)}
+						className="flex items-center gap-1.5 rounded-lg bg-action-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors"
+					>
+						<Plus size={14} /> Create Sponsorship
+					</button>
+				}
 			/>
 
 			<SearchInput
@@ -185,6 +196,15 @@ export default function SponsorshipQueuePage() {
 				}}
 				proposal={selectedProposal}
 				onAction={handleAction}
+			/>
+
+			<CreateSponsorshipDrawer
+				open={createOpen}
+				onClose={() => setCreateOpen(false)}
+				onCreated={() => {
+					setCreateOpen(false)
+					fetchProposals()
+				}}
 			/>
 		</div>
 	)
