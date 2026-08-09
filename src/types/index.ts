@@ -20,6 +20,7 @@ export type Permission =
 	| "event.approve"
 	| "event.revision.review"
 	| "sponsorship.approve"
+	| "communityProfile.approve"
 	| "coupon.create"
 	| "coupon.view"
 	| "moderation.read"
@@ -403,6 +404,65 @@ export type CreateSponsorshipPayload = {
 	docType: string
 	docSize: number
 	sponsorTiers: SponsorTier[]
+}
+
+// ─── Host community profiles ───────────────────────────────────────────────────
+
+export type CommunityProfileCategory = { id: string; name: string }
+
+export type CommunityProfile = {
+	id: string
+	name: string
+	about: string
+	logoKey: string
+	size: string
+	avgGuestCount: string
+	experiencesPerYear: string
+	approvalStatus: ApprovalStatus
+	adminRejectionRemark: string | null
+	reviewedAt: string | null
+	createdAt: string
+	updatedAt: string
+	categories: CommunityProfileCategory[]
+	hostProfile: {
+		id: string
+		displayName: string | null
+		user: { id: string; firstName: string; lastName: string; email: string | null }
+	}
+}
+
+export type CommunityProfileDetail = CommunityProfile & { logoUrl: string | null }
+
+export type CommunityProfilesListResponse = {
+	profiles: CommunityProfile[]
+	total: number
+	page: number
+	limit: number
+}
+
+export type SponsorshipInterest = {
+	id: string
+	createdAt: string
+	brandProfile: {
+		id: string
+		brandName: string
+		user: { email: string | null; phone: string | null }
+	}
+	sponsorshipProposal: {
+		id: string
+		name: string | null
+		hostProfile: {
+			displayName: string | null
+			user: { firstName: string; lastName: string }
+		}
+	}
+}
+
+export type SponsorshipInterestsListResponse = {
+	interests: SponsorshipInterest[]
+	total: number
+	page: number
+	limit: number
 }
 
 export type BulkHostRow = {

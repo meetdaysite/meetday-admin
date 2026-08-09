@@ -22,6 +22,7 @@ import {
 	LifeBuoy,
 	Settings,
 	HandCoins,
+	BadgeCheck,
 	type LucideIcon,
 } from "lucide-react"
 import { useAuthStore } from "@/stores/auth.store"
@@ -110,6 +111,18 @@ const NAV: NavSection[] = [
 				icon: HandCoins,
 				permission: "sponsorship.approve",
 				badgeKey: "sponsorshipQueue",
+			},
+			{
+				label: "Community Profile Queue",
+				href: "/community-profiles/queue",
+				icon: BadgeCheck,
+				permission: "communityProfile.approve",
+			},
+			{
+				label: "Brands",
+				href: "/brands",
+				icon: Users,
+				permission: "sponsorship.approve",
 			},
 		],
 	},

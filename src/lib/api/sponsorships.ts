@@ -1,5 +1,5 @@
 import { apiClient } from "./client"
-import type { CreateSponsorshipPayload, SponsorshipDetail, SponsorshipsListResponse, SponsorshipStatus } from "@/types"
+import type { CreateSponsorshipPayload, SponsorshipDetail, SponsorshipInterestsListResponse, SponsorshipsListResponse, SponsorshipStatus } from "@/types"
 
 export type GetSponsorshipsParams = {
 	status?: SponsorshipStatus
@@ -64,4 +64,14 @@ export async function approveSponsorshipRevision(id: string): Promise<void> {
 
 export async function rejectSponsorshipRevision(id: string, remark: string): Promise<void> {
 	await apiClient.post(`/admin/sponsorships/${id}/revision/reject`, { remark })
+}
+
+export async function getSponsorshipInterests(
+	params?: { page?: number; limit?: number },
+): Promise<SponsorshipInterestsListResponse> {
+	const { data } = await apiClient.get<SponsorshipInterestsListResponse>(
+		"/admin/sponsorships/brands/interested",
+		{ params },
+	)
+	return data
 }
