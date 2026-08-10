@@ -427,6 +427,7 @@ export type CommunityProfile = {
 	hostProfile: {
 		id: string
 		displayName: string | null
+		operatingCities: string[]
 		user: { id: string; firstName: string; lastName: string; email: string | null }
 	}
 }

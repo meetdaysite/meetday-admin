@@ -139,6 +139,11 @@ export default function CommunityProfileQueuePage() {
 				cell: ({ row }) => row.original.categories.map(c => c.name).join(", ") || "—",
 			},
 			{
+				id: "cities",
+				header: "Operating cities",
+				cell: ({ row }) => row.original.hostProfile.operatingCities.join(", ") || "—",
+			},
+			{
 				id: "submitted",
 				header: "Submitted",
 				cell: ({ row }) => (

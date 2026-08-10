@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, Mail, Users, Calendar, AlertTriangle, ShieldAlert, Tag } from "lucide-react"
+import { Loader2, Mail, Users, Calendar, AlertTriangle, ShieldAlert, Tag, MapPin } from "lucide-react"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ReasonDialog } from "@/components/events/event-review-drawer"
@@ -97,6 +97,21 @@ function CommunityProfileDetailContent({ detail }: { detail: CommunityProfileDet
 									{detail.categories.map(c => (
 										<span key={c.id} className="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-text-secondary">
 											{c.name}
+										</span>
+									))}
+								</div>
+							}
+						/>
+					)}
+					{detail.hostProfile.operatingCities.length > 0 && (
+						<DetailRow
+							icon={MapPin}
+							label="Operating cities"
+							value={
+								<div className="flex flex-wrap gap-1.5 mt-1">
+									{detail.hostProfile.operatingCities.map(city => (
+										<span key={city} className="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-text-secondary">
+											{city}
 										</span>
 									))}
 								</div>
