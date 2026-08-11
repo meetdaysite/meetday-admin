@@ -136,7 +136,18 @@ function DrawerSkeleton() {
 	)
 }
 
-function SponsorshipDetailContent({ detail }: { detail: SponsorshipDetail }) {
+function SponsorshipDetailContent({
+	detail,
+	mode = "proposal",
+}: {
+	detail: SponsorshipDetail
+	mode?: "proposal" | "revision"
+}) {
+	// In revision mode, overlay the pendingRevision snapshot so the admin reviews the
+	// proposed changes (e.g. a new cover image) rather than the still-live values.
+	const showingRevision = mode === "revision" && !!detail.pendingRevision
+	const display: SponsorshipDetail = showingRevision ? { ...detail, ...detail.pendingRevision } : detail
+
 	return (
 		<div className="space-y-6">
 			{/* Status row */}
@@ -149,13 +160,19 @@ function SponsorshipDetailContent({ detail }: { detail: SponsorshipDetail }) {
 				)}
 			</div>
 
+			{showingRevision && (
+				<p className="text-[11px] text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+					Showing the host&apos;s proposed changes below, not the currently live version.
+				</p>
+			)}
+
 			{/* Cover image */}
-			{detail.imageUrl && (
+			{display.imageUrl && (
 				<div className="rounded-xl overflow-hidden border border-border-subtle">
 					{/* eslint-disable-next-line @next/next/no-img-element */}
 					<img
-						src={detail.imageUrl}
-						alt={`Cover for ${detail.name ?? "proposal"}`}
+						src={display.imageUrl}
+						alt={`Cover for ${display.name ?? "proposal"}`}
 						className="w-full h-44 object-cover"
 					/>
 				</div>
@@ -183,57 +200,57 @@ function SponsorshipDetailContent({ detail }: { detail: SponsorshipDetail }) {
 						label="Location"
 						value={
 							<span>
-								{detail.venue && <span className="block">{detail.venue}</span>}
-								<span className={detail.venue ? "text-[11px] text-text-tertiary" : undefined}>
-									{detail.city}
+								{display.venue && <span className="block">{display.venue}</span>}
+								<span className={display.venue ? "text-[11px] text-text-tertiary" : undefined}>
+									{display.city}
 								</span>
 							</span>
 						}
 					/>
-					{detail.eventDate && (
-						<DetailRow icon={Calendar} label="Event date" value={formatDate(detail.eventDate)} />
+					{display.eventDate && (
+						<DetailRow icon={Calendar} label="Event date" value={formatDate(display.eventDate)} />
 					)}
-					{detail.ageGroup && <DetailRow icon={Users} label="Age group" value={detail.ageGroup} />}
-					{detail.guestCount && <DetailRow icon={Users} label="Guest count" value={detail.guestCount} />}
-					{detail.audienceProfile.length > 0 && (
-						<DetailRow icon={Tag} label="Audience profile" value={<TagList items={detail.audienceProfile} />} />
+					{display.ageGroup && <DetailRow icon={Users} label="Age group" value={display.ageGroup} />}
+					{display.guestCount && <DetailRow icon={Users} label="Guest count" value={display.guestCount} />}
+					{display.audienceProfile.length > 0 && (
+						<DetailRow icon={Tag} label="Audience profile" value={<TagList items={display.audienceProfile} />} />
 					)}
 				</div>
 			</div>
 
 			{/* About */}
-			{detail.about && (
+			{display.about && (
 				<>
 					<div className="border-t border-border-subtle" />
 					<div>
 						<SectionLabel>About</SectionLabel>
-						<p className="text-xs text-text-primary leading-relaxed whitespace-pre-wrap">{detail.about}</p>
+						<p className="text-xs text-text-primary leading-relaxed whitespace-pre-wrap">{display.about}</p>
 					</div>
 				</>
 			)}
 
 			{/* Sponsor tiers */}
-			{detail.sponsorTiers.length > 0 && (
+			{display.sponsorTiers.length > 0 && (
 				<>
 					<div className="border-t border-border-subtle" />
-					<SponsorTiersTable tiers={detail.sponsorTiers} />
+					<SponsorTiersTable tiers={display.sponsorTiers} />
 				</>
 			)}
 
 			{/* Pitch document */}
-			{detail.docUrl && (
+			{display.docUrl && (
 				<>
 					<div className="border-t border-border-subtle" />
 					<div>
 						<SectionLabel>Pitch Document</SectionLabel>
 						<a
-							href={detail.docUrl}
+							href={display.docUrl}
 							target="_blank"
 							rel="noopener noreferrer"
 							className="flex items-center gap-2 rounded-xl border border-border-subtle px-3.5 py-3 text-xs text-text-brand hover:bg-neutral-50 transition-colors"
 						>
 							<FileText size={14} />
-							{detail.docName ?? "View document"}
+							{display.docName ?? "View document"}
 						</a>
 					</div>
 				</>
@@ -353,7 +370,7 @@ export function SponsorshipReviewDrawer({ open, onClose, proposal, onAction, mod
 					</div>
 				)}
 
-				{fetchState === "done" && detail && <SponsorshipDetailContent detail={detail} />}
+				{fetchState === "done" && detail && <SponsorshipDetailContent detail={detail} mode={mode} />}
 
 				<DrawerFooter className={canReview ? "justify-between" : "justify-end"}>
 					{canReview ? (
