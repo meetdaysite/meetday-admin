@@ -74,7 +74,7 @@ export default function AdminsPage() {
 	async function handleInvite(values: InviteAdminSubmitValues) {
 		setIsInviting(true)
 		try {
-			await inviteAdmin({
+			const result = await inviteAdmin({
 				email: values.email,
 				firstName: values.firstName,
 				lastName: values.lastName,
@@ -82,9 +82,7 @@ export default function AdminsPage() {
 				managedCities: values.managedCities,
 			})
 			setDrawerOpen(false)
-			toast.success("Invitation sent", {
-				description: `${values.firstName} ${values.lastName} will receive an email shortly.`,
-			})
+			toast.success(result.message)
 			if (page === 1) {
 				fetchAdmins()
 			} else {

@@ -11,7 +11,7 @@ import {
 	getPendingSponsorshipRevisions,
 	rejectSponsorshipRevision,
 } from "@/lib/api/sponsorships"
-import { formatDate, getDaysSince } from "@/lib/formatters"
+import { formatDate, formatDateRange, getDaysSince } from "@/lib/formatters"
 import { useDrawer } from "@/lib/hooks/use-drawer"
 import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
@@ -119,7 +119,12 @@ export default function SponsorshipRevisionsPage() {
 			{
 				id: "eventDate",
 				header: "Event Date",
-				cell: ({ row }) => (row.original.eventDate ? formatDate(row.original.eventDate) : "—"),
+				cell: ({ row }) =>
+					row.original.eventDate
+						? row.original.eventEndDate && row.original.eventEndDate !== row.original.eventDate
+							? formatDateRange(row.original.eventDate, row.original.eventEndDate)
+							: formatDate(row.original.eventDate)
+						: "—",
 			},
 			{
 				id: "submitted",

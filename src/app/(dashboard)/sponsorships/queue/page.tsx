@@ -7,7 +7,7 @@ import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { approveSponsorship, getPendingSponsorships, rejectSponsorship } from "@/lib/api/sponsorships"
-import { formatDate, getDaysSince } from "@/lib/formatters"
+import { formatDate, formatDateRange, getDaysSince } from "@/lib/formatters"
 import { AgeDateCell, ChipCell, TwoLineCell } from "@/components/ui/table-cells"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { SponsorshipProposal } from "@/types"
@@ -141,7 +141,12 @@ export default function SponsorshipQueuePage() {
 			{
 				id: "eventDate",
 				header: "Event Date",
-				cell: ({ row }) => (row.original.eventDate ? formatDate(row.original.eventDate) : "—"),
+				cell: ({ row }) =>
+					row.original.eventDate
+						? row.original.eventEndDate && row.original.eventEndDate !== row.original.eventDate
+							? formatDateRange(row.original.eventDate, row.original.eventEndDate)
+							: formatDate(row.original.eventDate)
+						: "—",
 			},
 			{
 				id: "submitted",

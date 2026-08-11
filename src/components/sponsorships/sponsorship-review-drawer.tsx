@@ -19,7 +19,7 @@ import { StatusBadge } from "@/components/ui/status-badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ReasonDialog } from "@/components/events/event-review-drawer"
 import { getSponsorshipById } from "@/lib/api/sponsorships"
-import { formatDate } from "@/lib/formatters"
+import { formatDate, formatDateRange } from "@/lib/formatters"
 import type { SponsorshipDetail, SponsorshipProposal } from "@/types"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -208,7 +208,15 @@ function SponsorshipDetailContent({
 						}
 					/>
 					{display.eventDate && (
-						<DetailRow icon={Calendar} label="Event date" value={formatDate(display.eventDate)} />
+						<DetailRow
+							icon={Calendar}
+							label="Event date"
+							value={
+								display.eventEndDate && display.eventEndDate !== display.eventDate
+									? formatDateRange(display.eventDate, display.eventEndDate)
+									: formatDate(display.eventDate)
+							}
+						/>
 					)}
 					{display.ageGroup && <DetailRow icon={Users} label="Age group" value={display.ageGroup} />}
 					{display.guestCount && <DetailRow icon={Users} label="Guest count" value={display.guestCount} />}

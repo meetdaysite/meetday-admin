@@ -37,6 +37,7 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 	const [imageKey, setImageKey] = useState<string | null>(null)
 	const [imagePreview, setImagePreview] = useState<string | null>(null)
 	const [eventDate, setEventDate] = useState("")
+	const [eventEndDate, setEventEndDate] = useState("")
 	const [venue, setVenue] = useState("")
 	const [city, setCity] = useState("")
 	const [ageGroup, setAgeGroup] = useState("")
@@ -62,6 +63,7 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 		setImageKey(null)
 		setImagePreview(null)
 		setEventDate("")
+		setEventEndDate("")
 		setVenue("")
 		setCity("")
 		setAgeGroup("")
@@ -135,6 +137,8 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 		if (!about.trim()) return setError("About is required.")
 		if (!imageKey) return setError("Cover image is required.")
 		if (!eventDate) return setError("Event date is required.")
+		if (!eventEndDate) return setError("Event end date is required.")
+		if (eventEndDate < eventDate) return setError("End date cannot be before the start date.")
 		if (!venue.trim()) return setError("Venue is required.")
 		if (!city.trim()) return setError("City is required.")
 		if (audienceProfile.length === 0) return setError("At least one audience profile tag is required.")
@@ -150,6 +154,7 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 				about: about.trim(),
 				imageKey,
 				eventDate: new Date(eventDate).toISOString(),
+				eventEndDate: new Date(eventEndDate).toISOString(),
 				venue: venue.trim(),
 				city: city.trim(),
 				audienceProfile,
@@ -232,7 +237,7 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 					required
 				/>
 
-				<div className="grid grid-cols-2 gap-3">
+				<div className="grid grid-cols-3 gap-3">
 					<div>
 						<label className={labelClass}>
 							Event date <span className="text-red-500" aria-hidden>*</span>
@@ -241,6 +246,19 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 							type="date"
 							value={eventDate}
 							onChange={(e) => setEventDate(e.target.value)}
+							disabled={isLoading}
+							className={inputClass}
+						/>
+					</div>
+					<div>
+						<label className={labelClass}>
+							Event end date <span className="text-red-500" aria-hidden>*</span>
+						</label>
+						<input
+							type="date"
+							value={eventEndDate}
+							min={eventDate || undefined}
+							onChange={(e) => setEventEndDate(e.target.value)}
 							disabled={isLoading}
 							className={inputClass}
 						/>
