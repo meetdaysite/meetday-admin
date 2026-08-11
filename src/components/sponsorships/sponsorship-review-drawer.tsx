@@ -31,6 +31,9 @@ export type SponsorshipReviewDrawerProps = {
 	onClose: () => void
 	proposal: SponsorshipProposal | null
 	onAction: (proposalId: string, action: SponsorshipAction, message?: string) => Promise<void>
+	// "revision" mode reviews the pendingRevision snapshot on an already-published proposal
+	// instead of the proposal's own UNDER_REVIEW status.
+	mode?: "proposal" | "revision"
 }
 
 // ─── Sub-components ─────────────────────────────────────────────────────────
@@ -255,7 +258,7 @@ function SponsorshipDetailContent({ detail }: { detail: SponsorshipDetail }) {
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
-export function SponsorshipReviewDrawer({ open, onClose, proposal, onAction }: SponsorshipReviewDrawerProps) {
+export function SponsorshipReviewDrawer({ open, onClose, proposal, onAction, mode = "proposal" }: SponsorshipReviewDrawerProps) {
 	const router = useRouter()
 	const [detail, setDetail] = useState<SponsorshipDetail | null>(null)
 	const [fetchState, setFetchState] = useState<"loading" | "error" | "done">("loading")
@@ -324,7 +327,7 @@ export function SponsorshipReviewDrawer({ open, onClose, proposal, onAction }: S
 	}
 
 	const status = detail?.status ?? proposal?.status
-	const canReview = status === "UNDER_REVIEW"
+	const canReview = mode === "revision" ? !!detail?.pendingRevision : status === "UNDER_REVIEW"
 	const isBusy = actionLoading !== null
 
 	const hostDisplay = proposal

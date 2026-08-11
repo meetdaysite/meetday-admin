@@ -113,6 +113,20 @@ const NAV: NavSection[] = [
 				badgeKey: "sponsorshipQueue",
 			},
 			{
+				label: "All Sponsorships",
+				href: "/sponsorships",
+				icon: HandCoins,
+				permission: "sponsorship.approve",
+				exact: true,
+			},
+			{
+				label: "Revisions",
+				href: "/sponsorships/revisions",
+				icon: FileEdit,
+				permission: "sponsorship.approve",
+				badgeKey: "sponsorshipRevisions",
+			},
+			{
 				label: "Community Profile Queue",
 				href: "/community-profiles/queue",
 				icon: BadgeCheck,
