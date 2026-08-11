@@ -1,5 +1,5 @@
 import { apiClient } from "./client"
-import type { CommunityProfileDetail, CommunityProfilesListResponse } from "@/types"
+import type { ApprovalStatus, CommunityProfileDetail, CommunityProfilesListResponse } from "@/types"
 
 export async function getPendingCommunityProfiles(
 	params?: { page?: number; limit?: number },
@@ -7,6 +7,13 @@ export async function getPendingCommunityProfiles(
 	const { data } = await apiClient.get<CommunityProfilesListResponse>("/admin/community-profiles/pending", {
 		params,
 	})
+	return data
+}
+
+export async function getCommunityProfiles(
+	params?: { status?: ApprovalStatus; page?: number; limit?: number },
+): Promise<CommunityProfilesListResponse> {
+	const { data } = await apiClient.get<CommunityProfilesListResponse>("/admin/community-profiles", { params })
 	return data
 }
 

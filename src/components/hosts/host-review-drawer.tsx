@@ -7,14 +7,10 @@ import {
 	MapPin,
 	Mail,
 	Building2,
-	Briefcase,
 	CreditCard,
 	BadgeCheck,
 	AlertTriangle,
 	Globe,
-	Link,
-	BookOpen,
-	Languages,
 } from "lucide-react"
 import * as Dialog from "@radix-ui/react-dialog"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
@@ -143,13 +139,6 @@ function DrawerSkeleton() {
 
 function HostDetailContent({ detail }: { detail: HostDetail }) {
 	const fullName = `${detail.user.firstName} ${detail.user.lastName}`
-	const addressParts = [
-		detail.address?.street,
-		detail.address?.city,
-		detail.address?.state,
-		detail.address?.pincode,
-		detail.address?.country,
-	].filter(Boolean)
 
 	return (
 		<div className="space-y-6">
@@ -194,6 +183,9 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 			<div>
 				<SectionLabel>Profile</SectionLabel>
 				<div className="space-y-3.5">
+					{detail.communityName && (
+						<DetailRow icon={Building2} label="Community name" value={detail.communityName} />
+					)}
 					{detail.legalName && (
 						<DetailRow icon={BadgeCheck} label="Legal name" value={detail.legalName} />
 					)}
@@ -216,18 +208,11 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 						<span className="text-xs text-text-tertiary">Account status</span>
 						<StatusBadge status={detail.user.isActive ? "ACTIVE" : "DISABLED"} />
 					</div>
-					{detail.tagline && <DetailRow icon={BookOpen} label="Tagline" value={detail.tagline} />}
-					{detail.hostBio && <DetailRow icon={BookOpen} label="Bio" value={detail.hostBio} />}
-					{detail.languages.length > 0 && (
-						<DetailRow icon={Languages} label="Languages" value={detail.languages.join(", ")} />
-					)}
 				</div>
 			</div>
 
 			{/*  Links */}
-			{(detail.socialLinks?.website ||
-				detail.socialLinks?.instagram ||
-				detail.portfolioLinks.length > 0) && (
+			{(detail.socialLinks?.website || detail.socialLinks?.instagram) && (
 				<>
 					<div className="border-t border-border-subtle" />
 					<div>
@@ -265,39 +250,12 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 									}
 								/>
 							)}
-							{detail.portfolioLinks.map((link, i) => (
-								<DetailRow
-									key={i}
-									icon={Link}
-									label={`Portfolio ${detail.portfolioLinks.length > 1 ? i + 1 : ""}`.trim()}
-									value={
-										<a
-											href={link}
-											target="_blank"
-											rel="noopener noreferrer"
-											className="text-text-brand hover:underline break-all"
-										>
-											{link}
-										</a>
-									}
-								/>
-							))}
 						</div>
 					</div>
 				</>
 			)}
 
 			<div className="border-t border-border-subtle" />
-
-			{/*  Address */}
-			{addressParts.length > 0 && (
-				<div>
-					<SectionLabel>Address</SectionLabel>
-					<DetailRow icon={MapPin} label="Location" value={addressParts.join(", ")} />
-				</div>
-			)}
-
-			{addressParts.length > 0 && <div className="border-t border-border-subtle" />}
 
 			{/*  Verification  */}
 			<div>
@@ -308,56 +266,12 @@ function HostDetailContent({ detail }: { detail: HostDetail }) {
 				</div>
 			</div>
 
-			<div className="border-t border-border-subtle" />
-
-			{/*  Experience & operations  */}
-			<div>
-				<SectionLabel>Experience & Operations</SectionLabel>
-				<div className="space-y-3.5">
-					<DetailRow
-						icon={Briefcase}
-						label="Experience"
-						value={
-							detail.yearsOfExperience !== null
-								? `${detail.yearsOfExperience} yr${detail.yearsOfExperience !== 1 ? "s" : ""}`
-								: "Not specified"
-						}
-					/>
-					<DetailRow
-						icon={Briefcase}
-						label="Events hosted previously"
-						value={
-							detail.totalEventsPreviouslyHosted !== null
-								? String(detail.totalEventsPreviouslyHosted)
-								: "Not specified"
-						}
-					/>
-					{detail.operatingCities.length > 0 && (
-						<DetailRow
-							icon={MapPin}
-							label="Operating cities"
-							value={detail.operatingCities.join(", ")}
-						/>
-					)}
-				</div>
-			</div>
-
-			{/*  Categories  */}
-			{detail.categories.length > 0 && (
+			{detail.operatingCities.length > 0 && (
 				<>
 					<div className="border-t border-border-subtle" />
 					<div>
-						<SectionLabel>Categories</SectionLabel>
-						<div className="flex flex-wrap gap-1.5">
-							{detail.categories.map(cat => (
-								<span
-									key={cat.categoryId}
-									className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-medium text-text-secondary"
-								>
-									{cat.category.name}
-								</span>
-							))}
-						</div>
+						<SectionLabel>Operating Cities</SectionLabel>
+						<DetailRow icon={MapPin} label="Cities" value={detail.operatingCities.join(", ")} />
 					</div>
 				</>
 			)}

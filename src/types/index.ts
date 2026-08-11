@@ -76,6 +76,7 @@ export type HostDetail = {
 	id: string
 	displayName: string
 	legalName: string | null
+	communityName: string | null
 	hostType: string
 	approvalStatus: ApprovalStatus
 	currentPlan: HostPlan

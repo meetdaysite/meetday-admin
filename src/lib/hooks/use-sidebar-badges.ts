@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { getPendingHosts } from "@/lib/api/hosts"
 import { getPendingEvents, getPendingRevisions } from "@/lib/api/events"
 import { getPendingSponsorships, getPendingSponsorshipRevisions } from "@/lib/api/sponsorships"
+import { getPendingCommunityProfiles } from "@/lib/api/community-profiles"
 import { getSupportTickets } from "@/lib/api/support-tickets"
 import { usePermission } from "@/lib/hooks/use-permission"
 
@@ -14,6 +15,7 @@ export type SidebarBadgeKey =
 	| "supportTickets"
 	| "sponsorshipQueue"
 	| "sponsorshipRevisions"
+	| "communityProfileQueue"
 
 export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>> {
 	const canSeeHostQueue = usePermission("host.approve")
@@ -64,6 +66,14 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		refetchInterval: REFETCH_INTERVAL,
 	})
 
+	const canSeeCommunityProfileQueue = usePermission("communityProfile.approve")
+	const communityProfileQueue = useQuery({
+		queryKey: ["sidebar-badge", "community-profile-queue"],
+		queryFn: () => getPendingCommunityProfiles({ limit: 1 }).then(r => r.total),
+		enabled: canSeeCommunityProfileQueue,
+		refetchInterval: REFETCH_INTERVAL,
+	})
+
 	return {
 		hostQueue: hostQueue.data,
 		eventQueue: eventQueue.data,
@@ -71,5 +81,6 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		supportTickets: supportTickets.data,
 		sponsorshipQueue: sponsorshipQueue.data,
 		sponsorshipRevisions: sponsorshipRevisions.data,
+		communityProfileQueue: communityProfileQueue.data,
 	}
 }

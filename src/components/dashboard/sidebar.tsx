@@ -100,6 +100,20 @@ const NAV: NavSection[] = [
 				permission: "community.manage",
 				exact: true,
 			},
+			{
+				label: "Community Profile Queue",
+				href: "/community-profiles/queue",
+				icon: Clock,
+				permission: "communityProfile.approve",
+				badgeKey: "communityProfileQueue",
+			},
+			{
+				label: "All Community Profiles",
+				href: "/community-profiles",
+				icon: BadgeCheck,
+				permission: "communityProfile.approve",
+				exact: true,
+			},
 		],
 	},
 	{
@@ -125,12 +139,6 @@ const NAV: NavSection[] = [
 				icon: FileEdit,
 				permission: "sponsorship.approve",
 				badgeKey: "sponsorshipRevisions",
-			},
-			{
-				label: "Community Profile Queue",
-				href: "/community-profiles/queue",
-				icon: BadgeCheck,
-				permission: "communityProfile.approve",
 			},
 			{
 				label: "Brands",
