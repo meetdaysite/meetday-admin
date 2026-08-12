@@ -346,6 +346,8 @@ export type SponsorshipProposal = {
 	city: string | null
 	eventDate: string | null
 	eventEndDate: string | null
+	venues: string[]
+	venueCities: string[]
 	status: SponsorshipStatus
 	submittedAt: string | null
 	createdAt: string
@@ -373,6 +375,7 @@ export type SponsorshipDetail = {
 	venue: string | null
 	venues: string[]
 	city: string | null
+	venueCities: string[]
 	audienceProfile: string[]
 	ageGroup: string | null
 	guestCount: string | null
@@ -400,7 +403,7 @@ export type CreateSponsorshipPayload = {
 	eventDate: string
 	eventEndDate: string
 	venues: string[]
-	city: string
+	venueCities: string[]
 	audienceProfile: string[]
 	ageGroup: string
 	guestCount: string

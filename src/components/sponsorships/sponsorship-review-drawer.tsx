@@ -201,13 +201,22 @@ function SponsorshipDetailContent({
 						value={
 							<span>
 								{display.venues && display.venues.length > 0 ? (
-									<span className="block">{display.venues.join(", ")}</span>
+									<span className="block">
+										{display.venues
+											.map((v: string, idx: number) => {
+												const c = display.venueCities?.[idx]
+												return c ? `${v} (${c})` : v
+											})
+											.join(", ")}
+									</span>
 								) : (
-									display.venue && <span className="block">{display.venue}</span>
+									<>
+										{display.venue && <span className="block">{display.venue}</span>}
+										<span className={display.venue ? "text-[11px] text-text-tertiary" : undefined}>
+											{display.city}
+										</span>
+									</>
 								)}
-								<span className={display.venue || (display.venues && display.venues.length > 0) ? "text-[11px] text-text-tertiary" : undefined}>
-									{display.city}
-								</span>
 							</span>
 						}
 					/>

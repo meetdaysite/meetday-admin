@@ -39,7 +39,7 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 	const [eventDate, setEventDate] = useState("")
 	const [eventEndDate, setEventEndDate] = useState("")
 	const [venues, setVenues] = useState<string[]>([""])
-	const [city, setCity] = useState("")
+	const [venueCities, setVenueCities] = useState<string[]>([""])
 	const [ageGroup, setAgeGroup] = useState("")
 	const [guestCount, setGuestCount] = useState("")
 
@@ -65,7 +65,7 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 		setEventDate("")
 		setEventEndDate("")
 		setVenues([""])
-		setCity("")
+		setVenueCities([""])
 		setAgeGroup("")
 		setGuestCount("")
 		setAudienceProfile([])
@@ -140,7 +140,7 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 		if (!eventEndDate) return setError("Event end date is required.")
 		if (eventEndDate < eventDate) return setError("End date cannot be before the start date.")
 		if (venues.every((v) => !v.trim())) return setError("At least one venue is required.")
-		if (!city.trim()) return setError("City is required.")
+		if (venues.some((v, idx) => v.trim() && !venueCities[idx]?.trim())) return setError("Please add a city for every venue.")
 		if (audienceProfile.length === 0) return setError("At least one audience profile tag is required.")
 		if (!ageGroup.trim()) return setError("Age group is required.")
 		if (!guestCount.trim()) return setError("Guest count is required.")
@@ -156,7 +156,9 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 				eventDate: new Date(eventDate).toISOString(),
 				eventEndDate: new Date(eventEndDate).toISOString(),
 				venues: venues.map((v) => v.trim()).filter(Boolean),
-				city: city.trim(),
+				venueCities: venues
+					.map((v, idx) => (v.trim() ? venueCities[idx]?.trim() || "" : null))
+					.filter((c): c is string => c !== null),
 				audienceProfile,
 				ageGroup: ageGroup.trim(),
 				guestCount: guestCount.trim(),
@@ -237,7 +239,7 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 					required
 				/>
 
-				<div className="grid grid-cols-3 gap-3">
+				<div className="grid grid-cols-2 gap-3">
 					<div>
 						<label className={labelClass}>
 							Event date <span className="text-red-500" aria-hidden>*</span>
@@ -263,18 +265,6 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 							className={inputClass}
 						/>
 					</div>
-					<div>
-						<label className={labelClass}>
-							City <span className="text-red-500" aria-hidden>*</span>
-						</label>
-						<input
-							type="text"
-							value={city}
-							onChange={(e) => setCity(e.target.value)}
-							disabled={isLoading}
-							className={inputClass}
-						/>
-					</div>
 				</div>
 
 				<div>
@@ -284,7 +274,10 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 						</label>
 						<button
 							type="button"
-							onClick={() => setVenues([...venues, ""])}
+							onClick={() => {
+								setVenues([...venues, ""])
+								setVenueCities([...venueCities, ""])
+							}}
 							disabled={isLoading}
 							className="text-xs font-semibold text-text-brand hover:underline disabled:opacity-50"
 						>
@@ -303,12 +296,28 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 										setVenues(updated)
 									}}
 									disabled={isLoading}
+									placeholder="Venue"
+									className={inputClass}
+								/>
+								<input
+									type="text"
+									value={venueCities[idx] || ""}
+									onChange={(e) => {
+										const updated = [...venueCities]
+										updated[idx] = e.target.value
+										setVenueCities(updated)
+									}}
+									disabled={isLoading}
+									placeholder="City"
 									className={inputClass}
 								/>
 								{venues.length > 1 && (
 									<button
 										type="button"
-										onClick={() => setVenues(venues.filter((_, i) => i !== idx))}
+										onClick={() => {
+											setVenues(venues.filter((_, i) => i !== idx))
+											setVenueCities(venueCities.filter((_, i) => i !== idx))
+										}}
 										disabled={isLoading}
 										className="text-red-500 hover:text-red-700 font-bold text-lg disabled:opacity-50"
 									>
