@@ -433,6 +433,7 @@ export type CommunityProfile = {
 		id: string
 		displayName: string | null
 		operatingCities: string[]
+		socialLinks: { instagram?: string; linkedin?: string; youtube?: string; website?: string } | null
 		user: { id: string; firstName: string; lastName: string; email: string | null }
 	}
 }

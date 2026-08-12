@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, Mail, Users, Calendar, AlertTriangle, ShieldAlert, Tag, MapPin } from "lucide-react"
+import { Loader2, Mail, Users, Calendar, AlertTriangle, ShieldAlert, Tag, MapPin, Link2, Globe } from "lucide-react"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ReasonDialog } from "@/components/events/event-review-drawer"
@@ -120,6 +120,29 @@ function CommunityProfileDetailContent({ detail }: { detail: CommunityProfileDet
 					)}
 				</div>
 			</div>
+
+			{detail.hostProfile.socialLinks && Object.values(detail.hostProfile.socialLinks).some(Boolean) && (
+				<>
+					<div className="border-t border-border-subtle" />
+					<div>
+						<SectionLabel>Social Links</SectionLabel>
+						<div className="space-y-3.5">
+							{detail.hostProfile.socialLinks.instagram && (
+								<DetailRow icon={Link2} label="Instagram" value={detail.hostProfile.socialLinks.instagram} />
+							)}
+							{detail.hostProfile.socialLinks.linkedin && (
+								<DetailRow icon={Link2} label="LinkedIn" value={detail.hostProfile.socialLinks.linkedin} />
+							)}
+							{detail.hostProfile.socialLinks.youtube && (
+								<DetailRow icon={Link2} label="YouTube" value={detail.hostProfile.socialLinks.youtube} />
+							)}
+							{detail.hostProfile.socialLinks.website && (
+								<DetailRow icon={Globe} label="Website" value={detail.hostProfile.socialLinks.website} />
+							)}
+						</div>
+					</div>
+				</>
+			)}
 
 			{detail.about && (
 				<>
