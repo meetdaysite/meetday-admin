@@ -114,6 +114,16 @@ export async function uploadSponsorshipImage(file: File): Promise<string> {
 	return key
 }
 
+// Host community profile logos share the SPONSORSHIP_MEDIA upload context (see ActivateCommunityDto).
+export async function uploadCommunityProfileLogo(file: File): Promise<string> {
+	const { uploadUrl, key } = await getPresignedUploadUrl({
+		context: "SPONSORSHIP_MEDIA",
+		contentType: file.type as ImageContentType,
+	})
+	await uploadToStorage(uploadUrl, file)
+	return key
+}
+
 export async function uploadSponsorshipDocument(file: File): Promise<string> {
 	const { uploadUrl, key } = await getPresignedUploadUrl({
 		context: "SPONSORSHIP_DOCUMENT",

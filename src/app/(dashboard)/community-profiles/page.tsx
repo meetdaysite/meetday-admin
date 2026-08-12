@@ -1,6 +1,7 @@
 "use client"
 
 import { CommunityProfileReviewDrawer, type CommunityProfileAction } from "@/components/community-profiles/community-profile-review-drawer"
+import { CreateCommunityProfileDrawer } from "@/components/community-profiles/create-community-profile-drawer"
 import { DataView } from "@/components/ui/data-view"
 import { FilterSelect } from "@/components/ui/filter-select"
 import PageHeader from "@/components/ui/PageHeader"
@@ -14,6 +15,7 @@ import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { ApprovalStatus, CommunityProfile } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
+import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useMemo, useState } from "react"
 import { toast } from "sonner"
@@ -43,6 +45,7 @@ export default function AllCommunityProfilesPage() {
 	const [search, setSearch] = useState("")
 
 	const { item: selectedProfile, open: drawerOpen, openDrawer, closeDrawer } = useDrawer<CommunityProfile>()
+	const [createOpen, setCreateOpen] = useState(false)
 
 	const fetcher = useCallback(() => {
 		const params: { status?: ApprovalStatus; page: number; limit: number } = { page, limit: PAGE_LIMIT }
@@ -156,6 +159,14 @@ export default function AllCommunityProfilesPage() {
 			<PageHeader
 				title="All Community Profiles"
 				description="Every host community profile on the platform, regardless of status."
+				buttons={
+					<button
+						onClick={() => setCreateOpen(true)}
+						className="flex items-center gap-1.5 rounded-lg bg-action-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors"
+					>
+						<Plus size={14} /> Add Community Profile
+					</button>
+				}
 			/>
 
 			<div className="flex items-center gap-2 flex-wrap">
@@ -190,6 +201,15 @@ export default function AllCommunityProfilesPage() {
 				onClose={closeDrawer}
 				profile={selectedProfile}
 				onAction={handleAction}
+			/>
+
+			<CreateCommunityProfileDrawer
+				open={createOpen}
+				onClose={() => setCreateOpen(false)}
+				onCreated={() => {
+					setCreateOpen(false)
+					fetchProfiles()
+				}}
 			/>
 		</div>
 	)

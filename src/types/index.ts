@@ -450,6 +450,31 @@ export type CommunityProfilesListResponse = {
 	limit: number
 }
 
+// A host that doesn't have a community profile yet — eligible for admin-direct creation.
+export type EligibleHost = {
+	id: string
+	displayName: string | null
+	user: { id: string; firstName: string; lastName: string; email: string | null }
+}
+
+export type EligibleHostsListResponse = {
+	hosts: EligibleHost[]
+	total: number
+	page: number
+	limit: number
+}
+
+export type CreateCommunityProfilePayload = {
+	hostProfileId: string
+	name: string
+	about: string
+	logoKey: string
+	size: string
+	avgGuestCount: string
+	experiencesPerYear: string
+	categoryIds: string[]
+}
+
 export type SponsorshipInterest = {
 	id: string
 	createdAt: string
