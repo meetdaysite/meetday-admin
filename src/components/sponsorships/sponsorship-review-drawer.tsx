@@ -200,8 +200,12 @@ function SponsorshipDetailContent({
 						label="Location"
 						value={
 							<span>
-								{display.venue && <span className="block">{display.venue}</span>}
-								<span className={display.venue ? "text-[11px] text-text-tertiary" : undefined}>
+								{display.venues && display.venues.length > 0 ? (
+									<span className="block">{display.venues.join(", ")}</span>
+								) : (
+									display.venue && <span className="block">{display.venue}</span>
+								)}
+								<span className={display.venue || (display.venues && display.venues.length > 0) ? "text-[11px] text-text-tertiary" : undefined}>
 									{display.city}
 								</span>
 							</span>

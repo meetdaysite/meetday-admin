@@ -38,7 +38,7 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 	const [imagePreview, setImagePreview] = useState<string | null>(null)
 	const [eventDate, setEventDate] = useState("")
 	const [eventEndDate, setEventEndDate] = useState("")
-	const [venue, setVenue] = useState("")
+	const [venues, setVenues] = useState<string[]>([""])
 	const [city, setCity] = useState("")
 	const [ageGroup, setAgeGroup] = useState("")
 	const [guestCount, setGuestCount] = useState("")
@@ -64,7 +64,7 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 		setImagePreview(null)
 		setEventDate("")
 		setEventEndDate("")
-		setVenue("")
+		setVenues([""])
 		setCity("")
 		setAgeGroup("")
 		setGuestCount("")
@@ -139,7 +139,7 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 		if (!eventDate) return setError("Event date is required.")
 		if (!eventEndDate) return setError("Event end date is required.")
 		if (eventEndDate < eventDate) return setError("End date cannot be before the start date.")
-		if (!venue.trim()) return setError("Venue is required.")
+		if (venues.every((v) => !v.trim())) return setError("At least one venue is required.")
 		if (!city.trim()) return setError("City is required.")
 		if (audienceProfile.length === 0) return setError("At least one audience profile tag is required.")
 		if (!ageGroup.trim()) return setError("Age group is required.")
@@ -155,7 +155,7 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 				imageKey,
 				eventDate: new Date(eventDate).toISOString(),
 				eventEndDate: new Date(eventEndDate).toISOString(),
-				venue: venue.trim(),
+				venues: venues.map((v) => v.trim()).filter(Boolean),
 				city: city.trim(),
 				audienceProfile,
 				ageGroup: ageGroup.trim(),
@@ -278,16 +278,46 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 				</div>
 
 				<div>
-					<label className={labelClass}>
-						Venue <span className="text-red-500" aria-hidden>*</span>
-					</label>
-					<input
-						type="text"
-						value={venue}
-						onChange={(e) => setVenue(e.target.value)}
-						disabled={isLoading}
-						className={inputClass}
-					/>
+					<div className="flex items-center justify-between mb-1.5">
+						<label className="block text-xs font-semibold text-text-secondary">
+							Venue <span className="text-red-500" aria-hidden>*</span>
+						</label>
+						<button
+							type="button"
+							onClick={() => setVenues([...venues, ""])}
+							disabled={isLoading}
+							className="text-xs font-semibold text-text-brand hover:underline disabled:opacity-50"
+						>
+							+ Add venue
+						</button>
+					</div>
+					<div className="space-y-2">
+						{venues.map((v, idx) => (
+							<div key={idx} className="flex gap-2 items-center">
+								<input
+									type="text"
+									value={v}
+									onChange={(e) => {
+										const updated = [...venues]
+										updated[idx] = e.target.value
+										setVenues(updated)
+									}}
+									disabled={isLoading}
+									className={inputClass}
+								/>
+								{venues.length > 1 && (
+									<button
+										type="button"
+										onClick={() => setVenues(venues.filter((_, i) => i !== idx))}
+										disabled={isLoading}
+										className="text-red-500 hover:text-red-700 font-bold text-lg disabled:opacity-50"
+									>
+										✕
+									</button>
+								)}
+							</div>
+						))}
+					</div>
 				</div>
 
 				<div className="grid grid-cols-2 gap-3">

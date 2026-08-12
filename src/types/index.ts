@@ -371,6 +371,7 @@ export type SponsorshipDetail = {
 	eventDate: string | null
 	eventEndDate: string | null
 	venue: string | null
+	venues: string[]
 	city: string | null
 	audienceProfile: string[]
 	ageGroup: string | null
@@ -398,7 +399,7 @@ export type CreateSponsorshipPayload = {
 	imageKey: string
 	eventDate: string
 	eventEndDate: string
-	venue: string
+	venues: string[]
 	city: string
 	audienceProfile: string[]
 	ageGroup: string
