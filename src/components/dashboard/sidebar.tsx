@@ -145,6 +145,13 @@ const NAV: NavSection[] = [
 				href: "/brands",
 				icon: Users,
 				permission: "sponsorship.approve",
+				exact: true,
+			},
+			{
+				label: "Brand Interests",
+				href: "/brands/interests",
+				icon: Users,
+				permission: "sponsorship.approve",
 			},
 		],
 	},

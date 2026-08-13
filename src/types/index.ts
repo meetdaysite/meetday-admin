@@ -500,6 +500,25 @@ export type SponsorshipInterestsListResponse = {
 	limit: number
 }
 
+export type BrandProfileStatus = "COMPLETE" | "INCOMPLETE"
+
+export type Brand = {
+	id: string
+	brandName: string
+	socialLinks: { instagram?: string; linkedin?: string; youtube?: string; website?: string } | null
+	isProfileComplete: boolean
+	createdAt: string
+	user: { id: string; email: string | null; phone: string | null; firstName: string; lastName: string }
+	categories: { id: string; name: string }[]
+}
+
+export type BrandsListResponse = {
+	brands: Brand[]
+	total: number
+	page: number
+	limit: number
+}
+
 export type BulkHostRow = {
 	_index: number
 	name: string
