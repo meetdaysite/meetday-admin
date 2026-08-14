@@ -507,6 +507,14 @@ export type Brand = {
 	brandName: string
 	socialLinks: { instagram?: string; linkedin?: string; youtube?: string; website?: string } | null
 	isProfileComplete: boolean
+	workEmail: string | null
+	contactPhone: string | null
+	logoKey: string | null
+	logoUrl: string | null
+	companyType: "BRAND" | "AGENCY" | null
+	aboutCompany: string | null
+	industry: string | null
+	approvalStatus: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED"
 	createdAt: string
 	user: { id: string; email: string | null; phone: string | null; firstName: string; lastName: string }
 	categories: { id: string; name: string }[]

@@ -12,4 +12,12 @@ export async function getBrands(params?: GetBrandsParams): Promise<BrandsListRes
 	return data
 }
 
+export async function approveBrand(id: string): Promise<void> {
+	await apiClient.post(`/admin/brands/${id}/approve`)
+}
+
+export async function rejectBrand(id: string, remark: string): Promise<void> {
+	await apiClient.post(`/admin/brands/${id}/reject`, { remark })
+}
+
 export type { Brand }

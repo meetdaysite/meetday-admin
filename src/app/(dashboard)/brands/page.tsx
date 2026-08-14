@@ -13,6 +13,8 @@ import { usePermission } from "@/lib/hooks/use-permission"
 import type { Brand, BrandProfileStatus } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
 import { useCallback, useMemo, useState } from "react"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { BrandReviewDrawer } from "@/components/brands/brand-review-drawer"
 
 const PAGE_LIMIT = 20
 
@@ -43,6 +45,9 @@ export default function BrandsPage() {
 	const [statusFilter, setStatusFilter] = useState<ProfileFilter>("ALL")
 	const [search, setSearch] = useState("")
 
+	const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
+	const [drawerOpen, setDrawerOpen] = useState(false)
+
 	const fetcher = useCallback(
 		() =>
 			getBrands({
@@ -53,7 +58,7 @@ export default function BrandsPage() {
 		[page, statusFilter],
 	)
 
-	const { items: brands, total, isLoading, error } = usePaginatedFetch(fetcher, "Failed to load brands")
+	const { items: brands, total, isLoading, error, refresh } = usePaginatedFetch(fetcher, "Failed to load brands")
 
 	const filtered = useMemo(() => {
 		const q = search.toLowerCase()
@@ -111,6 +116,11 @@ export default function BrandsPage() {
 				cell: ({ row }) => <CompletenessBadge isProfileComplete={row.original.isProfileComplete} />,
 			},
 			{
+				id: "approvalStatus",
+				header: "Approval",
+				cell: ({ row }) => <StatusBadge status={row.original.approvalStatus} />,
+			},
+			{
 				id: "joined",
 				header: "Joined",
 				cell: ({ row }) => <DateCell value={row.original.createdAt} format={formatDate} secondary />,
@@ -150,7 +160,21 @@ export default function BrandsPage() {
 				columns={columns}
 				data={filtered}
 				emptyMessage="No brands found."
+				onRowClick={(brand) => {
+					setSelectedBrand(brand)
+					setDrawerOpen(true)
+				}}
 				pagination={{ page, totalPages, total, pageSize: PAGE_LIMIT, onPageChange: setPage }}
+			/>
+
+			<BrandReviewDrawer
+				open={drawerOpen}
+				onClose={() => {
+					setDrawerOpen(false)
+					setSelectedBrand(null)
+				}}
+				brand={selectedBrand}
+				onRefresh={refresh}
 			/>
 		</div>
 	)
