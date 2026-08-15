@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { getPendingHosts } from "@/lib/api/hosts"
 import { getPendingEvents, getPendingRevisions } from "@/lib/api/events"
 import { getPendingSponsorships, getPendingSponsorshipRevisions } from "@/lib/api/sponsorships"
-import { getPendingCommunityProfiles } from "@/lib/api/community-profiles"
+import { getPendingCommunityProfiles, getPendingCommunityProfileRevisions } from "@/lib/api/community-profiles"
 import { getPendingBrands } from "@/lib/api/brands"
 import { getSupportTickets } from "@/lib/api/support-tickets"
 import { usePermission } from "@/lib/hooks/use-permission"
@@ -17,6 +17,7 @@ export type SidebarBadgeKey =
 	| "sponsorshipQueue"
 	| "sponsorshipRevisions"
 	| "communityProfileQueue"
+	| "communityProfileRevisions"
 	| "brandQueue"
 
 export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>> {
@@ -76,6 +77,13 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		refetchInterval: REFETCH_INTERVAL,
 	})
 
+	const communityProfileRevisions = useQuery({
+		queryKey: ["sidebar-badge", "community-profile-revisions"],
+		queryFn: () => getPendingCommunityProfileRevisions({ limit: 1 }).then(r => r.total),
+		enabled: canSeeCommunityProfileQueue,
+		refetchInterval: REFETCH_INTERVAL,
+	})
+
 	const canSeeBrandQueue = usePermission("sponsorship.approve")
 	const brandQueue = useQuery({
 		queryKey: ["sidebar-badge", "brand-queue"],
@@ -92,6 +100,7 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		sponsorshipQueue: sponsorshipQueue.data,
 		sponsorshipRevisions: sponsorshipRevisions.data,
 		communityProfileQueue: communityProfileQueue.data,
+		communityProfileRevisions: communityProfileRevisions.data,
 		brandQueue: brandQueue.data,
 	}
 }

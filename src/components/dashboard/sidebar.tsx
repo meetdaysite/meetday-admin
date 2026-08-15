@@ -108,6 +108,13 @@ const NAV: NavSection[] = [
 				badgeKey: "communityProfileQueue",
 			},
 			{
+				label: "Community Profile Revisions",
+				href: "/community-profiles/revisions",
+				icon: FileEdit,
+				permission: "communityProfile.approve",
+				badgeKey: "communityProfileRevisions",
+			},
+			{
 				label: "All Community Profiles",
 				href: "/community-profiles",
 				icon: BadgeCheck,
