@@ -8,6 +8,8 @@ import { ImageUploadZone } from "@/components/communities/create/ui/image-upload
 import { createSponsorship } from "@/lib/api/sponsorships"
 import { getHosts } from "@/lib/api/hosts"
 import { uploadSponsorshipDocument, uploadSponsorshipImage } from "@/lib/api/storage"
+import { VenueAutocompleteInput } from "@/components/sponsorships/venue-autocomplete-input"
+import { extractApiErrorMessage } from "@/lib/error-handler"
 import type { Host, SponsorshipDetail, SponsorTier } from "@/types"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -131,8 +133,8 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 			setDocName(file.name)
 			setDocType(file.type)
 			setDocSize(file.size)
-		} catch {
-			toast.error("Document upload failed. Please try again.")
+		} catch (err) {
+			toast.error(extractApiErrorMessage(err, "Document upload failed. Please try again."))
 		} finally {
 			setUploadingDoc(false)
 		}
@@ -388,18 +390,29 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 					<div className="space-y-2">
 						{venues.map((v, idx) => (
 							<div key={idx} className="flex gap-2 items-center">
-								<input
-									type="text"
-									value={v}
-									onChange={(e) => {
-										const updated = [...venues]
-										updated[idx] = e.target.value
-										setVenues(updated)
-									}}
-									disabled={isLoading}
-									placeholder="Venue"
-									className={inputClass}
-								/>
+								<div className="flex-1">
+									<VenueAutocompleteInput
+										value={v}
+										disabled={isLoading}
+										onChange={(val) => {
+											const updated = [...venues]
+											updated[idx] = val
+											setVenues(updated)
+										}}
+										onPlaceSelect={(fields) => {
+											const updated = [...venues]
+											updated[idx] = fields.venueName || fields.fullAddress
+											setVenues(updated)
+											if (fields.city && !venueCities[idx]?.trim()) {
+												const updatedCities = [...venueCities]
+												updatedCities[idx] = fields.city
+												setVenueCities(updatedCities)
+											}
+										}}
+										placeholder="Venue"
+										className={inputClass}
+									/>
+								</div>
 								<input
 									type="text"
 									value={venueCities[idx] || ""}

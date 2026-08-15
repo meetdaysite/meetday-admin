@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react"
 import { ImageIcon, Upload, X, Pencil, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { extractApiErrorMessage } from "@/lib/error-handler"
 
 interface ImageUploadZoneProps {
 	value: string | null
@@ -53,9 +54,9 @@ export function ImageUploadZone({
 			try {
 				const key = await onUpload(file)
 				onChange(key, localUrl)
-			} catch {
+			} catch (err) {
 				URL.revokeObjectURL(localUrl)
-				toast.error("Image upload failed. Please try again.")
+				toast.error(extractApiErrorMessage(err, "Image upload failed. Please try again."))
 			} finally {
 				setUploading(false)
 			}
