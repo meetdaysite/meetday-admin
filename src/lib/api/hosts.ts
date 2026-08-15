@@ -6,6 +6,7 @@ export type GetHostsParams = {
 	kycStatus?: KycStatus
 	plan?: HostPlan
 	city?: string
+	search?: string
 	page?: number
 	limit?: number
 }

@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
-import { Loader2, Plus, X, FileText } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Loader2, Plus, X, FileText, Search } from "lucide-react"
 import { toast } from "sonner"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { ImageUploadZone } from "@/components/communities/create/ui/image-upload-zone"
 import { createSponsorship } from "@/lib/api/sponsorships"
+import { getHosts } from "@/lib/api/hosts"
 import { uploadSponsorshipDocument, uploadSponsorshipImage } from "@/lib/api/storage"
-import type { SponsorshipDetail, SponsorTier } from "@/types"
+import type { Host, SponsorshipDetail, SponsorTier } from "@/types"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,6 +33,12 @@ const labelClass = "block text-xs font-semibold text-text-secondary mb-1.5"
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSponsorshipDrawerProps) {
+	const [selectedHost, setSelectedHost] = useState<Host | null>(null)
+	const [hostPickerOpen, setHostPickerOpen] = useState(false)
+	const [hostSearch, setHostSearch] = useState("")
+	const [hosts, setHosts] = useState<Host[]>([])
+	const [hostsLoading, setHostsLoading] = useState(false)
+
 	const [name, setName] = useState("")
 	const [about, setAbout] = useState("")
 	const [imageKey, setImageKey] = useState<string | null>(null)
@@ -57,7 +64,23 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 	const [isLoading, setIsLoading] = useState(false)
 	const [error, setError] = useState<string | null>(null)
 
+	useEffect(() => {
+		if (!hostPickerOpen) return
+		setHostsLoading(true)
+		const timeout = setTimeout(() => {
+			getHosts({ search: hostSearch.trim() || undefined, limit: 20 })
+				.then((r) => setHosts(r.hosts))
+				.catch(() => toast.error("Failed to load hosts"))
+				.finally(() => setHostsLoading(false))
+		}, 300)
+		return () => clearTimeout(timeout)
+	}, [hostPickerOpen, hostSearch])
+
 	function reset() {
+		setSelectedHost(null)
+		setHostPickerOpen(false)
+		setHostSearch("")
+		setHosts([])
 		setName("")
 		setAbout("")
 		setImageKey(null)
@@ -150,6 +173,7 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 		setIsLoading(true)
 		try {
 			const proposal = await createSponsorship({
+				...(selectedHost && { hostProfileId: selectedHost.id }),
 				name: name.trim(),
 				about: about.trim(),
 				imageKey,
@@ -184,15 +208,92 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 		}
 	}
 
+	const description = selectedHost
+		? `Published immediately under ${selectedHost.displayName || `${selectedHost.user.firstName} ${selectedHost.user.lastName}`} — no KYC or review required.`
+		: "Published immediately under the Meetday Official host — no KYC or review required."
+
 	return (
 		<Drawer
 			open={open}
 			onClose={handleClose}
 			title="Create Sponsorship Proposal"
-			description="Published immediately under the Meetday Official host — no KYC or review required."
+			description={description}
 			width="max-w-lg"
 		>
 			<form onSubmit={handleSubmit} className="space-y-5">
+				<div>
+					<label className={labelClass}>Publish under</label>
+					{selectedHost ? (
+						<div className="flex items-center justify-between gap-2 rounded-lg border border-border-default px-3 py-2 text-xs">
+							<span className="truncate">
+								<span className="font-semibold">
+									{selectedHost.displayName || `${selectedHost.user.firstName} ${selectedHost.user.lastName}`}
+								</span>
+								{selectedHost.user.email && <span className="text-text-tertiary"> · {selectedHost.user.email}</span>}
+							</span>
+							<button
+								type="button"
+								onClick={() => setSelectedHost(null)}
+								disabled={isLoading}
+								className="shrink-0 text-xs font-semibold text-text-brand hover:underline disabled:opacity-50"
+							>
+								Change
+							</button>
+						</div>
+					) : (
+						<div className="space-y-2">
+							<button
+								type="button"
+								onClick={() => setHostPickerOpen((v) => !v)}
+								disabled={isLoading}
+								className="flex w-full items-center justify-between rounded-lg border border-dashed border-border-default px-3 py-2 text-xs text-text-tertiary hover:bg-neutral-50 disabled:opacity-50"
+							>
+								Meetday Official (default) — click to attribute to a specific host instead
+							</button>
+							{hostPickerOpen && (
+								<div className="rounded-lg border border-border-default overflow-hidden">
+									<div className="relative border-b border-border-subtle">
+										<Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
+										<input
+											type="text"
+											value={hostSearch}
+											onChange={(e) => setHostSearch(e.target.value)}
+											placeholder="Search hosts by name or email…"
+											className={`${inputClass} border-0 rounded-none pl-8`}
+										/>
+									</div>
+									<div className="max-h-48 overflow-y-auto divide-y divide-border-subtle">
+										{hostsLoading ? (
+											<p className="px-3 py-3 text-xs text-text-tertiary text-center">Loading…</p>
+										) : hosts.length === 0 ? (
+											<p className="px-3 py-3 text-xs text-text-tertiary text-center">No hosts found.</p>
+										) : (
+											hosts.map((h) => (
+												<button
+													key={h.id}
+													type="button"
+													onClick={() => {
+														setSelectedHost(h)
+														setHostPickerOpen(false)
+													}}
+													className="w-full flex flex-col gap-0.5 px-3 py-2 text-left hover:bg-neutral-50 transition-colors"
+												>
+													<span className="text-xs font-semibold text-text-primary">
+														{h.displayName || `${h.user.firstName} ${h.user.lastName}`}
+													</span>
+													<span className="text-[11px] text-text-tertiary">
+														{h.user.email ?? "—"}
+													</span>
+												</button>
+											))
+										)}
+									</div>
+								</div>
+							)}
+						</div>
+					)}
+				</div>
+
 				<div>
 					<label className={labelClass}>
 						Name <span className="text-red-500" aria-hidden>*</span>
