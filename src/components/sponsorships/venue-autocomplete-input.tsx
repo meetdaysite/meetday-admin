@@ -89,6 +89,7 @@ export function VenueAutocompleteInput({
 				left: rect.left,
 				width: rect.width,
 				zIndex: 9999,
+				pointerEvents: "auto",
 			})
 		}
 
@@ -215,7 +216,10 @@ export function VenueAutocompleteInput({
 								role="option"
 								aria-selected={index === highlightedIndex}
 								onMouseDown={(event) => event.preventDefault()}
-								onClick={() => selectSuggestion(suggestion)}
+								onPointerDown={(event) => {
+									event.preventDefault()
+									selectSuggestion(suggestion)
+								}}
 								className={`flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-colors ${
 									index === highlightedIndex ? "bg-neutral-100" : "hover:bg-neutral-50"
 								}`}
