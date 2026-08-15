@@ -8,7 +8,7 @@ import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { AgeDateCell, ChipCell, StatusCell, TwoLineCell } from "@/components/ui/table-cells"
-import { approveCommunityProfile, getCommunityProfiles, rejectCommunityProfile } from "@/lib/api/community-profiles"
+import { approveCommunityProfile, approveCommunityProfileRevision, getCommunityProfiles, rejectCommunityProfile, rejectCommunityProfileRevision } from "@/lib/api/community-profiles"
 import { formatDate, getDaysSince } from "@/lib/formatters"
 import { useDrawer } from "@/lib/hooks/use-drawer"
 import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
@@ -72,14 +72,19 @@ export default function AllCommunityProfilesPage() {
 		)
 	}, [profiles, search])
 
-	async function handleAction(profileId: string, action: CommunityProfileAction, message?: string) {
+	async function handleAction(profileId: string, action: CommunityProfileAction, message?: string, isRevision?: boolean) {
 		try {
-			if (action === "approve") await approveCommunityProfile(profileId)
-			else if (action === "reject") await rejectCommunityProfile(profileId, message!)
+			if (isRevision) {
+				if (action === "approve") await approveCommunityProfileRevision(profileId)
+				else if (action === "reject") await rejectCommunityProfileRevision(profileId, message!)
+			} else {
+				if (action === "approve") await approveCommunityProfile(profileId)
+				else if (action === "reject") await rejectCommunityProfile(profileId, message!)
+			}
 
 			const labels: Record<CommunityProfileAction, string> = {
-				approve: "Community profile approved",
-				reject: "Community profile rejected",
+				approve: isRevision ? "Changes approved and applied" : "Community profile approved",
+				reject: isRevision ? "Changes rejected" : "Community profile rejected",
 			}
 			toast.success(labels[action])
 			fetchProfiles()
@@ -146,7 +151,16 @@ export default function AllCommunityProfilesPage() {
 			{
 				id: "status",
 				header: "Status",
-				cell: ({ row }) => <StatusCell status={row.original.approvalStatus} />,
+				cell: ({ row }) => (
+					<div className="flex items-center gap-1.5">
+						<StatusCell status={row.original.approvalStatus} />
+						{row.original.pendingRevision && (
+							<span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 border border-blue-200">
+								Edit pending
+							</span>
+						)}
+					</div>
+				),
 			},
 		],
 		[],

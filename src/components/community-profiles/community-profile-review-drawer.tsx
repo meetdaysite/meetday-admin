@@ -16,7 +16,7 @@ export type CommunityProfileReviewDrawerProps = {
 	open: boolean
 	onClose: () => void
 	profile: CommunityProfile | null
-	onAction: (profileId: string, action: CommunityProfileAction, message?: string) => Promise<void>
+	onAction: (profileId: string, action: CommunityProfileAction, message?: string, isRevision?: boolean) => Promise<void>
 }
 
 function SectionLabel({ children }: { children: string }) {
@@ -60,9 +60,86 @@ function DrawerSkeleton() {
 	)
 }
 
+function ChangeRow({ label, before, after }: { label: string; before: React.ReactNode; after: React.ReactNode }) {
+	return (
+		<div className="rounded-lg bg-blue-50/60 border border-blue-100 px-3 py-2.5">
+			<p className="text-[11px] font-semibold text-blue-700 mb-1">{label}</p>
+			<div className="flex items-start gap-2 text-xs">
+				<span className="text-text-tertiary line-through decoration-red-300 flex-1 min-w-0 break-words">{before || "—"}</span>
+				<span className="text-blue-700 shrink-0">→</span>
+				<span className="text-text-primary font-medium flex-1 min-w-0 break-words">{after || "—"}</span>
+			</div>
+		</div>
+	)
+}
+
+function ProposedChangesSection({ detail }: { detail: CommunityProfileDetail }) {
+	const revision = detail.pendingRevision
+	if (!revision) return null
+
+	const textFields: { key: string; label: string }[] = [
+		{ key: "name", label: "Name" },
+		{ key: "about", label: "About" },
+		{ key: "size", label: "Community size" },
+		{ key: "avgGuestCount", label: "Avg. guest count" },
+		{ key: "experiencesPerYear", label: "Experiences/year" },
+	]
+
+	const changedText = textFields.filter((f) => revision[f.key] !== undefined && revision[f.key] !== (detail as any)[f.key])
+	const hasNewLogo = !!revision.logoUrl
+	const hasNewSecondaryImage = !!revision.secondaryImageUrl
+	const hasCategoryChange = Array.isArray((revision as any).categoryIds)
+
+	return (
+		<div className="rounded-xl border-2 border-blue-200 bg-blue-50/30 p-4 space-y-3">
+			<p className="text-xs font-bold text-blue-700 uppercase tracking-wider">Proposed changes — awaiting review</p>
+			<p className="text-[11px] text-text-tertiary -mt-2">
+				This profile is already live. Brands still see the current (approved) version below until this edit is approved.
+			</p>
+
+			{(hasNewLogo || hasNewSecondaryImage) && (
+				<div className="flex gap-3">
+					{hasNewLogo && (
+						<div className="flex flex-col gap-1">
+							<span className="text-[10px] font-semibold text-blue-700">New logo</span>
+							{/* eslint-disable-next-line @next/next/no-img-element */}
+							<img src={revision.logoUrl as string} alt="Proposed logo" className="w-16 h-16 rounded-full object-cover border border-border-subtle" />
+						</div>
+					)}
+					{hasNewSecondaryImage && (
+						<div className="flex flex-col gap-1">
+							<span className="text-[10px] font-semibold text-blue-700">New poster/banner</span>
+							{/* eslint-disable-next-line @next/next/no-img-element */}
+							<img src={revision.secondaryImageUrl as string} alt="Proposed poster" className="w-28 h-16 rounded-lg object-cover border border-border-subtle" />
+						</div>
+					)}
+				</div>
+			)}
+
+			{changedText.map((f) => (
+				<ChangeRow key={f.key} label={f.label} before={(detail as any)[f.key]} after={revision[f.key] as string} />
+			))}
+
+			{hasCategoryChange && (
+				<p className="text-[11px] text-text-tertiary">Categories were also changed as part of this edit.</p>
+			)}
+
+			{changedText.length === 0 && !hasNewLogo && !hasNewSecondaryImage && !hasCategoryChange && (
+				<p className="text-[11px] text-text-tertiary">No visible field changes detected.</p>
+			)}
+		</div>
+	)
+}
+
 function CommunityProfileDetailContent({ detail }: { detail: CommunityProfileDetail }) {
 	return (
 		<div className="space-y-6">
+			<ProposedChangesSection detail={detail} />
+
+			{detail.pendingRevision && (
+				<p className="text-[10px] font-semibold uppercase tracking-wider text-text-tertiary">Current (live) version</p>
+			)}
+
 			{detail.logoUrl && (
 				<div className="w-20 h-20 rounded-full overflow-hidden border border-border-subtle">
 					{/* eslint-disable-next-line @next/next/no-img-element */}
@@ -231,7 +308,7 @@ export function CommunityProfileReviewDrawer({ open, onClose, profile, onAction 
 		if (!profile) return
 		setActionLoading("approve")
 		try {
-			await onAction(profile.id, "approve")
+			await onAction(profile.id, "approve", undefined, isRevisionReview)
 			handleClose()
 		} finally {
 			setActionLoading(null)
@@ -240,13 +317,14 @@ export function CommunityProfileReviewDrawer({ open, onClose, profile, onAction 
 
 	async function handleRejectConfirm(remark: string) {
 		if (!profile) return
-		await onAction(profile.id, "reject", remark)
+		await onAction(profile.id, "reject", remark, isRevisionReview)
 		setRejectDialogOpen(false)
 		handleClose()
 	}
 
+	const isRevisionReview = !!detail?.pendingRevision
 	const status = detail?.approvalStatus ?? profile?.approvalStatus
-	const canReview = status === "PENDING"
+	const canReview = isRevisionReview || status === "PENDING"
 	const isBusy = actionLoading !== null
 
 	const hostDisplay = profile
@@ -284,7 +362,7 @@ export function CommunityProfileReviewDrawer({ open, onClose, profile, onAction 
 								className="flex items-center gap-1.5 rounded-lg bg-action-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors disabled:opacity-70"
 							>
 								{actionLoading === "approve" && <Loader2 size={12} className="animate-spin" />}
-								Approve
+								{isRevisionReview ? "Approve Changes" : "Approve"}
 							</button>
 						</>
 					) : (
@@ -300,10 +378,14 @@ export function CommunityProfileReviewDrawer({ open, onClose, profile, onAction 
 
 			<ReasonDialog
 				open={rejectDialogOpen}
-				title="Reject Community Profile"
-				description="Provide a remark explaining why this community profile is rejected. The host will be notified and can edit and resubmit."
+				title={isRevisionReview ? "Reject Changes" : "Reject Community Profile"}
+				description={
+					isRevisionReview
+						? "Provide a remark explaining why this edit is rejected. The profile stays live as-is; the host will be notified and can revise and resubmit."
+						: "Provide a remark explaining why this community profile is rejected. The host will be notified and can edit and resubmit."
+				}
 				placeholder="e.g. The community size and guest count seem inconsistent. Please clarify and resubmit."
-				confirmLabel="Reject Profile"
+				confirmLabel={isRevisionReview ? "Reject Changes" : "Reject Profile"}
 				confirmClassName="bg-red-600 hover:bg-red-700"
 				onClose={() => setRejectDialogOpen(false)}
 				onConfirm={handleRejectConfirm}

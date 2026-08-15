@@ -36,6 +36,23 @@ export async function rejectCommunityProfile(id: string, remark: string): Promis
 	await apiClient.post(`/admin/community-profiles/${id}/reject`, { remark })
 }
 
+export async function getPendingCommunityProfileRevisions(
+	params?: { page?: number; limit?: number },
+): Promise<CommunityProfilesListResponse> {
+	const { data } = await apiClient.get<CommunityProfilesListResponse>("/admin/community-profiles/revisions/pending", {
+		params,
+	})
+	return data
+}
+
+export async function approveCommunityProfileRevision(id: string): Promise<void> {
+	await apiClient.post(`/admin/community-profiles/${id}/revision/approve`)
+}
+
+export async function rejectCommunityProfileRevision(id: string, remark: string): Promise<void> {
+	await apiClient.post(`/admin/community-profiles/${id}/revision/reject`, { remark })
+}
+
 export async function getEligibleHosts(
 	params?: { search?: string; page?: number; limit?: number },
 ): Promise<EligibleHostsListResponse> {

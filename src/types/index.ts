@@ -430,6 +430,7 @@ export type CommunityProfile = {
 	approvalStatus: ApprovalStatus
 	adminRejectionRemark: string | null
 	reviewedAt: string | null
+	pendingRevision: Record<string, unknown> | null
 	createdAt: string
 	updatedAt: string
 	categories: CommunityProfileCategory[]
@@ -442,7 +443,11 @@ export type CommunityProfile = {
 	}
 }
 
-export type CommunityProfileDetail = CommunityProfile & { logoUrl: string | null; secondaryImageUrl: string | null }
+export type CommunityProfileDetail = CommunityProfile & {
+	logoUrl: string | null
+	secondaryImageUrl: string | null
+	pendingRevision: (Record<string, unknown> & { logoUrl?: string | null; secondaryImageUrl?: string | null }) | null
+}
 
 export type CommunityProfilesListResponse = {
 	profiles: CommunityProfile[]
