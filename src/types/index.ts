@@ -394,6 +394,7 @@ export type SponsorshipDetail = {
 	createdAt: string
 	updatedAt: string
 	hostProfile: EventHostProfile
+	videoUrl: string | null
 }
 
 export type CreateSponsorshipPayload = {
@@ -441,7 +442,7 @@ export type CommunityProfile = {
 	}
 }
 
-export type CommunityProfileDetail = CommunityProfile & { logoUrl: string | null }
+export type CommunityProfileDetail = CommunityProfile & { logoUrl: string | null; secondaryImageUrl: string | null }
 
 export type CommunityProfilesListResponse = {
 	profiles: CommunityProfile[]

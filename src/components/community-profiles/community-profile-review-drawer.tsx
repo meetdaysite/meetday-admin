@@ -70,6 +70,13 @@ function CommunityProfileDetailContent({ detail }: { detail: CommunityProfileDet
 				</div>
 			)}
 
+			{detail.secondaryImageUrl && (
+				<div className="rounded-xl overflow-hidden border border-border-subtle">
+					{/* eslint-disable-next-line @next/next/no-img-element */}
+					<img src={detail.secondaryImageUrl} alt={`${detail.name} poster`} className="w-full h-auto object-cover" />
+				</div>
+			)}
+
 			<div>
 				<SectionLabel>Community Details</SectionLabel>
 				<div className="space-y-3.5">

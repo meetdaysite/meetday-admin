@@ -277,6 +277,24 @@ function SponsorshipDetailContent({
 				</>
 			)}
 
+			{/* Proposal video */}
+			{detail.videoUrl && (
+				<>
+					<div className="border-t border-border-subtle" />
+					<div>
+						<SectionLabel>Proposal Video</SectionLabel>
+						<a
+							href={detail.videoUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="text-xs font-semibold text-text-brand hover:underline break-all"
+						>
+							Watch Video ↗
+						</a>
+					</div>
+				</>
+			)}
+
 			{/* Rejection remark */}
 			{detail.adminRejectionRemark && (
 				<>
