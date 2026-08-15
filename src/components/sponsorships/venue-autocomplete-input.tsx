@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react"
+import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent } from "react"
+import { createPortal } from "react-dom"
 import { setOptions, importLibrary } from "@googlemaps/js-api-loader"
 
 export interface PlaceFields {
@@ -51,6 +52,9 @@ function cityFromComponents(components?: google.maps.places.AddressComponent[]) 
 // Venue name input with Google Places autocomplete — mirrors the frontend host app's
 // VenueAutocompleteInput (frontend/src/components/eventForm/AddressAutocompleteInput.tsx),
 // ported here since the admin app is a separate project with no shared component package.
+//
+// The suggestions dropdown is rendered via a React portal so it escapes any
+// overflow-hidden / overflow-y-auto ancestor (e.g. the drawer body).
 export function VenueAutocompleteInput({
 	id,
 	value,
@@ -63,10 +67,37 @@ export function VenueAutocompleteInput({
 	const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([])
 	const [open, setOpen] = useState(false)
 	const [highlightedIndex, setHighlightedIndex] = useState(0)
+	const [dropdownStyle, setDropdownStyle] = useState<CSSProperties>({})
 	const listboxId = useId()
 	const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null)
 	const requestIdRef = useRef(0)
 	const rootRef = useRef<HTMLDivElement>(null)
+	const inputRef = useRef<HTMLInputElement>(null)
+
+	// Recalculate dropdown position whenever it opens or the window scrolls/resizes
+	useEffect(() => {
+		if (!open) return
+
+		function updatePosition() {
+			const rect = inputRef.current?.getBoundingClientRect()
+			if (!rect) return
+			setDropdownStyle({
+				position: "fixed",
+				top: rect.bottom + 4,
+				left: rect.left,
+				width: rect.width,
+				zIndex: 9999,
+			})
+		}
+
+		updatePosition()
+		window.addEventListener("scroll", updatePosition, true)
+		window.addEventListener("resize", updatePosition)
+		return () => {
+			window.removeEventListener("scroll", updatePosition, true)
+			window.removeEventListener("resize", updatePosition)
+		}
+	}, [open])
 
 	useEffect(() => {
 		if (!googleMapsApiKey || value.trim().length < 3) {
@@ -162,9 +193,42 @@ export function VenueAutocompleteInput({
 		}
 	}
 
+	const dropdown =
+		open && suggestions.length > 0
+			? createPortal(
+					<div
+						id={listboxId}
+						role="listbox"
+						style={dropdownStyle}
+						className="overflow-hidden rounded-lg border border-border-default bg-surface-canvas shadow-lg"
+					>
+						{suggestions.map((suggestion, index) => (
+							<button
+								key={suggestion.prediction.placeId}
+								type="button"
+								role="option"
+								aria-selected={index === highlightedIndex}
+								onMouseDown={(event) => event.preventDefault()}
+								onClick={() => selectSuggestion(suggestion)}
+								className={`flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-colors ${
+									index === highlightedIndex ? "bg-neutral-100" : "hover:bg-neutral-50"
+								}`}
+							>
+								<span className="text-xs font-medium text-text-primary">{suggestion.mainText}</span>
+								{suggestion.secondaryText && (
+									<span className="text-[11px] text-text-tertiary">{suggestion.secondaryText}</span>
+								)}
+							</button>
+						))}
+					</div>,
+					document.body,
+				)
+			: null
+
 	return (
 		<div ref={rootRef} className="relative w-full">
 			<input
+				ref={inputRef}
 				id={id}
 				type="text"
 				value={value}
@@ -181,33 +245,8 @@ export function VenueAutocompleteInput({
 				aria-autocomplete="list"
 				aria-controls={listboxId}
 			/>
-
-			{open && suggestions.length > 0 && (
-				<div
-					id={listboxId}
-					role="listbox"
-					className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-border-default bg-surface-canvas shadow-lg"
-				>
-					{suggestions.map((suggestion, index) => (
-						<button
-							key={suggestion.prediction.placeId}
-							type="button"
-							role="option"
-							aria-selected={index === highlightedIndex}
-							onMouseDown={(event) => event.preventDefault()}
-							onClick={() => selectSuggestion(suggestion)}
-							className={`flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-colors ${
-								index === highlightedIndex ? "bg-neutral-100" : "hover:bg-neutral-50"
-							}`}
-						>
-							<span className="text-xs font-medium text-text-primary">{suggestion.mainText}</span>
-							{suggestion.secondaryText && (
-								<span className="text-[11px] text-text-tertiary">{suggestion.secondaryText}</span>
-							)}
-						</button>
-					))}
-				</div>
-			)}
+			{dropdown}
 		</div>
 	)
 }
+
