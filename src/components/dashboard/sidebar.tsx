@@ -140,8 +140,20 @@ const NAV: NavSection[] = [
 				permission: "sponsorship.approve",
 				badgeKey: "sponsorshipRevisions",
 			},
+		],
+	},
+	{
+		title: "Brands",
+		items: [
 			{
-				label: "Brands",
+				label: "Brand Queue",
+				href: "/brands/queue",
+				icon: Clock,
+				permission: "sponsorship.approve",
+				badgeKey: "brandQueue",
+			},
+			{
+				label: "All Brands",
 				href: "/brands",
 				icon: Users,
 				permission: "sponsorship.approve",

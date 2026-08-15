@@ -1,14 +1,24 @@
 import { apiClient } from "./client"
-import type { Brand, BrandProfileStatus, BrandsListResponse } from "@/types"
+import type { ApprovalStatus, Brand, BrandProfileStatus, BrandsListResponse } from "@/types"
 
 export type GetBrandsParams = {
 	profileStatus?: BrandProfileStatus
+	approvalStatus?: ApprovalStatus
 	page?: number
 	limit?: number
 }
 
 export async function getBrands(params?: GetBrandsParams): Promise<BrandsListResponse> {
 	const { data } = await apiClient.get<BrandsListResponse>("/admin/brands", { params })
+	return data
+}
+
+export async function getPendingBrands(
+	params?: { page?: number; limit?: number },
+): Promise<BrandsListResponse> {
+	const { data } = await apiClient.get<BrandsListResponse>("/admin/brands", {
+		params: { ...params, approvalStatus: "PENDING" },
+	})
 	return data
 }
 
