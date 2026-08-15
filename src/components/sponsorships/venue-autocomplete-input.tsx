@@ -163,7 +163,7 @@ export function VenueAutocompleteInput({
 	}
 
 	return (
-		<div ref={rootRef} className="relative">
+		<div ref={rootRef} className="relative w-full">
 			<input
 				id={id}
 				type="text"
