@@ -74,6 +74,8 @@ export function VenueAutocompleteInput({
 	const rootRef = useRef<HTMLDivElement>(null)
 	const inputRef = useRef<HTMLInputElement>(null)
 
+	const dropdownRef = useRef<HTMLDivElement>(null)
+
 	// Recalculate dropdown position whenever it opens or the window scrolls/resizes
 	useEffect(() => {
 		if (!open) return
@@ -149,7 +151,10 @@ export function VenueAutocompleteInput({
 
 	useEffect(() => {
 		function handlePointerDown(event: PointerEvent) {
-			if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+			const target = event.target as Node
+			if (!rootRef.current?.contains(target) && !dropdownRef.current?.contains(target)) {
+				setOpen(false)
+			}
 		}
 		document.addEventListener("pointerdown", handlePointerDown)
 		return () => document.removeEventListener("pointerdown", handlePointerDown)
@@ -197,6 +202,7 @@ export function VenueAutocompleteInput({
 		open && suggestions.length > 0
 			? createPortal(
 					<div
+						ref={dropdownRef}
 						id={listboxId}
 						role="listbox"
 						style={dropdownStyle}
