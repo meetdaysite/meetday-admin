@@ -390,7 +390,7 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 					<div className="space-y-2">
 						{venues.map((v, idx) => (
 							<div key={idx} className="flex gap-2 items-center">
-								<div className="flex-1">
+								<div className="flex-1 min-w-0">
 									<VenueAutocompleteInput
 										value={v}
 										disabled={isLoading}
@@ -413,18 +413,20 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 										className={inputClass}
 									/>
 								</div>
-								<input
-									type="text"
-									value={venueCities[idx] || ""}
-									onChange={(e) => {
-										const updated = [...venueCities]
-										updated[idx] = e.target.value
-										setVenueCities(updated)
-									}}
-									disabled={isLoading}
-									placeholder="City"
-									className={inputClass}
-								/>
+								<div className="w-40 shrink-0">
+									<input
+										type="text"
+										value={venueCities[idx] || ""}
+										onChange={(e) => {
+											const updated = [...venueCities]
+											updated[idx] = e.target.value
+											setVenueCities(updated)
+										}}
+										disabled={isLoading}
+										placeholder="City"
+										className={inputClass}
+									/>
+								</div>
 								{venues.length > 1 && (
 									<button
 										type="button"
