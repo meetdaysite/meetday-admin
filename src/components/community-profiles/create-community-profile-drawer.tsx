@@ -162,12 +162,16 @@ export function CreateCommunityProfileDrawer({
 		if (categoryIds.size === 0) return setError("At least one category is required.")
 
 		setIsLoading(true)
-		const socialLinks = {
+		const socialLinksInput = {
 			instagram: instagram.trim() || undefined,
 			linkedin: linkedin.trim() || undefined,
 			youtube: youtube.trim() || undefined,
 			website: website.trim() || undefined,
 		}
+		// Omit entirely when nothing was typed — the create flow can't see a host's existing
+		// social links (not returned by the eligible-hosts list), so sending an empty object
+		// here would silently wipe out whatever they already set during onboarding.
+		const socialLinks = Object.values(socialLinksInput).some(Boolean) ? socialLinksInput : undefined
 		try {
 			if (isEditing && editingProfile) {
 				const profile = await updateCommunityProfile(editingProfile.id, {
