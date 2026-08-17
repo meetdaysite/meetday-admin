@@ -13,7 +13,9 @@ import {
 	Tag,
 	FileText,
 	ShieldAlert,
+	Link2,
 } from "lucide-react"
+import { toast } from "sonner"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -21,6 +23,17 @@ import { ReasonDialog } from "@/components/events/event-review-drawer"
 import { getSponsorshipById } from "@/lib/api/sponsorships"
 import { formatDate, formatDateRange } from "@/lib/formatters"
 import type { SponsorshipDetail, SponsorshipProposal } from "@/types"
+
+// The main brand-facing app is a separate deployment from admin — no shared origin to derive this from.
+const FRONTEND_URL = process.env.NEXT_PUBLIC_FRONTEND_URL ?? "https://meetday-frontend.vercel.app"
+
+function copyProposalShareLink(proposalId: string) {
+	const link = `${FRONTEND_URL}/brand/proposal/${proposalId}`
+	navigator.clipboard
+		.writeText(link)
+		.then(() => toast.success("Link copied! Share it with brands."))
+		.catch(() => toast.error("Failed to copy link."))
+}
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -429,6 +442,16 @@ export function SponsorshipReviewDrawer({ open, onClose, proposal, onAction, onE
 								className="rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors disabled:opacity-50"
 							>
 								Edit
+							</button>
+						)}
+						{status === "PUBLISHED" && proposal && (
+							<button
+								onClick={() => copyProposalShareLink(proposal.id)}
+								disabled={isBusy || fetchState !== "done"}
+								className="flex items-center gap-1.5 rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors disabled:opacity-50"
+							>
+								<Link2 size={13} />
+								Share
 							</button>
 						)}
 						{!canReview && (
