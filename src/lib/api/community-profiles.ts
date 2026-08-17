@@ -68,3 +68,11 @@ export async function createCommunityProfile(
 	const { data } = await apiClient.post<CommunityProfileDetail>("/admin/community-profiles", payload)
 	return data
 }
+
+export async function updateCommunityProfile(
+	id: string,
+	payload: Partial<Omit<CreateCommunityProfilePayload, "hostProfileId">> & { secondaryImageKey?: string },
+): Promise<CommunityProfileDetail> {
+	const { data } = await apiClient.patch<CommunityProfileDetail>(`/admin/community-profiles/${id}`, payload)
+	return data
+}

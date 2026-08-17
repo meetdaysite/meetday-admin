@@ -31,6 +31,9 @@ export type SponsorshipReviewDrawerProps = {
 	onClose: () => void
 	proposal: SponsorshipProposal | null
 	onAction: (proposalId: string, action: SponsorshipAction, message?: string) => Promise<void>
+	// Opens the full edit form for this proposal, pre-filled with every field — available
+	// regardless of status or who created it.
+	onEdit?: (detail: SponsorshipDetail) => void
 	// "revision" mode reviews the pendingRevision snapshot on an already-published proposal
 	// instead of the proposal's own UNDER_REVIEW status.
 	mode?: "proposal" | "revision"
@@ -314,7 +317,7 @@ function SponsorshipDetailContent({
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
-export function SponsorshipReviewDrawer({ open, onClose, proposal, onAction, mode = "proposal" }: SponsorshipReviewDrawerProps) {
+export function SponsorshipReviewDrawer({ open, onClose, proposal, onAction, onEdit, mode = "proposal" }: SponsorshipReviewDrawerProps) {
 	const router = useRouter()
 	const [detail, setDetail] = useState<SponsorshipDetail | null>(null)
 	const [fetchState, setFetchState] = useState<"loading" | "error" | "done">("loading")
@@ -382,6 +385,12 @@ export function SponsorshipReviewDrawer({ open, onClose, proposal, onAction, mod
 		handleClose()
 	}
 
+	function handleEdit() {
+		if (!detail) return
+		onEdit?.(detail)
+		handleClose()
+	}
+
 	const status = detail?.status ?? proposal?.status
 	const canReview = mode === "revision" ? !!detail?.pendingRevision : status === "UNDER_REVIEW"
 	const isBusy = actionLoading !== null
@@ -411,9 +420,28 @@ export function SponsorshipReviewDrawer({ open, onClose, proposal, onAction, mod
 
 				{fetchState === "done" && detail && <SponsorshipDetailContent detail={detail} mode={mode} />}
 
-				<DrawerFooter className={canReview ? "justify-between" : "justify-end"}>
-					{canReview ? (
-						<>
+				<DrawerFooter className="justify-between">
+					<div className="flex items-center gap-2">
+						{onEdit && (
+							<button
+								onClick={handleEdit}
+								disabled={isBusy || fetchState !== "done"}
+								className="rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors disabled:opacity-50"
+							>
+								Edit
+							</button>
+						)}
+						{!canReview && (
+							<button
+								onClick={handleClose}
+								className="rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors"
+							>
+								Close
+							</button>
+						)}
+					</div>
+					{canReview && (
+						<div className="flex items-center gap-2">
 							<button
 								onClick={() => setRejectDialogOpen(true)}
 								disabled={isBusy || fetchState !== "done"}
@@ -429,14 +457,7 @@ export function SponsorshipReviewDrawer({ open, onClose, proposal, onAction, mod
 								{actionLoading === "approve" && <Loader2 size={12} className="animate-spin" />}
 								Approve
 							</button>
-						</>
-					) : (
-						<button
-							onClick={handleClose}
-							className="rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors"
-						>
-							Close
-						</button>
+						</div>
 					)}
 				</DrawerFooter>
 			</Drawer>

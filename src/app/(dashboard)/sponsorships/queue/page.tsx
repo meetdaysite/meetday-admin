@@ -10,7 +10,7 @@ import { approveSponsorship, getPendingSponsorships, rejectSponsorship } from "@
 import { formatDate, formatDateRange, getDaysSince } from "@/lib/formatters"
 import { AgeDateCell, ChipCell, TwoLineCell } from "@/components/ui/table-cells"
 import { usePermission } from "@/lib/hooks/use-permission"
-import type { SponsorshipProposal } from "@/types"
+import type { SponsorshipDetail, SponsorshipProposal } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -42,6 +42,7 @@ export default function SponsorshipQueuePage() {
 	const [selectedProposal, setSelectedProposal] = useState<SponsorshipProposal | null>(null)
 	const [drawerOpen, setDrawerOpen] = useState(false)
 	const [createOpen, setCreateOpen] = useState(false)
+	const [editingProposal, setEditingProposal] = useState<SponsorshipDetail | null>(null)
 
 	const fetchProposals = useCallback(async () => {
 		setIsLoading(true)
@@ -201,13 +202,22 @@ export default function SponsorshipQueuePage() {
 				}}
 				proposal={selectedProposal}
 				onAction={handleAction}
+				onEdit={setEditingProposal}
 			/>
 
 			<CreateSponsorshipDrawer
-				open={createOpen}
-				onClose={() => setCreateOpen(false)}
+				open={createOpen || !!editingProposal}
+				editingProposal={editingProposal}
+				onClose={() => {
+					setCreateOpen(false)
+					setEditingProposal(null)
+				}}
 				onCreated={() => {
 					setCreateOpen(false)
+					fetchProposals()
+				}}
+				onUpdated={() => {
+					setEditingProposal(null)
 					fetchProposals()
 				}}
 			/>

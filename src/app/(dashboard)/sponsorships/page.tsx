@@ -19,7 +19,7 @@ import { formatDate, formatDateRange, getDaysSince } from "@/lib/formatters"
 import { useDrawer } from "@/lib/hooks/use-drawer"
 import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
-import type { SponsorshipProposal, SponsorshipStatus } from "@/types"
+import type { SponsorshipDetail, SponsorshipProposal, SponsorshipStatus } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -52,6 +52,7 @@ export default function SponsorshipsPage() {
 	const [cityFilter, setCityFilter] = useState("")
 	const [search, setSearch] = useState("")
 	const [createOpen, setCreateOpen] = useState(false)
+	const [editingProposal, setEditingProposal] = useState<SponsorshipDetail | null>(null)
 
 	const { item: selectedProposal, open: drawerOpen, openDrawer, closeDrawer } = useDrawer<SponsorshipProposal>()
 
@@ -238,13 +239,22 @@ export default function SponsorshipsPage() {
 				onClose={closeDrawer}
 				proposal={selectedProposal}
 				onAction={handleAction}
+				onEdit={setEditingProposal}
 			/>
 
 			<CreateSponsorshipDrawer
-				open={createOpen}
-				onClose={() => setCreateOpen(false)}
+				open={createOpen || !!editingProposal}
+				editingProposal={editingProposal}
+				onClose={() => {
+					setCreateOpen(false)
+					setEditingProposal(null)
+				}}
 				onCreated={() => {
 					setCreateOpen(false)
+					fetchProposals()
+				}}
+				onUpdated={() => {
+					setEditingProposal(null)
 					fetchProposals()
 				}}
 			/>

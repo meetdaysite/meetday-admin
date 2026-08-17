@@ -6,17 +6,21 @@ import { toast } from "sonner"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ImageUploadZone } from "@/components/communities/create/ui/image-upload-zone"
-import { getEligibleHosts, createCommunityProfile } from "@/lib/api/community-profiles"
+import { getEligibleHosts, createCommunityProfile, updateCommunityProfile } from "@/lib/api/community-profiles"
 import { getCategories } from "@/lib/api/categories"
 import { uploadCommunityProfileLogo } from "@/lib/api/storage"
 import type { Category, CommunityProfileDetail, EligibleHost } from "@/types"
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────────────────────────────
 
 type CreateCommunityProfileDrawerProps = {
 	open: boolean
 	onClose: () => void
 	onCreated: (profile: CommunityProfileDetail) => void
+	// When set, the drawer edits this existing profile instead of creating a new one —
+	// skips host selection, pre-fills every field, and submit calls the update endpoint.
+	editingProfile?: CommunityProfileDetail | null
+	onUpdated?: (profile: CommunityProfileDetail) => void
 }
 
 const inputClass =
@@ -25,7 +29,14 @@ const labelClass = "block text-xs font-semibold text-text-secondary mb-1.5"
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function CreateCommunityProfileDrawer({ open, onClose, onCreated }: CreateCommunityProfileDrawerProps) {
+export function CreateCommunityProfileDrawer({
+	open,
+	onClose,
+	onCreated,
+	editingProfile,
+	onUpdated,
+}: CreateCommunityProfileDrawerProps) {
+	const isEditing = !!editingProfile
 	const [step, setStep] = useState<"select-host" | "form">("select-host")
 	const [selectedHost, setSelectedHost] = useState<EligibleHost | null>(null)
 
@@ -39,6 +50,8 @@ export function CreateCommunityProfileDrawer({ open, onClose, onCreated }: Creat
 	const [about, setAbout] = useState("")
 	const [logoKey, setLogoKey] = useState<string | null>(null)
 	const [logoPreview, setLogoPreview] = useState<string | null>(null)
+	const [secondaryImageKey, setSecondaryImageKey] = useState<string | null>(null)
+	const [secondaryImagePreview, setSecondaryImagePreview] = useState<string | null>(null)
 	const [size, setSize] = useState("")
 	const [avgGuestCount, setAvgGuestCount] = useState("")
 	const [experiencesPerYear, setExperiencesPerYear] = useState("")
@@ -49,7 +62,7 @@ export function CreateCommunityProfileDrawer({ open, onClose, onCreated }: Creat
 	const [error, setError] = useState<string | null>(null)
 
 	useEffect(() => {
-		if (!open) return
+		if (!open || isEditing) return
 		setHostsLoading(true)
 		const timeout = setTimeout(() => {
 			getEligibleHosts({ search: search.trim() || undefined })
@@ -58,7 +71,7 @@ export function CreateCommunityProfileDrawer({ open, onClose, onCreated }: Creat
 				.finally(() => setHostsLoading(false))
 		}, 300)
 		return () => clearTimeout(timeout)
-	}, [open, search])
+	}, [open, isEditing, search])
 
 	useEffect(() => {
 		if (!open || step !== "form") return
@@ -66,6 +79,24 @@ export function CreateCommunityProfileDrawer({ open, onClose, onCreated }: Creat
 			.then(setCategories)
 			.catch(() => toast.error("Failed to load categories"))
 	}, [open, step])
+
+	// Pre-fill every field from the profile being edited, skipping host selection.
+	useEffect(() => {
+		if (!open || !editingProfile) return
+		const p = editingProfile
+		setStep("form")
+		setSelectedHost(p.hostProfile)
+		setName(p.name)
+		setAbout(p.about)
+		setLogoKey(p.logoKey)
+		setLogoPreview(p.logoUrl)
+		setSecondaryImageKey(null)
+		setSecondaryImagePreview(p.secondaryImageUrl)
+		setSize(p.size)
+		setAvgGuestCount(p.avgGuestCount)
+		setExperiencesPerYear(p.experiencesPerYear)
+		setCategoryIds(new Set(p.categories.map((c) => c.id)))
+	}, [open, editingProfile])
 
 	function reset() {
 		setStep("select-host")
@@ -76,6 +107,8 @@ export function CreateCommunityProfileDrawer({ open, onClose, onCreated }: Creat
 		setAbout("")
 		setLogoKey(null)
 		setLogoPreview(null)
+		setSecondaryImageKey(null)
+		setSecondaryImagePreview(null)
 		setSize("")
 		setAvgGuestCount("")
 		setExperiencesPerYear("")
@@ -118,24 +151,40 @@ export function CreateCommunityProfileDrawer({ open, onClose, onCreated }: Creat
 
 		setIsLoading(true)
 		try {
-			const profile = await createCommunityProfile({
-				hostProfileId: selectedHost.id,
-				name: name.trim(),
-				about: about.trim(),
-				logoKey,
-				size: size.trim(),
-				avgGuestCount: avgGuestCount.trim(),
-				experiencesPerYear: experiencesPerYear.trim(),
-				categoryIds: Array.from(categoryIds),
-			})
-			toast.success("Community profile created and activated")
-			onCreated(profile)
+			if (isEditing && editingProfile) {
+				const profile = await updateCommunityProfile(editingProfile.id, {
+					name: name.trim(),
+					about: about.trim(),
+					logoKey,
+					secondaryImageKey: secondaryImageKey ?? undefined,
+					size: size.trim(),
+					avgGuestCount: avgGuestCount.trim(),
+					experiencesPerYear: experiencesPerYear.trim(),
+					categoryIds: Array.from(categoryIds),
+				})
+				toast.success("Community profile updated")
+				onUpdated?.(profile)
+			} else {
+				const profile = await createCommunityProfile({
+					hostProfileId: selectedHost.id,
+					name: name.trim(),
+					about: about.trim(),
+					logoKey,
+					...(secondaryImageKey && { secondaryImageKey }),
+					size: size.trim(),
+					avgGuestCount: avgGuestCount.trim(),
+					experiencesPerYear: experiencesPerYear.trim(),
+					categoryIds: Array.from(categoryIds),
+				})
+				toast.success("Community profile created and activated")
+				onCreated(profile)
+			}
 			reset()
 		} catch (err: unknown) {
 			const axiosErr = err as { response?: { status?: number; data?: { message?: string } } }
 			const status = axiosErr?.response?.status
 			if (status === 403) {
-				setError("You don't have permission to create community profiles.")
+				setError(`You don't have permission to ${isEditing ? "edit" : "create"} community profiles.`)
 			} else if (status === 409) {
 				setError("This host already has a community profile.")
 			} else {
@@ -146,9 +195,10 @@ export function CreateCommunityProfileDrawer({ open, onClose, onCreated }: Creat
 		}
 	}
 
-	const title = step === "select-host" ? "Add Community Profile" : "Community Profile Details"
-	const description =
-		step === "select-host"
+	const title = isEditing ? "Edit Community Profile" : step === "select-host" ? "Add Community Profile" : "Community Profile Details"
+	const description = isEditing
+		? "Edit any field on this profile. Changes are saved immediately, regardless of approval status."
+		: step === "select-host"
 			? "Pick a host who doesn't have a community profile yet."
 			: `Creating for ${selectedHost?.displayName ?? `${selectedHost?.user.firstName} ${selectedHost?.user.lastName}`}. Activated immediately — no review needed.`
 
@@ -199,14 +249,16 @@ export function CreateCommunityProfileDrawer({ open, onClose, onCreated }: Creat
 				</div>
 			) : (
 				<form onSubmit={handleSubmit} className="space-y-5">
-					<button
-						type="button"
-						onClick={() => setStep("select-host")}
-						disabled={isLoading}
-						className="flex items-center gap-1 text-xs font-semibold text-text-brand hover:underline disabled:opacity-50"
-					>
-						<ChevronLeft size={13} /> Choose a different host
-					</button>
+					{!isEditing && (
+						<button
+							type="button"
+							onClick={() => setStep("select-host")}
+							disabled={isLoading}
+							className="flex items-center gap-1 text-xs font-semibold text-text-brand hover:underline disabled:opacity-50"
+						>
+							<ChevronLeft size={13} /> Choose a different host
+						</button>
+					)}
 
 					<div>
 						<label className={labelClass}>
@@ -252,6 +304,24 @@ export function CreateCommunityProfileDrawer({ open, onClose, onCreated }: Creat
 						aspectClass="aspect-square"
 						shape="circle"
 						required
+					/>
+
+					<ImageUploadZone
+						value={secondaryImageKey}
+						previewUrl={secondaryImagePreview}
+						onChange={(key, url) => {
+							setSecondaryImageKey(key)
+							setSecondaryImagePreview(url)
+						}}
+						onClear={() => {
+							setSecondaryImageKey(null)
+							setSecondaryImagePreview(null)
+						}}
+						onUpload={uploadCommunityProfileLogo}
+						label="Poster / banner (optional)"
+						hint="JPEG, PNG, or WebP"
+						aspectClass="aspect-[4/5]"
+						shape="rect"
 					/>
 
 					<div className="grid grid-cols-3 gap-3">
@@ -348,7 +418,7 @@ export function CreateCommunityProfileDrawer({ open, onClose, onCreated }: Creat
 							className="flex items-center gap-1.5 rounded-lg bg-action-primary px-4 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							{isLoading && <Loader2 size={12} className="animate-spin" />}
-							Create & Activate
+							{isEditing ? "Save changes" : "Create & Activate"}
 						</button>
 					</DrawerFooter>
 				</form>

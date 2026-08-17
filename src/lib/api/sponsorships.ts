@@ -14,6 +14,14 @@ export async function createSponsorship(payload: CreateSponsorshipPayload): Prom
 	return data
 }
 
+export async function updateSponsorship(
+	id: string,
+	payload: Partial<CreateSponsorshipPayload>,
+): Promise<SponsorshipDetail> {
+	const { data } = await apiClient.patch<SponsorshipDetail>(`/admin/sponsorships/${id}`, payload)
+	return data
+}
+
 export async function getPendingSponsorships(
 	params?: { page?: number; limit?: number },
 ): Promise<SponsorshipsListResponse> {

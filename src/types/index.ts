@@ -476,6 +476,7 @@ export type CreateCommunityProfilePayload = {
 	name: string
 	about: string
 	logoKey: string
+	secondaryImageKey?: string
 	size: string
 	avgGuestCount: string
 	experiencesPerYear: string

@@ -17,6 +17,9 @@ export type CommunityProfileReviewDrawerProps = {
 	onClose: () => void
 	profile: CommunityProfile | null
 	onAction: (profileId: string, action: CommunityProfileAction, message?: string, isRevision?: boolean) => Promise<void>
+	// Opens the full edit form for this profile, pre-filled with every field — available
+	// regardless of approvalStatus or who created it.
+	onEdit?: (detail: CommunityProfileDetail) => void
 }
 
 function SectionLabel({ children }: { children: string }) {
@@ -254,7 +257,7 @@ function CommunityProfileDetailContent({ detail }: { detail: CommunityProfileDet
 	)
 }
 
-export function CommunityProfileReviewDrawer({ open, onClose, profile, onAction }: CommunityProfileReviewDrawerProps) {
+export function CommunityProfileReviewDrawer({ open, onClose, profile, onAction, onEdit }: CommunityProfileReviewDrawerProps) {
 	const router = useRouter()
 	const [detail, setDetail] = useState<CommunityProfileDetail | null>(null)
 	const [fetchState, setFetchState] = useState<"loading" | "error" | "done">("loading")
@@ -322,6 +325,12 @@ export function CommunityProfileReviewDrawer({ open, onClose, profile, onAction 
 		handleClose()
 	}
 
+	function handleEdit() {
+		if (!detail) return
+		onEdit?.(detail)
+		handleClose()
+	}
+
 	const isRevisionReview = !!detail?.pendingRevision
 	const status = detail?.approvalStatus ?? profile?.approvalStatus
 	const canReview = isRevisionReview || status === "PENDING"
@@ -346,9 +355,28 @@ export function CommunityProfileReviewDrawer({ open, onClose, profile, onAction 
 
 				{fetchState === "done" && detail && <CommunityProfileDetailContent detail={detail} />}
 
-				<DrawerFooter className={canReview ? "justify-between" : "justify-end"}>
-					{canReview ? (
-						<>
+				<DrawerFooter className="justify-between">
+					<div className="flex items-center gap-2">
+						{onEdit && (
+							<button
+								onClick={handleEdit}
+								disabled={isBusy || fetchState !== "done"}
+								className="rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors disabled:opacity-50"
+							>
+								Edit
+							</button>
+						)}
+						{!canReview && (
+							<button
+								onClick={handleClose}
+								className="rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors"
+							>
+								Close
+							</button>
+						)}
+					</div>
+					{canReview && (
+						<div className="flex items-center gap-2">
 							<button
 								onClick={() => setRejectDialogOpen(true)}
 								disabled={isBusy || fetchState !== "done"}
@@ -364,14 +392,7 @@ export function CommunityProfileReviewDrawer({ open, onClose, profile, onAction 
 								{actionLoading === "approve" && <Loader2 size={12} className="animate-spin" />}
 								{isRevisionReview ? "Approve Changes" : "Approve"}
 							</button>
-						</>
-					) : (
-						<button
-							onClick={handleClose}
-							className="rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors"
-						>
-							Close
-						</button>
+						</div>
 					)}
 				</DrawerFooter>
 			</Drawer>

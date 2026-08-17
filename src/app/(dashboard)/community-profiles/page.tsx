@@ -13,7 +13,7 @@ import { formatDate, getDaysSince } from "@/lib/formatters"
 import { useDrawer } from "@/lib/hooks/use-drawer"
 import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
-import type { ApprovalStatus, CommunityProfile } from "@/types"
+import type { ApprovalStatus, CommunityProfile, CommunityProfileDetail } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -46,6 +46,7 @@ export default function AllCommunityProfilesPage() {
 
 	const { item: selectedProfile, open: drawerOpen, openDrawer, closeDrawer } = useDrawer<CommunityProfile>()
 	const [createOpen, setCreateOpen] = useState(false)
+	const [editingProfile, setEditingProfile] = useState<CommunityProfileDetail | null>(null)
 
 	const fetcher = useCallback(() => {
 		const params: { status?: ApprovalStatus; page: number; limit: number } = { page, limit: PAGE_LIMIT }
@@ -215,13 +216,22 @@ export default function AllCommunityProfilesPage() {
 				onClose={closeDrawer}
 				profile={selectedProfile}
 				onAction={handleAction}
+				onEdit={setEditingProfile}
 			/>
 
 			<CreateCommunityProfileDrawer
-				open={createOpen}
-				onClose={() => setCreateOpen(false)}
+				open={createOpen || !!editingProfile}
+				editingProfile={editingProfile}
+				onClose={() => {
+					setCreateOpen(false)
+					setEditingProfile(null)
+				}}
 				onCreated={() => {
 					setCreateOpen(false)
+					fetchProfiles()
+				}}
+				onUpdated={() => {
+					setEditingProfile(null)
 					fetchProfiles()
 				}}
 			/>

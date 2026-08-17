@@ -5,17 +5,29 @@ import { Loader2, Plus, X, FileText, Search } from "lucide-react"
 import { toast } from "sonner"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { ImageUploadZone } from "@/components/communities/create/ui/image-upload-zone"
-import { createSponsorship } from "@/lib/api/sponsorships"
+import { createSponsorship, updateSponsorship } from "@/lib/api/sponsorships"
 import { getHosts } from "@/lib/api/hosts"
 import { uploadSponsorshipDocument, uploadSponsorshipImage } from "@/lib/api/storage"
 import { VenueAutocompleteInput } from "@/components/sponsorships/venue-autocomplete-input"
 import { extractApiErrorMessage } from "@/lib/error-handler"
-import type { Host, SponsorshipDetail, SponsorTier } from "@/types"
+import type { SponsorshipDetail, SponsorTier } from "@/types"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+// Only the fields actually displayed/used here — matches both the full `Host` type
+// (from the host picker) and `SponsorshipDetail.hostProfile` (when editing an existing proposal).
+type HostRef = {
+	id: string
+	displayName: string
+	user: { firstName: string; lastName: string; email: string | null }
+}
+
 type CreateSponsorshipDrawerProps = {
 	open: boolean
+	// When set, the drawer edits this existing proposal instead of creating a new one —
+	// all fields are pre-filled and the submit calls the update endpoint.
+	editingProposal?: SponsorshipDetail | null
+	onUpdated?: (proposal: SponsorshipDetail) => void
 	onClose: () => void
 	onCreated: (proposal: SponsorshipDetail) => void
 }
@@ -34,11 +46,18 @@ const labelClass = "block text-xs font-semibold text-text-secondary mb-1.5"
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSponsorshipDrawerProps) {
-	const [selectedHost, setSelectedHost] = useState<Host | null>(null)
+export function CreateSponsorshipDrawer({
+	open,
+	onClose,
+	onCreated,
+	editingProposal,
+	onUpdated,
+}: CreateSponsorshipDrawerProps) {
+	const isEditing = !!editingProposal
+	const [selectedHost, setSelectedHost] = useState<HostRef | null>(null)
 	const [hostPickerOpen, setHostPickerOpen] = useState(false)
 	const [hostSearch, setHostSearch] = useState("")
-	const [hosts, setHosts] = useState<Host[]>([])
+	const [hosts, setHosts] = useState<HostRef[]>([])
 	const [hostsLoading, setHostsLoading] = useState(false)
 
 	const [name, setName] = useState("")
@@ -77,6 +96,29 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 		}, 300)
 		return () => clearTimeout(timeout)
 	}, [hostPickerOpen, hostSearch])
+
+	// Pre-fill every field from the proposal being edited.
+	useEffect(() => {
+		if (!open || !editingProposal) return
+		const p = editingProposal
+		setSelectedHost(p.hostProfile)
+		setName(p.name ?? "")
+		setAbout(p.about ?? "")
+		setImageKey(p.imageKey)
+		setImagePreview(p.imageUrl)
+		setEventDate(p.eventDate ? p.eventDate.slice(0, 10) : "")
+		setEventEndDate(p.eventEndDate ? p.eventEndDate.slice(0, 10) : "")
+		setVenues(p.venues.length > 0 ? p.venues : [""])
+		setVenueCities(p.venueCities.length > 0 ? p.venueCities : [""])
+		setAgeGroup(p.ageGroup ?? "")
+		setGuestCount(p.guestCount ?? "")
+		setAudienceProfile(p.audienceProfile)
+		setDocKey(p.docKey)
+		setDocName(p.docName)
+		setDocType(p.docType)
+		setDocSize(p.docSize)
+		setSponsorTiers(p.sponsorTiers.length > 0 ? p.sponsorTiers : [{ name: "", price: "" }])
+	}, [open, editingProposal])
 
 	function reset() {
 		setSelectedHost(null)
@@ -174,7 +216,7 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 
 		setIsLoading(true)
 		try {
-			const proposal = await createSponsorship({
+			const payload = {
 				...(selectedHost && { hostProfileId: selectedHost.id }),
 				name: name.trim(),
 				about: about.trim(),
@@ -193,15 +235,22 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 				docType,
 				docSize,
 				sponsorTiers: validTiers,
-			})
-			toast.success("Sponsorship proposal created and published")
-			onCreated(proposal)
+			}
+			if (isEditing && editingProposal) {
+				const proposal = await updateSponsorship(editingProposal.id, payload)
+				toast.success("Sponsorship proposal updated")
+				onUpdated?.(proposal)
+			} else {
+				const proposal = await createSponsorship(payload)
+				toast.success("Sponsorship proposal created and published")
+				onCreated(proposal)
+			}
 			reset()
 		} catch (err: unknown) {
 			const axiosErr = err as { response?: { status?: number; data?: { message?: string } } }
 			const status = axiosErr?.response?.status
 			if (status === 403) {
-				setError("You don't have permission to create sponsorship proposals.")
+				setError(`You don't have permission to ${isEditing ? "edit" : "create"} sponsorship proposals.`)
 			} else {
 				setError(axiosErr?.response?.data?.message ?? "Something went wrong. Please try again.")
 			}
@@ -210,15 +259,17 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 		}
 	}
 
-	const description = selectedHost
-		? `Published immediately under ${selectedHost.displayName || `${selectedHost.user.firstName} ${selectedHost.user.lastName}`} — no KYC or review required.`
-		: "Published immediately under the Meetday Official host — no KYC or review required."
+	const description = isEditing
+		? "Edit any field on this proposal. Changes are saved immediately, regardless of status."
+		: selectedHost
+			? `Published immediately under ${selectedHost.displayName || `${selectedHost.user.firstName} ${selectedHost.user.lastName}`} — no KYC or review required.`
+			: "Published immediately under the Meetday Official host — no KYC or review required."
 
 	return (
 		<Drawer
 			open={open}
 			onClose={handleClose}
-			title="Create Sponsorship Proposal"
+			title={isEditing ? "Edit Sponsorship Proposal" : "Create Sponsorship Proposal"}
 			description={description}
 			width="max-w-lg"
 		>
@@ -626,7 +677,7 @@ export function CreateSponsorshipDrawer({ open, onClose, onCreated }: CreateSpon
 					className="flex items-center gap-1.5 rounded-lg bg-action-primary px-4 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					{isLoading && <Loader2 size={13} className="animate-spin" />}
-					Create & Publish
+					{isEditing ? "Save changes" : "Create & Publish"}
 				</button>
 			</DrawerFooter>
 		</Drawer>

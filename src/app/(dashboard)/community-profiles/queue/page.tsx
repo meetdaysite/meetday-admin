@@ -4,6 +4,7 @@ import {
 	CommunityProfileReviewDrawer,
 	type CommunityProfileAction,
 } from "@/components/community-profiles/community-profile-review-drawer"
+import { CreateCommunityProfileDrawer } from "@/components/community-profiles/create-community-profile-drawer"
 import { DataView } from "@/components/ui/data-view"
 import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
@@ -12,7 +13,7 @@ import { approveCommunityProfile, getPendingCommunityProfiles, rejectCommunityPr
 import { formatDate, getDaysSince } from "@/lib/formatters"
 import { AgeDateCell, ChipCell, TwoLineCell } from "@/components/ui/table-cells"
 import { usePermission } from "@/lib/hooks/use-permission"
-import type { CommunityProfile } from "@/types"
+import type { CommunityProfile, CommunityProfileDetail } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -37,6 +38,7 @@ export default function CommunityProfileQueuePage() {
 
 	const [selectedProfile, setSelectedProfile] = useState<CommunityProfile | null>(null)
 	const [drawerOpen, setDrawerOpen] = useState(false)
+	const [editingProfile, setEditingProfile] = useState<CommunityProfileDetail | null>(null)
 
 	const fetchProfiles = useCallback(async () => {
 		setIsLoading(true)
@@ -188,6 +190,18 @@ export default function CommunityProfileQueuePage() {
 				}}
 				profile={selectedProfile}
 				onAction={handleAction}
+				onEdit={setEditingProfile}
+			/>
+
+			<CreateCommunityProfileDrawer
+				open={!!editingProfile}
+				editingProfile={editingProfile}
+				onClose={() => setEditingProfile(null)}
+				onCreated={() => setEditingProfile(null)}
+				onUpdated={() => {
+					setEditingProfile(null)
+					fetchProfiles()
+				}}
 			/>
 		</div>
 	)
