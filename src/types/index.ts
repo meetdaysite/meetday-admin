@@ -481,6 +481,7 @@ export type CreateCommunityProfilePayload = {
 	avgGuestCount: string
 	experiencesPerYear: string
 	categoryIds: string[]
+	socialLinks?: { instagram?: string; linkedin?: string; youtube?: string; website?: string }
 }
 
 export type SponsorshipInterest = {

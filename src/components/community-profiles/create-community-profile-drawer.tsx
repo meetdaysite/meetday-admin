@@ -57,6 +57,10 @@ export function CreateCommunityProfileDrawer({
 	const [experiencesPerYear, setExperiencesPerYear] = useState("")
 	const [categories, setCategories] = useState<Category[]>([])
 	const [categoryIds, setCategoryIds] = useState<Set<string>>(new Set())
+	const [instagram, setInstagram] = useState("")
+	const [linkedin, setLinkedin] = useState("")
+	const [youtube, setYoutube] = useState("")
+	const [website, setWebsite] = useState("")
 
 	const [isLoading, setIsLoading] = useState(false)
 	const [error, setError] = useState<string | null>(null)
@@ -96,6 +100,10 @@ export function CreateCommunityProfileDrawer({
 		setAvgGuestCount(p.avgGuestCount)
 		setExperiencesPerYear(p.experiencesPerYear)
 		setCategoryIds(new Set(p.categories.map((c) => c.id)))
+		setInstagram(p.hostProfile.socialLinks?.instagram ?? "")
+		setLinkedin(p.hostProfile.socialLinks?.linkedin ?? "")
+		setYoutube(p.hostProfile.socialLinks?.youtube ?? "")
+		setWebsite(p.hostProfile.socialLinks?.website ?? "")
 	}, [open, editingProfile])
 
 	function reset() {
@@ -113,6 +121,10 @@ export function CreateCommunityProfileDrawer({
 		setAvgGuestCount("")
 		setExperiencesPerYear("")
 		setCategoryIds(new Set())
+		setInstagram("")
+		setLinkedin("")
+		setYoutube("")
+		setWebsite("")
 		setError(null)
 	}
 
@@ -150,6 +162,12 @@ export function CreateCommunityProfileDrawer({
 		if (categoryIds.size === 0) return setError("At least one category is required.")
 
 		setIsLoading(true)
+		const socialLinks = {
+			instagram: instagram.trim() || undefined,
+			linkedin: linkedin.trim() || undefined,
+			youtube: youtube.trim() || undefined,
+			website: website.trim() || undefined,
+		}
 		try {
 			if (isEditing && editingProfile) {
 				const profile = await updateCommunityProfile(editingProfile.id, {
@@ -161,6 +179,7 @@ export function CreateCommunityProfileDrawer({
 					avgGuestCount: avgGuestCount.trim(),
 					experiencesPerYear: experiencesPerYear.trim(),
 					categoryIds: Array.from(categoryIds),
+					socialLinks,
 				})
 				toast.success("Community profile updated")
 				onUpdated?.(profile)
@@ -175,6 +194,7 @@ export function CreateCommunityProfileDrawer({
 					avgGuestCount: avgGuestCount.trim(),
 					experiencesPerYear: experiencesPerYear.trim(),
 					categoryIds: Array.from(categoryIds),
+					socialLinks,
 				})
 				toast.success("Community profile created and activated")
 				onCreated(profile)
@@ -399,6 +419,44 @@ export function CreateCommunityProfileDrawer({
 								})}
 							</div>
 						)}
+					</div>
+
+					<div>
+						<label className={labelClass}>Social links</label>
+						<div className="space-y-2">
+							<input
+								type="text"
+								value={instagram}
+								onChange={(e) => setInstagram(e.target.value)}
+								placeholder="Instagram — instagram.com/handle"
+								disabled={isLoading}
+								className={inputClass}
+							/>
+							<input
+								type="text"
+								value={linkedin}
+								onChange={(e) => setLinkedin(e.target.value)}
+								placeholder="LinkedIn — linkedin.com/in/profile"
+								disabled={isLoading}
+								className={inputClass}
+							/>
+							<input
+								type="text"
+								value={youtube}
+								onChange={(e) => setYoutube(e.target.value)}
+								placeholder="YouTube — youtube.com/@channel"
+								disabled={isLoading}
+								className={inputClass}
+							/>
+							<input
+								type="text"
+								value={website}
+								onChange={(e) => setWebsite(e.target.value)}
+								placeholder="Website — yourwebsite.com"
+								disabled={isLoading}
+								className={inputClass}
+							/>
+						</div>
 					</div>
 
 					{error && <p className="text-xs text-red-600">{error}</p>}
