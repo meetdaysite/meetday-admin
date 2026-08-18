@@ -10,6 +10,7 @@ import {
 	Activity,
 	AlertTriangle,
 	CalendarDays,
+	ChevronDown,
 	ChevronRight,
 	CircleCheckBig,
 	Clock3,
@@ -17,7 +18,9 @@ import {
 	Flag,
 	HandCoins,
 	IndianRupee,
+	Megaphone,
 	ScanLine,
+	Search,
 	Server,
 	ShieldAlert,
 	ShieldCheck,
@@ -25,7 +28,7 @@ import {
 	Users,
 	type LucideIcon,
 } from "lucide-react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { Button } from "@/components/ui/Button"
@@ -40,6 +43,8 @@ import { getPendingSponsorships, getSponsorships } from "@/lib/api/sponsorships"
 import { getPendingHosts, getHosts } from "@/lib/api/hosts"
 import { getPendingBrands, getBrands } from "@/lib/api/brands"
 import { getCommunityProfiles } from "@/lib/api/community-profiles"
+import { sendAnnouncement } from "@/lib/api/announcements"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import {
 	getDashboardHealth,
 	getDashboardLiveOperations,
@@ -951,9 +956,303 @@ function LegacyDashboardPage() {
 	)
 }
 
-// Simple dashboard: at-a-glance Sponsorship/Host/Brand counts, plus Recent Updates.
-// The full legacy dashboard above is kept but unused — swap the two default exports to bring it back.
-// The Announcement composer moved to its own /announcements page — see that route instead.
+// Simple dashboard: at-a-glance Sponsorship/Host/Brand counts, plus Recent Updates and an
+// Announcements composer. The full legacy dashboard above is kept but unused — swap the two
+// default exports to bring it back. Full history of past announcements lives on /announcements.
+function AnnouncementsBox() {
+	const queryClient = useQueryClient()
+	const [selectAll, setSelectAll] = useState(false)
+	const [selectBrands, setSelectBrands] = useState(false)
+	const [selectCommunity, setSelectCommunity] = useState(false)
+	const [brandsExpanded, setBrandsExpanded] = useState(false)
+	const [communityExpanded, setCommunityExpanded] = useState(false)
+	const [brandSearch, setBrandSearch] = useState("")
+	const [communitySearch, setCommunitySearch] = useState("")
+	const [selectedBrandIds, setSelectedBrandIds] = useState<Set<string>>(new Set())
+	const [selectedHostIds, setSelectedHostIds] = useState<Set<string>>(new Set())
+	const [subject, setSubject] = useState("")
+	const [message, setMessage] = useState("")
+	const [confirmOpen, setConfirmOpen] = useState(false)
+
+	// Fetched lazily — only once a group is expanded to search/pick specific recipients.
+	const brandsQuery = useQuery({
+		queryKey: ["announcement", "brands-list"],
+		queryFn: () => getBrands({ limit: 100 }).then(r => r.brands),
+		enabled: brandsExpanded,
+	})
+	const hostsQuery = useQuery({
+		queryKey: ["announcement", "hosts-list"],
+		queryFn: () => getHosts({ limit: 100 }).then(r => r.hosts),
+		enabled: communityExpanded,
+	})
+
+	function toggleSelectAll(checked: boolean) {
+		setSelectAll(checked)
+		setSelectBrands(checked)
+		setSelectCommunity(checked)
+	}
+
+	function toggleBrands(checked: boolean) {
+		setSelectBrands(checked)
+		if (!checked) setSelectAll(false)
+	}
+
+	function toggleCommunity(checked: boolean) {
+		setSelectCommunity(checked)
+		if (!checked) setSelectAll(false)
+	}
+
+	function toggleBrandId(id: string) {
+		setSelectedBrandIds(prev => {
+			const next = new Set(prev)
+			if (next.has(id)) next.delete(id)
+			else next.add(id)
+			return next
+		})
+	}
+
+	function toggleHostId(id: string) {
+		setSelectedHostIds(prev => {
+			const next = new Set(prev)
+			if (next.has(id)) next.delete(id)
+			else next.add(id)
+			return next
+		})
+	}
+
+	const filteredBrands = useMemo(() => {
+		const q = brandSearch.trim().toLowerCase()
+		const list = brandsQuery.data ?? []
+		if (!q) return list
+		return list.filter(b => b.brandName?.toLowerCase().includes(q))
+	}, [brandsQuery.data, brandSearch])
+
+	const filteredHosts = useMemo(() => {
+		const q = communitySearch.trim().toLowerCase()
+		const list = hostsQuery.data ?? []
+		if (!q) return list
+		return list.filter(h => h.displayName?.toLowerCase().includes(q))
+	}, [hostsQuery.data, communitySearch])
+
+	const recipientCount =
+		(selectBrands ? (brandsQuery.data?.length ?? 0) : selectedBrandIds.size) +
+		(selectCommunity ? (hostsQuery.data?.length ?? 0) : selectedHostIds.size)
+
+	const sendMutation = useMutation({
+		mutationFn: sendAnnouncement,
+		onSuccess: (data) => {
+			toast.success(`Announcement queued to ${data.queued} recipient(s).`)
+			queryClient.invalidateQueries({ queryKey: ["announcements", "list"] })
+			setConfirmOpen(false)
+			setMessage("")
+			setSubject("")
+			setSelectAll(false)
+			setSelectBrands(false)
+			setSelectCommunity(false)
+			setSelectedBrandIds(new Set())
+			setSelectedHostIds(new Set())
+		},
+		onError: (err) => {
+			const msg = axios.isAxiosError(err) ? err.response?.data?.message : undefined
+			toast.error(typeof msg === "string" ? msg : "Failed to send announcement.")
+		},
+	})
+
+	function handleSend() {
+		if (!message.trim()) {
+			toast.error("Write a message first.")
+			return
+		}
+		if (!selectBrands && !selectCommunity && selectedBrandIds.size === 0 && selectedHostIds.size === 0) {
+			toast.error("Select at least one recipient.")
+			return
+		}
+		setConfirmOpen(true)
+	}
+
+	function confirmSend() {
+		const recipientsSummary = selectAll
+			? "All Brands & Community"
+			: [
+					selectBrands ? "All Brands" : selectedBrandIds.size ? `${selectedBrandIds.size} Brand(s)` : null,
+					selectCommunity ? "All Community" : selectedHostIds.size ? `${selectedHostIds.size} Host(s)` : null,
+				]
+					.filter(Boolean)
+					.join(", ")
+
+		sendMutation.mutate({
+			allBrands: selectBrands,
+			allCommunity: selectCommunity,
+			brandIds: selectBrands ? undefined : Array.from(selectedBrandIds),
+			hostIds: selectCommunity ? undefined : Array.from(selectedHostIds),
+			subject: subject.trim() || undefined,
+			message: message.trim(),
+			recipientsSummary,
+		})
+	}
+
+	return (
+		<div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-4">
+			<div className="flex items-center gap-2">
+				<Megaphone size={18} className="text-text-tertiary" />
+				<h2 className="text-label-md font-semibold text-text-primary">Announcements</h2>
+			</div>
+
+			<div className="flex flex-col gap-2">
+				<label className="flex items-center gap-2 text-body-sm font-medium text-text-primary">
+					<input type="checkbox" checked={selectAll} onChange={e => toggleSelectAll(e.target.checked)} />
+					Select All (Brands + Community)
+				</label>
+
+				{/* Brands group */}
+				<div className="border border-border-default rounded-lg">
+					<div className="flex items-center justify-between px-3 py-2">
+						<label className="flex items-center gap-2 text-body-sm font-medium text-text-primary">
+							<input type="checkbox" checked={selectBrands} onChange={e => toggleBrands(e.target.checked)} />
+							Brands
+							{selectedBrandIds.size > 0 && !selectBrands && (
+								<span className="text-caption text-text-tertiary">({selectedBrandIds.size} selected)</span>
+							)}
+						</label>
+						<button
+							type="button"
+							onClick={() => setBrandsExpanded(v => !v)}
+							className="text-text-tertiary hover:text-text-primary transition-colors"
+						>
+							<ChevronDown size={16} className={cn("transition-transform", brandsExpanded && "rotate-180")} />
+						</button>
+					</div>
+					{brandsExpanded && (
+						<div className="border-t border-border-subtle p-3 flex flex-col gap-2">
+							<div className="relative">
+								<Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary" />
+								<input
+									type="text"
+									value={brandSearch}
+									onChange={e => setBrandSearch(e.target.value)}
+									placeholder="Search brands by name…"
+									className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-1.5 text-xs outline-none focus:border-border-focus"
+								/>
+							</div>
+							<div className="max-h-40 overflow-y-auto flex flex-col gap-0.5">
+								{brandsQuery.isLoading ? (
+									<p className="text-caption text-text-tertiary py-2 text-center">Loading…</p>
+								) : filteredBrands.length === 0 ? (
+									<p className="text-caption text-text-tertiary py-2 text-center">No brands found.</p>
+								) : (
+									filteredBrands.map(b => (
+										<label key={b.id} className="flex items-center gap-2 px-1.5 py-1 rounded hover:bg-neutral-50 text-caption text-text-primary">
+											<input
+												type="checkbox"
+												disabled={selectBrands}
+												checked={selectBrands || selectedBrandIds.has(b.id)}
+												onChange={() => toggleBrandId(b.id)}
+											/>
+											<span className="flex flex-col min-w-0">
+												<span className="truncate">{b.brandName}</span>
+												<span className="text-text-tertiary truncate">{b.user.email}</span>
+											</span>
+										</label>
+									))
+								)}
+							</div>
+						</div>
+					)}
+				</div>
+
+				{/* Community/Host group */}
+				<div className="border border-border-default rounded-lg">
+					<div className="flex items-center justify-between px-3 py-2">
+						<label className="flex items-center gap-2 text-body-sm font-medium text-text-primary">
+							<input type="checkbox" checked={selectCommunity} onChange={e => toggleCommunity(e.target.checked)} />
+							Community
+							{selectedHostIds.size > 0 && !selectCommunity && (
+								<span className="text-caption text-text-tertiary">({selectedHostIds.size} selected)</span>
+							)}
+						</label>
+						<button
+							type="button"
+							onClick={() => setCommunityExpanded(v => !v)}
+							className="text-text-tertiary hover:text-text-primary transition-colors"
+						>
+							<ChevronDown size={16} className={cn("transition-transform", communityExpanded && "rotate-180")} />
+						</button>
+					</div>
+					{communityExpanded && (
+						<div className="border-t border-border-subtle p-3 flex flex-col gap-2">
+							<div className="relative">
+								<Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary" />
+								<input
+									type="text"
+									value={communitySearch}
+									onChange={e => setCommunitySearch(e.target.value)}
+									placeholder="Search hosts by name…"
+									className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-1.5 text-xs outline-none focus:border-border-focus"
+								/>
+							</div>
+							<div className="max-h-40 overflow-y-auto flex flex-col gap-0.5">
+								{hostsQuery.isLoading ? (
+									<p className="text-caption text-text-tertiary py-2 text-center">Loading…</p>
+								) : hostsQuery.isError ? (
+									<p className="text-caption text-red-600 py-2 text-center">Failed to load hosts.</p>
+								) : filteredHosts.length === 0 ? (
+									<p className="text-caption text-text-tertiary py-2 text-center">No hosts found.</p>
+								) : (
+									filteredHosts.map(h => (
+										<label key={h.id} className="flex items-center gap-2 px-1.5 py-1 rounded hover:bg-neutral-50 text-caption text-text-primary">
+											<input
+												type="checkbox"
+												disabled={selectCommunity}
+												checked={selectCommunity || selectedHostIds.has(h.id)}
+												onChange={() => toggleHostId(h.id)}
+											/>
+											<span className="flex flex-col min-w-0">
+												<span className="truncate">{h.displayName}</span>
+												<span className="text-text-tertiary truncate">{h.user.email}</span>
+											</span>
+										</label>
+									))
+								)}
+							</div>
+						</div>
+					)}
+				</div>
+			</div>
+
+			<input
+				type="text"
+				value={subject}
+				onChange={e => setSubject(e.target.value)}
+				placeholder="Subject (optional)"
+				className="w-full rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-sm outline-none focus:border-border-focus"
+			/>
+			<textarea
+				value={message}
+				onChange={e => setMessage(e.target.value)}
+				placeholder="Write your announcement…"
+				rows={4}
+				className="w-full rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-sm outline-none focus:border-border-focus resize-none"
+			/>
+
+			<Button onClick={handleSend} disabled={sendMutation.isPending} className="self-end">
+				{sendMutation.isPending ? "Sending…" : `Send${recipientCount > 0 ? ` (${recipientCount})` : ""}`}
+			</Button>
+			<p className="text-caption text-text-tertiary text-right -mt-2">
+				This sends a real email to every selected recipient.
+			</p>
+
+			<ConfirmDialog
+				open={confirmOpen}
+				onClose={() => setConfirmOpen(false)}
+				onConfirm={confirmSend}
+				title="Send announcement"
+				description={`This will send a real email to ${recipientCount} recipient(s). This cannot be undone.`}
+				confirmLabel="Send"
+				isLoading={sendMutation.isPending}
+			/>
+		</div>
+	)
+}
 
 type UpdateItem = {
 	id: string
@@ -1145,7 +1444,12 @@ export default function DashboardPage() {
 				/>
 			</div>
 
-			<RecentUpdatesBox items={recentUpdates} isLoading={recentUpdatesLoading} />
+			<div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+				<div className="lg:col-span-2">
+					<RecentUpdatesBox items={recentUpdates} isLoading={recentUpdatesLoading} />
+				</div>
+				<AnnouncementsBox />
+			</div>
 		</div>
 	)
 }
