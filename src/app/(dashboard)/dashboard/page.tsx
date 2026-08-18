@@ -1010,57 +1010,70 @@ export default function DashboardPage() {
 	const canSeeSponsorships = usePermission("sponsorship.approve")
 	const canSeeHosts = usePermission("host.approve")
 	const canSeeBrands = usePermission("sponsorship.approve")
+	// Not full real-time (no websockets) — refetches in the background every 30s so
+	// the counts/feed stay fresh without needing a manual page reload.
+	const REFRESH_INTERVAL = 30_000
 
 	const sponsorshipsTotal = useQuery({
 		queryKey: ["dashboard", "sponsorships-total"],
 		queryFn: () => getSponsorships({ limit: 1 }).then(r => r.total),
 		enabled: canSeeSponsorships,
+		refetchInterval: REFRESH_INTERVAL,
 	})
 	const sponsorshipsPending = useQuery({
 		queryKey: ["dashboard", "sponsorships-pending"],
 		queryFn: () => getPendingSponsorships({ limit: 1 }).then(r => r.total),
 		enabled: canSeeSponsorships,
+		refetchInterval: REFRESH_INTERVAL,
 	})
 	const hostsTotal = useQuery({
 		queryKey: ["dashboard", "hosts-total"],
 		queryFn: () => getHosts({ limit: 1 }).then(r => r.total),
 		enabled: canSeeHosts,
+		refetchInterval: REFRESH_INTERVAL,
 	})
 	const hostsPending = useQuery({
 		queryKey: ["dashboard", "hosts-pending"],
 		queryFn: () => getPendingHosts({ limit: 1 }).then(r => r.total),
 		enabled: canSeeHosts,
+		refetchInterval: REFRESH_INTERVAL,
 	})
 	const brandsTotal = useQuery({
 		queryKey: ["dashboard", "brands-total"],
 		queryFn: () => getBrands({ limit: 1 }).then(r => r.total),
 		enabled: canSeeBrands,
+		refetchInterval: REFRESH_INTERVAL,
 	})
 	const brandsPending = useQuery({
 		queryKey: ["dashboard", "brands-pending"],
 		queryFn: () => getPendingBrands({ limit: 1 }).then(r => r.total),
 		enabled: canSeeBrands,
+		refetchInterval: REFRESH_INTERVAL,
 	})
 
 	const recentHosts = useQuery({
 		queryKey: ["dashboard", "recent-hosts"],
 		queryFn: () => getHosts({ limit: 5 }).then(r => r.hosts),
 		enabled: canSeeHosts,
+		refetchInterval: REFRESH_INTERVAL,
 	})
 	const recentBrands = useQuery({
 		queryKey: ["dashboard", "recent-brands"],
 		queryFn: () => getBrands({ limit: 5 }).then(r => r.brands),
 		enabled: canSeeBrands,
+		refetchInterval: REFRESH_INTERVAL,
 	})
 	const recentSponsorships = useQuery({
 		queryKey: ["dashboard", "recent-sponsorships"],
 		queryFn: () => getSponsorships({ limit: 5 }).then(r => r.proposals),
 		enabled: canSeeSponsorships,
+		refetchInterval: REFRESH_INTERVAL,
 	})
 	const recentCommunityProfiles = useQuery({
 		queryKey: ["dashboard", "recent-community-profiles"],
 		queryFn: () => getCommunityProfiles({ limit: 5 }).then(r => r.profiles),
 		enabled: canSeeSponsorships,
+		refetchInterval: REFRESH_INTERVAL,
 	})
 
 	const recentUpdatesLoading =
