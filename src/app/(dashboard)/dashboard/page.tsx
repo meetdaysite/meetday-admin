@@ -1092,65 +1092,76 @@ function AnnouncementsBox() {
 	}
 
 	return (
-		<div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-4">
+		<div className="bg-white border-[3px] border-black rounded-[24px] p-6 flex flex-col gap-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
 			<div className="flex items-center gap-2">
-				<Megaphone size={18} className="text-text-tertiary" />
-				<h2 className="text-label-md font-semibold text-text-primary">Announcements</h2>
+				<Megaphone size={18} className="text-black" />
+				<h2 className="text-xl font-black font-heading text-black">Announcements</h2>
 			</div>
 
-			<div className="flex flex-col gap-2">
-				<label className="flex items-center gap-2 text-body-sm font-medium text-text-primary">
-					<input type="checkbox" checked={selectAll} onChange={e => toggleSelectAll(e.target.checked)} />
+			<div className="flex flex-col gap-3">
+				<label className="flex items-center gap-2 text-sm font-bold text-black select-none cursor-pointer">
+					<input
+						type="checkbox"
+						checked={selectAll}
+						onChange={e => toggleSelectAll(e.target.checked)}
+						className="rounded-full border-2 border-black accent-[#EE2C2C] size-4 cursor-pointer focus:ring-0"
+					/>
 					Select All (Brands + Community)
 				</label>
 
 				{/* Brands group */}
-				<div className="border border-border-default rounded-lg">
-					<div className="flex items-center justify-between px-3 py-2">
-						<label className="flex items-center gap-2 text-body-sm font-medium text-text-primary">
-							<input type="checkbox" checked={selectBrands} onChange={e => toggleBrands(e.target.checked)} />
+				<div className="border-[3px] border-black rounded-2xl bg-white overflow-hidden">
+					<div
+						onClick={() => setBrandsExpanded(v => !v)}
+						className="flex items-center justify-between px-4 py-2.5 bg-neutral-50 hover:bg-neutral-100 transition-colors border-b-[3px] border-black cursor-pointer select-none"
+					>
+						<label
+							className="flex items-center gap-2 text-sm font-bold text-black cursor-pointer"
+							onClick={e => e.stopPropagation()}
+						>
+							<input
+								type="checkbox"
+								checked={selectBrands}
+								onChange={e => toggleBrands(e.target.checked)}
+								className="rounded-full border-2 border-black accent-[#EE2C2C] size-4 cursor-pointer focus:ring-0"
+							/>
 							Brands
 							{selectedBrandIds.size > 0 && !selectBrands && (
-								<span className="text-caption text-text-tertiary">({selectedBrandIds.size} selected)</span>
+								<span className="text-xs font-semibold text-neutral-500">({selectedBrandIds.size} selected)</span>
 							)}
 						</label>
-						<button
-							type="button"
-							onClick={() => setBrandsExpanded(v => !v)}
-							className="text-text-tertiary hover:text-text-primary transition-colors"
-						>
-							<ChevronDown size={16} className={cn("transition-transform", brandsExpanded && "rotate-180")} />
-						</button>
+						<ChevronDown size={16} className={cn("transition-transform text-black", brandsExpanded && "rotate-180")} />
 					</div>
 					{brandsExpanded && (
-						<div className="border-t border-border-subtle p-3 flex flex-col gap-2">
-							<div className="relative">
-								<Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary" />
+						<div className="p-3 flex flex-col gap-2 bg-white border-b-2 border-black">
+							<div className="relative mb-1">
+								<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
 								<input
 									type="text"
 									value={brandSearch}
 									onChange={e => setBrandSearch(e.target.value)}
 									placeholder="Search brands by name…"
-									className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-1.5 text-xs outline-none focus:border-border-focus"
+									className="w-full rounded-2xl border-[3px] border-black bg-white pl-9 pr-3 py-2 text-sm font-semibold outline-none focus:bg-neutral-50 text-black"
 								/>
 							</div>
-							<div className="max-h-40 overflow-y-auto flex flex-col gap-0.5">
+							<div className="max-h-40 overflow-y-auto flex flex-col gap-0.5 mt-2">
 								{brandsQuery.isLoading ? (
-									<p className="text-caption text-text-tertiary py-2 text-center">Loading…</p>
+									<p className="text-xs font-semibold text-neutral-500 py-2 text-center">Loading…</p>
 								) : filteredBrands.length === 0 ? (
-									<p className="text-caption text-text-tertiary py-2 text-center">No brands found.</p>
+									<p className="text-xs font-semibold text-neutral-500 py-2 text-center">No brands found.</p>
 								) : (
 									filteredBrands.map(b => (
-										<label key={b.id} className="flex items-center gap-2 px-1.5 py-1 rounded hover:bg-neutral-50 text-caption text-text-primary">
+										<label key={b.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#FFC940]/15 text-xs font-semibold text-black cursor-pointer select-none transition-colors">
 											<input
 												type="checkbox"
 												disabled={selectBrands}
 												checked={selectBrands || selectedBrandIds.has(b.id)}
 												onChange={() => toggleBrandId(b.id)}
+												className="rounded-full border-2 border-black accent-[#EE2C2C] size-4 cursor-pointer focus:ring-0"
 											/>
 											<span className="flex flex-col min-w-0">
 												<span className="truncate">{b.brandName}</span>
-												<span className="text-text-tertiary truncate">{b.user.email}</span>
+												<span className="text-[10px] text-neutral-500 truncate">{b.user.email}</span>
 											</span>
 										</label>
 									))
@@ -1161,54 +1172,60 @@ function AnnouncementsBox() {
 				</div>
 
 				{/* Community/Host group */}
-				<div className="border border-border-default rounded-lg">
-					<div className="flex items-center justify-between px-3 py-2">
-						<label className="flex items-center gap-2 text-body-sm font-medium text-text-primary">
-							<input type="checkbox" checked={selectCommunity} onChange={e => toggleCommunity(e.target.checked)} />
+				<div className="border-[3px] border-black rounded-2xl bg-white overflow-hidden">
+					<div
+						onClick={() => setCommunityExpanded(v => !v)}
+						className="flex items-center justify-between px-4 py-2.5 bg-neutral-50 hover:bg-neutral-100 transition-colors border-b-[3px] border-black cursor-pointer select-none"
+					>
+						<label
+							className="flex items-center gap-2 text-sm font-bold text-black cursor-pointer"
+							onClick={e => e.stopPropagation()}
+						>
+							<input
+								type="checkbox"
+								checked={selectCommunity}
+								onChange={e => toggleCommunity(e.target.checked)}
+								className="rounded-full border-2 border-black accent-[#EE2C2C] size-4 cursor-pointer focus:ring-0"
+							/>
 							Community
 							{selectedHostIds.size > 0 && !selectCommunity && (
-								<span className="text-caption text-text-tertiary">({selectedHostIds.size} selected)</span>
+								<span className="text-xs font-semibold text-neutral-500">({selectedHostIds.size} selected)</span>
 							)}
 						</label>
-						<button
-							type="button"
-							onClick={() => setCommunityExpanded(v => !v)}
-							className="text-text-tertiary hover:text-text-primary transition-colors"
-						>
-							<ChevronDown size={16} className={cn("transition-transform", communityExpanded && "rotate-180")} />
-						</button>
+						<ChevronDown size={16} className={cn("transition-transform text-black", communityExpanded && "rotate-180")} />
 					</div>
 					{communityExpanded && (
-						<div className="border-t border-border-subtle p-3 flex flex-col gap-2">
-							<div className="relative">
-								<Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary" />
+						<div className="p-3 flex flex-col gap-2 bg-white">
+							<div className="relative mb-1">
+								<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
 								<input
 									type="text"
 									value={communitySearch}
 									onChange={e => setCommunitySearch(e.target.value)}
 									placeholder="Search hosts by name…"
-									className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 py-1.5 text-xs outline-none focus:border-border-focus"
+									className="w-full rounded-2xl border-[3px] border-black bg-white pl-9 pr-3 py-2 text-sm font-semibold outline-none focus:bg-neutral-50 text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
 								/>
 							</div>
-							<div className="max-h-40 overflow-y-auto flex flex-col gap-0.5">
+							<div className="max-h-40 overflow-y-auto flex flex-col gap-0.5 mt-2">
 								{hostsQuery.isLoading ? (
-									<p className="text-caption text-text-tertiary py-2 text-center">Loading…</p>
+									<p className="text-xs font-semibold text-neutral-500 py-2 text-center">Loading…</p>
 								) : hostsQuery.isError ? (
-									<p className="text-caption text-red-600 py-2 text-center">Failed to load hosts.</p>
+									<p className="text-xs font-semibold text-red-600 py-2 text-center">Failed to load hosts.</p>
 								) : filteredHosts.length === 0 ? (
-									<p className="text-caption text-text-tertiary py-2 text-center">No hosts found.</p>
+									<p className="text-xs font-semibold text-neutral-500 py-2 text-center">No hosts found.</p>
 								) : (
 									filteredHosts.map(h => (
-										<label key={h.id} className="flex items-center gap-2 px-1.5 py-1 rounded hover:bg-neutral-50 text-caption text-text-primary">
+										<label key={h.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#FFC940]/15 text-xs font-semibold text-black cursor-pointer select-none transition-colors">
 											<input
 												type="checkbox"
 												disabled={selectCommunity}
 												checked={selectCommunity || selectedHostIds.has(h.id)}
 												onChange={() => toggleHostId(h.id)}
+												className="rounded-full border-2 border-black accent-[#EE2C2C] size-4 cursor-pointer focus:ring-0"
 											/>
 											<span className="flex flex-col min-w-0">
 												<span className="truncate">{h.displayName}</span>
-												<span className="text-text-tertiary truncate">{h.user.email}</span>
+												<span className="text-[10px] text-neutral-500 truncate">{h.user.email}</span>
 											</span>
 										</label>
 									))
@@ -1224,20 +1241,24 @@ function AnnouncementsBox() {
 				value={subject}
 				onChange={e => setSubject(e.target.value)}
 				placeholder="Subject (optional)"
-				className="w-full rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-sm outline-none focus:border-border-focus"
+				className="w-full rounded-2xl border-[3px] border-black bg-white px-4 py-2.5 text-sm font-semibold outline-none focus:bg-neutral-50 transition-colors placeholder:text-neutral-400 text-black animate-none"
 			/>
 			<textarea
 				value={message}
 				onChange={e => setMessage(e.target.value)}
 				placeholder="Write your announcement…"
 				rows={4}
-				className="w-full rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-sm outline-none focus:border-border-focus resize-none"
+				className="w-full rounded-2xl border-[3px] border-black bg-white px-4 py-2.5 text-sm font-semibold outline-none focus:bg-neutral-50 transition-colors placeholder:text-neutral-400 text-black resize-none"
 			/>
 
-			<Button onClick={handleSend} disabled={sendMutation.isPending} className="self-end">
-				{sendMutation.isPending ? "Sending…" : `Send${recipientCount > 0 ? ` (${recipientCount})` : ""}`}
-			</Button>
-			<p className="text-caption text-text-tertiary text-right -mt-2">
+			<button
+				onClick={handleSend}
+				disabled={sendMutation.isPending}
+				className="bg-[#FFC940] border-[3px] border-black text-black rounded-2xl px-6 py-2.5 font-black text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all select-none self-end cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+			>
+				{sendMutation.isPending ? "SENDING…" : `SEND${recipientCount > 0 ? ` (${recipientCount})` : ""}`}
+			</button>
+			<p className="text-[10px] font-semibold text-neutral-500 text-right -mt-2">
 				This sends a real email to every selected recipient.
 			</p>
 
