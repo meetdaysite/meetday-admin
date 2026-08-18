@@ -1124,8 +1124,10 @@ function AnnouncementsBox() {
 												checked={selectBrands || selectedBrandIds.has(b.id)}
 												onChange={() => toggleBrandId(b.id)}
 											/>
-											<span className="truncate">{b.brandName}</span>
-											<span className="text-text-tertiary truncate">{b.user.email}</span>
+											<span className="flex flex-col min-w-0">
+												<span className="truncate">{b.brandName}</span>
+												<span className="text-text-tertiary truncate">{b.user.email}</span>
+											</span>
 										</label>
 									))
 								)}
@@ -1178,8 +1180,10 @@ function AnnouncementsBox() {
 												checked={selectCommunity || selectedHostIds.has(h.id)}
 												onChange={() => toggleHostId(h.id)}
 											/>
-											<span className="truncate">{h.displayName}</span>
-											<span className="text-text-tertiary truncate">{h.user.email}</span>
+											<span className="flex flex-col min-w-0">
+												<span className="truncate">{h.displayName}</span>
+												<span className="text-text-tertiary truncate">{h.user.email}</span>
+											</span>
 										</label>
 									))
 								)}
