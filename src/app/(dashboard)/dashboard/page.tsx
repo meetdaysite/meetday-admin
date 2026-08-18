@@ -14,7 +14,9 @@ import {
 	Clock3,
 	CreditCard,
 	Flag,
+	HandCoins,
 	IndianRupee,
+	Megaphone,
 	ScanLine,
 	Server,
 	ShieldAlert,
@@ -28,9 +30,14 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Button } from "@/components/ui/Button"
 import { Dropdown, type DropdownOption } from "@/components/ui/Dropdown"
 import { ActivityFeed, type ActivityItem } from "@/components/dashboard/activity-feed"
+import { StatCard } from "@/components/dashboard/stat-card"
 import { SkeletonDashboardPage } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/stores/auth.store"
+import { usePermission } from "@/lib/hooks/use-permission"
+import { getPendingSponsorships, getSponsorships } from "@/lib/api/sponsorships"
+import { getPendingHosts, getHosts } from "@/lib/api/hosts"
+import { getPendingBrands, getBrands } from "@/lib/api/brands"
 import {
 	getDashboardHealth,
 	getDashboardLiveOperations,
@@ -523,7 +530,9 @@ function RevenueSectionError({ title, message, onRetry }: SectionErrorProps) {
 	)
 }
 
-export default function DashboardPage() {
+// Old, full dashboard (health, revenue chart, activity feed, review queue) — kept but unused
+// for now. Re-export this as default (and remove the simple dashboard below) to restore it.
+function LegacyDashboardPage() {
 	const router = useRouter()
 	const hasPermission = useAuthStore(state => state.hasPermission)
 	const [period, setPeriod] = useState<DashboardRevenuePeriod>("THIS_MONTH")
@@ -926,6 +935,91 @@ export default function DashboardPage() {
 					</div>
 				</section>
 			</div>
+		</div>
+	)
+}
+
+// Simple dashboard: at-a-glance Sponsorship/Host/Brand counts, plus an Announcements
+// placeholder box (content to be defined later). The full legacy dashboard above is kept
+// but unused — swap the two default exports to bring it back.
+function AnnouncementsBox() {
+	return (
+		<div className="bg-surface-card border border-border-default rounded-action p-6 flex flex-col items-center justify-center text-center gap-2 min-h-40">
+			<Megaphone size={22} className="text-text-tertiary" />
+			<p className="text-label-md font-semibold text-text-primary">Announcements</p>
+			<p className="text-body-sm text-text-tertiary max-w-xs">Coming soon.</p>
+		</div>
+	)
+}
+
+export default function DashboardPage() {
+	const canSeeSponsorships = usePermission("sponsorship.approve")
+	const canSeeHosts = usePermission("host.approve")
+	const canSeeBrands = usePermission("sponsorship.approve")
+
+	const sponsorshipsTotal = useQuery({
+		queryKey: ["dashboard", "sponsorships-total"],
+		queryFn: () => getSponsorships({ limit: 1 }).then(r => r.total),
+		enabled: canSeeSponsorships,
+	})
+	const sponsorshipsPending = useQuery({
+		queryKey: ["dashboard", "sponsorships-pending"],
+		queryFn: () => getPendingSponsorships({ limit: 1 }).then(r => r.total),
+		enabled: canSeeSponsorships,
+	})
+	const hostsTotal = useQuery({
+		queryKey: ["dashboard", "hosts-total"],
+		queryFn: () => getHosts({ limit: 1 }).then(r => r.total),
+		enabled: canSeeHosts,
+	})
+	const hostsPending = useQuery({
+		queryKey: ["dashboard", "hosts-pending"],
+		queryFn: () => getPendingHosts({ limit: 1 }).then(r => r.total),
+		enabled: canSeeHosts,
+	})
+	const brandsTotal = useQuery({
+		queryKey: ["dashboard", "brands-total"],
+		queryFn: () => getBrands({ limit: 1 }).then(r => r.total),
+		enabled: canSeeBrands,
+	})
+	const brandsPending = useQuery({
+		queryKey: ["dashboard", "brands-pending"],
+		queryFn: () => getPendingBrands({ limit: 1 }).then(r => r.total),
+		enabled: canSeeBrands,
+	})
+
+	return (
+		<div className="p-6 space-y-5 max-w-7xl mx-auto">
+			<div>
+				<h1 className="text-heading-sm font-semibold text-text-primary">Dashboard</h1>
+				<p className="text-body-sm text-text-secondary mt-1">What's happening right now.</p>
+			</div>
+
+			<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+				<StatCard
+					icon={HandCoins}
+					label="Sponsorships"
+					value={sponsorshipsTotal.data ?? "—"}
+					sub={`${sponsorshipsPending.data ?? "—"} pending review`}
+					href="/sponsorships"
+				/>
+				<StatCard
+					icon={Users}
+					label="Hosts"
+					value={hostsTotal.data ?? "—"}
+					sub={`${hostsPending.data ?? "—"} pending review`}
+					href="/hosts"
+				/>
+				<StatCard
+					icon={Users}
+					label="Brands"
+					value={brandsTotal.data ?? "—"}
+					sub={`${brandsPending.data ?? "—"} pending review`}
+					href="/brands"
+				/>
+			</div>
+
+			<AnnouncementsBox />
 		</div>
 	)
 }
