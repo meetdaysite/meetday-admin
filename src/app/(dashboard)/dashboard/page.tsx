@@ -29,6 +29,7 @@ import {
 	type LucideIcon,
 } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { Button } from "@/components/ui/Button"
@@ -43,6 +44,8 @@ import { getPendingSponsorships, getSponsorships } from "@/lib/api/sponsorships"
 import { getPendingHosts, getHosts } from "@/lib/api/hosts"
 import { getPendingBrands, getBrands } from "@/lib/api/brands"
 import { getCommunityProfiles } from "@/lib/api/community-profiles"
+import { sendAnnouncement } from "@/lib/api/announcements"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import {
 	getDashboardHealth,
 	getDashboardLiveOperations,
@@ -947,10 +950,6 @@ function LegacyDashboardPage() {
 // Simple dashboard: at-a-glance Sponsorship/Host/Brand counts, plus Recent Updates and an
 // Announcements composer. The full legacy dashboard above is kept but unused — swap the two
 // default exports to bring it back.
-//
-// Send is stubbed — no email actually goes out yet. It just resolves the final recipient
-// list and shows it in a toast, so the audience-selection UX can be reviewed before wiring
-// a real /admin/announcements send endpoint.
 function AnnouncementsBox() {
 	const [selectAll, setSelectAll] = useState(false)
 	const [selectBrands, setSelectBrands] = useState(false)
@@ -963,7 +962,7 @@ function AnnouncementsBox() {
 	const [selectedHostIds, setSelectedHostIds] = useState<Set<string>>(new Set())
 	const [subject, setSubject] = useState("")
 	const [message, setMessage] = useState("")
-	const [sending, setSending] = useState(false)
+	const [confirmOpen, setConfirmOpen] = useState(false)
 
 	// Fetched lazily — only once a group is expanded to search/pick specific recipients.
 	const brandsQuery = useQuery({
@@ -1029,6 +1028,24 @@ function AnnouncementsBox() {
 		(selectBrands ? (brandsQuery.data?.length ?? 0) : selectedBrandIds.size) +
 		(selectCommunity ? (hostsQuery.data?.length ?? 0) : selectedHostIds.size)
 
+	const sendMutation = useMutation({
+		mutationFn: sendAnnouncement,
+		onSuccess: (data) => {
+			toast.success(`Announcement queued to ${data.queued} recipient(s).`)
+			setConfirmOpen(false)
+			setMessage("")
+			setSubject("")
+			setSelectAll(false)
+			setSelectBrands(false)
+			setSelectCommunity(false)
+			setSelectedBrandIds(new Set())
+			setSelectedHostIds(new Set())
+		},
+		onError: (err) => {
+			const msg = axios.isAxiosError(err) ? err.response?.data?.message : undefined
+			toast.error(typeof msg === "string" ? msg : "Failed to send announcement.")
+		},
+	})
 
 	function handleSend() {
 		if (!message.trim()) {
@@ -1039,32 +1056,18 @@ function AnnouncementsBox() {
 			toast.error("Select at least one recipient.")
 			return
 		}
-		// A group's checkbox can be selected without ever expanding/fetching its list (e.g. "Select
-		// All" without opening the search) — fetch on demand so the resolved email list is real,
-		// not just a stale/empty cache from before the group was expanded.
-		setSending(true)
-		Promise.all([
-			selectBrands && !brandsQuery.data ? getBrands({ limit: 200 }).then(r => r.brands) : Promise.resolve(brandsQuery.data ?? []),
-			selectCommunity && !hostsQuery.data ? getHosts({ limit: 200 }).then(r => r.hosts) : Promise.resolve(hostsQuery.data ?? []),
-		])
-			.then(([brands, hosts]) => {
-				const brandEmails = brands
-					.filter(b => selectBrands || selectedBrandIds.has(b.id))
-					.map(b => b.user.email)
-					.filter((e): e is string => !!e)
-				const hostEmails = hosts
-					.filter(h => selectCommunity || selectedHostIds.has(h.id))
-					.map(h => h.user.email)
-					.filter((e): e is string => !!e)
-				const emails = Array.from(new Set([...brandEmails, ...hostEmails]))
+		setConfirmOpen(true)
+	}
 
-				// STUBBED — no email is actually sent yet. Real recipient list is resolved from the
-				// backend (real emails), just logged/previewed here for review before wiring a real send.
-				console.log("[Announcement preview] Would email:", emails)
-				const preview = emails.slice(0, 5).join(", ") + (emails.length > 5 ? ` +${emails.length - 5} more` : "")
-				toast.success(`(Preview only — no email sent) ${emails.length} real recipient(s): ${preview || "none found"}`)
-			})
-			.finally(() => setSending(false))
+	function confirmSend() {
+		sendMutation.mutate({
+			allBrands: selectBrands,
+			allCommunity: selectCommunity,
+			brandIds: selectBrands ? undefined : Array.from(selectedBrandIds),
+			hostIds: selectCommunity ? undefined : Array.from(selectedHostIds),
+			subject: subject.trim() || undefined,
+			message: message.trim(),
+		})
 	}
 
 	return (
@@ -1208,12 +1211,22 @@ function AnnouncementsBox() {
 				className="w-full rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-sm outline-none focus:border-border-focus resize-none"
 			/>
 
-			<Button onClick={handleSend} disabled={sending} className="self-end">
-				{sending ? "Sending…" : `Send${recipientCount > 0 ? ` (${recipientCount})` : ""}`}
+			<Button onClick={handleSend} disabled={sendMutation.isPending} className="self-end">
+				{sendMutation.isPending ? "Sending…" : `Send${recipientCount > 0 ? ` (${recipientCount})` : ""}`}
 			</Button>
 			<p className="text-caption text-text-tertiary text-right -mt-2">
-				Preview mode — no email is sent yet.
+				This sends a real email to every selected recipient.
 			</p>
+
+			<ConfirmDialog
+				open={confirmOpen}
+				onClose={() => setConfirmOpen(false)}
+				onConfirm={confirmSend}
+				title="Send announcement"
+				description={`This will send a real email to ${recipientCount} recipient(s). This cannot be undone.`}
+				confirmLabel="Send"
+				isLoading={sendMutation.isPending}
+			/>
 		</div>
 	)
 }
