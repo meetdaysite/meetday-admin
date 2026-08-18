@@ -1,12 +1,12 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useQuery, useMutation } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import axios from "axios"
 import { toast } from "sonner"
 import { Megaphone, ChevronDown, Search, Mail } from "lucide-react"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { sendAnnouncement } from "@/lib/api/announcements"
+import { sendAnnouncement, getAnnouncements, type Announcement } from "@/lib/api/announcements"
 import { getBrands } from "@/lib/api/brands"
 import { getHosts } from "@/lib/api/hosts"
 import { cn } from "@/lib/utils"
@@ -14,39 +14,8 @@ import PageHeader from "@/components/ui/PageHeader"
 import { DataTable } from "@/components/ui/data-table"
 import { type ColumnDef } from "@tanstack/react-table"
 
-type PastAnnouncement = {
-	id: string
-	subject: string
-	message: string
-	createdAt: string
-	recipients: string
-}
-
-const INITIAL_ANNOUNCEMENTS: PastAnnouncement[] = [
-	{
-		id: "1",
-		subject: "Welcome to Meetday Admin Portal",
-		message: "We have launched the new neo-brutalist admin panel interface for Meetday operations. Enjoy the fresh design!",
-		createdAt: "2026-08-18T10:30:00Z",
-		recipients: "All Brands & Community",
-	},
-	{
-		id: "2",
-		subject: "Platform Maintenance Notice",
-		message: "Scheduled database migrations will take place this Sunday at 2 AM IST. Temporary downtime of 10 minutes expected.",
-		createdAt: "2026-08-17T18:00:00Z",
-		recipients: "All Community",
-	},
-	{
-		id: "3",
-		subject: "August Host Rewards Program",
-		message: "Host payouts for top community engagements will be processed with a 5% bonus this month. Thank you for your amazing efforts!",
-		createdAt: "2026-08-15T09:15:00Z",
-		recipients: "Bangalore Founders Circle + 4 others",
-	},
-]
-
 export default function AnnouncementsPage() {
+	const queryClient = useQueryClient()
 	const [selectAll, setSelectAll] = useState(false)
 	const [selectBrands, setSelectBrands] = useState(false)
 	const [selectCommunity, setSelectCommunity] = useState(false)
@@ -61,10 +30,13 @@ export default function AnnouncementsPage() {
 	const [confirmOpen, setConfirmOpen] = useState(false)
 
 	// Past Announcements Search & Filters
-	const [pastAnnouncements, setPastAnnouncements] = useState<PastAnnouncement[]>(INITIAL_ANNOUNCEMENTS)
+	const pastAnnouncementsQuery = useQuery({
+		queryKey: ["announcements", "list"],
+		queryFn: () => getAnnouncements({ limit: 100 }).then(r => r.announcements),
+	})
 	const [pastSearch, setPastSearch] = useState("")
 	const [selectedDate, setSelectedDate] = useState("")
-	const [selectedAnn, setSelectedAnn] = useState<PastAnnouncement | null>(null)
+	const [selectedAnn, setSelectedAnn] = useState<Announcement | null>(null)
 	const [detailOpen, setDetailOpen] = useState(false)
 
 	// Fetched lazily — only once a group is expanded to search/pick specific recipients.
@@ -135,23 +107,7 @@ export default function AnnouncementsPage() {
 		mutationFn: sendAnnouncement,
 		onSuccess: (data) => {
 			toast.success(`Announcement queued to ${data.queued} recipient(s).`)
-
-			// Add to local past announcements list
-			const newAnn: PastAnnouncement = {
-				id: Date.now().toString(),
-				subject: subject.trim() || "Untitled Announcement",
-				message: message.trim(),
-				createdAt: new Date().toISOString(),
-				recipients: selectAll
-					? "All Brands & Community"
-					: [
-							selectBrands ? "All Brands" : `${selectedBrandIds.size} Brand(s)`,
-							selectCommunity ? "All Community" : `${selectedHostIds.size} Host(s)`,
-						]
-							.filter(Boolean)
-							.join(", "),
-			}
-			setPastAnnouncements(prev => [newAnn, ...prev])
+			queryClient.invalidateQueries({ queryKey: ["announcements", "list"] })
 
 			setConfirmOpen(false)
 			setMessage("")
@@ -181,6 +137,15 @@ export default function AnnouncementsPage() {
 	}
 
 	function confirmSend() {
+		const recipientsSummary = selectAll
+			? "All Brands & Community"
+			: [
+					selectBrands ? "All Brands" : selectedBrandIds.size ? `${selectedBrandIds.size} Brand(s)` : null,
+					selectCommunity ? "All Community" : selectedHostIds.size ? `${selectedHostIds.size} Host(s)` : null,
+				]
+					.filter(Boolean)
+					.join(", ")
+
 		sendMutation.mutate({
 			allBrands: selectBrands,
 			allCommunity: selectCommunity,
@@ -188,29 +153,30 @@ export default function AnnouncementsPage() {
 			hostIds: selectCommunity ? undefined : Array.from(selectedHostIds),
 			subject: subject.trim() || undefined,
 			message: message.trim(),
+			recipientsSummary,
 		})
 	}
 
 	// Filter past announcements
 	const filteredPastAnnouncements = useMemo(() => {
-		let list = pastAnnouncements
+		let list = pastAnnouncementsQuery.data ?? []
 		const q = pastSearch.trim().toLowerCase()
 		if (q) {
 			list = list.filter(
 				ann =>
 					ann.subject.toLowerCase().includes(q) ||
 					ann.message.toLowerCase().includes(q) ||
-					ann.recipients.toLowerCase().includes(q)
+					ann.recipientsSummary.toLowerCase().includes(q)
 			)
 		}
 		if (selectedDate) {
 			list = list.filter(ann => ann.createdAt.startsWith(selectedDate))
 		}
 		return list
-	}, [pastAnnouncements, pastSearch, selectedDate])
+	}, [pastAnnouncementsQuery.data, pastSearch, selectedDate])
 
 	// DataTable Columns Setup
-	const columns = useMemo<ColumnDef<PastAnnouncement>[]>(
+	const columns = useMemo<ColumnDef<Announcement>[]>(
 		() => [
 			{
 				id: "subject",
@@ -227,7 +193,7 @@ export default function AnnouncementsPage() {
 				cell: ({ row }) => (
 					<div className="max-w-[80px] sm:max-w-[120px] overflow-hidden truncate">
 						<span className="text-xs font-bold text-[#EE2C2C] bg-red-50/50 px-2 py-0.5 rounded border border-red-100 truncate inline-block max-w-full">
-							{row.original.recipients}
+							{row.original.recipientsSummary}
 						</span>
 					</div>
 				),
@@ -258,7 +224,7 @@ export default function AnnouncementsPage() {
 		[]
 	)
 
-	function handleRowClick(row: PastAnnouncement) {
+	function handleRowClick(row: Announcement) {
 		setSelectedAnn(row)
 		setDetailOpen(true)
 	}
@@ -496,16 +462,22 @@ export default function AnnouncementsPage() {
 
 					{/* Table Container */}
 					<div className="overflow-y-auto max-h-[550px] pr-1">
-						<DataTable
-							columns={columns}
-							data={filteredPastAnnouncements}
-							onRowClick={handleRowClick}
-							emptyState={
-								<div className="py-12 text-center text-sm font-semibold text-neutral-500 bg-white border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-									No broadcasted announcements match the filters.
-								</div>
-							}
-						/>
+						{pastAnnouncementsQuery.isLoading ? (
+							<div className="py-12 text-center text-sm font-semibold text-neutral-500 bg-white border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+								Loading…
+							</div>
+						) : (
+							<DataTable
+								columns={columns}
+								data={filteredPastAnnouncements}
+								onRowClick={handleRowClick}
+								emptyState={
+									<div className="py-12 text-center text-sm font-semibold text-neutral-500 bg-white border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+										No broadcasted announcements match the filters.
+									</div>
+								}
+							/>
+						)}
 					</div>
 				</div>
 			</div>
@@ -526,7 +498,7 @@ export default function AnnouncementsPage() {
 									Date: <span className="text-black">{new Date(selectedAnn.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })} at {new Date(selectedAnn.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}</span>
 								</div>
 								<div className="flex items-center gap-1.5 text-[#EE2C2C] bg-red-50/50 self-start px-2 py-0.5 rounded border border-red-100">
-									<Mail size={10} /> Recipients: {selectedAnn.recipients}
+									<Mail size={10} /> Recipients: {selectedAnn.recipientsSummary}
 								</div>
 							</div>
 						</div>
