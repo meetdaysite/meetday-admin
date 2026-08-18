@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import axios from "axios"
+import { formatDistanceToNow } from "date-fns"
 import {
 	ArrowRight,
 	Activity,
@@ -38,6 +39,7 @@ import { usePermission } from "@/lib/hooks/use-permission"
 import { getPendingSponsorships, getSponsorships } from "@/lib/api/sponsorships"
 import { getPendingHosts, getHosts } from "@/lib/api/hosts"
 import { getPendingBrands, getBrands } from "@/lib/api/brands"
+import { getCommunityProfiles } from "@/lib/api/community-profiles"
 import {
 	getDashboardHealth,
 	getDashboardLiveOperations,
@@ -939,15 +941,67 @@ function LegacyDashboardPage() {
 	)
 }
 
-// Simple dashboard: at-a-glance Sponsorship/Host/Brand counts, plus an Announcements
-// placeholder box (content to be defined later). The full legacy dashboard above is kept
-// but unused — swap the two default exports to bring it back.
+// Simple dashboard: at-a-glance Sponsorship/Host/Brand counts, plus Recent Updates and an
+// Announcements placeholder box (content to be defined later). The full legacy dashboard
+// above is kept but unused — swap the two default exports to bring it back.
 function AnnouncementsBox() {
 	return (
 		<div className="bg-surface-card border border-border-default rounded-action p-6 flex flex-col items-center justify-center text-center gap-2 min-h-40">
 			<Megaphone size={22} className="text-text-tertiary" />
 			<p className="text-label-md font-semibold text-text-primary">Announcements</p>
 			<p className="text-body-sm text-text-tertiary max-w-xs">Coming soon.</p>
+		</div>
+	)
+}
+
+type UpdateItem = {
+	id: string
+	label: string
+	title: string
+	createdAt: string
+	href: string
+}
+
+const UPDATE_ICONS: Record<string, LucideIcon> = {
+	"New host": Users,
+	"New brand": Users,
+	"New sponsorship": HandCoins,
+	"New community profile": Flag,
+}
+
+function RecentUpdatesBox({ items, isLoading }: { items: UpdateItem[]; isLoading: boolean }) {
+	return (
+		<div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-1">
+			<h2 className="text-label-md font-semibold text-text-primary mb-2">Recent Updates</h2>
+			{isLoading ? (
+				<p className="text-body-sm text-text-tertiary py-6 text-center">Loading…</p>
+			) : items.length === 0 ? (
+				<p className="text-body-sm text-text-tertiary py-6 text-center">Nothing new yet.</p>
+			) : (
+				<div className="divide-y divide-border-subtle">
+					{items.map(item => {
+						const Icon = UPDATE_ICONS[item.label] ?? Users
+						return (
+							<Link
+								key={`${item.label}-${item.id}`}
+								href={item.href}
+								className="flex items-center gap-3 py-2.5 hover:bg-neutral-50 -mx-2 px-2 rounded-lg transition-colors"
+							>
+								<div className="size-8 rounded-md bg-neutral-100 flex items-center justify-center shrink-0">
+									<Icon size={14} className="text-text-secondary" />
+								</div>
+								<div className="min-w-0 flex-1">
+									<p className="text-body-sm font-medium text-text-primary truncate">{item.title}</p>
+									<p className="text-caption text-text-tertiary">{item.label}</p>
+								</div>
+								<span className="text-caption text-text-tertiary shrink-0">
+									{formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
+								</span>
+							</Link>
+						)
+					})}
+				</div>
+			)}
 		</div>
 	)
 }
@@ -988,6 +1042,64 @@ export default function DashboardPage() {
 		enabled: canSeeBrands,
 	})
 
+	const recentHosts = useQuery({
+		queryKey: ["dashboard", "recent-hosts"],
+		queryFn: () => getHosts({ limit: 5 }).then(r => r.hosts),
+		enabled: canSeeHosts,
+	})
+	const recentBrands = useQuery({
+		queryKey: ["dashboard", "recent-brands"],
+		queryFn: () => getBrands({ limit: 5 }).then(r => r.brands),
+		enabled: canSeeBrands,
+	})
+	const recentSponsorships = useQuery({
+		queryKey: ["dashboard", "recent-sponsorships"],
+		queryFn: () => getSponsorships({ limit: 5 }).then(r => r.proposals),
+		enabled: canSeeSponsorships,
+	})
+	const recentCommunityProfiles = useQuery({
+		queryKey: ["dashboard", "recent-community-profiles"],
+		queryFn: () => getCommunityProfiles({ limit: 5 }).then(r => r.profiles),
+		enabled: canSeeSponsorships,
+	})
+
+	const recentUpdatesLoading =
+		recentHosts.isLoading || recentBrands.isLoading || recentSponsorships.isLoading || recentCommunityProfiles.isLoading
+
+	const recentUpdates = useMemo<UpdateItem[]>(() => {
+		const items: UpdateItem[] = [
+			...(recentHosts.data ?? []).map(h => ({
+				id: h.id,
+				label: "New host",
+				title: h.displayName || `${h.user.firstName} ${h.user.lastName}`,
+				createdAt: h.createdAt ?? new Date(0).toISOString(),
+				href: "/hosts",
+			})),
+			...(recentBrands.data ?? []).map(b => ({
+				id: b.id,
+				label: "New brand",
+				title: b.brandName || `${b.user.firstName} ${b.user.lastName}`,
+				createdAt: b.createdAt,
+				href: "/brands",
+			})),
+			...(recentSponsorships.data ?? []).map(s => ({
+				id: s.id,
+				label: "New sponsorship",
+				title: s.name || "Untitled proposal",
+				createdAt: s.createdAt,
+				href: "/sponsorships",
+			})),
+			...(recentCommunityProfiles.data ?? []).map(c => ({
+				id: c.id,
+				label: "New community profile",
+				title: c.name,
+				createdAt: c.createdAt,
+				href: "/community-profiles",
+			})),
+		]
+		return items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 8)
+	}, [recentHosts.data, recentBrands.data, recentSponsorships.data, recentCommunityProfiles.data])
+
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			<div>
@@ -1019,7 +1131,12 @@ export default function DashboardPage() {
 				/>
 			</div>
 
-			<AnnouncementsBox />
+			<div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+				<div className="lg:col-span-2">
+					<RecentUpdatesBox items={recentUpdates} isLoading={recentUpdatesLoading} />
+				</div>
+				<AnnouncementsBox />
+			</div>
 		</div>
 	)
 }
