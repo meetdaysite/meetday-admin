@@ -180,11 +180,14 @@ const NAV: NavSection[] = [
 		title: "Management",
 		items: [
 			{ label: "Admins", href: "/admins", icon: ShieldCheck, permission: "admin.invite" },
-			{ label: "Coupons", href: "/coupons", icon: Tag, permission: "coupon.view" },
-			{ label: "Categories", href: "/categories", icon: LayoutGrid, permission: "category.manage" },
+			// Coupons: not used — commented out, not deleted.
+			// { label: "Coupons", href: "/coupons", icon: Tag, permission: "coupon.view" },
+			// Categories: not used — commented out, not deleted.
+			// { label: "Categories", href: "/categories", icon: LayoutGrid, permission: "category.manage" },
 			// Interests (attendee personalization tags): not used — commented out, not deleted.
 			// { label: "Interests", href: "/interests", icon: Sparkles, permission: "interest.manage" },
-			{ label: "Orders", href: "/orders", icon: ShoppingBag, permission: "order.view" },
+			// Orders: not used — commented out, not deleted.
+			// { label: "Orders", href: "/orders", icon: ShoppingBag, permission: "order.view" },
 		],
 	},
 	{
@@ -210,7 +213,8 @@ const NAV: NavSection[] = [
 	{
 		title: "Platform",
 		items: [
-			{ label: "Platform Config", href: "/platform-config", icon: Settings, permission: "platform.config" },
+			// Platform Config: not used — commented out, not deleted.
+			// { label: "Platform Config", href: "/platform-config", icon: Settings, permission: "platform.config" },
 		],
 	},
 	{
