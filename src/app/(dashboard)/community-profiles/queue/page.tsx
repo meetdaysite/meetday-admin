@@ -9,9 +9,9 @@ import { DataView } from "@/components/ui/data-view"
 import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
-import { approveCommunityProfile, getPendingCommunityProfiles, rejectCommunityProfile } from "@/lib/api/community-profiles"
+import { approveCommunityProfile, getCommunityProfileById, getPendingCommunityProfiles, rejectCommunityProfile } from "@/lib/api/community-profiles"
 import { formatDate, getDaysSince } from "@/lib/formatters"
-import { AgeDateCell, ChipCell, TwoLineCell } from "@/components/ui/table-cells"
+import { AgeDateCell, ChipCell, StatusCell, TwoLineCell } from "@/components/ui/table-cells"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { CommunityProfile, CommunityProfileDetail } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
@@ -19,32 +19,83 @@ import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
+// Logo Cell Component to fetch detail image
+function LogoCell({ id, name }: { id: string; name: string }) {
+	const [logoUrl, setLogoUrl] = useState<string | null>(null)
+	const [loading, setLoading] = useState(true)
+
+	useEffect(() => {
+		let active = true
+		getCommunityProfileById(id)
+			.then((data: CommunityProfileDetail) => {
+				if (active && data.logoUrl) {
+					setLogoUrl(data.logoUrl)
+				}
+			})
+			.catch(() => {})
+			.finally(() => {
+				if (active) setLoading(false)
+			})
+		return () => {
+			active = false
+		}
+	}, [id])
+
+	if (loading) {
+		return <div className="size-8 rounded-lg bg-neutral-100 animate-pulse border-2 border-black" />
+	}
+
+	return logoUrl ? (
+		<img
+			src={logoUrl}
+			alt={name}
+			className="size-8 rounded-lg object-cover border-2 border-black"
+		/>
+	) : (
+		<div className="size-8 rounded-lg bg-neutral-100 flex items-center justify-center font-bold text-xs border-2 border-black text-neutral-700 select-none">
+			{name.slice(0, 2).toUpperCase()}
+		</div>
+	)
+}
+
 function getRowTint(profile: CommunityProfile): string {
 	const days = getDaysSince(profile.updatedAt)
 	if (days <= 7) return ""
 	if (days <= 21) return "border-l-4 border-amber-500"
-	if (days <= 35) return "border-l-4 border-orange-500"
-	return "border-l-4 border-red-500"
+	return "border-l-4 border-red-500 bg-red-50/10"
 }
 
-export default function CommunityProfileQueuePage() {
+// Drawer Custom Hook
+function useDrawer<T>() {
+	const [item, setItem] = useState<T | null>(null)
+	const open = item !== null
+	const openDrawer = (val: T) => setItem(val)
+	const closeDrawer = () => setItem(null)
+	return { item, open, openDrawer, closeDrawer }
+}
+
+const PAGE_LIMIT = 20
+
+// Component
+
+export default function AllCommunityProfilesQueuePage() {
 	const router = useRouter()
 	const canApprove = usePermission("communityProfile.approve")
+
+	const [page, setPage] = useState(1)
+	const [search, setSearch] = useState("")
+	const { item: selectedProfile, open: drawerOpen, openDrawer, closeDrawer } = useDrawer<CommunityProfile>()
 
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 	const [profiles, setProfiles] = useState<CommunityProfile[]>([])
-	const [search, setSearch] = useState("")
-
-	const [selectedProfile, setSelectedProfile] = useState<CommunityProfile | null>(null)
-	const [drawerOpen, setDrawerOpen] = useState(false)
 	const [editingProfile, setEditingProfile] = useState<CommunityProfileDetail | null>(null)
 
 	const fetchProfiles = useCallback(async () => {
 		setIsLoading(true)
 		setError(null)
 		try {
-			const res = await getPendingCommunityProfiles()
+			const res = await getPendingCommunityProfiles({ page, limit: PAGE_LIMIT })
 			setProfiles(res.profiles)
 		} catch (err: unknown) {
 			const status = (err as { response?: { status?: number } })?.response?.status
@@ -61,7 +112,7 @@ export default function CommunityProfileQueuePage() {
 		} finally {
 			setIsLoading(false)
 		}
-	}, [router])
+	}, [router, page])
 
 	useEffect(() => {
 		fetchProfiles()
@@ -78,21 +129,15 @@ export default function CommunityProfileQueuePage() {
 		)
 	}, [profiles, search])
 
-	function openDrawer(profile: CommunityProfile) {
-		setSelectedProfile(profile)
-		setDrawerOpen(true)
-	}
-
 	async function handleAction(profileId: string, action: CommunityProfileAction, message?: string) {
 		try {
-			if (action === "approve") await approveCommunityProfile(profileId)
-			else if (action === "reject") await rejectCommunityProfile(profileId, message!)
-
-			const labels: Record<CommunityProfileAction, string> = {
-				approve: "Community profile approved",
-				reject: "Community profile rejected",
+			if (action === "approve") {
+				await approveCommunityProfile(profileId)
+				toast.success("Community profile approved and published")
+			} else {
+				await rejectCommunityProfile(profileId, message!)
+				toast.success("Community profile rejected")
 			}
-			toast.success(labels[action])
 			fetchProfiles()
 		} catch (err: unknown) {
 			const axiosErr = err as { response?: { status?: number; data?: { message?: string } } }
@@ -105,16 +150,10 @@ export default function CommunityProfileQueuePage() {
 				toast.error("Permission denied", {
 					description: `You don't have permission to ${action} community profiles.`,
 				})
-			} else if (status === 404) {
-				toast.error("Community profile not found")
-			} else if (status === 400) {
-				const msg = axiosErr?.response?.data?.message
-				toast.error(`Cannot ${action} community profile`, {
-					description: msg ?? "Profile is not in the required state.",
-				})
 			} else {
+				const msg = axiosErr?.response?.data?.message
 				toast.error(`Failed to ${action} community profile`, {
-					description: "Something went wrong. Please try again.",
+					description: msg ?? "Something went wrong. Please try again.",
 				})
 			}
 			throw err
@@ -124,10 +163,17 @@ export default function CommunityProfileQueuePage() {
 	const columns = useMemo<ColumnDef<CommunityProfile>[]>(
 		() => [
 			{
-				id: "profile",
-				header: "Community",
+				id: "logo",
+				header: "Logo",
+				cell: ({ row }) => <LogoCell id={row.original.id} name={row.original.name} />,
+			},
+			{
+				id: "name",
+				header: "Name",
 				cell: ({ row }) => (
-					<TwoLineCell primary={row.original.name} secondary={row.original.hostProfile.displayName ?? undefined} />
+					<div className="min-w-[250px]">
+						<TwoLineCell primary={row.original.name} secondary={row.original.hostProfile.displayName ?? undefined} />
+					</div>
 				),
 			},
 			{
@@ -136,14 +182,15 @@ export default function CommunityProfileQueuePage() {
 				cell: ({ row }) => <ChipCell>{row.original.size} members</ChipCell>,
 			},
 			{
-				id: "categories",
-				header: "Categories",
-				cell: ({ row }) => row.original.categories.map(c => c.name).join(", ") || "—",
-			},
-			{
 				id: "cities",
-				header: "Operating cities",
-				cell: ({ row }) => row.original.hostProfile.operatingCities.join(", ") || "—",
+				header: "Cities",
+				cell: ({ row }) => {
+					const cities = row.original.hostProfile.operatingCities
+					if (cities.length <= 3) {
+						return cities.join(", ") || "—"
+					}
+					return `${cities.slice(0, 3).join(", ")} +${cities.length - 3}`
+				},
 			},
 			{
 				id: "submitted",
@@ -184,10 +231,7 @@ export default function CommunityProfileQueuePage() {
 
 			<CommunityProfileReviewDrawer
 				open={drawerOpen}
-				onClose={() => {
-					setDrawerOpen(false)
-					setSelectedProfile(null)
-				}}
+				onClose={closeDrawer}
 				profile={selectedProfile}
 				onAction={handleAction}
 				onEdit={setEditingProfile}

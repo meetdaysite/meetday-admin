@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { HostReviewDrawer, type HostAction } from "@/components/hosts/host-review-drawer"
 import { InviteBulkDrawer } from "@/components/hosts/invite-bulk-drawer"
@@ -222,14 +222,14 @@ export default function HostsPage() {
 					canInvite && (
 						<>
 							<Button
-								variant="secondary"
+								variant="primary"
 								leftIcon={<UserPlus size={13} />}
 								onClick={() => setSingleOpen(true)}
 							>
 								Invite Host
 							</Button>
 							<Button
-								variant="primary"
+								variant="red"
 								leftIcon={<Upload size={13} />}
 								onClick={() => setBulkOpen(true)}
 							>

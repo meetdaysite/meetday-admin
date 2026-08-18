@@ -8,16 +8,17 @@ import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { AgeDateCell, ChipCell, StatusCell, TwoLineCell } from "@/components/ui/table-cells"
-import { approveCommunityProfile, approveCommunityProfileRevision, getCommunityProfiles, rejectCommunityProfile, rejectCommunityProfileRevision } from "@/lib/api/community-profiles"
+import { approveCommunityProfile, approveCommunityProfileRevision, getCommunityProfileById, getCommunityProfiles, rejectCommunityProfile, rejectCommunityProfileRevision } from "@/lib/api/community-profiles"
 import { formatDate, getDaysSince } from "@/lib/formatters"
 import { useDrawer } from "@/lib/hooks/use-drawer"
 import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { ApprovalStatus, CommunityProfile, CommunityProfileDetail } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
+import { Button } from "@/components/ui/Button"
 import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
 // Constants
@@ -33,6 +34,45 @@ const STATUS_TABS: { label: string; value: StatusFilter }[] = [
 	{ label: "Rejected", value: "REJECTED" },
 	{ label: "Suspended", value: "SUSPENDED" },
 ]
+
+// Logo Cell Component to fetch detail image
+function LogoCell({ id, name }: { id: string; name: string }) {
+	const [logoUrl, setLogoUrl] = useState<string | null>(null)
+	const [loading, setLoading] = useState(true)
+
+	useEffect(() => {
+		let active = true
+		getCommunityProfileById(id)
+			.then((data: CommunityProfileDetail) => {
+				if (active && data.logoUrl) {
+					setLogoUrl(data.logoUrl)
+				}
+			})
+			.catch(() => {})
+			.finally(() => {
+				if (active) setLoading(false)
+			})
+		return () => {
+			active = false
+		}
+	}, [id])
+
+	if (loading) {
+		return <div className="size-8 rounded-lg bg-neutral-100 animate-pulse border-2 border-black" />
+	}
+
+	return logoUrl ? (
+		<img
+			src={logoUrl}
+			alt={name}
+			className="size-8 rounded-lg object-cover border-2 border-black"
+		/>
+	) : (
+		<div className="size-8 rounded-lg bg-neutral-100 flex items-center justify-center font-bold text-xs border-2 border-black text-neutral-700 select-none">
+			{name.slice(0, 2).toUpperCase()}
+		</div>
+	)
+}
 
 // Page
 
@@ -121,10 +161,17 @@ export default function AllCommunityProfilesPage() {
 	const columns = useMemo<ColumnDef<CommunityProfile>[]>(
 		() => [
 			{
-				id: "profile",
-				header: "Community",
+				id: "logo",
+				header: "Logo",
+				cell: ({ row }) => <LogoCell id={row.original.id} name={row.original.name} />,
+			},
+			{
+				id: "name",
+				header: "Name",
 				cell: ({ row }) => (
-					<TwoLineCell primary={row.original.name} secondary={row.original.hostProfile.displayName ?? undefined} />
+					<div className="min-w-[250px]">
+						<TwoLineCell primary={row.original.name} secondary={row.original.hostProfile.displayName ?? undefined} />
+					</div>
 				),
 			},
 			{
@@ -133,14 +180,15 @@ export default function AllCommunityProfilesPage() {
 				cell: ({ row }) => <ChipCell>{row.original.size} members</ChipCell>,
 			},
 			{
-				id: "categories",
-				header: "Categories",
-				cell: ({ row }) => row.original.categories.map(c => c.name).join(", ") || "—",
-			},
-			{
 				id: "cities",
-				header: "Operating cities",
-				cell: ({ row }) => row.original.hostProfile.operatingCities.join(", ") || "—",
+				header: "Cities",
+				cell: ({ row }) => {
+					const cities = row.original.hostProfile.operatingCities
+					if (cities.length <= 3) {
+						return cities.join(", ") || "—"
+					}
+					return `${cities.slice(0, 3).join(", ")} +${cities.length - 3}`
+				},
 			},
 			{
 				id: "updated",
@@ -175,12 +223,13 @@ export default function AllCommunityProfilesPage() {
 				title="All Community Profiles"
 				description="Every host community profile on the platform, regardless of status."
 				buttons={
-					<button
+					<Button
+						variant="red"
 						onClick={() => setCreateOpen(true)}
-						className="flex items-center gap-1.5 rounded-lg bg-action-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors"
+						leftIcon={<Plus size={14} />}
 					>
-						<Plus size={14} /> Add Community Profile
-					</button>
+						Add Community Profile
+					</Button>
 				}
 			/>
 

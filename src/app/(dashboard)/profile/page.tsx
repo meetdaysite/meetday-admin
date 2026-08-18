@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import PageHeader from "@/components/ui/PageHeader"
 import { Button } from "@/components/ui/Button"
@@ -9,10 +9,11 @@ import { useAuthStore } from "@/stores/auth.store"
 import { firebaseAuth } from "@/lib/firebase/config"
 import { sendPasswordResetEmail } from "firebase/auth"
 import { toast } from "sonner"
-import { AlertTriangle, Calendar, KeyRound, Loader2, Mail, Pencil, Phone, RefreshCw, ShieldCheck, UserX } from "lucide-react"
+import { AlertTriangle, KeyRound, Loader2, Pencil, ShieldCheck, UserX, LogOut } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { EditProfileDrawer } from "@/components/profile/edit-profile-drawer"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 // Role badge
 
@@ -49,30 +50,6 @@ function ProfileSkeleton() {
 	)
 }
 
-// Info row
-
-function InfoRow({
-	icon: Icon,
-	label,
-	value,
-}: {
-	icon: React.ElementType
-	label: string
-	value: React.ReactNode
-}) {
-	return (
-		<div className="py-3 flex items-start gap-3">
-			<Icon size={14} className="mt-0.5 shrink-0 text-text-tertiary" />
-			<div className="min-w-0 flex-1">
-				<p className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary mb-0.5">
-					{label}
-				</p>
-				<div className="text-xs text-text-primary">{value}</div>
-			</div>
-		</div>
-	)
-}
-
 // Page
 
 type PageState = "loading" | "done" | "error" | "access-denied" | "not-found"
@@ -86,6 +63,12 @@ export default function ProfilePage() {
 	const [errorMessage, setErrorMessage] = useState<string | null>(null)
 	const [resetting, setResetting] = useState(false)
 	const [editOpen, setEditOpen] = useState(false)
+	const [confirmOpen, setConfirmOpen] = useState(false)
+
+	function handleSignOut() {
+		clearAuth()
+		router.replace("/login")
+	}
 
 	useEffect(() => {
 		let cancelled = false
@@ -186,37 +169,17 @@ export default function ProfilePage() {
 
 	const initials = getInitials(profile.firstName, profile.lastName)
 	const roleName = profile.role.name
-
 	return (
-		<div className="p-6 space-y-6 max-w-2xl mx-auto">
-			{/* Page header */}
-			<PageHeader
-				title="Profile"
-				description="View your admin profile."
-				buttons={
-					<>
-						<Button
-							variant="primary"
-							size="sm"
-							onClick={() => setEditOpen(true)}
-							leftIcon={<Pencil size={14} />}
-						>
-							Edit profile
-						</Button>
-						<Button
-							variant="secondary"
-							size="sm"
-							disabled={resetting}
-							onClick={handleResetPassword}
-							leftIcon={
-								resetting ? <Loader2 size={14} className="animate-spin" /> : <KeyRound size={14} />
-							}
-						>
-							{resetting ? "Sending…" : "Reset password"}
-						</Button>
-					</>
-				}
-			/>
+		<div className="max-w-2xl mx-auto py-10 px-6 space-y-8">
+			{/* Page Header */}
+			<div className="space-y-1">
+				<h1 className="text-[32px] font-black font-heading text-black tracking-tight leading-none">
+					My Profile
+				</h1>
+				<p className="text-sm font-semibold text-black/50">
+					Your admin identity and account details
+				</p>
+			</div>
 
 			<EditProfileDrawer
 				open={editOpen}
@@ -225,75 +188,132 @@ export default function ProfilePage() {
 				onSaved={updated => setProfile(updated)}
 			/>
 
-			{/* Profile card */}
-			<div className="bg-surface-card rounded-xl border border-border-default overflow-hidden">
-				{/* Avatar + name */}
-				<div className="p-6 flex items-center gap-4 border-b border-border-subtle">
-					{profile.avatarUrl ? (
-						// eslint-disable-next-line @next/next/no-img-element
-						<img
-							src={profile.avatarUrl}
-							alt={`${profile.firstName} ${profile.lastName}`}
-							className="w-16 h-16 rounded-full object-cover shrink-0 border border-border-default"
-						/>
-					) : (
-						<div className="w-16 h-16 rounded-full bg-action-primary text-white text-lg font-bold flex items-center justify-center shrink-0 select-none">
-							{initials}
-						</div>
-					)}
+			{/* Profile card: Yellow outer, white inner */}
+			<div className="bg-[#FFC940] border-[3px] border-black rounded-[24px] p-2.5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+				<div className="bg-white border-2 border-dashed border-black/10 rounded-[20px] p-6 flex flex-col gap-6">
+					{/* Avatar + name */}
+					<div className="flex items-center gap-4 pb-4 border-b border-dashed border-black/10">
+						{profile.avatarUrl ? (
+							// eslint-disable-next-line @next/next/no-img-element
+							<img
+								src={profile.avatarUrl}
+								alt={`${profile.firstName} ${profile.lastName}`}
+								className="w-16 h-16 rounded-2xl object-cover shrink-0 border-[3px] border-black bg-white"
+							/>
+						) : (
+							<div className="w-16 h-16 rounded-2xl bg-white border-[3px] border-black text-black text-lg font-black flex items-center justify-center shrink-0 select-none">
+								{initials}
+							</div>
+						)}
 
-					<div className="min-w-0">
-						<p className="text-sm font-semibold text-text-primary leading-none">
-							{profile.firstName} {profile.lastName}
-						</p>
-						<div className="mt-1.5 flex items-center gap-2 flex-wrap">
-							<span
-								className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${ROLE_STYLE[roleName]}`}
-							>
-								{ROLE_LABEL[roleName]}
+						<div className="min-w-0 flex flex-col gap-1.5">
+							<p className="text-xl font-black text-black leading-none">
+								{profile.firstName} {profile.lastName}
+							</p>
+							<div className="flex items-center gap-2 flex-wrap">
+								<span className="inline-block bg-[#1E1B4B] text-white text-[8px] font-black px-2.5 py-0.5 rounded-lg uppercase tracking-wider">
+									{ROLE_LABEL[roleName]}
+								</span>
+							</div>
+						</div>
+					</div>
+
+					{/* Info rows */}
+					<div className="flex flex-col gap-3">
+						<div className="flex gap-2 text-sm font-semibold">
+							<span className="text-black/50 w-28">Email ID :</span>
+							<span className="text-[#6C32D1] font-bold truncate max-w-[280px]">
+								{profile.email}
 							</span>
-							<span
-								className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-									profile.isActive
-										? "bg-green-50 text-green-700"
-										: "bg-neutral-100 text-neutral-500"
-								}`}
-							>
-								{profile.isActive ? "Active" : "Inactive"}
+						</div>
+
+						<div className="flex gap-2 text-sm font-semibold">
+							<span className="text-black/50 w-28">Phone No :</span>
+							<span className="text-[#6C32D1] font-bold">
+								{profile.phone || "Not specified"}
+							</span>
+						</div>
+
+						<div className="flex gap-2 text-sm font-semibold">
+							<span className="text-black/50 w-28">Member Since :</span>
+							<span className="text-[#6C32D1] font-bold">
+								{formatDateLong(profile.createdAt)}
+							</span>
+						</div>
+
+						<div className="flex gap-2 text-sm font-semibold">
+							<span className="text-black/50 w-28">Last Updated :</span>
+							<span className="text-[#6C32D1] font-bold">
+								{formatDateLong(profile.updatedAt)}
 							</span>
 						</div>
 					</div>
 				</div>
+			</div>
 
-				{/* Info rows */}
-				<div className="px-6 divide-y divide-border-subtle">
-					<InfoRow
-						icon={Mail}
-						label="Email"
-						value={<span className="font-medium">{profile.email}</span>}
-					/>
+			{/* Options Menu List */}
+			<div className="flex flex-col mt-6 divide-y divide-black/10">
+				{/* Super Admin Manage Admins */}
+				{profile.role.name === "SUPER_ADMIN" && (
+					<div className="flex items-center justify-between py-4 border-b border-black/10 hover:bg-black/[0.01]">
+						<span className="font-heading font-black text-base text-black">Manage Admins</span>
+						<div className="flex items-center gap-3">
+							<button
+								type="button"
+								onClick={() => router.push("/admins")}
+								className="bg-[#EE2C2C] text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
+							>
+								MANAGE NOW
+							</button>
+							<span className="text-black/50 font-black text-lg">&gt;</span>
+						</div>
+					</div>
+				)}
 
-					<InfoRow
-						icon={Phone}
-						label="Phone"
-						value={
-							profile.phone ? (
-								<span className="font-medium">{profile.phone}</span>
-							) : (
-								<span className="text-text-tertiary italic">Not provided</span>
-							)
-						}
-					/>
+				{/* Edit Profile */}
+				<div className="flex items-center justify-between py-4 border-b border-black/10 hover:bg-black/[0.01]">
+					<span className="font-heading font-black text-base text-black">Edit Profile</span>
+					<div className="flex items-center gap-3">
+						<button
+							type="button"
+							onClick={() => setEditOpen(true)}
+							className="bg-[#EE2C2C] text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
+						>
+							EDIT DETAILS
+						</button>
+						<span className="text-black/50 font-black text-lg">&gt;</span>
+					</div>
+				</div>
 
-					<InfoRow icon={Calendar} label="Member since" value={formatDateLong(profile.createdAt)} />
-
-					<InfoRow
-						icon={RefreshCw}
-						label="Last updated"
-						value={formatDateLong(profile.updatedAt)}
-					/>
+				{/* Profile Actions */}
+				<div className="flex items-center justify-between py-4">
+					<span className="font-heading font-black text-base text-black">Profile Actions</span>
+					<div className="flex items-center gap-3">
+						<button
+							onClick={handleResetPassword}
+							disabled={resetting}
+							className="bg-white border-[3px] border-black text-black rounded-2xl px-4 py-2 font-black text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all select-none"
+						>
+							{resetting ? "SENDING…" : "RESET PASSWORD"}
+						</button>
+						<button
+							onClick={() => setConfirmOpen(true)}
+							className="bg-[#EE2C2C] border-[3px] border-black text-white rounded-2xl px-4 py-2 font-black text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all select-none"
+						>
+							LOG OUT
+						</button>
+					</div>
 				</div>
 			</div>
+
+			<ConfirmDialog
+				open={confirmOpen}
+				onClose={() => setConfirmOpen(false)}
+				onConfirm={handleSignOut}
+				title="Sign out"
+				description="Are you sure you want to sign out?"
+				confirmLabel="Sign out"
+			/>
 		</div>
 	)
 }

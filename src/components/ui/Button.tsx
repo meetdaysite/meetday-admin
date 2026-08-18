@@ -2,7 +2,7 @@ import clsx from "clsx"
 import React from "react"
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-	variant?: "primary" | "secondary"
+	variant?: "primary" | "secondary" | "red"
 	size?: "sm" | "md" | "lg"
 	radius?: "sm" | "md" | "lg" | "pill"
 	leftIcon?: React.ReactNode
@@ -22,27 +22,36 @@ const iconSizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
 }
 
 const radiusClasses: Record<NonNullable<ButtonProps["radius"]>, string> = {
-	sm: "rounded-badge",
-	md: "rounded-action",
-	lg: "rounded-card",
-	pill: "rounded-avatar",
+	sm: "rounded-xl",
+	md: "rounded-2xl",
+	lg: "rounded-[24px]",
+	pill: "rounded-full",
 }
 
 const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
 	primary: clsx(
-		"bg-action-primary text-action-primary-text",
-		"hover:bg-action-primary-hover",
-		"active:bg-action-primary-pressed",
-		"focus-visible:bg-action-primary-pressed focus-visible:outline-none",
-		"focus-visible:ring-2 focus-visible:ring-text-inverse focus-visible:ring-offset-2 focus-visible:ring-offset-action-primary",
-		"disabled:bg-action-disabled disabled:text-action-disabled-text disabled:cursor-not-allowed",
+		"bg-[#FFC940] border-[3px] border-black text-black font-black uppercase tracking-wider",
+		"shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]",
+		"hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px]",
+		"active:translate-x-[3px] active:translate-y-[3px] active:shadow-none",
+		"transition-all cursor-pointer",
+		"disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-x-0 disabled:translate-y-0",
 	),
 	secondary: clsx(
-		"bg-action-secondary text-action-secondary-text border border-action-secondary-border",
-		"hover:bg-action-secondary-hover",
-		"focus-visible:border-border-focus focus-visible:text-text-brand focus-visible:outline-none",
-		"focus-visible:ring-1 focus-visible:ring-border-focus",
-		"disabled:bg-action-disabled disabled:text-action-disabled-text disabled:border-border-subtle disabled:cursor-not-allowed",
+		"bg-white border-[3px] border-black text-black font-black uppercase tracking-wider",
+		"shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]",
+		"hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px]",
+		"active:translate-x-[3px] active:translate-y-[3px] active:shadow-none",
+		"transition-all cursor-pointer",
+		"disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-x-0 disabled:translate-y-0",
+	),
+	red: clsx(
+		"bg-[#EE2C2C] border-[3px] border-black text-white font-black uppercase tracking-wider",
+		"shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]",
+		"hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px]",
+		"active:translate-x-[3px] active:translate-y-[3px] active:shadow-none",
+		"transition-all cursor-pointer",
+		"disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-x-0 disabled:translate-y-0",
 	),
 }
 

@@ -14,15 +14,15 @@ export function SearchInput({ value, onChange, placeholder = "Search…", classN
 	return (
 		<div className={cn("relative", className)}>
 			<Search
-				size={14}
-				className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-icon-secondary"
+				size={16}
+				className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-black"
 			/>
 			<input
 				type="text"
 				value={value}
 				onChange={e => onChange(e.target.value)}
 				placeholder={placeholder}
-				className="w-full rounded-lg border border-border-default bg-surface-canvas pl-8 pr-3 h-10 text-xs placeholder:text-text-tertiary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors"
+				className="w-full rounded-2xl border-[3px] border-black bg-white pl-9 pr-3 h-10 text-sm font-semibold text-black placeholder:text-neutral-400 focus:bg-neutral-50 focus:outline-none transition-colors"
 			/>
 		</div>
 	)

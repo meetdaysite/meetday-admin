@@ -13,9 +13,9 @@ export function TwoLineCell({
 }) {
 	return (
 		<div>
-			<p className="text-xs font-semibold text-text-primary leading-none mb-0.5">{primary}</p>
+			<p className="text-sm font-black font-heading text-black leading-none mb-1">{primary}</p>
 			{secondary != null && (
-				<p className="text-[11px] text-text-tertiary">{secondary}</p>
+				<p className="text-xs text-text-tertiary">{secondary}</p>
 			)}
 		</div>
 	)

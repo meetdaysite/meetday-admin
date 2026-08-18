@@ -1,12 +1,19 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Poppins:wght@400;500;600;700;800;900&display=swap');
 @import "../styles/tokens/primitive.css";
 @import "../styles/tokens/semantic.css";
 @import "../styles/tokens/typography.css";
+
+:root {
+	--font-poppins: 'Poppins', sans-serif;
+	--font-bricolage: 'Bricolage Grotesque', sans-serif;
+}
 
 /* NEW DESIGN SYSTEM TOKENS */
 @theme inline {
 	/* FONTS */
 	--font-sans: var(--font-poppins), "Inter", Arial, sans-serif;
+	--font-heading: var(--font-bricolage), "Bricolage Grotesque", sans-serif;
 	/* SURFACE */
 	--color-surface-page: var(--surface-page);
 	--color-surface-canvas: var(--surface-canvas);
@@ -121,9 +128,13 @@ html {
 body {
 	background-color: var(--surface-page);
 	color: var(--text-primary);
-	font-family: var(--font-poppins), Inter, Arial, sans-serif;
+	font-family: var(--font-sans);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	font-family: var(--font-heading);
 }
 
 * {

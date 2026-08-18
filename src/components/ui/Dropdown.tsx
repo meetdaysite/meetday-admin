@@ -223,24 +223,22 @@ export function Dropdown({
 					onClick={() => !disabled && setOpen(v => !v)}
 					onKeyDown={handleKeyDown}
 					className={clsx(
-						"group w-full flex items-center rounded-input border transition-colors duration-(--duration-120)",
+						"group w-full flex items-center rounded-2xl border-[3px] border-black transition-all text-black font-semibold",
 						triggerSizeClasses[size],
 						disabled
-							? "border-border-subtle bg-action-disabled cursor-not-allowed"
+							? "bg-action-disabled opacity-50 cursor-not-allowed"
 							: error
-								? "border-border-brand bg-surface-brand-soft hover:border-border-focus focus-visible:border-border-focus focus-visible:outline-none"
-								: open
-									? "border-border-focused bg-surface-canvas"
-									: "border-border-default bg-surface-canvas hover:border-border-strong focus-visible:border-border-focused focus-visible:outline-none",
+								? "border-red-600 bg-red-50"
+								: "bg-white hover:bg-neutral-50",
 					)}
 				>
 					{/* Left icon */}
 					{leftIcon && (
 						<span
 							className={clsx(
-								"flex items-center justify-center shrink-0 transition-colors duration-(--duration-120)",
+								"flex items-center justify-center shrink-0 transition-colors",
 								iconSizeClasses[size],
-								disabled ? "text-icon-muted" : error ? "text-icon-brand" : "text-icon-secondary",
+								disabled ? "text-neutral-400" : "text-black",
 							)}
 						>
 							{leftIcon}
@@ -248,16 +246,15 @@ export function Dropdown({
 					)}
 
 					{/* Selected label / placeholder */}
-					<span className={clsx("flex-1 text-left truncate", selectedOption ? "text-text-primary" : "text-text-muted")}>
+					<span className={clsx("flex-1 text-left truncate", selectedOption ? "text-black" : "text-neutral-400")}>
 						{selectedOption ? selectedOption.label : placeholder}
 					</span>
 
 					{/* Chevron */}
 					<ChevronDown
 						className={clsx(
-							"shrink-0 transition-transform duration-(--duration-120)",
+							"shrink-0 transition-transform text-black",
 							chevronSizeClasses[size],
-							disabled ? "text-icon-muted" : "text-icon-secondary",
 							open && "rotate-180",
 						)}
 					/>
@@ -271,8 +268,8 @@ export function Dropdown({
 						role="listbox"
 						aria-label={label}
 						className={clsx(
-							"absolute z-50 left-0 right-0 mt-1",
-							"bg-surface-card border border-border-default rounded-action shadow-modal",
+							"absolute z-50 left-0 right-0 mt-2",
+							"bg-white border-[3px] border-black rounded-2xl",
 							"max-h-60 overflow-y-auto py-1",
 						)}
 					>
@@ -289,13 +286,13 @@ export function Dropdown({
 									onClick={() => select(option)}
 									onMouseEnter={() => !option.disabled && setFocusedIndex(index)}
 									className={clsx(
-										"flex items-center cursor-pointer select-none transition-colors duration-(--duration-120)",
+										"flex items-center cursor-pointer select-none transition-colors",
 										itemSizeClasses[size],
 										option.disabled
 											? "opacity-40 cursor-not-allowed"
 											: isFocused || isSelected
-												? "bg-surface-hover"
-												: "hover:bg-surface-hover",
+												? "bg-[#FFC940]/15"
+												: "hover:bg-[#FFC940]/10",
 									)}
 								>
 									{/* Left element (flag, icon, etc.) */}
@@ -307,17 +304,17 @@ export function Dropdown({
 
 									{/* Label + description */}
 									<span className="flex-1 min-w-0">
-										<span className={clsx("block truncate", isSelected ? "text-text-brand font-medium" : "text-text-primary")}>
+										<span className={clsx("block truncate font-semibold", isSelected ? "text-black" : "text-black")}>
 											{option.label}
 										</span>
 										{option.description && (
-											<span className="block text-caption text-text-muted truncate">{option.description}</span>
+											<span className="block text-[10px] text-neutral-500 truncate">{option.description}</span>
 										)}
 									</span>
 
 									{/* Selected checkmark */}
 									{isSelected && (
-										<CheckIcon className={clsx("shrink-0 text-text-brand", leftElSizeClasses[size])} />
+										<CheckIcon className={clsx("shrink-0 text-black", leftElSizeClasses[size])} />
 									)}
 								</li>
 							)

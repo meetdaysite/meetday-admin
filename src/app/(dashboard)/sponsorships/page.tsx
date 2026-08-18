@@ -11,6 +11,7 @@ import { SearchInput } from "@/components/ui/search-input"
 import { AgeDateCell, ChipCell, StatusCell, TwoLineCell } from "@/components/ui/table-cells"
 import {
 	approveSponsorship,
+	getSponsorshipById,
 	getSponsorships,
 	rejectSponsorship,
 	type GetSponsorshipsParams,
@@ -21,10 +22,50 @@ import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
 import type { SponsorshipDetail, SponsorshipProposal, SponsorshipStatus } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
+import { Button } from "@/components/ui/Button"
 import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
+
+// Logo Cell Component for Sponsorship cover image
+function SponsorshipLogoCell({ id, name }: { id: string; name: string }) {
+	const [imageUrl, setImageUrl] = useState<string | null>(null)
+	const [loading, setLoading] = useState(true)
+
+	useEffect(() => {
+		let active = true
+		getSponsorshipById(id)
+			.then((data: SponsorshipDetail) => {
+				if (active && data.imageUrl) {
+					setImageUrl(data.imageUrl)
+				}
+			})
+			.catch(() => {})
+			.finally(() => {
+				if (active) setLoading(false)
+			})
+		return () => {
+			active = false
+		}
+	}, [id])
+
+	if (loading) {
+		return <div className="size-8 rounded-lg bg-neutral-100 animate-pulse border-2 border-black" />
+	}
+
+	return imageUrl ? (
+		<img
+			src={imageUrl}
+			alt={name}
+			className="size-8 rounded-lg object-cover border-2 border-black"
+		/>
+	) : (
+		<div className="size-8 rounded-lg bg-neutral-100 flex items-center justify-center font-bold text-xs border-2 border-black text-neutral-700 select-none">
+			{name.slice(0, 2).toUpperCase()}
+		</div>
+	)
+}
 
 // Constants
 
@@ -131,10 +172,17 @@ export default function SponsorshipsPage() {
 	const columns = useMemo<ColumnDef<SponsorshipProposal>[]>(
 		() => [
 			{
+				id: "logo",
+				header: "Logo",
+				cell: ({ row }) => <SponsorshipLogoCell id={row.original.id} name={row.original.name ?? "Sponsorship"} />,
+			},
+			{
 				id: "proposal",
 				header: "Proposal",
 				cell: ({ row }) => (
-					<TwoLineCell primary={row.original.name ?? "—"} secondary={row.original.hostProfile.displayName} />
+					<div className="min-w-[250px]">
+						<TwoLineCell primary={row.original.name ?? "—"} secondary={row.original.hostProfile.displayName} />
+					</div>
 				),
 			},
 			{
@@ -185,12 +233,13 @@ export default function SponsorshipsPage() {
 				title="All Sponsorships"
 				description="Every sponsorship proposal on the platform, regardless of status."
 				buttons={
-					<button
+					<Button
+						variant="red"
 						onClick={() => setCreateOpen(true)}
-						className="flex items-center gap-1.5 rounded-lg bg-action-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-action-primary-hover transition-colors"
+						leftIcon={<Plus size={14} />}
 					>
-						<Plus size={14} /> Create Sponsorship
-					</button>
+						Create Sponsorship
+					</Button>
 				}
 			/>
 

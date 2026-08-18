@@ -132,15 +132,21 @@ export function EditProfileDrawer({ open, profile, onClose, onSaved }: Props) {
 					{...register("phone")}
 				/>
 
-				<DrawerFooter className="px-0 border-0 pt-4 justify-start">
+				<DrawerFooter className="px-0 border-0 pt-4 justify-start gap-3">
 					<Button
 						type="submit"
 						disabled={isSubmitting}
 						leftIcon={isSubmitting ? <Loader2 size={13} className="animate-spin" /> : undefined}
+						className="bg-[#FFC940] border-[3px] border-black text-black rounded-2xl px-4 py-2 font-black text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
 					>
 						{isSubmitting ? "Saving…" : "Save changes"}
 					</Button>
-					<Button type="button" variant="secondary" onClick={handleClose}>
+					<Button
+						type="button"
+						variant="secondary"
+						onClick={handleClose}
+						className="bg-white border-[3px] border-black text-black rounded-2xl px-4 py-2 font-black text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+					>
 						Cancel
 					</Button>
 				</DrawerFooter>

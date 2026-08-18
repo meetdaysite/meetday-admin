@@ -5,9 +5,10 @@ import { DataView } from "@/components/ui/data-view"
 import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
-import { AgeDateCell, ChipCell, TwoLineCell } from "@/components/ui/table-cells"
+import { AgeDateCell, ChipCell, StatusCell, TwoLineCell } from "@/components/ui/table-cells"
 import {
 	approveCommunityProfileRevision,
+	getCommunityProfileById,
 	getPendingCommunityProfileRevisions,
 	rejectCommunityProfileRevision,
 } from "@/lib/api/community-profiles"
@@ -15,11 +16,50 @@ import { formatDate, getDaysSince } from "@/lib/formatters"
 import { useDrawer } from "@/lib/hooks/use-drawer"
 import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
 import { usePermission } from "@/lib/hooks/use-permission"
-import type { CommunityProfile } from "@/types"
+import type { CommunityProfile, CommunityProfileDetail } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
 import { useRouter } from "next/navigation"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
+
+// Logo Cell Component to fetch detail image
+function LogoCell({ id, name }: { id: string; name: string }) {
+	const [logoUrl, setLogoUrl] = useState<string | null>(null)
+	const [loading, setLoading] = useState(true)
+
+	useEffect(() => {
+		let active = true
+		getCommunityProfileById(id)
+			.then((data: CommunityProfileDetail) => {
+				if (active && data.logoUrl) {
+					setLogoUrl(data.logoUrl)
+				}
+			})
+			.catch(() => {})
+			.finally(() => {
+				if (active) setLoading(false)
+			})
+		return () => {
+			active = false
+		}
+	}, [id])
+
+	if (loading) {
+		return <div className="size-8 rounded-lg bg-neutral-100 animate-pulse border-2 border-black" />
+	}
+
+	return logoUrl ? (
+		<img
+			src={logoUrl}
+			alt={name}
+			className="size-8 rounded-lg object-cover border-2 border-black"
+		/>
+	) : (
+		<div className="size-8 rounded-lg bg-neutral-100 flex items-center justify-center font-bold text-xs border-2 border-black text-neutral-700 select-none">
+			{name.slice(0, 2).toUpperCase()}
+		</div>
+	)
+}
 
 const PAGE_LIMIT = 20
 
@@ -43,7 +83,7 @@ export default function CommunityProfileRevisionsPage() {
 		isLoading,
 		error,
 		refresh: fetchProfiles,
-	} = usePaginatedFetch(fetcher, "Failed to load pending revisions")
+	} = usePaginatedFetch(fetcher, "Failed to load revisions queue")
 
 	const filtered = useMemo(() => {
 		const q = search.toLowerCase()
@@ -58,14 +98,13 @@ export default function CommunityProfileRevisionsPage() {
 
 	async function handleAction(profileId: string, action: CommunityProfileAction, message?: string) {
 		try {
-			if (action === "approve") await approveCommunityProfileRevision(profileId)
-			else if (action === "reject") await rejectCommunityProfileRevision(profileId, message!)
-
-			const labels: Record<CommunityProfileAction, string> = {
-				approve: "Changes approved and applied",
-				reject: "Changes rejected",
+			if (action === "approve") {
+				await approveCommunityProfileRevision(profileId)
+				toast.success("Community profile changes approved")
+			} else {
+				await rejectCommunityProfileRevision(profileId, message!)
+				toast.success("Community profile changes rejected")
 			}
-			toast.success(labels[action])
 			fetchProfiles()
 		} catch (err: unknown) {
 			const axiosErr = err as { response?: { status?: number; data?: { message?: string } } }
@@ -76,20 +115,12 @@ export default function CommunityProfileRevisionsPage() {
 			}
 			if (status === 403) {
 				toast.error("Permission denied", {
-					description: `You don't have permission to ${action} revisions.`,
-				})
-			} else if (status === 404) {
-				toast.error("Revision not found", {
-					description: "It may have already been reviewed.",
-				})
-			} else if (status === 400) {
-				const msg = axiosErr?.response?.data?.message
-				toast.error(`Cannot ${action} revision`, {
-					description: msg ?? "Profile is not in the required state.",
+					description: `You don't have permission to ${action} community profiles.`,
 				})
 			} else {
-				toast.error(`Failed to ${action} revision`, {
-					description: "Something went wrong. Please try again.",
+				const msg = axiosErr?.response?.data?.message
+				toast.error(`Failed to ${action} community profile changes`, {
+					description: msg ?? "Something went wrong. Please try again.",
 				})
 			}
 			throw err
@@ -101,10 +132,17 @@ export default function CommunityProfileRevisionsPage() {
 	const columns = useMemo<ColumnDef<CommunityProfile>[]>(
 		() => [
 			{
-				id: "profile",
-				header: "Community",
+				id: "logo",
+				header: "Logo",
+				cell: ({ row }) => <LogoCell id={row.original.id} name={row.original.name} />,
+			},
+			{
+				id: "name",
+				header: "Name",
 				cell: ({ row }) => (
-					<TwoLineCell primary={row.original.name} secondary={row.original.hostProfile.displayName ?? undefined} />
+					<div className="min-w-[250px]">
+						<TwoLineCell primary={row.original.name} secondary={row.original.hostProfile.displayName ?? undefined} />
+					</div>
 				),
 			},
 			{
@@ -114,8 +152,14 @@ export default function CommunityProfileRevisionsPage() {
 			},
 			{
 				id: "cities",
-				header: "Operating cities",
-				cell: ({ row }) => row.original.hostProfile.operatingCities.join(", ") || "—",
+				header: "Cities",
+				cell: ({ row }) => {
+					const cities = row.original.hostProfile.operatingCities
+					if (cities.length <= 3) {
+						return cities.join(", ") || "—"
+					}
+					return `${cities.slice(0, 3).join(", ")} +${cities.length - 3}`
+				},
 			},
 			{
 				id: "updated",

@@ -671,7 +671,17 @@ function LegacyDashboardPage() {
 	const health = healthQuery.data!
 
 	return (
-		<div className="relative p-6 max-w-7xl mx-auto">
+		<div className="relative p-6 max-w-7xl mx-auto space-y-8">
+			{/* Page Header */}
+			<div className="space-y-1 mb-8">
+				<h1 className="text-[32px] font-black font-heading text-black tracking-tight leading-none">
+					Dashboard
+				</h1>
+				<p className="text-sm font-semibold text-black/50">
+					Welcome back! Here is a summary of Meetday&apos;s activity and operations.
+				</p>
+			</div>
+
 			<div className="grid gap-4 md:grid-cols-3 xl:grid-cols-3">
 				<HeroStatCard
 					icon={ShieldAlert}
@@ -1394,9 +1404,9 @@ export default function DashboardPage() {
 
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
-			<div>
-				<h1 className="text-heading-sm font-semibold text-text-primary">Dashboard</h1>
-				<p className="text-body-sm text-text-secondary mt-1">What's happening right now.</p>
+			<div className="mb-6 flex flex-col gap-1">
+				<h1 className="text-[32px] font-black font-heading text-black tracking-tight leading-none">Dashboard</h1>
+				<p className="text-sm font-semibold text-black/50">What&apos;s happening right now.</p>
 			</div>
 
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

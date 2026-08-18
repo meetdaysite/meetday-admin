@@ -22,13 +22,13 @@ export function ClearableInput({
 				value={value}
 				onChange={e => onChange(e.target.value)}
 				placeholder={placeholder}
-				className={`rounded-lg border border-border-default bg-surface-canvas px-3 h-10 text-xs text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-border-focus/10 transition-colors w-36 ${inputClassName ? ` ${inputClassName}` : ""}`}
+				className={`rounded-2xl border-[3px] border-black bg-white px-3.5 h-10 text-sm font-semibold text-black placeholder:text-neutral-400 focus:bg-neutral-50 focus:outline-none transition-colors w-36${inputClassName ? ` ${inputClassName}` : ""}`}
 			/>
 			{showClear && (
 				<button
 					type="button"
 					onClick={onClear}
-					className="rounded-lg border border-border-default px-2.5 h-10 text-xs text-text-primary hover:bg-neutral-50 transition-colors"
+					className="rounded-2xl border-[3px] border-black px-3.5 h-10 text-xs font-black uppercase tracking-wider bg-[#FFC940] text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer"
 				>
 					Clear
 				</button>

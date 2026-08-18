@@ -54,11 +54,11 @@ export function DataTable<TData, TValue>({
 	const tableRows = !isLoading ? (table.getRowModel()?.rows ?? []) : []
 
 	return (
-		<div className="overflow-hidden rounded-xl border border-border-default">
+		<div className="overflow-hidden rounded-[24px] border-[3px] border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
 			<div className="overflow-x-auto">
 				<table className="w-full">
 					{/* Head */}
-					<thead className="bg-neutral-50 border-b border-border-default">
+					<thead className="bg-[#FFC940] border-b-[3px] border-black">
 						{table.getHeaderGroups().map(headerGroup => (
 							<tr key={headerGroup.id}>
 								{headerGroup.headers.map(header => {
@@ -71,9 +71,9 @@ export function DataTable<TData, TValue>({
 												canSort ? header.column.getToggleSortingHandler() : undefined
 											}
 											className={cn(
-												"px-4 py-3 text-left text-xs font-semibold tracking-wider text-text-primary uppercase",
+												"px-4 py-3.5 text-left text-xs font-black tracking-wider text-black uppercase",
 												canSort &&
-													"cursor-pointer select-none hover:text-text-primary transition-colors",
+													"cursor-pointer select-none hover:opacity-80 transition-opacity",
 											)}
 										>
 											<span className="inline-flex items-center gap-1.5">
@@ -84,7 +84,7 @@ export function DataTable<TData, TValue>({
 															header.getContext(),
 														)}
 												{canSort && (
-													<span className="text-text-muted">
+													<span className="text-black/60">
 														{sorted === "asc" ? (
 															<ChevronUp size={13} />
 														) : sorted === "desc" ? (
@@ -103,7 +103,7 @@ export function DataTable<TData, TValue>({
 					</thead>
 
 					{/* Body */}
-					<tbody className="divide-y divide-border-subtle bg-surface-canvas">
+					<tbody className="divide-y-2 divide-black/10 bg-white">
 						{isLoading ? (
 							Array.from({ length: skeletonRows }).map((_, i) => (
 								<SkeletonTableRow key={i} cells={columns.length} />
@@ -131,7 +131,7 @@ export function DataTable<TData, TValue>({
 									)}
 								>
 									{row.getVisibleCells().map(cell => (
-										<td key={cell.id} className="px-4 py-3 text-sm text-text-primary">
+										<td key={cell.id} className="px-4 py-3.5 text-sm font-semibold text-text-primary">
 											{flexRender(cell.column.columnDef.cell, cell.getContext())}
 										</td>
 									))}
