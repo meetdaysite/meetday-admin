@@ -1029,6 +1029,7 @@ function AnnouncementsBox() {
 		(selectBrands ? (brandsQuery.data?.length ?? 0) : selectedBrandIds.size) +
 		(selectCommunity ? (hostsQuery.data?.length ?? 0) : selectedHostIds.size)
 
+
 	function handleSend() {
 		if (!message.trim()) {
 			toast.error("Write a message first.")
@@ -1038,17 +1039,32 @@ function AnnouncementsBox() {
 			toast.error("Select at least one recipient.")
 			return
 		}
+		// A group's checkbox can be selected without ever expanding/fetching its list (e.g. "Select
+		// All" without opening the search) — fetch on demand so the resolved email list is real,
+		// not just a stale/empty cache from before the group was expanded.
 		setSending(true)
-		// STUBBED — no email is actually sent yet. Just previews what would happen.
-		setTimeout(() => {
-			const parts: string[] = []
-			if (selectBrands) parts.push("All Brands")
-			else if (selectedBrandIds.size > 0) parts.push(`${selectedBrandIds.size} selected brand(s)`)
-			if (selectCommunity) parts.push("All Community/Hosts")
-			else if (selectedHostIds.size > 0) parts.push(`${selectedHostIds.size} selected host(s)`)
-			toast.success(`(Preview only — no email sent) Would email ${recipientCount} recipient(s): ${parts.join(" + ")}`)
-			setSending(false)
-		}, 400)
+		Promise.all([
+			selectBrands && !brandsQuery.data ? getBrands({ limit: 200 }).then(r => r.brands) : Promise.resolve(brandsQuery.data ?? []),
+			selectCommunity && !hostsQuery.data ? getHosts({ limit: 200 }).then(r => r.hosts) : Promise.resolve(hostsQuery.data ?? []),
+		])
+			.then(([brands, hosts]) => {
+				const brandEmails = brands
+					.filter(b => selectBrands || selectedBrandIds.has(b.id))
+					.map(b => b.user.email)
+					.filter((e): e is string => !!e)
+				const hostEmails = hosts
+					.filter(h => selectCommunity || selectedHostIds.has(h.id))
+					.map(h => h.user.email)
+					.filter((e): e is string => !!e)
+				const emails = Array.from(new Set([...brandEmails, ...hostEmails]))
+
+				// STUBBED — no email is actually sent yet. Real recipient list is resolved from the
+				// backend (real emails), just logged/previewed here for review before wiring a real send.
+				console.log("[Announcement preview] Would email:", emails)
+				const preview = emails.slice(0, 5).join(", ") + (emails.length > 5 ? ` +${emails.length - 5} more` : "")
+				toast.success(`(Preview only — no email sent) ${emails.length} real recipient(s): ${preview || "none found"}`)
+			})
+			.finally(() => setSending(false))
 	}
 
 	return (
@@ -1108,7 +1124,8 @@ function AnnouncementsBox() {
 												checked={selectBrands || selectedBrandIds.has(b.id)}
 												onChange={() => toggleBrandId(b.id)}
 											/>
-											{b.brandName}
+											<span className="truncate">{b.brandName}</span>
+											<span className="text-text-tertiary truncate">{b.user.email}</span>
 										</label>
 									))
 								)}
@@ -1161,7 +1178,8 @@ function AnnouncementsBox() {
 												checked={selectCommunity || selectedHostIds.has(h.id)}
 												onChange={() => toggleHostId(h.id)}
 											/>
-											{h.displayName}
+											<span className="truncate">{h.displayName}</span>
+											<span className="text-text-tertiary truncate">{h.user.email}</span>
 										</label>
 									))
 								)}
