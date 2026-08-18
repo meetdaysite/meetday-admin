@@ -26,6 +26,7 @@ import {
 	ChevronDown,
 	ChevronRight,
 	Megaphone,
+	MessagesSquare,
 	type LucideIcon,
 } from "lucide-react"
 import { useAuthStore } from "@/stores/auth.store"
@@ -158,6 +159,11 @@ const BOTTOM_NAV: NavItem[] = [
 		label: "Announcements",
 		href: "/announcements",
 		icon: Megaphone,
+	},
+	{
+		label: "Ongoing Chats",
+		href: "/sponsorship-chats",
+		icon: MessagesSquare,
 	},
 	{
 		label: "Audit Logs",
