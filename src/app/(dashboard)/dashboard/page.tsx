@@ -967,12 +967,12 @@ function AnnouncementsBox() {
 	// Fetched lazily — only once a group is expanded to search/pick specific recipients.
 	const brandsQuery = useQuery({
 		queryKey: ["announcement", "brands-list"],
-		queryFn: () => getBrands({ limit: 200 }).then(r => r.brands),
+		queryFn: () => getBrands({ limit: 100 }).then(r => r.brands),
 		enabled: brandsExpanded,
 	})
 	const hostsQuery = useQuery({
 		queryKey: ["announcement", "hosts-list"],
-		queryFn: () => getHosts({ limit: 200 }).then(r => r.hosts),
+		queryFn: () => getHosts({ limit: 100 }).then(r => r.hosts),
 		enabled: communityExpanded,
 	})
 
@@ -1172,6 +1172,8 @@ function AnnouncementsBox() {
 							<div className="max-h-40 overflow-y-auto flex flex-col gap-0.5">
 								{hostsQuery.isLoading ? (
 									<p className="text-caption text-text-tertiary py-2 text-center">Loading…</p>
+								) : hostsQuery.isError ? (
+									<p className="text-caption text-red-600 py-2 text-center">Failed to load hosts.</p>
 								) : filteredHosts.length === 0 ? (
 									<p className="text-caption text-text-tertiary py-2 text-center">No hosts found.</p>
 								) : (
