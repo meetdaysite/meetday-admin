@@ -64,42 +64,44 @@ const NAV: NavSection[] = [
 			{ label: "All Hosts", href: "/hosts", icon: Users, permission: "host.approve", exact: true },
 		],
 	},
-	{
-		title: "Events",
-		items: [
-			{
-				label: "Event Queue",
-				href: "/events/queue",
-				icon: CalendarDays,
-				permission: "event.approve",
-				badgeKey: "eventQueue",
-			},
-			{
-				label: "All Events",
-				href: "/events",
-				icon: CalendarRange,
-				permission: "event.approve",
-				exact: true,
-			},
-			{
-				label: "Revisions",
-				href: "/events/revisions",
-				icon: FileEdit,
-				permission: "event.revision.review",
-				badgeKey: "revisions",
-			},
-		],
-	},
+	// Events: not used in the current sponsorship-focused product — commented out, not deleted.
+	// {
+	// 	title: "Events",
+	// 	items: [
+	// 		{
+	// 			label: "Event Queue",
+	// 			href: "/events/queue",
+	// 			icon: CalendarDays,
+	// 			permission: "event.approve",
+	// 			badgeKey: "eventQueue",
+	// 		},
+	// 		{
+	// 			label: "All Events",
+	// 			href: "/events",
+	// 			icon: CalendarRange,
+	// 			permission: "event.approve",
+	// 			exact: true,
+	// 		},
+	// 		{
+	// 			label: "Revisions",
+	// 			href: "/events/revisions",
+	// 			icon: FileEdit,
+	// 			permission: "event.revision.review",
+	// 			badgeKey: "revisions",
+	// 		},
+	// 	],
+	// },
 	{
 		title: "Communities",
 		items: [
-			{
-				label: "All Communities",
-				href: "/communities",
-				icon: Users,
-				permission: "community.manage",
-				exact: true,
-			},
+			// All Communities (social feed/posts feature): not used — commented out, not deleted.
+			// {
+			// 	label: "All Communities",
+			// 	href: "/communities",
+			// 	icon: Users,
+			// 	permission: "community.manage",
+			// 	exact: true,
+			// },
 			{
 				label: "Community Profile Queue",
 				href: "/community-profiles/queue",
@@ -180,14 +182,16 @@ const NAV: NavSection[] = [
 			{ label: "Admins", href: "/admins", icon: ShieldCheck, permission: "admin.invite" },
 			{ label: "Coupons", href: "/coupons", icon: Tag, permission: "coupon.view" },
 			{ label: "Categories", href: "/categories", icon: LayoutGrid, permission: "category.manage" },
-			{ label: "Interests", href: "/interests", icon: Sparkles, permission: "interest.manage" },
+			// Interests (attendee personalization tags): not used — commented out, not deleted.
+			// { label: "Interests", href: "/interests", icon: Sparkles, permission: "interest.manage" },
 			{ label: "Orders", href: "/orders", icon: ShoppingBag, permission: "order.view" },
 		],
 	},
 	{
 		title: "Moderation",
 		items: [
-			{ label: "Reviews", href: "/reviews", icon: Star, permission: "moderation.read" },
+			// Reviews (event reviews): not used — commented out, not deleted.
+			// { label: "Reviews", href: "/reviews", icon: Star, permission: "moderation.read" },
 			{ label: "Audit Logs", href: "/audit-logs", icon: ScrollText, permission: "audit.read" },
 		],
 	},

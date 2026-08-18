@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { getPendingHosts } from "@/lib/api/hosts"
-import { getPendingEvents, getPendingRevisions } from "@/lib/api/events"
+// Events nav is commented out in the sidebar \u2014 badge queries below are commented out too.
+// import { getPendingEvents, getPendingRevisions } from "@/lib/api/events"
 import { getPendingSponsorships, getPendingSponsorshipRevisions } from "@/lib/api/sponsorships"
 import { getPendingCommunityProfiles, getPendingCommunityProfileRevisions } from "@/lib/api/community-profiles"
 import { getPendingBrands } from "@/lib/api/brands"
@@ -22,8 +23,9 @@ export type SidebarBadgeKey =
 
 export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>> {
 	const canSeeHostQueue = usePermission("host.approve")
-	const canSeeEventQueue = usePermission("event.approve")
-	const canSeeRevisions = usePermission("event.revision.review")
+	// Events nav is commented out in the sidebar — no badge needed for it.
+	// const canSeeEventQueue = usePermission("event.approve")
+	// const canSeeRevisions = usePermission("event.revision.review")
 	const canSeeSupportTickets = usePermission("support.view")
 
 	const hostQueue = useQuery({
@@ -33,19 +35,19 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		refetchInterval: REFETCH_INTERVAL,
 	})
 
-	const eventQueue = useQuery({
-		queryKey: ["sidebar-badge", "event-queue"],
-		queryFn: () => getPendingEvents().then(r => r.total),
-		enabled: canSeeEventQueue,
-		refetchInterval: REFETCH_INTERVAL,
-	})
+	// const eventQueue = useQuery({
+	// 	queryKey: ["sidebar-badge", "event-queue"],
+	// 	queryFn: () => getPendingEvents().then(r => r.total),
+	// 	enabled: canSeeEventQueue,
+	// 	refetchInterval: REFETCH_INTERVAL,
+	// })
 
-	const revisions = useQuery({
-		queryKey: ["sidebar-badge", "revisions"],
-		queryFn: () => getPendingRevisions({ limit: 1 }).then(r => r.total),
-		enabled: canSeeRevisions,
-		refetchInterval: REFETCH_INTERVAL,
-	})
+	// const revisions = useQuery({
+	// 	queryKey: ["sidebar-badge", "revisions"],
+	// 	queryFn: () => getPendingRevisions({ limit: 1 }).then(r => r.total),
+	// 	enabled: canSeeRevisions,
+	// 	refetchInterval: REFETCH_INTERVAL,
+	// })
 
 	const supportTickets = useQuery({
 		queryKey: ["sidebar-badge", "support-tickets"],
@@ -94,8 +96,8 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 
 	return {
 		hostQueue: hostQueue.data,
-		eventQueue: eventQueue.data,
-		revisions: revisions.data,
+		// eventQueue: eventQueue.data,
+		// revisions: revisions.data,
 		supportTickets: supportTickets.data,
 		sponsorshipQueue: sponsorshipQueue.data,
 		sponsorshipRevisions: sponsorshipRevisions.data,
