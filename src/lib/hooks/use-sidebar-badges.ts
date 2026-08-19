@@ -7,6 +7,7 @@ import { getPendingCommunityProfiles, getPendingCommunityProfileRevisions } from
 import { getPendingBrands } from "@/lib/api/brands"
 import { getSupportTickets } from "@/lib/api/support-tickets"
 import { getPendingSponsorshipChatsCount } from "@/lib/api/sponsorship-chats"
+import { getMeetdayChatUnreadCount } from "@/lib/api/meetday-chats"
 import { usePermission } from "@/lib/hooks/use-permission"
 
 const REFETCH_INTERVAL = 60_000
@@ -22,6 +23,7 @@ export type SidebarBadgeKey =
 	| "communityProfileRevisions"
 	| "brandQueue"
 	| "pendingChats"
+	| "meetdayChats"
 
 export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>> {
 	const canSeeHostQueue = usePermission("host.approve")
@@ -102,6 +104,12 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		refetchInterval: REFETCH_INTERVAL,
 	})
 
+	const meetdayChats = useQuery({
+		queryKey: ["sidebar-badge", "meetday-chats"],
+		queryFn: () => getMeetdayChatUnreadCount(),
+		refetchInterval: REFETCH_INTERVAL,
+	})
+
 	return {
 		hostQueue: hostQueue.data,
 		// eventQueue: eventQueue.data,
@@ -113,5 +121,6 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		communityProfileRevisions: communityProfileRevisions.data,
 		brandQueue: brandQueue.data,
 		pendingChats: pendingChats.data,
+		meetdayChats: meetdayChats.data,
 	}
 }

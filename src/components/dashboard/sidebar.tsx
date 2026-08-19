@@ -28,6 +28,7 @@ import {
 	Megaphone,
 	MessagesSquare,
 	Handshake,
+	Headset,
 	type LucideIcon,
 } from "lucide-react"
 import { useAuthStore } from "@/stores/auth.store"
@@ -171,6 +172,12 @@ const BOTTOM_NAV: NavItem[] = [
 		label: "Sponsorship Deals",
 		href: "/sponsorship-deals",
 		icon: Handshake,
+	},
+	{
+		label: "Meetday Chats",
+		href: "/meetday-chats",
+		icon: Headset,
+		badgeKey: "meetdayChats",
 	},
 	{
 		label: "Audit Logs",
