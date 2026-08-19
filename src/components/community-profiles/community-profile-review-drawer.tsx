@@ -89,9 +89,18 @@ function ProposedChangesSection({ detail }: { detail: CommunityProfileDetail }) 
 	]
 
 	const changedText = textFields.filter((f) => revision[f.key] !== undefined && revision[f.key] !== (detail as any)[f.key])
-	const hasNewLogo = !!revision.logoUrl
-	const hasNewSecondaryImage = !!revision.secondaryImageUrl
-	const hasCategoryChange = Array.isArray((revision as any).categoryIds)
+
+	// The form always resubmits every field (not just a diff), so a field's presence in the
+	// revision doesn't mean it changed — compare against the current live value instead.
+	const hasNewLogo = !!revision.logoUrl && (revision.logoKey as string | undefined) !== detail.logoKey
+	const hasNewSecondaryImage =
+		!!revision.secondaryImageUrl && (revision.secondaryImageKey as string | undefined) !== (detail.secondaryImageKey ?? undefined)
+
+	const revisionCategoryIds = revision.categoryIds as string[] | undefined
+	const currentCategoryIds = detail.categories.map((c) => c.id)
+	const hasCategoryChange =
+		Array.isArray(revisionCategoryIds) &&
+		JSON.stringify([...revisionCategoryIds].sort()) !== JSON.stringify([...currentCategoryIds].sort())
 
 	// imageUrls are freshly-signed on every fetch (different query string each time), so compare
 	// on name/description/imageKeys only — otherwise this would always look "changed".

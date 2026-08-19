@@ -432,6 +432,7 @@ export type CommunityProfile = {
 	name: string
 	about: string
 	logoKey: string
+	secondaryImageKey?: string | null
 	size: string
 	avgGuestCount: string
 	experiencesPerYear: string
