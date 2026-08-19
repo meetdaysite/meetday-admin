@@ -74,6 +74,24 @@ export default function BrandsPage() {
 	const columns = useMemo<ColumnDef<Brand>[]>(
 		() => [
 			{
+				id: "logo",
+				header: "Logo",
+				cell: ({ row }) => {
+					const b = row.original
+					return b.logoUrl ? (
+						<img
+							src={b.logoUrl}
+							alt={b.brandName}
+							className="size-8 rounded-lg object-cover border-2 border-black"
+						/>
+					) : (
+						<div className="size-8 rounded-lg bg-neutral-100 flex items-center justify-center font-bold text-xs border-2 border-black text-neutral-700 select-none">
+							{b.brandName.slice(0, 2).toUpperCase()}
+						</div>
+					)
+				},
+			},
+			{
 				id: "brand",
 				header: "Brand",
 				cell: ({ row }) => {

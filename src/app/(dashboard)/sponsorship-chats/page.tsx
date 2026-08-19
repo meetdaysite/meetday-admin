@@ -14,6 +14,7 @@ import {
 	sendSponsorshipChatMessage,
 	type SponsorshipChatStatus,
 	type SponsorshipChatMessage,
+	type SponsorshipChatThread,
 } from "@/lib/api/sponsorship-chats"
 
 const THREADS_POLL_MS = 8000
@@ -36,7 +37,10 @@ export default function SponsorshipChatsPage() {
 
 	const threadsQuery = useQuery({
 		queryKey: ["admin-sponsorship-chats", statusFilter],
-		queryFn: () => getSponsorshipChats(statusFilter),
+		queryFn: () => getSponsorshipChats(statusFilter).then(data => {
+			console.log("[DEBUG admin sponsorship chats data]:", data)
+			return data
+		}),
 		refetchInterval: THREADS_POLL_MS,
 	})
 
@@ -45,22 +49,25 @@ export default function SponsorshipChatsPage() {
 
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
-			<PageHeader title="Ongoing Chats" description="Every Host ↔ Brand chat thread — view or step in as Meetday." />
+			<PageHeader title="Ongoing Chats" description="Every Community ↔ Brand chat thread — view or step in as Meetday." />
 
-			<div className="h-[calc(100vh-220px)] min-h-[500px] border border-border-default rounded-action overflow-hidden flex bg-surface-card">
+			<div className="h-[calc(100vh-270px)] min-h-[450px] border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex bg-white">
 				{/* Thread list */}
-				<div className="w-80 shrink-0 border-r border-border-default flex flex-col">
-					<div className="flex border-b border-border-default">
-						{([undefined, "REQUESTED", "ACCEPTED"] as (SponsorshipChatStatus | undefined)[]).map(s => (
+				<div className="w-80 shrink-0 border-r-[3px] border-black flex flex-col">
+					<div className="flex border-b-[3px] border-black">
+						{([undefined, "ACCEPTED", "REQUESTED"] as (SponsorshipChatStatus | undefined)[]).map(s => (
 							<button
 								key={s ?? "ALL"}
-								onClick={() => setStatusFilter(s)}
+								onClick={() => {
+									setStatusFilter(s)
+									setSelectedId(null)
+								}}
 								className={cn(
-									"flex-1 py-2.5 text-xs font-semibold transition-colors",
-									statusFilter === s ? "bg-action-primary text-white" : "text-text-tertiary hover:bg-neutral-50",
+									"flex-grow py-3 text-xs font-black uppercase tracking-wider transition-colors relative",
+									statusFilter === s ? "bg-[#EE2C2C] text-white" : "bg-white text-black/50 hover:bg-neutral-50",
 								)}
 							>
-								{s === "REQUESTED" ? "Requested" : s === "ACCEPTED" ? "Accepted" : "All"}
+								{s === "REQUESTED" ? "Requests" : s === s ? "General" : "All"}
 							</button>
 						))}
 					</div>
@@ -75,26 +82,58 @@ export default function SponsorshipChatsPage() {
 									key={t.id}
 									onClick={() => setSelectedId(t.id)}
 									className={cn(
-										"w-full text-left px-4 py-3 border-b border-border-subtle transition-colors",
-										selectedId === t.id ? "bg-neutral-100" : "hover:bg-neutral-50",
+										"w-full text-left px-4 py-3 border-b border-black/10 transition-colors flex items-center gap-3",
+										selectedId === t.id ? "bg-[#FFC940]/20" : "hover:bg-neutral-50",
 									)}
 								>
-									<div className="flex items-center justify-between gap-2">
-										<p className="text-body-sm font-semibold text-text-primary truncate">{t.brandName}</p>
-										<span className="text-caption text-text-tertiary shrink-0">{timeAgo(t.lastMessageAt ?? t.createdAt)}</span>
-									</div>
-									<p className="text-caption text-text-tertiary truncate mt-0.5">{t.communityName} — {t.proposalName}</p>
-									<div className="flex items-center gap-2 mt-1">
-										<span
-											className={cn(
-												"text-[10px] font-semibold px-1.5 py-0.5 rounded",
-												t.chatStatus === "ACCEPTED" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700",
+									{/* Cascading Logos */}
+									<div className="relative w-12 h-10 shrink-0 select-none">
+										{/* Brand Logo or Initials (back/left) */}
+										<div className="absolute left-0 top-1 w-8 h-8 rounded-full border border-border-default bg-neutral-100 flex items-center justify-center font-bold text-xs text-text-secondary z-0 overflow-hidden">
+											{t.brandLogoUrl || (t as any).brandLogo || (t as any).brandAvatarUrl ? (
+												<img
+													src={t.brandLogoUrl || (t as any).brandLogo || (t as any).brandAvatarUrl}
+													alt={t.brandName}
+													className="w-full h-full object-cover"
+												/>
+											) : (
+												t.brandName.charAt(0).toUpperCase()
 											)}
-										>
-											{t.chatStatus === "ACCEPTED" ? "Accepted" : "Requested"}
-										</span>
+										</div>
+										{/* Community Logo or Initials (front/right overlapping) */}
+										<div className="absolute right-0 bottom-0.5 w-8 h-8 rounded-full border border-black bg-[#FFC940] flex items-center justify-center font-bold text-xs text-black z-10 shadow-[2px_2px_0px_rgba(0,0,0,1)] overflow-hidden">
+											{t.communityLogoUrl || (t as any).communityLogo || (t as any).communityAvatarUrl ? (
+												<img
+													src={t.communityLogoUrl || (t as any).communityLogo || (t as any).communityAvatarUrl}
+													alt={t.communityName}
+													className="w-full h-full object-cover"
+												/>
+											) : (
+												t.communityName.charAt(0).toUpperCase()
+											)}
+										</div>
 									</div>
-									{t.lastMessagePreview && <p className="text-caption text-text-tertiary truncate mt-1">{t.lastMessagePreview}</p>}
+									<div className="flex-1 min-w-0">
+										<div className="flex items-center justify-between gap-2">
+											<div className="min-w-0 flex-1">
+												<p className="text-body-sm font-semibold text-text-primary truncate">{t.brandName} • Brand</p>
+												<p className="text-body-sm font-semibold text-text-primary truncate mt-0.5">{t.communityName} • Community</p>
+											</div>
+											<span className="text-caption text-text-tertiary shrink-0 self-start mt-0.5">{timeAgo(t.lastMessageAt ?? t.createdAt)}</span>
+										</div>
+										<p className="text-caption text-text-tertiary truncate mt-1">{t.proposalName}</p>
+										<div className="flex items-center gap-2 mt-1">
+											<span
+												className={cn(
+													"text-[10px] font-semibold px-1.5 py-0.5 rounded",
+													t.chatStatus === "ACCEPTED" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700",
+												)}
+											>
+												{t.chatStatus === "ACCEPTED" ? "Accepted" : "Requested"}
+											</span>
+										</div>
+										{t.lastMessagePreview && <p className="text-caption text-text-tertiary truncate mt-1">{t.lastMessagePreview}</p>}
+									</div>
 								</button>
 							))
 						)}
@@ -117,7 +156,7 @@ export default function SponsorshipChatsPage() {
 function AdminChatThreadPanel({
 	thread,
 }: {
-	thread: { id: string; brandName: string; communityName: string; proposalName: string; chatStatus: SponsorshipChatStatus }
+	thread: SponsorshipChatThread
 }) {
 	const queryClient = useQueryClient()
 	const [input, setInput] = useState("")
@@ -166,16 +205,44 @@ function AdminChatThreadPanel({
 	}
 
 	function labelFor(senderType: SponsorshipChatMessage["senderType"]) {
-		if (senderType === "HOST") return thread.communityName
-		if (senderType === "BRAND") return thread.brandName
-		return "Meetday"
+		if (senderType === "HOST") return `${thread.communityName} • Community`
+		if (senderType === "BRAND") return `${thread.brandName} • Brand`
+		return "Meetday • Admin"
 	}
 
 	return (
 		<div className="flex-1 min-h-0 flex flex-col">
-			<div className="px-5 py-3 border-b border-border-default shrink-0">
-				<p className="text-body-sm font-semibold text-text-primary">{thread.brandName} ↔ {thread.communityName}</p>
-				<p className="text-caption text-text-tertiary">{thread.proposalName}</p>
+			<div className="px-5 py-3 border-b-[3px] border-black shrink-0 flex items-center gap-4">
+				<div className="relative w-12 h-10 shrink-0 select-none">
+					{/* Brand Logo or Initials (back/left) */}
+					<div className="absolute left-0 top-1 w-8 h-8 rounded-full border border-border-default bg-neutral-100 flex items-center justify-center font-bold text-xs text-text-secondary z-0 overflow-hidden">
+						{thread.brandLogoUrl || (thread as any).brandLogo || (thread as any).brandAvatarUrl ? (
+							<img
+								src={thread.brandLogoUrl || (thread as any).brandLogo || (thread as any).brandAvatarUrl}
+								alt={thread.brandName}
+								className="w-full h-full object-cover"
+							/>
+						) : (
+							thread.brandName.charAt(0).toUpperCase()
+						)}
+					</div>
+					{/* Community Logo or Initials (front/right overlapping) */}
+					<div className="absolute right-0 bottom-0.5 w-8 h-8 rounded-full border border-black bg-[#FFC940] flex items-center justify-center font-bold text-xs text-black z-10 shadow-[2px_2px_0px_rgba(0,0,0,1)] overflow-hidden">
+						{thread.communityLogoUrl || (thread as any).communityLogo || (thread as any).communityAvatarUrl ? (
+							<img
+								src={thread.communityLogoUrl || (thread as any).communityLogo || (thread as any).communityAvatarUrl}
+								alt={thread.communityName}
+								className="w-full h-full object-cover"
+							/>
+						) : (
+							thread.communityName.charAt(0).toUpperCase()
+						)}
+					</div>
+				</div>
+				<div className="min-w-0">
+					<p className="text-body-sm font-semibold text-text-primary">{thread.brandName} ↔ {thread.communityName}</p>
+					<p className="text-caption text-text-tertiary">{thread.proposalName}</p>
+				</div>
 			</div>
 
 			<div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
@@ -197,7 +264,7 @@ function AdminChatThreadPanel({
 						const isMeetday = m.senderType === "ADMIN"
 						return (
 							<div key={m.id} className={cn("flex flex-col max-w-[70%]", isMeetday ? "self-end items-end" : "self-start items-start")}>
-								<span className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary mb-0.5 px-1">{labelFor(m.senderType)}</span>
+								<span className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary mb-0.5 px-1 font-heading">{labelFor(m.senderType)}</span>
 								{m.mediaUrl && (
 									/* eslint-disable-next-line @next/next/no-img-element */
 									<img
@@ -210,11 +277,35 @@ function AdminChatThreadPanel({
 								{m.content && (
 									<div
 										className={cn(
-											"px-3.5 py-2 rounded-2xl text-body-sm break-words",
-											isMeetday ? "bg-action-primary text-white rounded-br-sm" : "bg-neutral-100 text-text-primary rounded-bl-sm",
+											"px-3.5 py-2 rounded-2xl text-body-sm break-words border border-black/10",
+											m.senderType === "BRAND" && "bg-[#EE2C2C] text-white",
+											m.senderType === "HOST" && "bg-[#FFC940] text-black",
+											m.senderType === "ADMIN" && "bg-neutral-100 text-black",
+											isMeetday ? "rounded-br-sm" : "rounded-bl-sm",
 										)}
 									>
 										{m.content}
+									</div>
+								)}
+								{(m.content || m.mediaUrl) && (
+									<div className={cn("flex items-center gap-1 mt-0.5 text-[9px] font-bold text-black/40 px-1", isMeetday ? "justify-end" : "justify-start")}>
+										<span>
+											{(() => {
+												try {
+													return new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+												} catch {
+													return ""
+												}
+											})()}
+										</span>
+										{m.senderType === "ADMIN" && (() => {
+											const isRead = !!m.hostReadAt && !!m.brandReadAt
+											return (
+												<span className={cn("text-[10px] leading-none font-bold", isRead ? "text-red-500 font-black" : "text-gray-400")}>
+													✓✓
+												</span>
+											)
+										})()}
 									</div>
 								)}
 							</div>
@@ -224,16 +315,16 @@ function AdminChatThreadPanel({
 				<div ref={bottomRef} />
 			</div>
 
-			<div className="p-3 border-t border-border-default flex items-center gap-2 shrink-0">
+			<div className="p-3 border-t-[3px] border-black flex items-center gap-2 shrink-0">
 				<input type="file" accept="image/*" ref={fileInputRef} onChange={handleImagePick} className="hidden" />
 				<button
 					type="button"
 					onClick={() => fileInputRef.current?.click()}
 					disabled={uploadingImage}
-					className="shrink-0 size-9 rounded-lg border border-border-default flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50"
+					className="shrink-0 size-9 rounded-xl border-[3px] border-black flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50"
 					aria-label="Attach image"
 				>
-					<ImageIcon size={16} className="text-text-tertiary" />
+					<ImageIcon size={16} className="text-black" />
 				</button>
 				<input
 					value={input}
@@ -245,7 +336,7 @@ function AdminChatThreadPanel({
 						}
 					}}
 					placeholder="Message as Meetday…"
-					className="flex-1 rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-sm outline-none focus:border-border-focus"
+					className="flex-1 rounded-2xl border-[3px] border-black bg-white px-4 py-2 text-sm font-semibold outline-none focus:bg-neutral-50"
 				/>
 				<Button onClick={() => input.trim() && sendMutation.mutate({ content: input.trim() })} disabled={sendMutation.isPending || !input.trim()}>
 					{sendMutation.isPending ? "…" : "Send"}

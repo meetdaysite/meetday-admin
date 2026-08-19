@@ -101,13 +101,13 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 	const pendingChats = useQuery({
 		queryKey: ["sidebar-badge", "pending-chats"],
 		queryFn: () => getPendingSponsorshipChatsCount(),
-		refetchInterval: REFETCH_INTERVAL,
+		refetchInterval: 8_000,
 	})
 
 	const meetdayChats = useQuery({
 		queryKey: ["sidebar-badge", "meetday-chats"],
 		queryFn: () => getMeetdayChatUnreadCount(),
-		refetchInterval: REFETCH_INTERVAL,
+		refetchInterval: 8_000,
 	})
 
 	return {

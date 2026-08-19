@@ -46,6 +46,7 @@ type SubItem = {
 	permission?: Permission
 	exact?: boolean
 	badgeKey?: SidebarBadgeKey
+	icon?: LucideIcon
 }
 
 type NavItem = {
@@ -64,24 +65,6 @@ const NAV: NavItem[] = [
 		href: "/dashboard",
 		icon: LayoutDashboard,
 		exact: true,
-	},
-	{
-		label: "Hosts",
-		icon: Users,
-		subItems: [
-			{
-				label: "Host Queue",
-				href: "/hosts/queue",
-				permission: "host.approve",
-				badgeKey: "hostQueue",
-			},
-			{
-				label: "All Hosts",
-				href: "/hosts",
-				permission: "host.approve",
-				exact: true,
-			},
-		],
 	},
 	{
 		label: "Communities",
@@ -103,6 +86,12 @@ const NAV: NavItem[] = [
 				label: "All Community Profiles",
 				href: "/community-profiles",
 				permission: "communityProfile.approve",
+				exact: true,
+			},
+			{
+				label: "Community Reps",
+				href: "/hosts",
+				permission: "host.approve",
 				exact: true,
 			},
 		],
@@ -129,6 +118,11 @@ const NAV: NavItem[] = [
 				permission: "sponsorship.approve",
 				badgeKey: "sponsorshipRevisions",
 			},
+			{
+				label: "Sponsorship Deals",
+				href: "/sponsorship-deals",
+				icon: Handshake,
+			},
 		],
 	},
 	{
@@ -154,6 +148,24 @@ const NAV: NavItem[] = [
 			},
 		],
 	},
+	{
+		label: "Chats",
+		icon: MessagesSquare,
+		subItems: [
+			{
+				label: "Ongoing Chats",
+				href: "/sponsorship-chats",
+				badgeKey: "pendingChats",
+				icon: MessagesSquare,
+			},
+			{
+				label: "Meetday Chats",
+				href: "/meetday-chats",
+				badgeKey: "meetdayChats",
+				icon: Headset,
+			},
+		],
+	},
 ]
 
 const BOTTOM_NAV: NavItem[] = [
@@ -161,23 +173,6 @@ const BOTTOM_NAV: NavItem[] = [
 		label: "Announcements",
 		href: "/announcements",
 		icon: Megaphone,
-	},
-	{
-		label: "Ongoing Chats",
-		href: "/sponsorship-chats",
-		icon: MessagesSquare,
-		badgeKey: "pendingChats",
-	},
-	{
-		label: "Sponsorship Deals",
-		href: "/sponsorship-deals",
-		icon: Handshake,
-	},
-	{
-		label: "Meetday Chats",
-		href: "/meetday-chats",
-		icon: Headset,
-		badgeKey: "meetdayChats",
 	},
 	{
 		label: "Audit Logs",
@@ -470,6 +465,7 @@ export function Sidebar() {
 													key={sub.href}
 													label={sub.label}
 													href={sub.href}
+													icon={sub.icon}
 													active={isActive(sub)}
 													collapsed={collapsed}
 													onNavigate={() => setSidebarOpen(false)}

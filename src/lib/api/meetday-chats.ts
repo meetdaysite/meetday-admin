@@ -10,6 +10,8 @@ export type MeetdayChatThread = {
 	lastMessageAt: string | null
 	lastMessagePreview: string | null
 	unreadCount: number
+	userLogoUrl?: string | null
+	userAvatarUrl?: string | null
 }
 
 export type MeetdayChatMessage = {
@@ -19,6 +21,8 @@ export type MeetdayChatMessage = {
 	content: string
 	mediaUrl?: string | null
 	createdAt: string
+	hostReadAt?: string | null
+	brandReadAt?: string | null
 }
 
 export async function getMeetdayChats(): Promise<MeetdayChatThread[]> {
