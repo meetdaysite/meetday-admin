@@ -32,15 +32,12 @@ function timeAgo(iso: string | null) {
 }
 
 export default function SponsorshipChatsPage() {
-	const [statusFilter, setStatusFilter] = useState<SponsorshipChatStatus | undefined>(undefined)
+	const [statusFilter, setStatusFilter] = useState<SponsorshipChatStatus>("ACCEPTED")
 	const [selectedId, setSelectedId] = useState<string | null>(null)
 
 	const threadsQuery = useQuery({
 		queryKey: ["admin-sponsorship-chats", statusFilter],
-		queryFn: () => getSponsorshipChats(statusFilter).then(data => {
-			console.log("[DEBUG admin sponsorship chats data]:", data)
-			return data
-		}),
+		queryFn: () => getSponsorshipChats(statusFilter),
 		refetchInterval: THREADS_POLL_MS,
 	})
 
@@ -55,9 +52,9 @@ export default function SponsorshipChatsPage() {
 				{/* Thread list */}
 				<div className="w-80 shrink-0 border-r-[3px] border-black flex flex-col">
 					<div className="flex border-b-[3px] border-black">
-						{([undefined, "ACCEPTED", "REQUESTED"] as (SponsorshipChatStatus | undefined)[]).map(s => (
+						{(["ACCEPTED", "REQUESTED"] as SponsorshipChatStatus[]).map(s => (
 							<button
-								key={s ?? "ALL"}
+								key={s}
 								onClick={() => {
 									setStatusFilter(s)
 									setSelectedId(null)
@@ -67,7 +64,7 @@ export default function SponsorshipChatsPage() {
 									statusFilter === s ? "bg-[#EE2C2C] text-white" : "bg-white text-black/50 hover:bg-neutral-50",
 								)}
 							>
-								{s === "REQUESTED" ? "Requests" : s === s ? "General" : "All"}
+								{s === "REQUESTED" ? "Requests" : "General"}
 							</button>
 						))}
 					</div>
@@ -90,9 +87,9 @@ export default function SponsorshipChatsPage() {
 									<div className="relative w-12 h-10 shrink-0 select-none">
 										{/* Brand Logo or Initials (back/left) */}
 										<div className="absolute left-0 top-1 w-8 h-8 rounded-full border border-border-default bg-neutral-100 flex items-center justify-center font-bold text-xs text-text-secondary z-0 overflow-hidden">
-											{t.brandLogoUrl || (t as any).brandLogo || (t as any).brandAvatarUrl ? (
+											{t.brandLogoUrl ? (
 												<img
-													src={t.brandLogoUrl || (t as any).brandLogo || (t as any).brandAvatarUrl}
+													src={t.brandLogoUrl}
 													alt={t.brandName}
 													className="w-full h-full object-cover"
 												/>
@@ -102,9 +99,9 @@ export default function SponsorshipChatsPage() {
 										</div>
 										{/* Community Logo or Initials (front/right overlapping) */}
 										<div className="absolute right-0 bottom-0.5 w-8 h-8 rounded-full border border-black bg-[#FFC940] flex items-center justify-center font-bold text-xs text-black z-10 shadow-[2px_2px_0px_rgba(0,0,0,1)] overflow-hidden">
-											{t.communityLogoUrl || (t as any).communityLogo || (t as any).communityAvatarUrl ? (
+											{t.communityLogoUrl ? (
 												<img
-													src={t.communityLogoUrl || (t as any).communityLogo || (t as any).communityAvatarUrl}
+													src={t.communityLogoUrl}
 													alt={t.communityName}
 													className="w-full h-full object-cover"
 												/>
@@ -216,9 +213,9 @@ function AdminChatThreadPanel({
 				<div className="relative w-12 h-10 shrink-0 select-none">
 					{/* Brand Logo or Initials (back/left) */}
 					<div className="absolute left-0 top-1 w-8 h-8 rounded-full border border-border-default bg-neutral-100 flex items-center justify-center font-bold text-xs text-text-secondary z-0 overflow-hidden">
-						{thread.brandLogoUrl || (thread as any).brandLogo || (thread as any).brandAvatarUrl ? (
+						{thread.brandLogoUrl ? (
 							<img
-								src={thread.brandLogoUrl || (thread as any).brandLogo || (thread as any).brandAvatarUrl}
+								src={thread.brandLogoUrl}
 								alt={thread.brandName}
 								className="w-full h-full object-cover"
 							/>
@@ -228,9 +225,9 @@ function AdminChatThreadPanel({
 					</div>
 					{/* Community Logo or Initials (front/right overlapping) */}
 					<div className="absolute right-0 bottom-0.5 w-8 h-8 rounded-full border border-black bg-[#FFC940] flex items-center justify-center font-bold text-xs text-black z-10 shadow-[2px_2px_0px_rgba(0,0,0,1)] overflow-hidden">
-						{thread.communityLogoUrl || (thread as any).communityLogo || (thread as any).communityAvatarUrl ? (
+						{thread.communityLogoUrl ? (
 							<img
-								src={thread.communityLogoUrl || (thread as any).communityLogo || (thread as any).communityAvatarUrl}
+								src={thread.communityLogoUrl}
 								alt={thread.communityName}
 								className="w-full h-full object-cover"
 							/>
