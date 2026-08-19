@@ -6,6 +6,7 @@ import { getPendingSponsorships, getPendingSponsorshipRevisions } from "@/lib/ap
 import { getPendingCommunityProfiles, getPendingCommunityProfileRevisions } from "@/lib/api/community-profiles"
 import { getPendingBrands } from "@/lib/api/brands"
 import { getSupportTickets } from "@/lib/api/support-tickets"
+import { getPendingSponsorshipChatsCount } from "@/lib/api/sponsorship-chats"
 import { usePermission } from "@/lib/hooks/use-permission"
 
 const REFETCH_INTERVAL = 60_000
@@ -20,6 +21,7 @@ export type SidebarBadgeKey =
 	| "communityProfileQueue"
 	| "communityProfileRevisions"
 	| "brandQueue"
+	| "pendingChats"
 
 export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>> {
 	const canSeeHostQueue = usePermission("host.approve")
@@ -94,6 +96,12 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		refetchInterval: REFETCH_INTERVAL,
 	})
 
+	const pendingChats = useQuery({
+		queryKey: ["sidebar-badge", "pending-chats"],
+		queryFn: () => getPendingSponsorshipChatsCount(),
+		refetchInterval: REFETCH_INTERVAL,
+	})
+
 	return {
 		hostQueue: hostQueue.data,
 		// eventQueue: eventQueue.data,
@@ -104,5 +112,6 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		communityProfileQueue: communityProfileQueue.data,
 		communityProfileRevisions: communityProfileRevisions.data,
 		brandQueue: brandQueue.data,
+		pendingChats: pendingChats.data,
 	}
 }

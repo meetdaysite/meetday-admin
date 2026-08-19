@@ -21,6 +21,7 @@ export type SponsorshipChatMessage = {
 	senderType: ChatSenderType
 	senderId: string
 	content: string
+	mediaUrl?: string | null
 	createdAt: string
 }
 
@@ -28,6 +29,11 @@ export async function getSponsorshipChats(status?: SponsorshipChatStatus): Promi
 	const { data } = await apiClient.get<SponsorshipChatThread[]>("/admin/sponsorship-chats", {
 		params: status ? { status } : undefined,
 	})
+	return data
+}
+
+export async function getPendingSponsorshipChatsCount(): Promise<number> {
+	const { data } = await apiClient.get<number>("/admin/sponsorship-chats/pending-count")
 	return data
 }
 
@@ -40,9 +46,10 @@ export async function getSponsorshipChatMessages(
 	return data
 }
 
-export async function sendSponsorshipChatMessage(interestId: string, content: string): Promise<SponsorshipChatMessage> {
-	const { data } = await apiClient.post<SponsorshipChatMessage>(`/admin/sponsorship-chats/${interestId}/messages`, {
-		content,
-	})
+export async function sendSponsorshipChatMessage(
+	interestId: string,
+	payload: { content?: string; mediaKey?: string },
+): Promise<SponsorshipChatMessage> {
+	const { data } = await apiClient.post<SponsorshipChatMessage>(`/admin/sponsorship-chats/${interestId}/messages`, payload)
 	return data
 }

@@ -164,6 +164,7 @@ const BOTTOM_NAV: NavItem[] = [
 		label: "Ongoing Chats",
 		href: "/sponsorship-chats",
 		icon: MessagesSquare,
+		badgeKey: "pendingChats",
 	},
 	{
 		label: "Audit Logs",
