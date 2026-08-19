@@ -93,6 +93,17 @@ function ProposedChangesSection({ detail }: { detail: CommunityProfileDetail }) 
 	const hasNewSecondaryImage = !!revision.secondaryImageUrl
 	const hasCategoryChange = Array.isArray((revision as any).categoryIds)
 
+	// imageUrls are freshly-signed on every fetch (different query string each time), so compare
+	// on name/description/imageKeys only — otherwise this would always look "changed".
+	const normalizePastEvents = (events?: { name?: string | null; description?: string | null; imageKeys?: string[] }[]) =>
+		JSON.stringify((events ?? []).map((e) => ({ name: e.name ?? null, description: e.description ?? null, imageKeys: e.imageKeys ?? [] })))
+	const revisionPastEvents = revision.pastEvents as
+		| { name?: string | null; description?: string | null; imageKeys?: string[]; imageUrls?: string[] }[]
+		| undefined
+	const hasPastEventsChange =
+		Array.isArray(revisionPastEvents) &&
+		normalizePastEvents(revisionPastEvents) !== normalizePastEvents(detail.pastEvents);
+
 	return (
 		<div className="rounded-xl border-2 border-blue-200 bg-blue-50/30 p-4 space-y-3">
 			<p className="text-xs font-bold text-blue-700 uppercase tracking-wider">Proposed changes — awaiting review</p>
@@ -127,7 +138,33 @@ function ProposedChangesSection({ detail }: { detail: CommunityProfileDetail }) 
 				<p className="text-[11px] text-text-tertiary">Categories were also changed as part of this edit.</p>
 			)}
 
-			{changedText.length === 0 && !hasNewLogo && !hasNewSecondaryImage && !hasCategoryChange && (
+			{hasPastEventsChange && (
+				<div className="rounded-lg bg-blue-50/60 border border-blue-100 px-3 py-2.5 space-y-2">
+					<p className="text-[11px] font-semibold text-blue-700">Past events (proposed)</p>
+					{revisionPastEvents!.length === 0 ? (
+						<p className="text-xs text-text-tertiary">All past events removed.</p>
+					) : (
+						<div className="space-y-2">
+							{revisionPastEvents!.map((event, i) => (
+								<div key={i} className="rounded-md bg-white border border-border-subtle p-2 space-y-1">
+									{event.name && <p className="text-xs font-semibold text-text-primary">{event.name}</p>}
+									{event.description && <p className="text-xs text-text-secondary whitespace-pre-wrap">{event.description}</p>}
+									{!!event.imageUrls?.length && (
+										<div className="flex gap-1.5 pt-1">
+											{event.imageUrls.map((url, j) => (
+												// eslint-disable-next-line @next/next/no-img-element
+												<img key={j} src={url} alt={event.name || "Past event"} className="size-14 rounded-md object-cover border border-border-subtle" />
+											))}
+										</div>
+									)}
+								</div>
+							))}
+						</div>
+					)}
+				</div>
+			)}
+
+			{changedText.length === 0 && !hasNewLogo && !hasNewSecondaryImage && !hasCategoryChange && !hasPastEventsChange && (
 				<p className="text-[11px] text-text-tertiary">No visible field changes detected.</p>
 			)}
 		</div>
