@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
+import { useEffect, useRef } from "react"
 import { getPendingHosts } from "@/lib/api/hosts"
 // Events nav is commented out in the sidebar — badge queries below are commented out too.
 // import { getPendingEvents, getPendingRevisions } from "@/lib/api/events"
@@ -8,9 +9,12 @@ import { getPendingBrands } from "@/lib/api/brands"
 import { getSupportTickets } from "@/lib/api/support-tickets"
 import { getPendingSponsorshipChatsCount } from "@/lib/api/sponsorship-chats"
 import { getMeetdayChatUnreadCount } from "@/lib/api/meetday-chats"
+import { playMessageChime } from "@/lib/notificationSound"
 import { usePermission } from "@/lib/hooks/use-permission"
 
 const REFETCH_INTERVAL = 60_000
+// Chats deserve a snappier poll than the approval queues, since a chime should feel roughly live.
+const CHAT_REFETCH_INTERVAL = 15_000
 
 export type SidebarBadgeKey =
 	| "hostQueue"
@@ -101,14 +105,26 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 	const pendingChats = useQuery({
 		queryKey: ["sidebar-badge", "pending-chats"],
 		queryFn: () => getPendingSponsorshipChatsCount(),
-		refetchInterval: REFETCH_INTERVAL,
+		refetchInterval: CHAT_REFETCH_INTERVAL,
 	})
 
 	const meetdayChats = useQuery({
 		queryKey: ["sidebar-badge", "meetday-chats"],
 		queryFn: () => getMeetdayChatUnreadCount(),
-		refetchInterval: REFETCH_INTERVAL,
+		refetchInterval: CHAT_REFETCH_INTERVAL,
 	})
+
+	// Chime when either chat badge count goes up — skip the very first load so opening the
+	// admin panel with existing unread chats doesn't immediately play a sound.
+	const prevChatUnreadRef = useRef<number | null>(null)
+	useEffect(() => {
+		if (pendingChats.data === undefined && meetdayChats.data === undefined) return
+		const total = (pendingChats.data ?? 0) + (meetdayChats.data ?? 0)
+		if (prevChatUnreadRef.current !== null && total > prevChatUnreadRef.current) {
+			playMessageChime()
+		}
+		prevChatUnreadRef.current = total
+	}, [pendingChats.data, meetdayChats.data])
 
 	return {
 		hostQueue: hostQueue.data,
