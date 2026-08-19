@@ -39,7 +39,11 @@ export default function MeetdayChatsPage() {
 		refetchInterval: THREADS_POLL_MS,
 	})
 
-	const threads = threadsQuery.data ?? []
+	const threads = [...(threadsQuery.data ?? [])].sort((a, b) => {
+		const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
+		const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+		return tB - tA
+	})
 	const selectedThread = threads.find(t => t.id === selectedId) ?? null
 
 	return (
