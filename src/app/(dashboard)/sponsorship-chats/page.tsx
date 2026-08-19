@@ -10,10 +10,12 @@ import PageHeader from "@/components/ui/PageHeader"
 import { uploadSponsorshipChatImage } from "@/lib/api/storage"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
+import { useChatTyping } from "@/lib/hooks/use-chat-typing"
 import {
 	getSponsorshipChats,
 	getSponsorshipChatMessages,
 	sendSponsorshipChatMessage,
+	type ChatSenderType,
 	type SponsorshipChatStatus,
 	type SponsorshipChatMessage,
 	type SponsorshipChatThread,
@@ -181,6 +183,7 @@ function AdminChatThreadPanel({
 	const [replyingTo, setReplyingTo] = useState<SponsorshipChatMessage | null>(null)
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
+	const { typingSenderType, notifyTyping, notifyStopTyping } = useChatTyping(thread.id, "ADMIN")
 
 	const messagesQuery = useQuery({
 		queryKey: ["admin-sponsorship-chat-messages", thread.id],
@@ -207,6 +210,7 @@ function AdminChatThreadPanel({
 		onSuccess: () => {
 			setInput("")
 			setReplyingTo(null)
+			notifyStopTyping()
 			queryClient.invalidateQueries({ queryKey: ["admin-sponsorship-chat-messages", thread.id] })
 			queryClient.invalidateQueries({ queryKey: ["admin-sponsorship-chats"] })
 		},
@@ -241,6 +245,12 @@ function AdminChatThreadPanel({
 	function replySnippet(replyTo: SponsorshipChatMessage["replyTo"]) {
 		if (!replyTo) return ""
 		return replyTo.content?.trim() ? replyTo.content : replyTo.hasMedia ? "\ud83d\udcf7 Photo" : ""
+	}
+
+	function typingLabelFor(senderType: ChatSenderType) {
+		if (senderType === "HOST") return thread.communityName
+		if (senderType === "BRAND") return thread.brandName
+		return "Meetday"
 	}
 
 	return (
@@ -369,6 +379,9 @@ function AdminChatThreadPanel({
 			</div>
 
 			<div className="p-3 border-t-[3px] border-black flex flex-col gap-2 shrink-0">
+				{typingSenderType && (
+					<p className="text-[11px] font-bold text-text-tertiary italic">{typingLabelFor(typingSenderType)} is typing…</p>
+				)}
 				{replyingTo && (
 					<div className="flex items-center justify-between gap-2">
 						<div className="min-w-0 pl-2 border-l-2 border-[#EE2C2C]">
@@ -392,7 +405,11 @@ function AdminChatThreadPanel({
 				<EmojiPicker onSelect={emoji => setInput(prev => prev + emoji)} />
 				<input
 					value={input}
-					onChange={e => setInput(e.target.value)}
+					onChange={e => {
+						setInput(e.target.value)
+						if (e.target.value.trim()) notifyTyping()
+						else notifyStopTyping()
+					}}
 					onKeyDown={e => {
 						if (e.key === "Enter" && !e.shiftKey && input.trim()) {
 							e.preventDefault()
