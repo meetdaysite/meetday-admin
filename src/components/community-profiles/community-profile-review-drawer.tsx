@@ -103,15 +103,20 @@ function ProposedChangesSection({ detail }: { detail: CommunityProfileDetail }) 
 		JSON.stringify([...revisionCategoryIds].sort()) !== JSON.stringify([...currentCategoryIds].sort())
 
 	// imageUrls are freshly-signed on every fetch (different query string each time), so compare
-	// on name/description/imageKeys only — otherwise this would always look "changed".
-	const normalizePastEvents = (events?: { name?: string | null; description?: string | null; imageKeys?: string[] }[]) =>
-		JSON.stringify((events ?? []).map((e) => ({ name: e.name ?? null, description: e.description ?? null, imageKeys: e.imageKeys ?? [] })))
-	const revisionPastEvents = revision.pastEvents as
-		| { name?: string | null; description?: string | null; imageKeys?: string[]; imageUrls?: string[] }[]
-		| undefined
-	const hasPastEventsChange =
-		Array.isArray(revisionPastEvents) &&
-		normalizePastEvents(revisionPastEvents) !== normalizePastEvents(detail.pastEvents);
+	// on name/description/imageKeys only — otherwise this would always look "changed". Past events
+	// have no stable id, so identity = exact content match; only genuinely new/removed entries show.
+	type PastEventLike = { name?: string | null; description?: string | null; imageKeys?: string[]; imageUrls?: string[] }
+	const identityOf = (e: PastEventLike) =>
+		JSON.stringify({ name: e.name ?? null, description: e.description ?? null, imageKeys: e.imageKeys ?? [] })
+	const revisionPastEvents = (revision.pastEvents as PastEventLike[] | undefined) ?? []
+	const currentPastEvents = (detail.pastEvents as PastEventLike[] | undefined) ?? []
+	const currentIdentities = new Set(currentPastEvents.map(identityOf))
+	const revisionIdentities = new Set(revisionPastEvents.map(identityOf))
+	const addedPastEvents = revision.pastEvents ? revisionPastEvents.filter((e) => !currentIdentities.has(identityOf(e))) : []
+	const removedPastEventsCount = revision.pastEvents
+		? currentPastEvents.filter((e) => !revisionIdentities.has(identityOf(e))).length
+		: 0
+	const hasPastEventsChange = addedPastEvents.length > 0 || removedPastEventsCount > 0;
 
 	return (
 		<div className="rounded-xl border-2 border-blue-200 bg-blue-50/30 p-4 space-y-3">
@@ -149,12 +154,12 @@ function ProposedChangesSection({ detail }: { detail: CommunityProfileDetail }) 
 
 			{hasPastEventsChange && (
 				<div className="rounded-lg bg-blue-50/60 border border-blue-100 px-3 py-2.5 space-y-2">
-					<p className="text-[11px] font-semibold text-blue-700">Past events (proposed)</p>
-					{revisionPastEvents!.length === 0 ? (
-						<p className="text-xs text-text-tertiary">All past events removed.</p>
-					) : (
+					<p className="text-[11px] font-semibold text-blue-700">
+						{addedPastEvents.length > 0 ? `New past event${addedPastEvents.length > 1 ? "s" : ""} (proposed)` : "Past events changed"}
+					</p>
+					{addedPastEvents.length > 0 && (
 						<div className="space-y-2">
-							{revisionPastEvents!.map((event, i) => (
+							{addedPastEvents.map((event, i) => (
 								<div key={i} className="rounded-md bg-white border border-border-subtle p-2 space-y-1">
 									{event.name && <p className="text-xs font-semibold text-text-primary">{event.name}</p>}
 									{event.description && <p className="text-xs text-text-secondary whitespace-pre-wrap">{event.description}</p>}
@@ -169,6 +174,11 @@ function ProposedChangesSection({ detail }: { detail: CommunityProfileDetail }) 
 								</div>
 							))}
 						</div>
+					)}
+					{removedPastEventsCount > 0 && (
+						<p className="text-xs text-text-tertiary">
+							{removedPastEventsCount} past event{removedPastEventsCount > 1 ? "s" : ""} removed.
+						</p>
 					)}
 				</div>
 			)}
