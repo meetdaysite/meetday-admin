@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button"
 import PageHeader from "@/components/ui/PageHeader"
 import { uploadSponsorshipChatImage } from "@/lib/api/storage"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
+import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import {
 	getSponsorshipChats,
 	getSponsorshipChatMessages,
@@ -357,6 +358,7 @@ function AdminChatThreadPanel({
 				>
 					<ImageIcon size={16} className="text-black" />
 				</button>
+				<EmojiPicker onSelect={emoji => setInput(prev => prev + emoji)} />
 				<input
 					value={input}
 					onChange={e => setInput(e.target.value)}
