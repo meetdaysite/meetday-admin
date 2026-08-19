@@ -164,6 +164,7 @@ function AdminChatThreadPanel({
 	const [input, setInput] = useState("")
 	const [uploadingImage, setUploadingImage] = useState(false)
 	const [viewingImage, setViewingImage] = useState<string | null>(null)
+	const [replyingTo, setReplyingTo] = useState<SponsorshipChatMessage | null>(null)
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -179,9 +180,10 @@ function AdminChatThreadPanel({
 	}, [messages.length])
 
 	const sendMutation = useMutation({
-		mutationFn: (payload: { content?: string; mediaKey?: string }) => sendSponsorshipChatMessage(thread.id, payload),
+		mutationFn: (payload: { content?: string; mediaKey?: string }) => sendSponsorshipChatMessage(thread.id, { ...payload, replyToId: replyingTo?.id }),
 		onSuccess: () => {
 			setInput("")
+			setReplyingTo(null)
 			queryClient.invalidateQueries({ queryKey: ["admin-sponsorship-chat-messages", thread.id] })
 			queryClient.invalidateQueries({ queryKey: ["admin-sponsorship-chats"] })
 		},
@@ -211,6 +213,11 @@ function AdminChatThreadPanel({
 		if (senderType === "HOST") return `${thread.communityName} • Community`
 		if (senderType === "BRAND") return `${thread.brandName} • Brand`
 		return "Meetday • Admin"
+	}
+
+	function replySnippet(replyTo: SponsorshipChatMessage["replyTo"]) {
+		if (!replyTo) return ""
+		return replyTo.content?.trim() ? replyTo.content : replyTo.hasMedia ? "\ud83d\udcf7 Photo" : ""
 	}
 
 	return (
@@ -267,7 +274,18 @@ function AdminChatThreadPanel({
 						const isMeetday = m.senderType === "ADMIN"
 						return (
 							<div key={m.id} className={cn("flex flex-col max-w-[70%]", isMeetday ? "self-end items-end" : "self-start items-start")}>
-								<span className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary mb-0.5 px-1 font-heading">{labelFor(m.senderType)}</span>
+								<div className="flex items-center gap-2 mb-0.5 px-1">
+									<span className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary font-heading">{labelFor(m.senderType)}</span>
+									<button type="button" onClick={() => setReplyingTo(m)} className="text-[10px] font-bold text-text-tertiary hover:text-black">
+										Reply
+									</button>
+								</div>
+								{m.replyTo && (
+									<div className="mb-1 pl-2 border-l-2 border-black/20 max-w-[220px]">
+										<p className="text-[9px] font-black uppercase text-text-tertiary">{labelFor(m.replyTo.senderType)}</p>
+										<p className="text-[11px] font-semibold text-text-tertiary truncate">{replySnippet(m.replyTo)}</p>
+									</div>
+								)}
 								{m.mediaUrl && (
 									/* eslint-disable-next-line @next/next/no-img-element */
 									<img
@@ -318,7 +336,17 @@ function AdminChatThreadPanel({
 				<div ref={bottomRef} />
 			</div>
 
-			<div className="p-3 border-t-[3px] border-black flex items-center gap-2 shrink-0">
+			<div className="p-3 border-t-[3px] border-black flex flex-col gap-2 shrink-0">
+				{replyingTo && (
+					<div className="flex items-center justify-between gap-2">
+						<div className="min-w-0 pl-2 border-l-2 border-[#EE2C2C]">
+							<p className="text-[10px] font-black uppercase text-text-tertiary">Replying to {labelFor(replyingTo.senderType)}</p>
+							<p className="text-[11px] font-semibold text-text-tertiary truncate">{replyingTo.content?.trim() ? replyingTo.content : (replyingTo.mediaUrl ? "Photo" : "")}</p>
+						</div>
+						<button type="button" onClick={() => setReplyingTo(null)} className="text-[10px] font-bold text-[#EE2C2C] shrink-0">Cancel</button>
+					</div>
+				)}
+				<div className="flex items-center gap-2">
 				<input type="file" accept="image/*" ref={fileInputRef} onChange={handleImagePick} className="hidden" />
 				<button
 					type="button"
@@ -344,6 +372,7 @@ function AdminChatThreadPanel({
 				<Button onClick={() => input.trim() && sendMutation.mutate({ content: input.trim() })} disabled={sendMutation.isPending || !input.trim()}>
 					{sendMutation.isPending ? "…" : "Send"}
 				</Button>
+				</div>
 			</div>
 			{viewingImage && <ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />}
 		</div>

@@ -18,6 +18,13 @@ export type SponsorshipChatThread = {
 	communityLogoUrl?: string | null
 }
 
+export type SponsorshipChatReplyTo = {
+	id: string
+	senderType: ChatSenderType
+	content: string
+	hasMedia: boolean
+}
+
 export type SponsorshipChatMessage = {
 	id: string
 	senderType: ChatSenderType
@@ -28,6 +35,7 @@ export type SponsorshipChatMessage = {
 	createdAt: string
 	hostReadAt?: string | null
 	brandReadAt?: string | null
+	replyTo?: SponsorshipChatReplyTo | null
 }
 
 export async function getSponsorshipChats(status?: SponsorshipChatStatus): Promise<SponsorshipChatThread[]> {
@@ -53,7 +61,7 @@ export async function getSponsorshipChatMessages(
 
 export async function sendSponsorshipChatMessage(
 	interestId: string,
-	payload: { content?: string; mediaKey?: string },
+	payload: { content?: string; mediaKey?: string; replyToId?: string },
 ): Promise<SponsorshipChatMessage> {
 	const { data } = await apiClient.post<SponsorshipChatMessage>(`/admin/sponsorship-chats/${interestId}/messages`, payload)
 	return data
