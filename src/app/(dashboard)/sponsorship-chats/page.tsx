@@ -34,6 +34,7 @@ function timeAgo(iso: string | null) {
 }
 
 export default function SponsorshipChatsPage() {
+	const queryClient = useQueryClient()
 	const [statusFilter, setStatusFilter] = useState<SponsorshipChatStatus>("ACCEPTED")
 	const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -49,6 +50,15 @@ export default function SponsorshipChatsPage() {
 		return tB - tA
 	})
 	const selectedThread = threads.find(t => t.id === selectedId) ?? null
+
+	function handleSelectThread(id: string) {
+		setSelectedId(id)
+		// Clear the badge instantly — the backend marks the thread read once messages load, but
+		// polling could take a few seconds to reflect that, so we zero it optimistically here.
+		queryClient.setQueryData<SponsorshipChatThread[]>(["admin-sponsorship-chats", statusFilter], prev =>
+			prev?.map(t => (t.id === id ? { ...t, unreadCount: 0 } : t)),
+		)
+	}
 
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
@@ -83,7 +93,7 @@ export default function SponsorshipChatsPage() {
 							threads.map(t => (
 								<button
 									key={t.id}
-									onClick={() => setSelectedId(t.id)}
+									onClick={() => handleSelectThread(t.id)}
 									className={cn(
 										"w-full text-left px-4 py-3 border-b border-black/10 transition-colors flex items-center gap-3",
 										selectedId === t.id ? "bg-[#FFC940]/20" : "hover:bg-neutral-50",
@@ -114,8 +124,11 @@ export default function SponsorshipChatsPage() {
 											) : (
 												t.communityName.charAt(0).toUpperCase()
 											)}
-										</div>
-									</div>
+										</div>									{t.unreadCount > 0 && (
+										<span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1.5 rounded-full bg-[#EE2C2C] text-white text-[9px] font-black flex items-center justify-center border-2 border-white shadow-[2px_2px_4px_rgba(0,0,0,0.15)] z-20">
+											{t.unreadCount > 9 ? "9+" : t.unreadCount}
+										</span>
+									)}									</div>
 									<div className="flex-1 min-w-0">
 										<div className="flex items-center justify-between gap-2">
 											<div className="min-w-0 flex-1">
@@ -179,6 +192,15 @@ function AdminChatThreadPanel({
 	useEffect(() => {
 		bottomRef.current?.scrollIntoView({ behavior: "smooth" })
 	}, [messages.length])
+
+	useEffect(() => {
+		// Opening a thread marks it read on the backend — resync the thread list's unread
+		// badge with the server once loaded, in case the optimistic local clear drifted.
+		if (messagesQuery.isSuccess) {
+			queryClient.invalidateQueries({ queryKey: ["admin-sponsorship-chats"] })
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [messagesQuery.isSuccess])
 
 	const sendMutation = useMutation({
 		mutationFn: (payload: { content?: string; mediaKey?: string }) => sendSponsorshipChatMessage(thread.id, { ...payload, replyToId: replyingTo?.id }),
@@ -287,13 +309,21 @@ function AdminChatThreadPanel({
 										<p className="text-[11px] font-semibold text-text-tertiary truncate">{replySnippet(m.replyTo)}</p>
 									</div>
 								)}
+								{m.deletedAt && (
+									<p className="text-[10px] font-bold italic text-text-tertiary mb-0.5">
+										🗑️ Deleted by {labelFor(m.senderType)}
+									</p>
+								)}
 								{m.mediaUrl && (
 									/* eslint-disable-next-line @next/next/no-img-element */
 									<img
 										src={m.mediaUrl}
 										alt="Shared image"
 										onClick={() => setViewingImage(m.mediaUrl!)}
-										className="max-w-[220px] max-h-[220px] rounded-2xl border border-border-default object-cover cursor-pointer mb-1"
+										className={cn(
+											"max-w-[220px] max-h-[220px] rounded-2xl border border-border-default object-cover cursor-pointer mb-1",
+											m.deletedAt && "opacity-50",
+										)}
 									/>
 								)}
 								{m.content && (
@@ -304,6 +334,7 @@ function AdminChatThreadPanel({
 											m.senderType === "HOST" && "bg-[#FFC940] text-black",
 											m.senderType === "ADMIN" && "bg-neutral-100 text-black",
 											isMeetday ? "rounded-br-sm" : "rounded-bl-sm",
+											m.deletedAt && "opacity-50 italic line-through",
 										)}
 									>
 										{m.content}

@@ -14,6 +14,7 @@ export type SponsorshipChatThread = {
 	chatAcceptedAt: string | null
 	lastMessageAt: string | null
 	lastMessagePreview: string | null
+	unreadCount: number
 	brandLogoUrl?: string | null
 	communityLogoUrl?: string | null
 }
@@ -32,6 +33,7 @@ export type SponsorshipChatMessage = {
 	messageType?: "TEXT" | "SYSTEM"
 	content: string
 	mediaUrl?: string | null
+	deletedAt?: string | null
 	createdAt: string
 	hostReadAt?: string | null
 	brandReadAt?: string | null

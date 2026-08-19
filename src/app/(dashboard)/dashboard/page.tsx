@@ -19,6 +19,7 @@ import {
 	HandCoins,
 	IndianRupee,
 	Megaphone,
+	MessageCircle,
 	ScanLine,
 	Search,
 	Server,
@@ -44,6 +45,7 @@ import { getPendingHosts, getHosts } from "@/lib/api/hosts"
 import { getPendingBrands, getBrands } from "@/lib/api/brands"
 import { getCommunityProfiles } from "@/lib/api/community-profiles"
 import { sendAnnouncement } from "@/lib/api/announcements"
+import { getSponsorshipChats, type SponsorshipChatThread } from "@/lib/api/sponsorship-chats"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import {
 	getDashboardHealth,
@@ -1290,6 +1292,71 @@ const UPDATE_ICONS: Record<string, LucideIcon> = {
 	"New community profile": Flag,
 }
 
+function RecentChatsBox() {
+	const chatsQuery = useQuery({
+		queryKey: ["dashboard", "recent-chats"],
+		queryFn: () => getSponsorshipChats(),
+		refetchInterval: 30_000,
+	})
+
+	const topThreads = useMemo(() => {
+		const threads = chatsQuery.data ?? []
+		return [...threads]
+			.sort((a, b) => {
+				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : new Date(a.createdAt).getTime()
+				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : new Date(b.createdAt).getTime()
+				return tB - tA
+			})
+			.slice(0, 5)
+	}, [chatsQuery.data])
+
+	return (
+		<div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-1">
+			<div className="flex items-center justify-between mb-2">
+				<h2 className="text-label-md font-semibold text-text-primary">Recent Chats</h2>
+				<Link href="/sponsorship-chats" className="text-caption font-semibold text-text-brand hover:underline">
+					View all
+				</Link>
+			</div>
+			{chatsQuery.isLoading ? (
+				<p className="text-body-sm text-text-tertiary py-6 text-center">Loading…</p>
+			) : topThreads.length === 0 ? (
+				<p className="text-body-sm text-text-tertiary py-6 text-center">No chat activity yet.</p>
+			) : (
+				<div className="divide-y divide-border-subtle">
+					{topThreads.map((t: SponsorshipChatThread) => (
+						<Link
+							key={t.id}
+							href="/sponsorship-chats"
+							className="flex items-center gap-3 py-2.5 hover:bg-neutral-50 -mx-2 px-2 rounded-lg transition-colors"
+						>
+							<div className="size-8 rounded-md bg-neutral-100 flex items-center justify-center shrink-0">
+								<MessageCircle size={14} className="text-text-secondary" />
+							</div>
+							<div className="min-w-0 flex-1">
+								<p className="text-body-sm font-medium text-text-primary truncate">
+									{t.brandName} ↔ {t.communityName}
+								</p>
+								<p className="text-caption text-text-tertiary truncate">{t.lastMessagePreview ?? t.proposalName}</p>
+							</div>
+							<div className="flex flex-col items-end gap-1 shrink-0">
+								<span className="text-caption text-text-tertiary">
+									{formatDistanceToNow(new Date(t.lastMessageAt ?? t.createdAt), { addSuffix: true })}
+								</span>
+								{t.unreadCount > 0 && (
+									<span className="min-w-[18px] h-[18px] px-1.5 rounded-full bg-[#EE2C2C] text-white text-[9px] font-black flex items-center justify-center">
+										{t.unreadCount > 9 ? "9+" : t.unreadCount}
+									</span>
+								)}
+							</div>
+						</Link>
+					))}
+				</div>
+			)}
+		</div>
+	)
+}
+
 function RecentUpdatesBox({ items, isLoading }: { items: UpdateItem[]; isLoading: boolean }) {
 	return (
 		<div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-1">
@@ -1470,6 +1537,12 @@ export default function DashboardPage() {
 					<RecentUpdatesBox items={recentUpdates} isLoading={recentUpdatesLoading} />
 				</div>
 				<AnnouncementsBox />
+			</div>
+
+			<div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+				<div className="lg:col-span-2">
+					<RecentChatsBox />
+				</div>
 			</div>
 		</div>
 	)
