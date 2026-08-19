@@ -143,8 +143,8 @@ function AdminChatThreadPanel({
 	})
 
 	function labelFor(senderType: SponsorshipChatMessage["senderType"]) {
-		if (senderType === "HOST") return "Community"
-		if (senderType === "BRAND") return "Brand"
+		if (senderType === "HOST") return thread.communityName
+		if (senderType === "BRAND") return thread.brandName
 		return "Meetday"
 	}
 
