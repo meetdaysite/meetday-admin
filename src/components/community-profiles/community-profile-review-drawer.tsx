@@ -241,6 +241,31 @@ function CommunityProfileDetailContent({ detail }: { detail: CommunityProfileDet
 				</>
 			)}
 
+			{detail.pastEvents && detail.pastEvents.length > 0 && (
+				<>
+					<div className="border-t border-border-subtle" />
+					<div>
+						<SectionLabel>Past Events</SectionLabel>
+						<div className="space-y-3">
+							{detail.pastEvents.map((event, i) => (
+								<div key={i} className="rounded-lg bg-neutral-50 border border-border-subtle p-3 space-y-1.5">
+									{event.name && <p className="text-xs font-semibold text-text-primary">{event.name}</p>}
+									{event.description && <p className="text-xs text-text-secondary whitespace-pre-wrap">{event.description}</p>}
+									{event.imageUrls.length > 0 && (
+										<div className="flex gap-2 pt-1">
+											{event.imageUrls.map((url, j) => (
+												// eslint-disable-next-line @next/next/no-img-element
+												<img key={j} src={url} alt={event.name || "Past event"} className="size-16 rounded-md object-cover border border-border-subtle" />
+											))}
+										</div>
+									)}
+								</div>
+							))}
+						</div>
+					</div>
+				</>
+			)}
+
 			{detail.adminRejectionRemark && (
 				<>
 					<div className="border-t border-border-subtle" />

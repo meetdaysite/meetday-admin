@@ -420,6 +420,13 @@ export type CreateSponsorshipPayload = {
 
 export type CommunityProfileCategory = { id: string; name: string }
 
+export type CommunityProfilePastEvent = {
+	name: string | null
+	description: string | null
+	imageKeys: string[]
+	imageUrls: string[]
+}
+
 export type CommunityProfile = {
 	id: string
 	name: string
@@ -432,6 +439,7 @@ export type CommunityProfile = {
 	adminRejectionRemark: string | null
 	reviewedAt: string | null
 	pendingRevision: Record<string, unknown> | null
+	pastEvents?: CommunityProfilePastEvent[]
 	createdAt: string
 	updatedAt: string
 	categories: CommunityProfileCategory[]
@@ -443,6 +451,7 @@ export type CommunityProfile = {
 		user: { id: string; firstName: string; lastName: string; email: string | null }
 	}
 }
+
 
 export type CommunityProfileDetail = CommunityProfile & {
 	logoUrl: string | null
