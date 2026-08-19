@@ -179,7 +179,7 @@ export function InviteAdminDrawer({
 		setRolesLoading(true)
 		fetchAdminRoles()
 			.then((data) => {
-				// Only Super Admin and Support are invitable for now \u2014 City Admin and Moderator
+							// Only Super Admin and Support are invitable for now — City Admin and Moderator
 				// are hidden from this drawer (not deleted from the DB, just not offered here).
 				const allowed = data.filter((r) => r.name === "SUPER_ADMIN" || r.name === "SUPPORT")
 				setRoles(allowed)

@@ -43,7 +43,7 @@ export default function SponsorshipChatsPage() {
 
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
-			<PageHeader title="Ongoing Chats" description="Every Host \u2194 Brand chat thread \u2014 view or step in as Meetday." />
+			<PageHeader title="Ongoing Chats" description="Every Host ↔ Brand chat thread — view or step in as Meetday." />
 
 			<div className="h-[calc(100vh-220px)] min-h-[500px] border border-border-default rounded-action overflow-hidden flex bg-surface-card">
 				{/* Thread list */}
@@ -64,7 +64,7 @@ export default function SponsorshipChatsPage() {
 					</div>
 					<div className="flex-1 overflow-y-auto">
 						{threadsQuery.isLoading ? (
-							<p className="text-caption text-text-tertiary text-center py-8">Loading\u2026</p>
+							<p className="text-caption text-text-tertiary text-center py-8">Loading…</p>
 						) : threads.length === 0 ? (
 							<p className="text-caption text-text-tertiary text-center py-8 px-4">No chat threads yet.</p>
 						) : (
@@ -81,7 +81,7 @@ export default function SponsorshipChatsPage() {
 										<p className="text-body-sm font-semibold text-text-primary truncate">{t.brandName}</p>
 										<span className="text-caption text-text-tertiary shrink-0">{timeAgo(t.lastMessageAt ?? t.createdAt)}</span>
 									</div>
-									<p className="text-caption text-text-tertiary truncate mt-0.5">{t.communityName} \u2014 {t.proposalName}</p>
+									<p className="text-caption text-text-tertiary truncate mt-0.5">{t.communityName} — {t.proposalName}</p>
 									<div className="flex items-center gap-2 mt-1">
 										<span
 											className={cn(
@@ -151,13 +151,13 @@ function AdminChatThreadPanel({
 	return (
 		<div className="flex-1 min-h-0 flex flex-col">
 			<div className="px-5 py-3 border-b border-border-default shrink-0">
-				<p className="text-body-sm font-semibold text-text-primary">{thread.brandName} \u2194 {thread.communityName}</p>
+				<p className="text-body-sm font-semibold text-text-primary">{thread.brandName} ↔ {thread.communityName}</p>
 				<p className="text-caption text-text-tertiary">{thread.proposalName}</p>
 			</div>
 
 			<div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
 				{messagesQuery.isLoading ? (
-					<p className="text-caption text-text-tertiary text-center">Loading\u2026</p>
+					<p className="text-caption text-text-tertiary text-center">Loading…</p>
 				) : messages.length === 0 ? (
 					<p className="text-caption text-text-tertiary text-center m-auto">
 						{thread.chatStatus === "REQUESTED" ? "The community hasn't accepted this request yet." : "No messages yet."}
@@ -193,11 +193,11 @@ function AdminChatThreadPanel({
 							sendMutation.mutate(input.trim())
 						}
 					}}
-					placeholder="Message as Meetday\u2026"
+					placeholder="Message as Meetday…"
 					className="flex-1 rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-sm outline-none focus:border-border-focus"
 				/>
 				<Button onClick={() => input.trim() && sendMutation.mutate(input.trim())} disabled={sendMutation.isPending || !input.trim()}>
-					{sendMutation.isPending ? "\u2026" : "Send"}
+					{sendMutation.isPending ? "…" : "Send"}
 				</Button>
 			</div>
 		</div>
