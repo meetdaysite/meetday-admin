@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/Button"
 import PageHeader from "@/components/ui/PageHeader"
 import { uploadSponsorshipChatImage } from "@/lib/api/storage"
+import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import {
 	getSponsorshipChats,
 	getSponsorshipChatMessages,
@@ -158,6 +159,7 @@ function AdminChatThreadPanel({
 	const queryClient = useQueryClient()
 	const [input, setInput] = useState("")
 	const [uploadingImage, setUploadingImage] = useState(false)
+	const [viewingImage, setViewingImage] = useState<string | null>(null)
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -267,7 +269,7 @@ function AdminChatThreadPanel({
 									<img
 										src={m.mediaUrl}
 										alt="Shared image"
-										onClick={() => window.open(m.mediaUrl!, "_blank")}
+										onClick={() => setViewingImage(m.mediaUrl!)}
 										className="max-w-[220px] max-h-[220px] rounded-2xl border border-border-default object-cover cursor-pointer mb-1"
 									/>
 								)}
@@ -339,6 +341,7 @@ function AdminChatThreadPanel({
 					{sendMutation.isPending ? "…" : "Send"}
 				</Button>
 			</div>
+			{viewingImage && <ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />}
 		</div>
 	)
 }
