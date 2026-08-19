@@ -43,11 +43,11 @@ export default function MeetdayChatsPage() {
 
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
-			<PageHeader title="Meetday Chats" description="Direct support chats from Hosts and Brands — reply as Meetday." />
+			<PageHeader title="Meetday Chats" description="Direct support chats from Communities and Brands — reply as Meetday." />
 
-			<div className="h-[calc(100vh-220px)] min-h-[500px] border border-border-default rounded-action overflow-hidden flex bg-surface-card">
+			<div className="h-[calc(100vh-270px)] min-h-[450px] border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex bg-white">
 				{/* Thread list */}
-				<div className="w-80 shrink-0 border-r border-border-default flex flex-col">
+				<div className="w-80 shrink-0 border-r-[3px] border-black flex flex-col">
 					<div className="flex-1 overflow-y-auto">
 						{threadsQuery.isLoading ? (
 							<p className="text-caption text-text-tertiary text-center py-8">Loading…</p>
@@ -59,21 +59,34 @@ export default function MeetdayChatsPage() {
 									key={t.id}
 									onClick={() => setSelectedId(t.id)}
 									className={cn(
-										"w-full text-left px-4 py-3 border-b border-border-subtle transition-colors",
-										selectedId === t.id ? "bg-neutral-100" : "hover:bg-neutral-50",
+										"w-full text-left px-4 py-3 border-b border-black/10 transition-colors flex items-center gap-3",
+										selectedId === t.id ? "bg-[#FFC940]/20" : "hover:bg-neutral-50",
 									)}
 								>
-									<div className="flex items-center justify-between gap-2">
-										<p className="text-body-sm font-semibold text-text-primary truncate">{t.userName}</p>
-										<span className="text-caption text-text-tertiary shrink-0">{timeAgo(t.lastMessageAt ?? t.createdAt)}</span>
-									</div>
-									<p className="text-caption text-text-tertiary truncate mt-0.5">{t.userEmail}{t.userRole ? ` · ${t.userRole}` : ""}</p>
-									<div className="flex items-center justify-between gap-2 mt-1">
-										{t.lastMessagePreview && <p className="text-caption text-text-tertiary truncate">{t.lastMessagePreview}</p>}
+									<div className="w-8 h-8 rounded-full border border-border-default bg-neutral-100 flex items-center justify-center font-bold text-xs text-text-secondary shrink-0 relative overflow-hidden">
+										{t.userLogoUrl || (t as any).userAvatarUrl || (t as any).logoUrl || (t as any).avatarUrl ? (
+											<img
+												src={t.userLogoUrl || (t as any).userAvatarUrl || (t as any).logoUrl || (t as any).avatarUrl}
+												alt={t.userName}
+												className="w-full h-full object-cover"
+											/>
+										) : (
+											t.userName.charAt(0).toUpperCase()
+										)}
 										{t.unreadCount > 0 && (
-											<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-action-primary text-white text-[10px] font-semibold flex items-center justify-center">
+											<span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-action-primary text-white text-[9px] font-semibold flex items-center justify-center border border-white z-10">
 												{t.unreadCount > 9 ? "9+" : t.unreadCount}
 											</span>
+										)}
+									</div>
+									<div className="flex-1 min-w-0">
+										<div className="flex items-center justify-between gap-2">
+											<p className="text-body-sm font-semibold text-text-primary truncate">{t.userName}</p>
+											<span className="text-caption text-text-tertiary shrink-0">{timeAgo(t.lastMessageAt ?? t.createdAt)}</span>
+										</div>
+										<p className="text-caption text-text-tertiary truncate mt-0.5">{t.userEmail}{t.userRole ? ` · ${t.userRole === "HOST" ? "Community" : t.userRole}` : ""}</p>
+										{t.lastMessagePreview && (
+											<p className="text-caption text-text-tertiary truncate mt-1">{t.lastMessagePreview}</p>
 										)}
 									</div>
 								</button>
@@ -144,9 +157,22 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 
 	return (
 		<div className="flex-1 min-h-0 flex flex-col">
-			<div className="px-5 py-3 border-b border-border-default shrink-0">
-				<p className="text-body-sm font-semibold text-text-primary">{thread.userName}</p>
-				<p className="text-caption text-text-tertiary">{thread.userEmail}{thread.userRole ? ` · ${thread.userRole}` : ""}</p>
+			<div className="px-5 py-3 border-b-[3px] border-black shrink-0 flex items-center gap-3">
+				<div className="w-8 h-8 rounded-full border border-border-default bg-neutral-100 flex items-center justify-center font-bold text-xs text-text-secondary shrink-0 overflow-hidden">
+					{thread.userLogoUrl || (thread as any).userAvatarUrl || (thread as any).logoUrl || (thread as any).avatarUrl ? (
+						<img
+							src={thread.userLogoUrl || (thread as any).userAvatarUrl || (thread as any).logoUrl || (thread as any).avatarUrl}
+							alt={thread.userName}
+							className="w-full h-full object-cover"
+						/>
+					) : (
+						thread.userName.charAt(0).toUpperCase()
+					)}
+				</div>
+				<div className="min-w-0">
+					<p className="text-body-sm font-semibold text-text-primary truncate">{thread.userName}</p>
+					<p className="text-caption text-text-tertiary truncate">{thread.userEmail}{thread.userRole ? ` · ${thread.userRole === "HOST" ? "Community" : thread.userRole}` : ""}</p>
+				</div>
 			</div>
 
 			<div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
@@ -157,10 +183,12 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 				) : (
 					messages.map(m => {
 						const isMeetday = m.senderType === "ADMIN"
+						const userRoleLabel = thread.userRole === "BRAND" ? "Brand" : thread.userRole === "HOST" ? "Community" : (thread.userRole || "")
+						const senderLabel = isMeetday ? "Meetday • Admin" : `${thread.userName}${userRoleLabel ? ` • ${userRoleLabel}` : ""}`
 						return (
 							<div key={m.id} className={cn("flex flex-col max-w-[70%]", isMeetday ? "self-end items-end" : "self-start items-start")}>
-								<span className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary mb-0.5 px-1">
-									{isMeetday ? "Meetday" : thread.userName}
+								<span className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary mb-0.5 px-1 font-heading">
+									{senderLabel}
 								</span>
 								{m.mediaUrl && (
 									/* eslint-disable-next-line @next/next/no-img-element */
@@ -174,11 +202,32 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 								{m.content && (
 									<div
 										className={cn(
-											"px-3.5 py-2 rounded-2xl text-body-sm break-words",
-											isMeetday ? "bg-action-primary text-white rounded-br-sm" : "bg-neutral-100 text-text-primary rounded-bl-sm",
+											"px-3.5 py-2 rounded-2xl text-body-sm break-words border border-black/10",
+											isMeetday ? "bg-neutral-100 text-black rounded-br-sm" : (thread.userRole === "BRAND" ? "bg-[#EE2C2C] text-white rounded-bl-sm" : "bg-[#FFC940] text-black rounded-bl-sm"),
 										)}
 									>
 										{m.content}
+									</div>
+								)}
+								{(m.content || m.mediaUrl) && (
+									<div className={cn("flex items-center gap-1 mt-0.5 text-[9px] font-bold text-black/40 px-1", isMeetday ? "justify-end" : "justify-start")}>
+										<span>
+											{(() => {
+												try {
+													return new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+												} catch {
+													return ""
+												}
+											})()}
+										</span>
+										{isMeetday && (() => {
+											const isRead = thread.userRole === "BRAND" ? !!m.brandReadAt : !!m.hostReadAt
+											return (
+												<span className={cn("text-[10px] leading-none font-bold", isRead ? "text-red-500 font-black" : "text-gray-400")}>
+													✓✓
+												</span>
+											)
+										})()}
 									</div>
 								)}
 							</div>
@@ -188,16 +237,16 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 				<div ref={bottomRef} />
 			</div>
 
-			<div className="p-3 border-t border-border-default flex items-center gap-2 shrink-0">
+			<div className="p-3 border-t-[3px] border-black flex items-center gap-2 shrink-0">
 				<input type="file" accept="image/*" ref={fileInputRef} onChange={handleImagePick} className="hidden" />
 				<button
 					type="button"
 					onClick={() => fileInputRef.current?.click()}
 					disabled={uploadingImage}
-					className="shrink-0 size-9 rounded-lg border border-border-default flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50"
+					className="shrink-0 size-9 rounded-xl border-[3px] border-black flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50"
 					aria-label="Attach image"
 				>
-					<ImageIcon size={16} className="text-text-tertiary" />
+					<ImageIcon size={16} className="text-black" />
 				</button>
 				<input
 					value={input}
@@ -209,7 +258,7 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 						}
 					}}
 					placeholder="Message as Meetday…"
-					className="flex-1 rounded-lg border border-border-default bg-surface-canvas px-3 py-2 text-sm outline-none focus:border-border-focus"
+					className="flex-1 rounded-2xl border-[3px] border-black bg-white px-4 py-2 text-sm font-semibold outline-none focus:bg-neutral-50"
 				/>
 				<Button onClick={() => input.trim() && sendMutation.mutate({ content: input.trim() })} disabled={sendMutation.isPending || !input.trim()}>
 					{sendMutation.isPending ? "…" : "Send"}

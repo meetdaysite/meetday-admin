@@ -195,11 +195,6 @@ export default function HostsPage() {
 				cell: ({ row }) => <StatusCell status={row.original.kycStatus} />,
 			},
 			{
-				id: "approvalStatus",
-				header: "Status",
-				cell: ({ row }) => <StatusCell status={row.original.approvalStatus} />,
-			},
-			{
 				id: "joined",
 				header: "Joined",
 				cell: ({ row }) => <DateCell value={row.original.createdAt} format={formatDate} secondary />,
@@ -216,8 +211,8 @@ export default function HostsPage() {
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			{/* Header */}
 			<PageHeader
-				title="All Hosts"
-				description="View and manage all hosts on the platform."
+				title="Community Reps"
+				description="View and manage all community representatives on the platform."
 				buttons={
 					canInvite && (
 						<>

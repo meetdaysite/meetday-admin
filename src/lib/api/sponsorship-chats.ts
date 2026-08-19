@@ -14,6 +14,8 @@ export type SponsorshipChatThread = {
 	chatAcceptedAt: string | null
 	lastMessageAt: string | null
 	lastMessagePreview: string | null
+	brandLogoUrl?: string | null
+	communityLogoUrl?: string | null
 }
 
 export type SponsorshipChatMessage = {
@@ -24,6 +26,8 @@ export type SponsorshipChatMessage = {
 	content: string
 	mediaUrl?: string | null
 	createdAt: string
+	hostReadAt?: string | null
+	brandReadAt?: string | null
 }
 
 export async function getSponsorshipChats(status?: SponsorshipChatStatus): Promise<SponsorshipChatThread[]> {

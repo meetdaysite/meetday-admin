@@ -13,8 +13,6 @@ import { playMessageChime } from "@/lib/notificationSound"
 import { usePermission } from "@/lib/hooks/use-permission"
 
 const REFETCH_INTERVAL = 60_000
-// Chats deserve a snappier poll than the approval queues, since a chime should feel roughly live.
-const CHAT_REFETCH_INTERVAL = 15_000
 
 export type SidebarBadgeKey =
 	| "hostQueue"
@@ -105,13 +103,13 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 	const pendingChats = useQuery({
 		queryKey: ["sidebar-badge", "pending-chats"],
 		queryFn: () => getPendingSponsorshipChatsCount(),
-		refetchInterval: CHAT_REFETCH_INTERVAL,
+		refetchInterval: 8_000,
 	})
 
 	const meetdayChats = useQuery({
 		queryKey: ["sidebar-badge", "meetday-chats"],
 		queryFn: () => getMeetdayChatUnreadCount(),
-		refetchInterval: CHAT_REFETCH_INTERVAL,
+		refetchInterval: 8_000,
 	})
 
 	// Chime when either chat badge count goes up — skip the very first load so opening the
