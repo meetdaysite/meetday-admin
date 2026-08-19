@@ -27,6 +27,7 @@ import {
 	ChevronRight,
 	Megaphone,
 	MessagesSquare,
+	Handshake,
 	type LucideIcon,
 } from "lucide-react"
 import { useAuthStore } from "@/stores/auth.store"
@@ -165,6 +166,11 @@ const BOTTOM_NAV: NavItem[] = [
 		href: "/sponsorship-chats",
 		icon: MessagesSquare,
 		badgeKey: "pendingChats",
+	},
+	{
+		label: "Sponsorship Deals",
+		href: "/sponsorship-deals",
+		icon: Handshake,
 	},
 	{
 		label: "Audit Logs",

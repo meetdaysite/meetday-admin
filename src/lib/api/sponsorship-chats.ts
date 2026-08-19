@@ -20,6 +20,7 @@ export type SponsorshipChatMessage = {
 	id: string
 	senderType: ChatSenderType
 	senderId: string
+	messageType?: "TEXT" | "SYSTEM"
 	content: string
 	mediaUrl?: string | null
 	createdAt: string

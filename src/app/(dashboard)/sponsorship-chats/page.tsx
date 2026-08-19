@@ -187,6 +187,13 @@ function AdminChatThreadPanel({
 					</p>
 				) : (
 					messages.map(m => {
+						if (m.messageType === "SYSTEM") {
+							return (
+								<div key={m.id} className="self-center max-w-[90%] px-3 py-1.5 rounded-full bg-neutral-100 text-text-tertiary text-[11px] font-semibold text-center">
+									{m.content}
+								</div>
+							)
+						}
 						const isMeetday = m.senderType === "ADMIN"
 						return (
 							<div key={m.id} className={cn("flex flex-col max-w-[70%]", isMeetday ? "self-end items-end" : "self-start items-start")}>
