@@ -8,8 +8,20 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ImageUploadZone } from "@/components/communities/create/ui/image-upload-zone"
 import { getEligibleHosts, createCommunityProfile, updateCommunityProfile } from "@/lib/api/community-profiles"
 import { getCategories } from "@/lib/api/categories"
-import { uploadCommunityProfileLogo } from "@/lib/api/storage"
+import { uploadCommunityProfileLogo, uploadCommunityPastEventImage } from "@/lib/api/storage"
 import type { Category, CommunityProfileDetail, EligibleHost } from "@/types"
+
+// ─── Types ────────────────────────────────────────────
+
+// One past-event entry being edited — images can be a mix of already-uploaded keys (editing an
+// existing profile) and newly picked local files (uploaded on submit).
+type PastEventDraft = {
+	name: string
+	description: string
+	images: { key?: string; url: string; file?: File }[]
+}
+
+const emptyPastEventDraft = (): PastEventDraft => ({ name: "", description: "", images: [] })
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -61,6 +73,7 @@ export function CreateCommunityProfileDrawer({
 	const [linkedin, setLinkedin] = useState("")
 	const [youtube, setYoutube] = useState("")
 	const [website, setWebsite] = useState("")
+	const [pastEvents, setPastEvents] = useState<PastEventDraft[]>([])
 
 	const [isLoading, setIsLoading] = useState(false)
 	const [error, setError] = useState<string | null>(null)
@@ -104,6 +117,13 @@ export function CreateCommunityProfileDrawer({
 		setLinkedin(p.hostProfile.socialLinks?.linkedin ?? "")
 		setYoutube(p.hostProfile.socialLinks?.youtube ?? "")
 		setWebsite(p.hostProfile.socialLinks?.website ?? "")
+		setPastEvents(
+			(p.pastEvents ?? []).map((e) => ({
+				name: e.name ?? "",
+				description: e.description ?? "",
+				images: e.imageKeys.map((key, i) => ({ key, url: e.imageUrls[i] ?? "" })),
+			})),
+		)
 	}, [open, editingProfile])
 
 	function reset() {
@@ -125,6 +145,7 @@ export function CreateCommunityProfileDrawer({
 		setLinkedin("")
 		setYoutube("")
 		setWebsite("")
+		setPastEvents([])
 		setError(null)
 	}
 
@@ -146,6 +167,41 @@ export function CreateCommunityProfileDrawer({
 			else next.add(id)
 			return next
 		})
+	}
+
+	function addPastEvent() {
+		setPastEvents((prev) => [...prev, emptyPastEventDraft()])
+	}
+
+	function removePastEvent(index: number) {
+		setPastEvents((prev) => prev.filter((_, i) => i !== index))
+	}
+
+	function updatePastEvent(index: number, field: "name" | "description", value: string) {
+		setPastEvents((prev) => prev.map((e, i) => (i === index ? { ...e, [field]: value } : e)))
+	}
+
+	function addPastEventImage(index: number, file: File) {
+		if (!file.type.startsWith("image/")) {
+			toast.error("Only image files are accepted.")
+			return
+		}
+		setPastEvents((prev) =>
+			prev.map((e, i) => {
+				if (i !== index) return e
+				if (e.images.length >= 2) {
+					toast.error("Only up to 2 images per event are allowed.")
+					return e
+				}
+				return { ...e, images: [...e.images, { file, url: URL.createObjectURL(file) }] }
+			}),
+		)
+	}
+
+	function removePastEventImage(eventIndex: number, imageIndex: number) {
+		setPastEvents((prev) =>
+			prev.map((e, i) => (i === eventIndex ? { ...e, images: e.images.filter((_, j) => j !== imageIndex) } : e)),
+		)
 	}
 
 	async function handleSubmit(e: React.FormEvent) {
@@ -173,6 +229,16 @@ export function CreateCommunityProfileDrawer({
 		// here would silently wipe out whatever they already set during onboarding.
 		const socialLinks = Object.values(socialLinksInput).some(Boolean) ? socialLinksInput : undefined
 		try {
+			const pastEventsPayload = await Promise.all(
+				pastEvents.map(async (event) => ({
+					name: event.name.trim() || undefined,
+					description: event.description.trim() || undefined,
+					imageKeys: await Promise.all(
+						event.images.map((img) => (img.key ? img.key : uploadCommunityPastEventImage(img.file!, selectedHost.id))),
+					),
+				})),
+			)
+
 			if (isEditing && editingProfile) {
 				const profile = await updateCommunityProfile(editingProfile.id, {
 					name: name.trim(),
@@ -184,6 +250,7 @@ export function CreateCommunityProfileDrawer({
 					experiencesPerYear: experiencesPerYear.trim(),
 					categoryIds: Array.from(categoryIds),
 					socialLinks,
+					pastEvents: pastEventsPayload,
 				})
 				toast.success("Community profile updated")
 				onUpdated?.(profile)
@@ -199,6 +266,7 @@ export function CreateCommunityProfileDrawer({
 					experiencesPerYear: experiencesPerYear.trim(),
 					categoryIds: Array.from(categoryIds),
 					socialLinks,
+					pastEvents: pastEventsPayload,
 				})
 				toast.success("Community profile created and activated")
 				onCreated(profile)
@@ -347,6 +415,84 @@ export function CreateCommunityProfileDrawer({
 						aspectClass="aspect-[4/5]"
 						shape="rect"
 					/>
+
+					<div className="flex flex-col gap-2">
+						<div className="flex items-center justify-between">
+							<label className={labelClass}>Past Events (optional)</label>
+							<span className="text-[11px] text-text-tertiary">Showcase up to 2 images per event</span>
+						</div>
+						{pastEvents.map((event, i) => (
+							<div key={i} className="flex flex-col gap-2 p-3 rounded-lg border border-border-default bg-surface-canvas">
+								<div className="flex items-center justify-between">
+									<span className="text-[10px] font-semibold text-text-tertiary uppercase">Event {i + 1}</span>
+									<button
+										type="button"
+										onClick={() => removePastEvent(i)}
+										disabled={isLoading}
+										className="text-xs font-semibold text-text-tertiary hover:text-red-600 transition-colors disabled:opacity-50"
+									>
+										Remove
+									</button>
+								</div>
+								<input
+									type="text"
+									value={event.name}
+									onChange={(e) => updatePastEvent(i, "name", e.target.value)}
+									placeholder="Event name (optional)"
+									disabled={isLoading}
+									className={inputClass}
+								/>
+								<textarea
+									value={event.description}
+									onChange={(e) => updatePastEvent(i, "description", e.target.value)}
+									placeholder="Event description (optional)"
+									rows={2}
+									disabled={isLoading}
+									className={`${inputClass} resize-none`}
+								/>
+								<div className="flex items-center gap-2">
+									{event.images.map((img, j) => (
+										<div key={j} className="relative size-16 rounded-lg border border-border-default overflow-hidden shrink-0">
+											{/* eslint-disable-next-line @next/next/no-img-element */}
+											<img src={img.url} alt="Past event" className="size-full object-cover" />
+											<button
+												type="button"
+												onClick={() => removePastEventImage(i, j)}
+												aria-label="Remove image"
+												className="absolute top-0.5 right-0.5 size-4 rounded-full bg-black/70 text-white text-[10px] flex items-center justify-center leading-none"
+											>
+												×
+											</button>
+										</div>
+									))}
+									{event.images.length < 2 && (
+										<label className="size-16 rounded-lg border border-dashed border-border-strong flex items-center justify-center shrink-0 cursor-pointer hover:bg-neutral-50">
+											<input
+												type="file"
+												accept="image/*"
+												className="hidden"
+												disabled={isLoading}
+												onChange={(e) => {
+													const file = e.target.files?.[0]
+													e.target.value = ""
+													if (file) addPastEventImage(i, file)
+												}}
+											/>
+											<span className="text-[10px] text-text-tertiary">+ Add</span>
+										</label>
+									)}
+								</div>
+							</div>
+						))}
+						<button
+							type="button"
+							onClick={addPastEvent}
+							disabled={isLoading}
+							className="self-start text-xs font-semibold text-text-brand hover:underline disabled:opacity-50"
+						>
+							+ Add past event
+						</button>
+					</div>
 
 					<div className="grid grid-cols-3 gap-3">
 						<div>

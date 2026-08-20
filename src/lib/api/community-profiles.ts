@@ -71,8 +71,13 @@ export async function createCommunityProfile(
 
 export async function updateCommunityProfile(
 	id: string,
-	payload: Partial<Omit<CreateCommunityProfilePayload, "hostProfileId">> & { secondaryImageKey?: string },
+	payload: Partial<Omit<CreateCommunityProfilePayload, "hostProfileId">> & { secondaryImageKey?: string; isHidden?: boolean },
 ): Promise<CommunityProfileDetail> {
 	const { data } = await apiClient.patch<CommunityProfileDetail>(`/admin/community-profiles/${id}`, payload)
+	return data
+}
+
+export async function setCommunityProfileVisibility(id: string, isHidden: boolean): Promise<CommunityProfileDetail> {
+	const { data } = await apiClient.patch<CommunityProfileDetail>(`/admin/community-profiles/${id}/visibility`, { isHidden })
 	return data
 }
