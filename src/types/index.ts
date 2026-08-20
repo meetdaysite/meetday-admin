@@ -441,6 +441,7 @@ export type CommunityProfile = {
 	reviewedAt: string | null
 	pendingRevision: Record<string, unknown> | null
 	pastEvents?: CommunityProfilePastEvent[]
+	isHidden: boolean
 	createdAt: string
 	updatedAt: string
 	categories: CommunityProfileCategory[]
@@ -492,6 +493,13 @@ export type CreateCommunityProfilePayload = {
 	experiencesPerYear: string
 	categoryIds: string[]
 	socialLinks?: { instagram?: string; linkedin?: string; youtube?: string; website?: string }
+	pastEvents?: CommunityProfilePastEventPayload[]
+}
+
+export type CommunityProfilePastEventPayload = {
+	name?: string
+	description?: string
+	imageKeys?: string[]
 }
 
 export type SponsorshipInterest = {

@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/Button"
 import PageHeader from "@/components/ui/PageHeader"
 import { uploadMeetdayChatImage } from "@/lib/api/storage"
+import { ImageLightbox } from "@/components/ui/ImageLightbox"
+import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import {
 	getMeetdayChats,
 	getMeetdayChatMessages,
@@ -68,9 +70,9 @@ export default function MeetdayChatsPage() {
 									)}
 								>
 									<div className="w-8 h-8 rounded-full border border-border-default bg-neutral-100 flex items-center justify-center font-bold text-xs text-text-secondary shrink-0 relative overflow-hidden">
-										{t.userLogoUrl || (t as any).userAvatarUrl || (t as any).logoUrl || (t as any).avatarUrl ? (
-											<img
-												src={t.userLogoUrl || (t as any).userAvatarUrl || (t as any).logoUrl || (t as any).avatarUrl}
+									{t.userLogoUrl ? (
+										<img
+											src={t.userLogoUrl}
 												alt={t.userName}
 												className="w-full h-full object-cover"
 											/>
@@ -116,6 +118,7 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 	const queryClient = useQueryClient()
 	const [input, setInput] = useState("")
 	const [uploadingImage, setUploadingImage] = useState(false)
+	const [viewingImage, setViewingImage] = useState<string | null>(null)
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -163,9 +166,9 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 		<div className="flex-1 min-h-0 flex flex-col">
 			<div className="px-5 py-3 border-b-[3px] border-black shrink-0 flex items-center gap-3">
 				<div className="w-8 h-8 rounded-full border border-border-default bg-neutral-100 flex items-center justify-center font-bold text-xs text-text-secondary shrink-0 overflow-hidden">
-					{thread.userLogoUrl || (thread as any).userAvatarUrl || (thread as any).logoUrl || (thread as any).avatarUrl ? (
+					{thread.userLogoUrl ? (
 						<img
-							src={thread.userLogoUrl || (thread as any).userAvatarUrl || (thread as any).logoUrl || (thread as any).avatarUrl}
+							src={thread.userLogoUrl}
 							alt={thread.userName}
 							className="w-full h-full object-cover"
 						/>
@@ -199,7 +202,7 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 									<img
 										src={m.mediaUrl}
 										alt="Shared image"
-										onClick={() => window.open(m.mediaUrl!, "_blank")}
+										onClick={() => setViewingImage(m.mediaUrl!)}
 										className="max-w-[220px] max-h-[220px] rounded-2xl border border-border-default object-cover cursor-pointer mb-1"
 									/>
 								)}
@@ -252,6 +255,7 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 				>
 					<ImageIcon size={16} className="text-black" />
 				</button>
+				<EmojiPicker onSelect={emoji => setInput(prev => prev + emoji)} />
 				<input
 					value={input}
 					onChange={e => setInput(e.target.value)}
@@ -268,6 +272,7 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 					{sendMutation.isPending ? "…" : "Send"}
 				</Button>
 			</div>
+			{viewingImage && <ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />}
 		</div>
 	)
 }

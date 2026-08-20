@@ -20,6 +20,8 @@ export type CommunityProfileReviewDrawerProps = {
 	// Opens the full edit form for this profile, pre-filled with every field — available
 	// regardless of approvalStatus or who created it.
 	onEdit?: (detail: CommunityProfileDetail) => void
+	// Toggles brand-visibility — available regardless of approvalStatus, unlike approve/reject.
+	onToggleVisibility?: (profileId: string, isHidden: boolean) => Promise<void>
 }
 
 function SectionLabel({ children }: { children: string }) {
@@ -199,6 +201,12 @@ function CommunityProfileDetailContent({ detail }: { detail: CommunityProfileDet
 				<p className="text-[10px] font-semibold uppercase tracking-wider text-text-tertiary">Current (live) version</p>
 			)}
 
+			{detail.isHidden && (
+				<div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+					<p className="text-xs font-semibold text-amber-800">Hidden from brands — not discoverable in browse/search, sponsorships hidden too. The host&apos;s own access is unaffected.</p>
+				</div>
+			)}
+
 			{detail.logoUrl && (
 				<div className="w-20 h-20 rounded-full overflow-hidden border border-border-subtle">
 					{/* eslint-disable-next-line @next/next/no-img-element */}
@@ -338,13 +346,14 @@ function CommunityProfileDetailContent({ detail }: { detail: CommunityProfileDet
 	)
 }
 
-export function CommunityProfileReviewDrawer({ open, onClose, profile, onAction, onEdit }: CommunityProfileReviewDrawerProps) {
+export function CommunityProfileReviewDrawer({ open, onClose, profile, onAction, onEdit, onToggleVisibility }: CommunityProfileReviewDrawerProps) {
 	const router = useRouter()
 	const [detail, setDetail] = useState<CommunityProfileDetail | null>(null)
 	const [fetchState, setFetchState] = useState<"loading" | "error" | "done">("loading")
 	const [errorMessage, setErrorMessage] = useState<string | null>(null)
 	const [actionLoading, setActionLoading] = useState<CommunityProfileAction | null>(null)
 	const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
+	const [visibilityLoading, setVisibilityLoading] = useState(false)
 
 	useEffect(() => {
 		if (!open || !profile) return
@@ -412,6 +421,17 @@ export function CommunityProfileReviewDrawer({ open, onClose, profile, onAction,
 		handleClose()
 	}
 
+	async function handleToggleVisibility() {
+		if (!detail || !onToggleVisibility) return
+		setVisibilityLoading(true)
+		try {
+			await onToggleVisibility(detail.id, !detail.isHidden)
+			setDetail({ ...detail, isHidden: !detail.isHidden })
+		} finally {
+			setVisibilityLoading(false)
+		}
+	}
+
 	const isRevisionReview = !!detail?.pendingRevision
 	const status = detail?.approvalStatus ?? profile?.approvalStatus
 	const canReview = isRevisionReview || status === "PENDING"
@@ -445,6 +465,16 @@ export function CommunityProfileReviewDrawer({ open, onClose, profile, onAction,
 								className="rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors disabled:opacity-50"
 							>
 								Edit
+							</button>
+						)}
+						{onToggleVisibility && detail && (
+							<button
+								onClick={handleToggleVisibility}
+								disabled={visibilityLoading || fetchState !== "done"}
+								className="flex items-center gap-1.5 rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors disabled:opacity-50"
+							>
+								{visibilityLoading && <Loader2 size={12} className="animate-spin" />}
+								{detail.isHidden ? "Unhide from brands" : "Hide from brands"}
 							</button>
 						)}
 						{!canReview && (

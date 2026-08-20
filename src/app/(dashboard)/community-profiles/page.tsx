@@ -8,7 +8,7 @@ import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { AgeDateCell, ChipCell, StatusCell, TwoLineCell } from "@/components/ui/table-cells"
-import { approveCommunityProfile, approveCommunityProfileRevision, getCommunityProfileById, getCommunityProfiles, rejectCommunityProfile, rejectCommunityProfileRevision } from "@/lib/api/community-profiles"
+import { approveCommunityProfile, approveCommunityProfileRevision, getCommunityProfileById, getCommunityProfiles, rejectCommunityProfile, rejectCommunityProfileRevision, setCommunityProfileVisibility } from "@/lib/api/community-profiles"
 import { formatDate, getDaysSince } from "@/lib/formatters"
 import { useDrawer } from "@/lib/hooks/use-drawer"
 import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
@@ -158,6 +158,17 @@ export default function AllCommunityProfilesPage() {
 
 	const totalPages = Math.ceil(total / PAGE_LIMIT)
 
+	async function handleToggleVisibility(profileId: string, isHidden: boolean) {
+		try {
+			await setCommunityProfileVisibility(profileId, isHidden)
+			toast.success(isHidden ? "Community hidden from brands" : "Community is visible to brands again")
+			fetchProfiles()
+		} catch {
+			toast.error(`Failed to ${isHidden ? "hide" : "unhide"} community profile`)
+			throw new Error("visibility toggle failed")
+		}
+	}
+
 	const columns = useMemo<ColumnDef<CommunityProfile>[]>(
 		() => [
 			{
@@ -206,6 +217,11 @@ export default function AllCommunityProfilesPage() {
 						{row.original.pendingRevision && (
 							<span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 border border-blue-200">
 								Edit pending
+							</span>
+						)}
+						{row.original.isHidden && (
+							<span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
+								Hidden
 							</span>
 						)}
 					</div>
@@ -266,6 +282,7 @@ export default function AllCommunityProfilesPage() {
 				profile={selectedProfile}
 				onAction={handleAction}
 				onEdit={setEditingProfile}
+				onToggleVisibility={handleToggleVisibility}
 			/>
 
 			<CreateCommunityProfileDrawer

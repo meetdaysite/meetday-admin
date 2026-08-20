@@ -26,6 +26,7 @@ type PresignRequest =
 	| { context: "SPONSORSHIP_DOCUMENT";  contentType: PitchDocContentType }
 	| { context: "SPONSORSHIP_CHAT_MEDIA"; contentType: ImageContentType; resourceId: string }
 	| { context: "MEETDAY_CHAT_MEDIA";     contentType: ImageContentType; resourceId?: string }
+	| { context: "COMMUNITY_PAST_EVENT_MEDIA"; contentType: ImageContentType; resourceId: string }
 
 interface PresignResponse {
 	uploadUrl: string
@@ -121,6 +122,17 @@ export async function uploadCommunityProfileLogo(file: File): Promise<string> {
 	const { uploadUrl, key } = await getPresignedUploadUrl({
 		context: "SPONSORSHIP_MEDIA",
 		contentType: file.type as ImageContentType,
+	})
+	await uploadToStorage(uploadUrl, file)
+	return key
+}
+
+// resourceId is the target host's hostProfileId — admins upload "on behalf of" a host here.
+export async function uploadCommunityPastEventImage(file: File, hostProfileId: string): Promise<string> {
+	const { uploadUrl, key } = await getPresignedUploadUrl({
+		context: "COMMUNITY_PAST_EVENT_MEDIA",
+		contentType: file.type as ImageContentType,
+		resourceId: hostProfileId,
 	})
 	await uploadToStorage(uploadUrl, file)
 	return key
