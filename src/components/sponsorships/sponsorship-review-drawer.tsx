@@ -25,7 +25,7 @@ import { formatDate, formatDateRange } from "@/lib/formatters"
 import type { SponsorshipDetail, SponsorshipProposal } from "@/types"
 
 // The main brand-facing app is a separate deployment from admin — no shared origin to derive this from.
-const FRONTEND_URL = process.env.NEXT_PUBLIC_FRONTEND_URL ?? "https://meetday-frontend.vercel.app"
+const FRONTEND_URL = process.env.NEXT_PUBLIC_FRONTEND_URL ?? "https://app.meetday.ai"
 
 function copyProposalShareLink(proposalId: string) {
 	const link = `${FRONTEND_URL}/brand/proposal/${proposalId}`
