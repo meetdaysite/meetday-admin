@@ -12,6 +12,7 @@ export type SponsorshipDealPayment = {
 	projectName: string
 	sponsorshipAmount: string | number
 	platformFeeAmount: string | number | null
+	transactionFeeAmount: string | number | null
 	taxAmount: string | number | null
 	totalAmount: string | number | null
 	paymentStatus: SponsorshipDealPaymentStatus

@@ -66,6 +66,7 @@ export default function SponsorshipPaymentsPage() {
 								<th className="px-4 py-2.5 font-semibold">Community / Proposal</th>
 								<th className="px-4 py-2.5 font-semibold">Sponsorship Amount</th>
 								<th className="px-4 py-2.5 font-semibold">Platform Fee</th>
+								<th className="px-4 py-2.5 font-semibold">Transaction Fee</th>
 								<th className="px-4 py-2.5 font-semibold">GST</th>
 								<th className="px-4 py-2.5 font-semibold">Total</th>
 								<th className="px-4 py-2.5 font-semibold">Status</th>
@@ -84,6 +85,7 @@ export default function SponsorshipPaymentsPage() {
 										</td>
 										<td className="px-4 py-3 text-body-sm text-text-primary">{formatAmount(row.sponsorshipAmount)}</td>
 										<td className="px-4 py-3 text-body-sm text-text-primary">{formatAmount(row.platformFeeAmount)}</td>
+										<td className="px-4 py-3 text-body-sm text-text-primary">{formatAmount(row.transactionFeeAmount)}</td>
 										<td className="px-4 py-3 text-body-sm text-text-primary">{formatAmount(row.taxAmount)}</td>
 										<td className="px-4 py-3 text-body-sm text-text-primary font-semibold">{formatAmount(row.totalAmount)}</td>
 										<td className="px-4 py-3">
