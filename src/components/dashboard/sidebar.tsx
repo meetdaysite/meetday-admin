@@ -29,6 +29,7 @@ import {
 	MessagesSquare,
 	Handshake,
 	Headset,
+	Receipt,
 	type LucideIcon,
 } from "lucide-react"
 import { useAuthStore } from "@/stores/auth.store"
@@ -122,6 +123,11 @@ const NAV: NavItem[] = [
 				label: "Sponsorship Deals",
 				href: "/sponsorship-deals",
 				icon: Handshake,
+			},
+			{
+				label: "Payments",
+				href: "/sponsorship-payments",
+				icon: Receipt,
 			},
 		],
 	},
