@@ -81,7 +81,9 @@ export default function AllCommunityProfilesPage() {
 	const canApprove = usePermission("communityProfile.approve")
 
 	const [page, setPage] = useState(1)
-	const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL")
+	// Default to Approved so the dashboard shows "live" communities with complete profiles,
+	// not everyone who has merely signed up.
+	const [statusFilter, setStatusFilter] = useState<StatusFilter>("APPROVED")
 	const [search, setSearch] = useState("")
 
 	const { item: selectedProfile, open: drawerOpen, openDrawer, closeDrawer } = useDrawer<CommunityProfile>()
