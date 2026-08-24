@@ -30,6 +30,7 @@ import {
 	Handshake,
 	Headset,
 	Receipt,
+	Rocket,
 	type LucideIcon,
 } from "lucide-react"
 import { useAuthStore } from "@/stores/auth.store"
@@ -152,6 +153,12 @@ const NAV: NavItem[] = [
 				href: "/brands/interests",
 				permission: "sponsorship.approve",
 			},
+		],
+	},
+	{
+		label: "Campaigns",
+		icon: Rocket,
+		subItems: [
 			{
 				label: "Campaign Queue",
 				href: "/campaigns/queue",
