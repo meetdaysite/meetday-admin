@@ -31,3 +31,10 @@ export async function getSponsorshipDeals(status?: SponsorshipDealStatus): Promi
 	})
 	return data
 }
+
+export async function getCampaignDeals(status?: SponsorshipDealStatus): Promise<SponsorshipDeal[]> {
+	const { data } = await apiClient.get<SponsorshipDeal[]>("/admin/campaign-deals", {
+		params: status ? { status } : undefined,
+	})
+	return data
+}

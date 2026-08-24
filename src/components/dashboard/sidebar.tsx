@@ -126,6 +126,11 @@ const NAV: NavItem[] = [
 				icon: Handshake,
 			},
 			{
+				label: "Campaign Deals",
+				href: "/campaign-deals",
+				icon: Handshake,
+			},
+			{
 				label: "Payments",
 				href: "/sponsorship-payments",
 				icon: Receipt,
