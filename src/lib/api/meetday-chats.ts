@@ -16,8 +16,8 @@ export type MeetdayChatThread = {
 
 export type MeetdayChatMessage = {
 	id: string
-	senderType: "USER" | "ADMIN"
-	senderId: string
+	senderType: "USER" | "ADMIN" | "BOT"
+	senderId: string | null
 	content: string
 	mediaUrl?: string | null
 	createdAt: string
@@ -45,5 +45,10 @@ export async function sendMeetdayChatMessage(
 	payload: { content?: string; mediaKey?: string },
 ): Promise<MeetdayChatMessage> {
 	const { data } = await apiClient.post<MeetdayChatMessage>(`/admin/meetday-chats/${threadId}/messages`, payload)
+	return data
+}
+
+export async function resolveMeetdayChat(threadId: string): Promise<MeetdayChatMessage> {
+	const { data } = await apiClient.post<MeetdayChatMessage>(`/admin/meetday-chats/${threadId}/resolve`)
 	return data
 }
