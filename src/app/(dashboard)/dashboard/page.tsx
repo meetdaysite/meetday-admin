@@ -1286,9 +1286,9 @@ type UpdateItem = {
 }
 
 const UPDATE_ICONS: Record<string, LucideIcon> = {
-	"New community rep": Users,
+	"New host": Users,
 	"New brand": Users,
-	"New proposal": HandCoins,
+	"New sponsorship": HandCoins,
 	"New community profile": Flag,
 }
 
@@ -1471,7 +1471,7 @@ export default function DashboardPage() {
 		const items: UpdateItem[] = [
 			...(recentHosts.data ?? []).map(h => ({
 				id: h.id,
-				label: "New community rep",
+				label: "New host",
 				title: h.displayName || `${h.user.firstName} ${h.user.lastName}`,
 				createdAt: h.createdAt ?? new Date(0).toISOString(),
 				href: "/hosts",
@@ -1485,7 +1485,7 @@ export default function DashboardPage() {
 			})),
 			...(recentSponsorships.data ?? []).map(s => ({
 				id: s.id,
-				label: "New proposal",
+				label: "New sponsorship",
 				title: s.name || "Untitled proposal",
 				createdAt: s.createdAt,
 				href: "/sponsorships",
@@ -1511,14 +1511,14 @@ export default function DashboardPage() {
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 				<StatCard
 					icon={HandCoins}
-					label="Sponsorships"
+					label="Proposals"
 					value={sponsorshipsTotal.data ?? "—"}
 					sub={`${sponsorshipsPending.data ?? "—"} pending review`}
 					href="/sponsorships"
 				/>
 				<StatCard
 					icon={Users}
-					label="Hosts"
+					label="Community Reps"
 					value={hostsTotal.data ?? "—"}
 					sub={`${hostsPending.data ?? "—"} pending review`}
 					href="/hosts"
