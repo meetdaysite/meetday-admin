@@ -43,7 +43,7 @@ import { usePermission } from "@/lib/hooks/use-permission"
 import { getPendingSponsorships, getSponsorships } from "@/lib/api/sponsorships"
 import { getPendingHosts, getHosts } from "@/lib/api/hosts"
 import { getPendingBrands, getBrands } from "@/lib/api/brands"
-import { getCommunityProfiles } from "@/lib/api/community-profiles"
+import { getCommunityProfiles, getPendingCommunityProfiles } from "@/lib/api/community-profiles"
 import { sendAnnouncement } from "@/lib/api/announcements"
 import { getSponsorshipChats, type SponsorshipChatThread } from "@/lib/api/sponsorship-chats"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
@@ -1438,6 +1438,18 @@ export default function DashboardPage() {
 		enabled: canSeeBrands,
 		refetchInterval: REFRESH_INTERVAL,
 	})
+	const communityProfilesTotal = useQuery({
+		queryKey: ["dashboard", "community-profiles-total"],
+		queryFn: () => getCommunityProfiles({ limit: 1 }).then(r => r.total),
+		enabled: canSeeSponsorships,
+		refetchInterval: REFRESH_INTERVAL,
+	})
+	const communityProfilesPending = useQuery({
+		queryKey: ["dashboard", "community-profiles-pending"],
+		queryFn: () => getPendingCommunityProfiles({ limit: 1 }).then(r => r.total),
+		enabled: canSeeSponsorships,
+		refetchInterval: REFRESH_INTERVAL,
+	})
 
 	const recentHosts = useQuery({
 		queryKey: ["dashboard", "recent-hosts"],
@@ -1508,7 +1520,7 @@ export default function DashboardPage() {
 				<p className="text-sm font-semibold text-black/50">What&apos;s happening right now.</p>
 			</div>
 
-			<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 				<StatCard
 					icon={HandCoins}
 					label="Proposals"
@@ -1522,6 +1534,13 @@ export default function DashboardPage() {
 					value={hostsTotal.data ?? "—"}
 					sub={`${hostsPending.data ?? "—"} pending review`}
 					href="/hosts"
+				/>
+				<StatCard
+					icon={Flag}
+					label="Community Profiles"
+					value={communityProfilesTotal.data ?? "—"}
+					sub={`${communityProfilesPending.data ?? "—"} pending review`}
+					href="/community-profiles"
 				/>
 				<StatCard
 					icon={Users}
