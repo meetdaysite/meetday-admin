@@ -14,6 +14,7 @@ import {
 	getMeetdayChats,
 	getMeetdayChatMessages,
 	sendMeetdayChatMessage,
+	resolveMeetdayChat,
 	type MeetdayChatThread,
 } from "@/lib/api/meetday-chats"
 
@@ -143,6 +144,16 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 		onError: () => toast.error("Failed to send message."),
 	})
 
+	const resolveMutation = useMutation({
+		mutationFn: () => resolveMeetdayChat(thread.id),
+		onSuccess: () => {
+			toast.success("Marked as resolved.")
+			queryClient.invalidateQueries({ queryKey: ["admin-meetday-chat-messages", thread.id] })
+			queryClient.invalidateQueries({ queryKey: ["admin-meetday-chats"] })
+		},
+		onError: () => toast.error("Failed to mark as resolved."),
+	})
+
 	async function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0]
 		e.target.value = ""
@@ -176,10 +187,18 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 						thread.userName.charAt(0).toUpperCase()
 					)}
 				</div>
-				<div className="min-w-0">
+				<div className="min-w-0 flex-1">
 					<p className="text-body-sm font-semibold text-text-primary truncate">{thread.userName}</p>
 					<p className="text-caption text-text-tertiary truncate">{thread.userEmail}{thread.userRole ? ` · ${thread.userRole === "HOST" ? "Community" : thread.userRole}` : ""}</p>
 				</div>
+				<Button
+					variant="secondary"
+					size="sm"
+					onClick={() => resolveMutation.mutate()}
+					disabled={resolveMutation.isPending}
+				>
+					{resolveMutation.isPending ? "…" : "Mark as Resolved"}
+				</Button>
 			</div>
 
 			<div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
@@ -190,8 +209,9 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 				) : (
 					messages.map(m => {
 						const isMeetday = m.senderType === "ADMIN" || m.senderType === "BOT"
+						const isBot = m.senderType === "BOT"
 						const userRoleLabel = thread.userRole === "BRAND" ? "Brand" : thread.userRole === "HOST" ? "Community" : (thread.userRole || "")
-						const senderLabel = m.senderType === "BOT" ? "Meetday • Bot" : isMeetday ? "Meetday • Admin" : `${thread.userName}${userRoleLabel ? ` • ${userRoleLabel}` : ""}`
+						const senderLabel = isBot ? "Meetday • Bot" : isMeetday ? "Meetday • Admin" : `${thread.userName}${userRoleLabel ? ` • ${userRoleLabel}` : ""}`
 						return (
 							<div key={m.id} className={cn("flex flex-col max-w-[70%]", isMeetday ? "self-end items-end" : "self-start items-start")}>
 								<span className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary mb-0.5 px-1 font-heading">
@@ -210,7 +230,11 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 									<div
 										className={cn(
 											"px-3.5 py-2 rounded-2xl text-body-sm break-words border border-black/10",
-											isMeetday ? "bg-neutral-100 text-black rounded-br-sm" : (thread.userRole === "BRAND" ? "bg-[#EE2C2C] text-white rounded-bl-sm" : "bg-[#FFC940] text-black rounded-bl-sm"),
+											isBot
+												? "bg-black text-white rounded-br-sm"
+												: isMeetday
+													? "bg-neutral-100 text-black rounded-br-sm"
+													: (thread.userRole === "BRAND" ? "bg-[#EE2C2C] text-white rounded-bl-sm" : "bg-[#FFC940] text-black rounded-bl-sm"),
 										)}
 									>
 										{m.content}
