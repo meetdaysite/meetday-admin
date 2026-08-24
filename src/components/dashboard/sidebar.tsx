@@ -152,6 +152,18 @@ const NAV: NavItem[] = [
 				href: "/brands/interests",
 				permission: "sponsorship.approve",
 			},
+			{
+				label: "Campaign Queue",
+				href: "/campaigns/queue",
+				permission: "sponsorship.approve",
+				badgeKey: "campaignQueue",
+			},
+			{
+				label: "All Campaigns",
+				href: "/campaigns",
+				permission: "sponsorship.approve",
+				exact: true,
+			},
 		],
 	},
 	{

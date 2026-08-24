@@ -4,6 +4,7 @@ import { getPendingHosts } from "@/lib/api/hosts"
 // Events nav is commented out in the sidebar — badge queries below are commented out too.
 // import { getPendingEvents, getPendingRevisions } from "@/lib/api/events"
 import { getPendingSponsorships, getPendingSponsorshipRevisions } from "@/lib/api/sponsorships"
+import { getPendingCampaigns } from "@/lib/api/campaigns"
 import { getPendingCommunityProfiles, getPendingCommunityProfileRevisions } from "@/lib/api/community-profiles"
 import { getPendingBrands } from "@/lib/api/brands"
 import { getSupportTickets } from "@/lib/api/support-tickets"
@@ -24,6 +25,7 @@ export type SidebarBadgeKey =
 	| "communityProfileQueue"
 	| "communityProfileRevisions"
 	| "brandQueue"
+	| "campaignQueue"
 	| "pendingChats"
 	| "meetdayChats"
 
@@ -100,6 +102,13 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		refetchInterval: REFETCH_INTERVAL,
 	})
 
+	const campaignQueue = useQuery({
+		queryKey: ["sidebar-badge", "campaign-queue"],
+		queryFn: () => getPendingCampaigns({ limit: 1 }).then(r => r.total),
+		enabled: canSeeBrandQueue,
+		refetchInterval: REFETCH_INTERVAL,
+	})
+
 	const pendingChats = useQuery({
 		queryKey: ["sidebar-badge", "pending-chats"],
 		queryFn: () => getPendingSponsorshipChatsCount(),
@@ -134,6 +143,7 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		communityProfileQueue: communityProfileQueue.data,
 		communityProfileRevisions: communityProfileRevisions.data,
 		brandQueue: brandQueue.data,
+		campaignQueue: campaignQueue.data,
 		pendingChats: pendingChats.data,
 		meetdayChats: meetdayChats.data,
 	}

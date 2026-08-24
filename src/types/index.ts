@@ -817,3 +817,41 @@ export type SupportTicket = {
 	assignee: { id: string; firstName: string; lastName: string } | null
 	resolver: { id: string; firstName: string; lastName: string } | null
 }
+
+export type CampaignStatus = "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED"
+
+export type Campaign = {
+	id: string
+	brandProfileId: string
+	name: string
+	goal: string
+	locations: string[]
+	audience: string[]
+	startDate: string
+	endDate: string
+	offerType: "CASH" | "BARTER" | "BOTH"
+	budgetAmount: number
+	budgetCurrency: string
+	barterElements: string | null
+	description: string | null
+	status: CampaignStatus
+	adminRejectionRemark: string | null
+	createdAt: string
+	updatedAt: string
+	brandProfile: {
+		id: string
+		brandName: string
+		user: {
+			firstName: string
+			lastName: string
+			email: string
+		}
+	}
+}
+
+export type CampaignsListResponse = {
+	campaigns: Campaign[]
+	total: number
+	page: number
+	limit: number
+}
