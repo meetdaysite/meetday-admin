@@ -189,9 +189,9 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 					<p className="text-caption text-text-tertiary text-center m-auto">No messages yet.</p>
 				) : (
 					messages.map(m => {
-						const isMeetday = m.senderType === "ADMIN"
+						const isMeetday = m.senderType === "ADMIN" || m.senderType === "BOT"
 						const userRoleLabel = thread.userRole === "BRAND" ? "Brand" : thread.userRole === "HOST" ? "Community" : (thread.userRole || "")
-						const senderLabel = isMeetday ? "Meetday • Admin" : `${thread.userName}${userRoleLabel ? ` • ${userRoleLabel}` : ""}`
+						const senderLabel = m.senderType === "BOT" ? "Meetday • Bot" : isMeetday ? "Meetday • Admin" : `${thread.userName}${userRoleLabel ? ` • ${userRoleLabel}` : ""}`
 						return (
 							<div key={m.id} className={cn("flex flex-col max-w-[70%]", isMeetday ? "self-end items-end" : "self-start items-start")}>
 								<span className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary mb-0.5 px-1 font-heading">

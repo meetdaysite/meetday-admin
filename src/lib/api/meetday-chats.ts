@@ -16,7 +16,7 @@ export type MeetdayChatThread = {
 
 export type MeetdayChatMessage = {
 	id: string
-	senderType: "USER" | "ADMIN"
+	senderType: "USER" | "ADMIN" | "BOT"
 	senderId: string
 	content: string
 	mediaUrl?: string | null
