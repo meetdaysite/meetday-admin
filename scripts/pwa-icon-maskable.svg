@@ -1,4 +1,7 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" fill="#000000"/>
-  <text x="256" y="300" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="200" fill="#EE2C2C">M</text>
+  <rect width="512" height="512" fill="#EE2C2C"/>
+  <g font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="170" fill="#FFFFFF">
+    <text x="185" y="300" text-anchor="middle">e</text>
+    <text x="327" y="300" text-anchor="middle" transform="scale(-1,1) translate(-654,0)">e</text>
+  </g>
 </svg>
