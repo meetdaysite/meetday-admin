@@ -191,14 +191,16 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 					<p className="text-body-sm font-semibold text-text-primary truncate">{thread.userName}</p>
 					<p className="text-caption text-text-tertiary truncate">{thread.userEmail}{thread.userRole ? ` · ${thread.userRole === "HOST" ? "Community" : thread.userRole}` : ""}</p>
 				</div>
-				<Button
-					variant="secondary"
-					size="sm"
-					onClick={() => resolveMutation.mutate()}
-					disabled={resolveMutation.isPending}
-				>
-					{resolveMutation.isPending ? "…" : "Mark as Resolved"}
-				</Button>
+				{thread.botDormant && (
+					<Button
+						variant="secondary"
+						size="sm"
+						onClick={() => resolveMutation.mutate()}
+						disabled={resolveMutation.isPending}
+					>
+						{resolveMutation.isPending ? "…" : "Mark as Resolved"}
+					</Button>
+				)}
 			</div>
 
 			<div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">

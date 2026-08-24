@@ -10,6 +10,7 @@ export type MeetdayChatThread = {
 	lastMessageAt: string | null
 	lastMessagePreview: string | null
 	unreadCount: number
+	botDormant: boolean
 	userLogoUrl?: string | null
 	userAvatarUrl?: string | null
 }
