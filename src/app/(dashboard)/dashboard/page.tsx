@@ -1286,7 +1286,7 @@ type UpdateItem = {
 }
 
 const UPDATE_ICONS: Record<string, LucideIcon> = {
-	"New host": Users,
+	"New community rep": Users,
 	"New brand": Users,
 	"New sponsorship": HandCoins,
 	"New community profile": Flag,
@@ -1366,14 +1366,23 @@ function RecentUpdatesBox({ items, isLoading }: { items: UpdateItem[]; isLoading
 			) : items.length === 0 ? (
 				<p className="text-body-sm text-text-tertiary py-6 text-center">Nothing new yet.</p>
 			) : (
-				<div className="divide-y divide-border-subtle">
+				<div className="flex flex-col gap-2">
 					{items.map(item => {
 						const Icon = UPDATE_ICONS[item.label] ?? Users
+						let bgClass = "hover:bg-neutral-50 -mx-2 px-2"
+						const labelLower = item.label.toLowerCase()
+						if (labelLower.includes("community")) {
+							bgClass = "bg-[#FFC940]/10 hover:bg-[#FFC940]/20 px-3"
+						} else if (labelLower.includes("brand")) {
+							bgClass = "bg-[#EE2C2C]/10 hover:bg-[#EE2C2C]/20 px-3"
+						} else if (labelLower.includes("sponsorship")) {
+							bgClass = "bg-neutral-100/60 hover:bg-neutral-200/60 px-3"
+						}
 						return (
 							<Link
 								key={`${item.label}-${item.id}`}
 								href={item.href}
-								className="flex items-center gap-3 py-2.5 hover:bg-neutral-50 -mx-2 px-2 rounded-lg transition-colors"
+								className={`flex items-center gap-3 py-2.5 rounded-lg transition-colors ${bgClass}`}
 							>
 								<div className="size-8 rounded-md bg-neutral-100 flex items-center justify-center shrink-0">
 									<Icon size={14} className="text-text-secondary" />
@@ -1483,7 +1492,7 @@ export default function DashboardPage() {
 		const items: UpdateItem[] = [
 			...(recentHosts.data ?? []).map(h => ({
 				id: h.id,
-				label: "New host",
+				label: "New community rep",
 				title: h.displayName || `${h.user.firstName} ${h.user.lastName}`,
 				createdAt: h.createdAt ?? new Date(0).toISOString(),
 				href: "/hosts",
@@ -1551,17 +1560,9 @@ export default function DashboardPage() {
 				/>
 			</div>
 
-			<div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-				<div className="lg:col-span-2">
-					<RecentUpdatesBox items={recentUpdates} isLoading={recentUpdatesLoading} />
-				</div>
-				<AnnouncementsBox />
-			</div>
-
-			<div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-				<div className="lg:col-span-2">
-					<RecentChatsBox />
-				</div>
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+				<RecentUpdatesBox items={recentUpdates} isLoading={recentUpdatesLoading} />
+				<RecentChatsBox />
 			</div>
 		</div>
 	)
