@@ -210,6 +210,16 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 					messages.map(m => {
 						const isMeetday = m.senderType === "ADMIN" || m.senderType === "BOT"
 						const isBot = m.senderType === "BOT"
+						const isSystemMessage = m.content?.startsWith("[System]")
+						if (isSystemMessage) {
+							return (
+								<div key={m.id} className="w-full flex justify-center my-1">
+									<span className="text-[11px] font-semibold text-text-tertiary bg-neutral-100 px-3 py-1 rounded-full">
+										{m.content.replace(/^\[System\]\s*/, "")}
+									</span>
+								</div>
+							)
+						}
 						const userRoleLabel = thread.userRole === "BRAND" ? "Brand" : thread.userRole === "HOST" ? "Community" : (thread.userRole || "")
 						const senderLabel = isBot ? "Meetday • Bot" : isMeetday ? "Meetday • Admin" : `${thread.userName}${userRoleLabel ? ` • ${userRoleLabel}` : ""}`
 						return (
