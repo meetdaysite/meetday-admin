@@ -29,7 +29,6 @@ import {
 	MessagesSquare,
 	Handshake,
 	Headset,
-	Receipt,
 	Rocket,
 	type LucideIcon,
 } from "lucide-react"
@@ -99,6 +98,29 @@ const NAV: NavItem[] = [
 		],
 	},
 	{
+		label: "Brands",
+		icon: Sparkles,
+		subItems: [
+			{
+				label: "Brand Queue",
+				href: "/brands/queue",
+				permission: "sponsorship.approve",
+				badgeKey: "brandQueue",
+			},
+			{
+				label: "All Brands",
+				href: "/brands",
+				permission: "sponsorship.approve",
+				exact: true,
+			},
+			{
+				label: "Brand Interests",
+				href: "/brands/interests",
+				permission: "sponsorship.approve",
+			},
+		],
+	},
+	{
 		label: "Sponsorships",
 		icon: HandCoins,
 		subItems: [
@@ -119,39 +141,6 @@ const NAV: NavItem[] = [
 				href: "/sponsorships/revisions",
 				permission: "sponsorship.approve",
 				badgeKey: "sponsorshipRevisions",
-			},
-			{
-				label: "Sponsorship Deals",
-				href: "/sponsorship-deals",
-				icon: Handshake,
-			},
-			{
-				label: "Payments",
-				href: "/sponsorship-payments",
-				icon: Receipt,
-			},
-		],
-	},
-	{
-		label: "Brands",
-		icon: Sparkles,
-		subItems: [
-			{
-				label: "Brand Queue",
-				href: "/brands/queue",
-				permission: "sponsorship.approve",
-				badgeKey: "brandQueue",
-			},
-			{
-				label: "All Brands",
-				href: "/brands",
-				permission: "sponsorship.approve",
-				exact: true,
-			},
-			{
-				label: "Brand Interests",
-				href: "/brands/interests",
-				permission: "sponsorship.approve",
 			},
 		],
 	},
@@ -188,6 +177,24 @@ const NAV: NavItem[] = [
 				href: "/meetday-chats",
 				badgeKey: "meetdayChats",
 				icon: Headset,
+			},
+		],
+	},
+	{
+		label: "Deals",
+		icon: Handshake,
+		subItems: [
+			{
+				label: "Sponsorship Deals",
+				href: "/sponsorship-deals",
+			},
+			{
+				label: "Campaign Deals",
+				href: "/campaign-deals",
+			},
+			{
+				label: "Payments",
+				href: "/sponsorship-payments",
 			},
 		],
 	},

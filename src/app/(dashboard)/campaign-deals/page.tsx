@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/Button"
 import PageHeader from "@/components/ui/PageHeader"
-import { getSponsorshipDeals, type SponsorshipDeal, type SponsorshipDealStatus } from "@/lib/api/sponsorship-deals"
+import { getCampaignDeals, type SponsorshipDeal, type SponsorshipDealStatus } from "@/lib/api/sponsorship-deals"
 
 const POLL_MS = 15000
 
@@ -29,13 +29,13 @@ function formatDate(iso: string) {
 	return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
 }
 
-export default function SponsorshipDealsPage() {
+export default function CampaignDealsPage() {
 	const [statusFilter, setStatusFilter] = useState<SponsorshipDealStatus | undefined>(undefined)
 	const [selected, setSelected] = useState<SponsorshipDeal | null>(null)
 
 	const dealsQuery = useQuery({
-		queryKey: ["admin-sponsorship-deals", statusFilter],
-		queryFn: () => getSponsorshipDeals(statusFilter),
+		queryKey: ["admin-campaign-deals", statusFilter],
+		queryFn: () => getCampaignDeals(statusFilter),
 		refetchInterval: POLL_MS,
 	})
 
@@ -44,8 +44,8 @@ export default function SponsorshipDealsPage() {
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			<PageHeader
-				title="Sponsorship Deals"
-				description="Negotiated & locked Host ↔ Brand deals — final structured terms, separate from the raw chat."
+				title="Campaign Deals"
+				description="Negotiated & locked Host ↔ Brand campaign deals — final structured terms, separate from the raw chat."
 			/>
 
 			<div className="border border-border-default rounded-action overflow-hidden bg-surface-card">
@@ -67,7 +67,7 @@ export default function SponsorshipDealsPage() {
 				{dealsQuery.isLoading ? (
 					<p className="text-caption text-text-tertiary text-center py-10">Loading…</p>
 				) : deals.length === 0 ? (
-					<p className="text-caption text-text-tertiary text-center py-10">No sponsorship deals yet.</p>
+					<p className="text-caption text-text-tertiary text-center py-10">No campaign deals yet.</p>
 				) : (
 					<table className="w-full text-left">
 						<thead>
@@ -125,7 +125,7 @@ function DealDetailDrawer({ deal, onClose }: { deal: SponsorshipDeal; onClose: (
 				<div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3">
 					<Row label="Community" value={deal.communityName} />
 					<Row label="Brand" value={deal.brandName} />
-					<Row label="Proposal" value={deal.proposalName} />
+					<Row label="Campaign Name" value={deal.proposalName || "—"} />
 					<Row label="Project Name" value={deal.projectName} />
 					<div className="grid grid-cols-2 gap-3">
 						<Row label="Start Date" value={deal.startDate ? formatDate(deal.startDate) : "—"} />
