@@ -253,8 +253,8 @@ export default function ProfilePage() {
 
 			{/* Options Menu List */}
 			<div className="flex flex-col mt-6 divide-y divide-black/10">
-				{/* Super Admin Manage Admins */}
-				{profile.role.name === "SUPER_ADMIN" && (
+				{/* Manage Admins \u2014 shown to anyone who can invite admins (Super Admin, Admin) */}
+				{(profile.role.name === "SUPER_ADMIN" || profile.role.name === "CITY_ADMIN") && (
 					<div className="flex items-center justify-between py-4 border-b border-black/10 hover:bg-black/[0.01]">
 						<span className="font-heading font-black text-base text-black">Manage Admins</span>
 						<div className="flex items-center gap-3">
