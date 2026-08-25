@@ -26,21 +26,30 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
 		"support.view",
 		"platform.config",
 	],
+	// Admin — full parity with Super Admin, per product decision (both created via the same invite flow).
 	CITY_ADMIN: [
+		"admin.invite",
 		"host.invite",
 		"host.approve",
 		"event.approve",
 		"event.revision.review",
 		"sponsorship.approve",
 		"communityProfile.approve",
+		"coupon.create",
+		"coupon.view",
 		"moderation.read",
 		"moderation.action",
+		"category.manage",
+		"interest.manage",
 		"order.view",
 		"audit.read",
 		"community.manage",
 		"support.view",
+		"platform.config",
 	],
-	MODERATOR: ["moderation.read", "moderation.action", "order.view", "event.revision.review"],
+	// Moderator — chat-only. Ongoing Chats and Meetday Chats have no permission gate (see sidebar.tsx),
+	// so an empty list here correctly hides every other permission-gated page/action.
+	MODERATOR: [],
 	SUPPORT:   ["moderation.read", "order.view", "support.view"],
 }
 

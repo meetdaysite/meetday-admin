@@ -27,7 +27,7 @@ type ActiveFilter = "ALL" | "true" | "false"
 
 const ROLE_FILTER_OPTIONS: { label: string; value: RoleFilter }[] = [
 	{ label: "All roles", value: "ALL" },
-	{ label: "City Admin", value: "CITY_ADMIN" },
+	{ label: "Admin", value: "CITY_ADMIN" },
 	{ label: "Moderator", value: "MODERATOR" },
 	{ label: "Support", value: "SUPPORT" },
 ]

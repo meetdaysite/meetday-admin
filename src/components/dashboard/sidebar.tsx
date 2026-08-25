@@ -301,12 +301,18 @@ function NavLink({
 
 export function Sidebar() {
 	const pathname = usePathname()
-	const { hasPermission, user } = useAuthStore()
+	const { hasPermission, user, role } = useAuthStore()
 	const { sidebarOpen, setSidebarOpen, sidebarCollapsed } = useUIStore()
 	const badgeCounts = useSidebarBadgeCounts()
 	const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
 	const collapsed = sidebarCollapsed
+
+	// Moderators are chat-only — everything else (including Dashboard/Announcements, which have
+	// no per-permission gate) is hidden for them.
+	const isChatOnly = role === "MODERATOR"
+	const visibleNav = isChatOnly ? NAV.filter(item => item.label === "Chats") : NAV
+	const visibleBottomNav = isChatOnly ? [] : BOTTOM_NAV
 
 	useEffect(() => {
 		let activeLabel: string | undefined
@@ -391,7 +397,7 @@ export function Sidebar() {
 					)}
 				>
 					{collapsed ? (
-						<Link href="/dashboard" className="shrink-0">
+						<Link href={isChatOnly ? "/sponsorship-chats" : "/dashboard"} className="shrink-0">
 							<Image
 								src="/favicon.ico"
 								alt="Meetday"
@@ -402,7 +408,7 @@ export function Sidebar() {
 							/>
 						</Link>
 					) : (
-						<Link href="/dashboard" className="min-w-0">
+						<Link href={isChatOnly ? "/sponsorship-chats" : "/dashboard"} className="min-w-0">
 							<Image
 								src="/brand_logo.svg"
 								alt="Meetday"
@@ -417,7 +423,7 @@ export function Sidebar() {
 
 				{/* Nav */}
 				<nav className="flex-1 overflow-y-auto py-3 space-y-1">
-					{NAV.map((item) => {
+					{visibleNav.map((item) => {
 						// Filter sub-items by permission
 						const visibleSubItems = item.subItems?.filter(sub => canSee(sub.permission))
 						const hasVisibleSubs = visibleSubItems && visibleSubItems.length > 0
@@ -522,7 +528,7 @@ export function Sidebar() {
 
 				{/* Fixed Bottom Navigation Links */}
 				<div className={cn("border-t border-white/10 pt-2 space-y-1 shrink-0", collapsed ? "flex flex-col items-center pb-2" : "pb-1")}>
-					{BOTTOM_NAV.filter(item => canSee(item.permission)).map((item) => {
+					{visibleBottomNav.filter(item => canSee(item.permission)).map((item) => {
 						const badgeCount = item.badgeKey ? badgeCounts[item.badgeKey] : undefined
 						return (
 							<NavLink

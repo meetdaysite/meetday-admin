@@ -25,7 +25,7 @@ const inviteSchema = z
 			if (data.roleName === "CITY_ADMIN") return data.managedCities.length > 0
 			return true
 		},
-		{ message: "At least one city is required for City Admin", path: ["managedCities"] },
+		{ message: "At least one city is required for Admin", path: ["managedCities"] },
 	)
 
 type InviteFormValues = z.infer<typeof inviteSchema>
@@ -51,6 +51,8 @@ export type InviteAdminDrawerProps = {
 //  Helpers
 
 function toLabel(name: string) {
+	// CITY_ADMIN is surfaced to users simply as "Admin" (full-access role, not scoped to a city concept).
+	if (name === "CITY_ADMIN") return "Admin"
 	return name
 		.split("_")
 		.map((w) => w.charAt(0) + w.slice(1).toLowerCase())
@@ -179,9 +181,7 @@ export function InviteAdminDrawer({
 		setRolesLoading(true)
 		fetchAdminRoles()
 			.then((data) => {
-							// Only Super Admin and Support are invitable for now — City Admin and Moderator
-				// are hidden from this drawer (not deleted from the DB, just not offered here).
-				const allowed = data.filter((r) => r.name === "SUPER_ADMIN" || r.name === "SUPPORT")
+				const allowed = data.filter((r) => r.name === "SUPER_ADMIN" || r.name === "CITY_ADMIN" || r.name === "MODERATOR" || r.name === "SUPPORT")
 				setRoles(allowed)
 				if (allowed[0]) {
 					setValue("roleId", allowed[0].id)

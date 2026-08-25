@@ -70,7 +70,7 @@ export default function LoginPage() {
 				idToken,
 				data.cityScope,
 			)
-			router.push("/dashboard")
+			router.push(data?.role?.name === "MODERATOR" ? "/sponsorship-chats" : "/dashboard")
 		} catch {
 			toast.error("Invalid credentials. Please try again.")
 		}

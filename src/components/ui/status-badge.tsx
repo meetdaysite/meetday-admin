@@ -69,6 +69,11 @@ const BADGE_CONFIG: Partial<Record<string, { label: string; className: string }>
 	HIGH:   { label: "High",   className: "bg-orange-50 text-orange-700 border-orange-200" },
 	NORMAL: { label: "Normal", className: "bg-blue-50 text-blue-700 border-blue-200" },
 	LOW:    { label: "Low",    className: "bg-green-50 text-green-700 border-green-200" },
+	// Admin roles
+	SUPER_ADMIN: { label: "Super Admin", className: "bg-purple-50 text-purple-700 border-purple-200" },
+	CITY_ADMIN:  { label: "Admin",       className: "bg-blue-50 text-blue-700 border-blue-200" },
+	MODERATOR:   { label: "Moderator",   className: "bg-amber-50 text-amber-700 border-amber-200" },
+	SUPPORT:     { label: "Support",     className: "bg-neutral-100 text-text-secondary border-neutral-200" },
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────

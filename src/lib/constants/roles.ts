@@ -11,7 +11,7 @@ export const ROLE_STYLE: Record<Role, string> = {
 
 export const ROLE_LABEL: Record<Role, string> = {
 	SUPER_ADMIN: "Super Admin",
-	CITY_ADMIN: "City Admin",
+	CITY_ADMIN: "Admin",
 	MODERATOR: "Moderator",
 	SUPPORT: "Support",
 }
