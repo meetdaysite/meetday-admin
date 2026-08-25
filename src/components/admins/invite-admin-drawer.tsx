@@ -181,7 +181,8 @@ export function InviteAdminDrawer({
 		setRolesLoading(true)
 		fetchAdminRoles()
 			.then((data) => {
-				const allowed = data.filter((r) => r.name === "SUPER_ADMIN" || r.name === "CITY_ADMIN" || r.name === "MODERATOR" || r.name === "SUPPORT")
+				// Support is not offered here \u2014 Moderator now covers the same chat-only scope.
+				const allowed = data.filter((r) => r.name === "SUPER_ADMIN" || r.name === "CITY_ADMIN" || r.name === "MODERATOR")
 				setRoles(allowed)
 				if (allowed[0]) {
 					setValue("roleId", allowed[0].id)
