@@ -9,11 +9,14 @@ export type SponsorshipDeal = {
 	proposalName: string
 	communityName: string
 	brandName: string
-	eventName: string
-	eventDate: string
-	eventTime: string | null
+	projectName: string
+	startDate: string
+	endDate: string | null
+	time: string | null
 	venue: string
-	finalAmount: string | number
+	sponsorshipAmount: string | number
+	sponsorshipCategory: string | null
+	barterElements: string | null
 	deliverables: string
 	otherTerms: string | null
 	additionalNotes: string | null

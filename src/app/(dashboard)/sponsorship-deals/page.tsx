@@ -74,7 +74,7 @@ export default function SponsorshipDealsPage() {
 							<tr className="border-b border-border-default text-caption text-text-tertiary">
 								<th className="px-4 py-2.5 font-semibold">Community</th>
 								<th className="px-4 py-2.5 font-semibold">Brand</th>
-								<th className="px-4 py-2.5 font-semibold">Event</th>
+								<th className="px-4 py-2.5 font-semibold">Project Name</th>
 								<th className="px-4 py-2.5 font-semibold">Amount</th>
 								<th className="px-4 py-2.5 font-semibold">Status</th>
 								<th className="px-4 py-2.5 font-semibold">Updated</th>
@@ -89,8 +89,8 @@ export default function SponsorshipDealsPage() {
 								>
 									<td className="px-4 py-3 text-body-sm text-text-primary font-medium">{d.communityName}</td>
 									<td className="px-4 py-3 text-body-sm text-text-primary">{d.brandName}</td>
-									<td className="px-4 py-3 text-body-sm text-text-primary">{d.eventName}</td>
-									<td className="px-4 py-3 text-body-sm text-text-primary">{formatAmount(d.finalAmount)}</td>
+									<td className="px-4 py-3 text-body-sm text-text-primary">{d.projectName}</td>
+									<td className="px-4 py-3 text-body-sm text-text-primary">{formatAmount(d.sponsorshipAmount)}</td>
 									<td className="px-4 py-3">
 										<span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded", STATUS_BADGE_CLASS[d.status])}>
 											{STATUS_LABEL[d.status]}
@@ -115,7 +115,7 @@ function DealDetailDrawer({ deal, onClose }: { deal: SponsorshipDeal; onClose: (
 			<div className="bg-surface-card rounded-action border border-border-default shadow-floating w-full max-w-lg flex flex-col max-h-[90vh]">
 				<div className="flex items-center justify-between px-6 py-4 border-b border-border-default shrink-0">
 					<div className="flex items-center gap-2">
-						<p className="text-body-lg font-bold text-text-primary">{deal.eventName}</p>
+						<p className="text-body-lg font-bold text-text-primary">{deal.projectName}</p>
 						<span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded", STATUS_BADGE_CLASS[deal.status])}>
 							{STATUS_LABEL[deal.status]}
 						</span>
@@ -126,10 +126,20 @@ function DealDetailDrawer({ deal, onClose }: { deal: SponsorshipDeal; onClose: (
 					<Row label="Community" value={deal.communityName} />
 					<Row label="Brand" value={deal.brandName} />
 					<Row label="Proposal" value={deal.proposalName} />
-					<Row label="Event Date" value={formatDate(deal.eventDate)} />
-					{deal.eventTime && <Row label="Event Time" value={deal.eventTime} />}
+					<Row label="Project Name" value={deal.projectName} />
+					<div className="grid grid-cols-2 gap-3">
+						<Row label="Start Date" value={deal.startDate ? formatDate(deal.startDate) : "—"} />
+						<Row label="End Date" value={deal.endDate ? (deal.endDate.includes("-") ? formatDate(deal.endDate) : deal.endDate) : "—"} />
+					</div>
+					<div className="grid grid-cols-2 gap-3">
+						{deal.time && <Row label="Time" value={deal.time} />}
+						{deal.sponsorshipCategory && <Row label="Sponsorship Category" value={deal.sponsorshipCategory} />}
+					</div>
+					<div className="grid grid-cols-2 gap-3">
+						<Row label="Sponsorship Amount" value={formatAmount(deal.sponsorshipAmount)} />
+						{deal.barterElements && <Row label="Barter Elements" value={deal.barterElements} />}
+					</div>
 					<Row label="Venue" value={deal.venue} />
-					<Row label="Final Amount" value={formatAmount(deal.finalAmount)} />
 					<Row label="Deliverables" value={deal.deliverables} multiline />
 					{deal.otherTerms && <Row label="Other Terms / Conditions" value={deal.otherTerms} multiline />}
 					{deal.additionalNotes && <Row label="Additional Notes" value={deal.additionalNotes} multiline />}

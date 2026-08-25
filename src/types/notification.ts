@@ -10,6 +10,7 @@ export type NotificationType =
 	| "booking_cancelled"
 	| "subscription_upgraded"
 	| "subscription_expiring"
+	| "sponsorship_deal_locked"
 
 export type Notification = {
 	id: string

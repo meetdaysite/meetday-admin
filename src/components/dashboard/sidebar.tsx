@@ -29,7 +29,6 @@ import {
 	MessagesSquare,
 	Handshake,
 	Headset,
-	Receipt,
 	Rocket,
 	type LucideIcon,
 } from "lucide-react"
@@ -120,20 +119,23 @@ const NAV: NavItem[] = [
 				permission: "sponsorship.approve",
 				badgeKey: "sponsorshipRevisions",
 			},
+		],
+	},
+	{
+		label: "Deals",
+		icon: Handshake,
+		subItems: [
 			{
 				label: "Sponsorship Deals",
 				href: "/sponsorship-deals",
-				icon: Handshake,
 			},
 			{
 				label: "Campaign Deals",
 				href: "/campaign-deals",
-				icon: Handshake,
 			},
 			{
 				label: "Payments",
 				href: "/sponsorship-payments",
-				icon: Receipt,
 			},
 		],
 	},

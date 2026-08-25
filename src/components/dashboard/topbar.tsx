@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -8,6 +8,8 @@ import { useUIStore } from "@/stores/ui.store"
 import { useAuthStore } from "@/stores/auth.store"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Button } from "../ui/Button"
+
+import { NotificationBell } from "@/components/ui/NotificationBell"
 
 export function Topbar() {
 	const router = useRouter()
@@ -69,6 +71,8 @@ export function Topbar() {
 
 				{/* User info + logout */}
 				<div className="flex items-center gap-2">
+					<NotificationBell />
+					<div className="w-px h-4 bg-border-default mx-1" />
 					<div className="flex items-center gap-2">
 						<div className="w-7 h-7 rounded-full bg-surface-brand-soft text-text-brand text-xs border border-border-focus/20 font-semibold flex items-center justify-center shrink-0">
 							{initials}
