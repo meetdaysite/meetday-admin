@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { Image as ImageIcon, ArrowLeft } from "lucide-react"
@@ -10,6 +10,7 @@ import { uploadSponsorshipChatImage } from "@/lib/api/storage"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import { LinkifiedText } from "@/components/ui/linkified-text"
+import { MentionPicker, type MentionSuggestion } from "@/components/chat/MentionPicker"
 import { useChatTyping } from "@/lib/hooks/use-chat-typing"
 import {
 	getSponsorshipChats,
@@ -131,9 +132,16 @@ export default function SponsorshipChatsPage() {
 											)}
 										</div>
 										{t.unreadCount > 0 && (
-											<span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-[#EE2C2C] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-xs z-20">
-												{t.unreadCount > 9 ? "9+" : t.unreadCount}
-											</span>
+											<div className="absolute -top-1.5 -right-2 flex items-center gap-0.5 z-20">
+												{t.hasUnreadMention && (
+													<span className="size-4 rounded-full bg-black text-[#FFC940] text-[9px] font-black flex items-center justify-center border border-white shadow-xs" title="You were mentioned or replied to">
+														@
+													</span>
+												)}
+												<span className="min-w-[16px] h-[16px] px-1 rounded-full bg-[#EE2C2C] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-xs">
+													{t.unreadCount > 9 ? "9+" : t.unreadCount}
+												</span>
+											</div>
 										)}
 									</div>
 									<div className="flex-1 min-w-0">
@@ -198,12 +206,73 @@ function AdminChatThreadPanel({
 	const queryClient = useQueryClient()
 	const [input, setInput] = useState("")
 	const [replyingTo, setReplyingTo] = useState<SponsorshipChatMessage | null>(null)
-	const [uploadingImage, setUploadingImage] = useState(false)
+	const [mentionQuery, setMentionQuery] = useState("")
+	const [isMentionOpen, setIsMentionOpen] = useState(false)
 	const [viewingImage, setViewingImage] = useState<string | null>(null)
+	const [uploadingImage, setUploadingImage] = useState(false)
+	const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null)
+	const highlightTimerRef = useRef<NodeJS.Timeout | null>(null)
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 
 	const { typingSenderType, notifyTyping, notifyStopTyping } = useChatTyping(thread.id, "ADMIN")
+
+	const mentionSuggestions: MentionSuggestion[] = [
+		{
+			id: "community",
+			name: thread.communityName,
+			tag: thread.communityName.replace(/\s+/g, ""),
+			role: "Community",
+			avatarUrl: thread.communityLogoUrl,
+		},
+		{
+			id: "brand",
+			name: thread.brandName,
+			tag: thread.brandName.replace(/\s+/g, ""),
+			role: "Brand",
+			avatarUrl: thread.brandLogoUrl,
+		},
+	]
+
+	const handleInputChange = (val: string) => {
+		setInput(val)
+		if (val.trim()) notifyTyping()
+		else notifyStopTyping()
+
+		const lastAt = val.lastIndexOf("@")
+		if (lastAt !== -1 && (lastAt === 0 || /\s/.test(val[lastAt - 1]))) {
+			const q = val.slice(lastAt + 1)
+			if (!/\s/.test(q)) {
+				setMentionQuery(q)
+				setIsMentionOpen(true)
+				return
+			}
+		}
+		setIsMentionOpen(false)
+	}
+
+	const handleMentionSelect = (tag: string) => {
+		const lastAt = input.lastIndexOf("@")
+		if (lastAt !== -1) {
+			const next = input.slice(0, lastAt) + `@${tag} `
+			setInput(next)
+		} else {
+			setInput(prev => prev + `@${tag} `)
+		}
+		setIsMentionOpen(false)
+	}
+
+	const handleJumpToMessage = useCallback((messageId: string) => {
+		const el = document.getElementById(`msg-${messageId}`)
+		if (el) {
+			el.scrollIntoView({ behavior: "smooth", block: "center" })
+			if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current)
+			setHighlightedMessageId(messageId)
+			highlightTimerRef.current = setTimeout(() => {
+				setHighlightedMessageId(null)
+			}, 2000)
+		}
+	}, [])
 
 	const messagesQuery = useQuery({
 		queryKey: ["admin-sponsorship-chat-messages", thread.id],
@@ -342,49 +411,82 @@ function AdminChatThreadPanel({
 						}
 						const isMeetday = m.senderType === "ADMIN"
 						return (
-							<div key={m.id} className={cn("flex flex-col max-w-[85%] sm:max-w-[75%] md:max-w-[70%]", isMeetday ? "self-end items-end" : "self-start items-start")}>
+							<div
+								key={m.id}
+								id={`msg-${m.id}`}
+								className={cn(
+									"flex flex-col max-w-[85%] sm:max-w-[75%] md:max-w-[70%] transition-all duration-300 rounded-2xl p-1.5",
+									isMeetday ? "self-end items-end" : "self-start items-start",
+									highlightedMessageId === m.id && "ring-4 ring-[#EE2C2C] bg-[#FFC940]/40 shadow-xl scale-[1.03] animate-pulse"
+								)}
+							>
 								<div className="flex items-center gap-2 mb-0.5 px-1">
 									<span className="text-[10px] font-semibold uppercase tracking-wide text-black/40 font-heading">{labelFor(m.senderType)}</span>
 									<button type="button" onClick={() => setReplyingTo(m)} className="text-[10px] font-bold text-black/40 hover:text-black transition-colors">
 										Reply
 									</button>
 								</div>
-								{m.replyTo && (
-									<div className="mb-1 pl-2 border-l-2 border-[#EE2C2C] max-w-[220px]">
-										<p className="text-[9px] font-black uppercase text-black/40">{labelFor(m.replyTo.senderType)}</p>
-										<p className="text-[11px] font-semibold text-black/60 truncate">{replySnippet(m.replyTo)}</p>
-									</div>
-								)}
-								{m.deletedAt && (
-									<p className="text-[10px] font-bold italic text-black/40 mb-0.5">
-										🗑️ Deleted by {labelFor(m.senderType)}
-									</p>
-								)}
-								{m.mediaUrl && (
-									/* eslint-disable-next-line @next/next/no-img-element */
-									<img
-										src={m.mediaUrl}
-										alt="Shared image"
-										onClick={() => setViewingImage(m.mediaUrl!)}
-										className={cn(
-											"max-w-[220px] max-h-[220px] rounded-2xl border border-black/15 object-cover cursor-pointer mb-1 shadow-sm",
-											m.deletedAt && "opacity-50",
-										)}
-									/>
-								)}
-								{m.content && (
-									<div
-										className={cn(
-											"px-3.5 py-2 rounded-2xl text-xs sm:text-body-sm break-words break-all border",
-											m.senderType === "BRAND" && "bg-[#EE2C2C] text-white rounded-bl-xs border-[#EE2C2C]",
-											m.senderType === "HOST" && "bg-[#FFC940] text-black rounded-bl-xs border-[#FFC940]",
-											m.senderType === "ADMIN" && "bg-white md:bg-neutral-100 text-black rounded-br-xs border-black/10 shadow-xs md:shadow-none",
-											m.deletedAt && "opacity-50 italic line-through",
-										)}
-									>
-										<LinkifiedText text={m.content} />
-									</div>
-								)}
+								<div
+									className={cn(
+										"rounded-2xl p-2 sm:p-2.5 text-xs sm:text-body-sm break-words break-all border flex flex-col shadow-xs",
+										m.senderType === "BRAND" && "bg-[#EE2C2C] text-white rounded-bl-xs border-[#EE2C2C]",
+										m.senderType === "HOST" && "bg-[#FFC940] text-black rounded-bl-xs border-[#FFC940]",
+										m.senderType === "ADMIN" && "bg-neutral-100 text-black rounded-br-xs border-black/10",
+										m.deletedAt && "opacity-50 italic line-through",
+									)}
+								>
+									{m.replyTo && (
+										<button
+											type="button"
+											onClick={() => handleJumpToMessage(m.replyTo!.id)}
+											className={cn(
+												"w-full text-left mb-1.5 px-3 py-2 rounded-xl transition-all cursor-pointer block border-l-4 shadow-xs",
+												m.senderType === "BRAND"
+													? "bg-black/25 hover:bg-black/35 text-white border-white/80"
+													: m.senderType === "HOST"
+													? "bg-black/10 hover:bg-black/15 text-black border-black/40"
+													: "bg-white hover:bg-neutral-50 text-black border-[#EE2C2C] border border-black/10"
+											)}
+											title="Click to jump to message"
+										>
+											<p className={cn(
+												"text-[9px] font-black uppercase tracking-wider",
+												m.senderType === "BRAND" ? "text-white/80" : "text-black/60"
+											)}>
+												↩ Replying to {labelFor(m.replyTo.senderType)}
+											</p>
+											{m.replyTo.hasMedia && (
+												<p className={cn("text-xs font-semibold flex items-center gap-1 my-0.5", m.senderType === "BRAND" ? "text-white/90" : "text-black/70")}>
+													📷 Photo
+												</p>
+											)}
+											{m.replyTo.content && (
+												<p className={cn("text-xs font-medium break-words whitespace-pre-wrap leading-relaxed mt-0.5", m.senderType === "BRAND" ? "text-white/90" : "text-black/80")}>
+													{m.replyTo.content}
+												</p>
+											)}
+										</button>
+									)}
+									{m.deletedAt && (
+										<p className="text-[10px] font-bold italic text-black/40 mb-0.5">
+											🗑️ Deleted by {labelFor(m.senderType)}
+										</p>
+									)}
+									{m.mediaUrl && (
+										/* eslint-disable-next-line @next/next/no-img-element */
+										<img
+											src={m.mediaUrl}
+											alt="Shared image"
+											onClick={() => setViewingImage(m.mediaUrl!)}
+											className="max-w-[220px] max-h-[220px] rounded-xl border border-black/15 object-cover cursor-pointer mb-1 shadow-sm"
+										/>
+									)}
+									{m.content && (
+										<div className="px-1 py-0.5">
+											<LinkifiedText text={m.content} />
+										</div>
+									)}
+								</div>
 								{(m.content || m.mediaUrl) && (
 									<div className={cn("flex items-center gap-1 mt-0.5 text-[9px] font-bold text-black/40 px-1", isMeetday ? "justify-end" : "justify-start")}>
 										<span>
@@ -427,7 +529,14 @@ function AdminChatThreadPanel({
 						<button type="button" onClick={() => setReplyingTo(null)} className="text-[10px] font-bold text-[#EE2C2C] shrink-0">Cancel</button>
 					</div>
 				)}
-				<div className="flex items-center gap-1.5 sm:gap-2">
+				<div className="relative flex items-center gap-1.5 sm:gap-2">
+					<MentionPicker
+						suggestions={mentionSuggestions}
+						query={mentionQuery}
+						isOpen={isMentionOpen}
+						onSelect={handleMentionSelect}
+						onClose={() => setIsMentionOpen(false)}
+					/>
 					<input type="file" accept="image/*" ref={fileInputRef} onChange={handleImagePick} className="hidden" />
 					<button
 						type="button"
@@ -441,18 +550,14 @@ function AdminChatThreadPanel({
 					<EmojiPicker onSelect={emoji => setInput(prev => prev + emoji)} />
 					<input
 						value={input}
-						onChange={e => {
-							setInput(e.target.value)
-							if (e.target.value.trim()) notifyTyping()
-							else notifyStopTyping()
-						}}
+						onChange={e => handleInputChange(e.target.value)}
 						onKeyDown={e => {
-							if (e.key === "Enter" && !e.shiftKey && input.trim()) {
+							if (e.key === "Enter" && !e.shiftKey && input.trim() && !isMentionOpen) {
 								e.preventDefault()
 								sendMutation.mutate({ content: input.trim(), replyToId: replyingTo?.id })
 							}
 						}}
-						placeholder="Message as Meetday…"
+						placeholder="Message as Meetday… (type @ to tag)"
 						className="flex-1 min-w-0 rounded-full border border-black/15 focus:border-black bg-neutral-100 focus:bg-white px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-medium outline-none transition-all"
 					/>
 					<button

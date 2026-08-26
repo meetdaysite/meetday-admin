@@ -15,6 +15,7 @@ export type SponsorshipChatThread = {
 	lastMessageAt: string | null
 	lastMessagePreview: string | null
 	unreadCount: number
+	hasUnreadMention?: boolean
 	brandLogoUrl?: string | null
 	communityLogoUrl?: string | null
 	isDealLocked?: boolean
