@@ -223,7 +223,7 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 							)
 						}
 						const userRoleLabel = thread.userRole === "BRAND" ? "Brand" : thread.userRole === "HOST" ? "Community" : (thread.userRole || "")
-						const senderLabel = isBot ? "Meetday • Bot" : isMeetday ? "Meetday • Admin" : `${thread.userName}${userRoleLabel ? ` • ${userRoleLabel}` : ""}`
+						const senderLabel = isBot ? "Meetday" : isMeetday ? "Meetday • Admin" : `${thread.userName}${userRoleLabel ? ` • ${userRoleLabel}` : ""}`
 						return (
 							<div key={m.id} className={cn("flex flex-col max-w-[70%]", isMeetday ? "self-end items-end" : "self-start items-start")}>
 								<span className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary mb-0.5 px-1 font-heading">
