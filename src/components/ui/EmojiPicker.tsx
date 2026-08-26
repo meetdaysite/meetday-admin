@@ -104,13 +104,13 @@ export function EmojiPicker({ onSelect }: { onSelect: (emoji: string) => void })
 			<button
 				type="button"
 				onClick={() => setOpen(o => !o)}
-				className="shrink-0 size-9 rounded-xl border-[3px] border-black flex items-center justify-center hover:bg-neutral-50 text-base leading-none"
+				className="shrink-0 size-9 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-base leading-none transition-colors"
 				aria-label="Insert emoji"
 			>
 				🙂
 			</button>
 			{open && (
-				<div className="absolute bottom-full mb-2 left-0 z-50 w-80 rounded-2xl border-[3px] border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
+				<div className="absolute bottom-full mb-2 left-0 z-50 w-[280px] sm:w-80 rounded-2xl border-[3px] border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
 					<div className="flex border-b-[3px] border-black overflow-x-auto shrink-0">
 						{CATEGORIES.map((cat, i) => (
 							<button

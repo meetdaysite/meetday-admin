@@ -414,7 +414,7 @@ function AdminChatThreadPanel({
 			</div>
 
 			{/* Input & Action Bar */}
-			<div className="p-2.5 sm:p-3 border-t border-black/10 md:border-t-[3px] md:border-black bg-white flex flex-col gap-2 shrink-0">
+			<div className="p-2 sm:p-3 border-t border-black/10 md:border-t-[3px] md:border-black bg-white flex flex-col gap-2 shrink-0 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
 				{typingSenderType && (
 					<p className="text-[11px] font-bold text-black/40 italic">{typingLabelFor(typingSenderType)} is typing…</p>
 				)}
@@ -427,7 +427,7 @@ function AdminChatThreadPanel({
 						<button type="button" onClick={() => setReplyingTo(null)} className="text-[10px] font-bold text-[#EE2C2C] shrink-0">Cancel</button>
 					</div>
 				)}
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-1.5 sm:gap-2">
 					<input type="file" accept="image/*" ref={fileInputRef} onChange={handleImagePick} className="hidden" />
 					<button
 						type="button"
@@ -453,13 +453,13 @@ function AdminChatThreadPanel({
 							}
 						}}
 						placeholder="Message as Meetday…"
-						className="flex-1 rounded-full border border-black/15 focus:border-black bg-neutral-100 focus:bg-white px-4 py-2 text-xs sm:text-sm font-medium outline-none transition-all"
+						className="flex-1 min-w-0 rounded-full border border-black/15 focus:border-black bg-neutral-100 focus:bg-white px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-medium outline-none transition-all"
 					/>
 					<button
 						type="button"
 						onClick={() => input.trim() && sendMutation.mutate({ content: input.trim(), replyToId: replyingTo?.id })}
 						disabled={sendMutation.isPending || !input.trim()}
-						className="h-9 px-3.5 sm:px-4 rounded-full bg-[#EE2C2C] hover:bg-[#D12525] text-white font-black text-xs uppercase tracking-wider disabled:opacity-40 transition-all shrink-0"
+						className="h-9 px-3.5 sm:px-4 rounded-full bg-[#EE2C2C] hover:bg-[#D12525] text-white font-black text-xs uppercase tracking-wider disabled:opacity-40 transition-all shrink-0 flex items-center justify-center whitespace-nowrap"
 					>
 						{sendMutation.isPending ? "…" : "Send"}
 					</button>

@@ -32,7 +32,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 					</button>
 				</header>
 
-				<main className="flex-1 overflow-hidden min-h-0 flex flex-col">{children}</main>
+				<main className="flex-1 overflow-y-auto min-h-0 flex flex-col">{children}</main>
 			</div>
 		</div>
 	)
