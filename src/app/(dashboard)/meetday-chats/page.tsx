@@ -10,6 +10,7 @@ import PageHeader from "@/components/ui/PageHeader"
 import { uploadMeetdayChatImage } from "@/lib/api/storage"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
+import { LinkifiedText } from "@/components/ui/linkified-text"
 import {
 	getMeetdayChats,
 	getMeetdayChatMessages,
@@ -249,7 +250,7 @@ function MeetdayAdminChatPanel({ thread }: { thread: MeetdayChatThread }) {
 													: (thread.userRole === "BRAND" ? "bg-[#EE2C2C] text-white rounded-bl-sm" : "bg-[#FFC940] text-black rounded-bl-sm"),
 										)}
 									>
-										{m.content}
+										<LinkifiedText text={m.content} />
 									</div>
 								)}
 								{(m.content || m.mediaUrl) && (

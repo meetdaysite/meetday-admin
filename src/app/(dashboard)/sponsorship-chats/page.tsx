@@ -10,6 +10,7 @@ import PageHeader from "@/components/ui/PageHeader"
 import { uploadSponsorshipChatImage } from "@/lib/api/storage"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
+import { LinkifiedText } from "@/components/ui/linkified-text"
 import { useChatTyping } from "@/lib/hooks/use-chat-typing"
 import {
 	getSponsorshipChats,
@@ -149,6 +150,11 @@ export default function SponsorshipChatsPage() {
 											>
 												{t.chatStatus === "ACCEPTED" ? "Accepted" : "Requested"}
 											</span>
+											{t.isDealLocked && (
+												<span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#FFC940]/30 text-amber-900 flex items-center gap-1">
+													🔒 Locked
+												</span>
+											)}
 										</div>
 										{t.lastMessagePreview && <p className="text-caption text-text-tertiary truncate mt-1">{t.lastMessagePreview}</p>}
 									</div>
@@ -283,7 +289,14 @@ function AdminChatThreadPanel({
 					</div>
 				</div>
 				<div className="min-w-0">
-					<p className="text-body-sm font-semibold text-text-primary">{thread.brandName} ↔ {thread.communityName}</p>
+					<div className="flex items-center gap-2">
+						<p className="text-body-sm font-semibold text-text-primary">{thread.brandName} ↔ {thread.communityName}</p>
+						{thread.isDealLocked && (
+							<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FFC940] text-black border border-black/20">
+								🔒 Deal Locked
+							</span>
+						)}
+					</div>
 					<p className="text-caption text-text-tertiary">{thread.proposalName}</p>
 				</div>
 			</div>
@@ -347,7 +360,7 @@ function AdminChatThreadPanel({
 											m.deletedAt && "opacity-50 italic line-through",
 										)}
 									>
-										{m.content}
+										<LinkifiedText text={m.content} />
 									</div>
 								)}
 								{(m.content || m.mediaUrl) && (

@@ -17,6 +17,7 @@ export type SponsorshipChatThread = {
 	unreadCount: number
 	brandLogoUrl?: string | null
 	communityLogoUrl?: string | null
+	isDealLocked?: boolean
 }
 
 export type SponsorshipChatReplyTo = {

@@ -122,29 +122,25 @@ function DealDetailDrawer({ deal, onClose }: { deal: SponsorshipDeal; onClose: (
 					</div>
 					<Button variant="secondary" size="sm" onClick={onClose}>Close</Button>
 				</div>
-				<div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3">
-					<Row label="Community" value={deal.communityName} />
-					<Row label="Brand" value={deal.brandName} />
-					<Row label="Campaign Name" value={deal.proposalName || "—"} />
+				<div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3 text-sm">
 					<Row label="Project Name" value={deal.projectName} />
 					<div className="grid grid-cols-2 gap-3">
 						<Row label="Start Date" value={deal.startDate ? formatDate(deal.startDate) : "—"} />
 						<Row label="End Date" value={deal.endDate ? (deal.endDate.includes("-") ? formatDate(deal.endDate) : deal.endDate) : "—"} />
 					</div>
-					<div className="grid grid-cols-2 gap-3">
-						{deal.time && <Row label="Time" value={deal.time} />}
-						{deal.sponsorshipCategory && <Row label="Sponsorship Category" value={deal.sponsorshipCategory} />}
-					</div>
+					{deal.time && <Row label="Time" value={deal.time} />}
 					<div className="grid grid-cols-2 gap-3">
 						<Row label="Sponsorship Amount" value={formatAmount(deal.sponsorshipAmount)} />
 						{deal.barterElements && <Row label="Barter Elements" value={deal.barterElements} />}
 					</div>
 					<Row label="Venue" value={deal.venue} />
 					<Row label="Deliverables" value={deal.deliverables} multiline />
-					{deal.otherTerms && <Row label="Other Terms / Conditions" value={deal.otherTerms} multiline />}
-					{deal.additionalNotes && <Row label="Additional Notes" value={deal.additionalNotes} multiline />}
-					{deal.changeRequestNote && <Row label="Latest Change Request" value={deal.changeRequestNote} multiline />}
-					{deal.approvedAt && <Row label="Locked On" value={formatDate(deal.approvedAt)} />}
+					{deal.changeRequestNote && (
+						<div className="rounded-xl border border-red-200 bg-red-50 p-3">
+							<p className="text-[10px] font-bold uppercase text-red-600 mb-1">Changes Requested</p>
+							<p className="text-xs font-semibold text-text-primary">{deal.changeRequestNote}</p>
+						</div>
+					)}
 					<p className="text-caption text-text-tertiary">Version {deal.version}</p>
 				</div>
 			</div>
