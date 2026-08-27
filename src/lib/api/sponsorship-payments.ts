@@ -1,6 +1,7 @@
 import { apiClient } from "./client"
 
 export type SponsorshipDealPaymentStatus = "UNPAID" | "PAID"
+export type SponsorshipDealPaymentMode = "ONLINE" | "OFFLINE"
 
 export type SponsorshipDealPayment = {
 	id: string
@@ -16,6 +17,7 @@ export type SponsorshipDealPayment = {
 	taxAmount: string | number | null
 	totalAmount: string | number | null
 	paymentStatus: SponsorshipDealPaymentStatus
+	paymentMode: SponsorshipDealPaymentMode | null
 	paymentExpiresAt: string | null
 	paidAt: string | null
 	razorpayPaymentId: string | null
@@ -28,3 +30,12 @@ export async function getSponsorshipDealPayments(): Promise<SponsorshipDealPayme
 	})
 	return data
 }
+
+export async function markSponsorshipDealPaidOffline(
+	dealId: string,
+	payload: { transactionFeeAmount?: number; paidAt?: string },
+): Promise<SponsorshipDealPayment> {
+	const { data } = await apiClient.patch<SponsorshipDealPayment>(`/admin/sponsorship-deals/${dealId}/mark-paid-offline`, payload)
+	return data
+}
+
