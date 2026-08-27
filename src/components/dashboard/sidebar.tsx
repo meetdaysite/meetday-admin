@@ -27,6 +27,7 @@ import {
 	ChevronRight,
 	Megaphone,
 	MessagesSquare,
+	MessageSquarePlus,
 	Handshake,
 	Headset,
 	Rocket,
@@ -169,8 +170,13 @@ const NAV: NavItem[] = [
 			{
 				label: "Ongoing Chats",
 				href: "/sponsorship-chats",
-				badgeKey: "pendingChats",
 				icon: MessagesSquare,
+			},
+			{
+				label: "Chat Requests",
+				href: "/chat-requests",
+				badgeKey: "chatRequests",
+				icon: MessageSquarePlus,
 			},
 			{
 				label: "Meetday Chats",

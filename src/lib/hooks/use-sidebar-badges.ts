@@ -27,6 +27,7 @@ export type SidebarBadgeKey =
 	| "brandQueue"
 	| "campaignQueue"
 	| "pendingChats"
+	| "chatRequests"
 	| "meetdayChats"
 
 export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>> {
@@ -145,6 +146,7 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		brandQueue: brandQueue.data,
 		campaignQueue: campaignQueue.data,
 		pendingChats: pendingChats.data,
+		chatRequests: pendingChats.data,
 		meetdayChats: meetdayChats.data,
 	}
 }

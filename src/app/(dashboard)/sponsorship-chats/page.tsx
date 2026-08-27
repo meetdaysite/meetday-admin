@@ -16,8 +16,6 @@ import {
 	getSponsorshipChats,
 	getSponsorshipChatMessages,
 	sendSponsorshipChatMessage,
-	type ChatSenderType,
-	type SponsorshipChatStatus,
 	type SponsorshipChatMessage,
 	type SponsorshipChatThread,
 } from "@/lib/api/sponsorship-chats"
@@ -38,65 +36,102 @@ function timeAgo(iso: string | null) {
 
 export default function SponsorshipChatsPage() {
 	const queryClient = useQueryClient()
-	const [statusFilter, setStatusFilter] = useState<SponsorshipChatStatus>("ACCEPTED")
+	const [activeTab, setActiveTab] = useState<"SPONSORSHIP" | "CAMPAIGN">("SPONSORSHIP")
+	const [searchQuery, setSearchQuery] = useState("")
 	const [selectedId, setSelectedId] = useState<string | null>(null)
 
 	const threadsQuery = useQuery({
-		queryKey: ["admin-sponsorship-chats", statusFilter],
-		queryFn: () => getSponsorshipChats(statusFilter),
+		queryKey: ["admin-sponsorship-chats", "ACCEPTED"],
+		queryFn: () => getSponsorshipChats("ACCEPTED"),
 		refetchInterval: THREADS_POLL_MS,
 	})
 
-	const threads = [...(threadsQuery.data ?? [])].sort((a, b) => {
-		const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
-		const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
-		return tB - tA
+	const allThreads = threadsQuery.data ?? []
+
+	// Categorize threads into Sponsorships vs Campaigns
+	const tabThreads = allThreads.filter((t) => {
+		const isCampaign = t.type === "CAMPAIGN" || Boolean(t.campaignId) || (!t.proposalId && !t.proposalName && Boolean(t.campaignName))
+		return activeTab === "CAMPAIGN" ? isCampaign : !isCampaign
 	})
-	const selectedThread = threads.find(t => t.id === selectedId) ?? null
+
+	const filteredThreads = [...tabThreads]
+		.filter((t) => {
+			if (!searchQuery.trim()) return true
+			const q = searchQuery.toLowerCase()
+			return (
+				t.brandName?.toLowerCase().includes(q) ||
+				t.communityName?.toLowerCase().includes(q) ||
+				(t.proposalName && t.proposalName.toLowerCase().includes(q)) ||
+				(t.campaignName && t.campaignName.toLowerCase().includes(q)) ||
+				(t.targetName && t.targetName.toLowerCase().includes(q))
+			)
+		})
+		.sort((a, b) => {
+			const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
+			const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+			return tB - tA
+		})
+
+	const selectedThread = filteredThreads.find((t) => t.id === selectedId) ?? (filteredThreads.length > 0 && selectedId ? allThreads.find((t) => t.id === selectedId) ?? null : null)
 
 	function handleSelectThread(id: string) {
 		setSelectedId(id)
-		queryClient.setQueryData<SponsorshipChatThread[]>(["admin-sponsorship-chats", statusFilter], prev =>
-			prev?.map(t => (t.id === id ? { ...t, unreadCount: 0 } : t)),
+		queryClient.setQueryData<SponsorshipChatThread[]>(["admin-sponsorship-chats", "ACCEPTED"], (prev) =>
+			prev?.map((t) => (t.id === id ? { ...t, unreadCount: 0 } : t)),
 		)
 	}
 
 	return (
-		<div className="flex-1 min-h-0 flex flex-col h-full md:p-6 md:space-y-5 md:max-w-7xl md:mx-auto w-full">
-			<div className="hidden md:block shrink-0">
-				<PageHeader title="Ongoing Chats" description="Every Community ↔ Brand chat thread — view or step in as Meetday." />
+		<div className="flex-1 min-h-0 flex flex-col h-full md:p-6 md:space-y-4 md:max-w-7xl md:mx-auto w-full">
+			<div className="hidden md:flex items-center justify-between shrink-0">
+				<PageHeader title="Ongoing Chats" description="Active Community ↔ Brand chat threads — monitor and participate as Meetday." />
 			</div>
 
-			<div className="flex-1 min-h-0 flex flex-col md:flex-row bg-white overflow-hidden md:border-[3px] md:border-black md:rounded-[24px] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:h-[calc(100vh-270px)]">
+			<div className="flex-1 min-h-0 flex flex-col md:flex-row bg-white overflow-hidden md:border-[3px] md:border-black md:rounded-[24px] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:h-[calc(100vh-250px)]">
 				{/* Thread list */}
 				<div className={cn(
 					"flex flex-col h-full bg-white border-r-0 md:border-r-[3px] md:border-black",
-					selectedId ? "hidden md:flex md:w-80 shrink-0" : "w-full md:w-80 shrink-0 flex-1 md:flex-initial"
+					selectedId ? "hidden md:flex md:w-80 shrink-0" : "w-full md:w-80 shrink-0 flex-1 md:flex-initial",
 				)}>
+					{/* Dual Tabs: Sponsorships & Campaigns */}
 					<div className="flex border-b border-black/10 md:border-b-[3px] md:border-black shrink-0">
-						{(["ACCEPTED", "REQUESTED"] as SponsorshipChatStatus[]).map(s => (
+						{(["SPONSORSHIP", "CAMPAIGN"] as const).map((tab) => (
 							<button
-								key={s}
+								key={tab}
 								onClick={() => {
-									setStatusFilter(s)
+									setActiveTab(tab)
 									setSelectedId(null)
 								}}
 								className={cn(
-									"flex-grow py-3 text-xs font-black uppercase tracking-wider transition-colors relative",
-									statusFilter === s ? "bg-[#EE2C2C] text-white" : "bg-white text-black/50 hover:bg-neutral-50",
+									"flex-1 py-3 text-xs font-black uppercase tracking-wider transition-colors relative cursor-pointer",
+									activeTab === tab ? "bg-[#EE2C2C] text-white" : "bg-white text-black/60 hover:bg-neutral-50",
 								)}
 							>
-								{s === "REQUESTED" ? "Requests" : "General"}
+								{tab === "SPONSORSHIP" ? "Sponsorships" : "Campaigns"}
 							</button>
 						))}
 					</div>
+
+					{/* Search in threads */}
+					<div className="p-2 border-b border-black/10 bg-neutral-50/50 shrink-0">
+						<input
+							type="text"
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							placeholder={activeTab === "SPONSORSHIP" ? "Search sponsorships…" : "Search campaigns…"}
+							className="w-full px-3 py-1.5 text-xs rounded-xl border-[2px] border-neutral-300 bg-white placeholder:text-neutral-400 focus:border-black focus:outline-none transition-colors"
+						/>
+					</div>
+
 					<div className="flex-1 overflow-y-auto">
 						{threadsQuery.isLoading ? (
 							<p className="text-caption text-text-tertiary text-center py-8">Loading…</p>
-						) : threads.length === 0 ? (
-							<p className="text-caption text-text-tertiary text-center py-8 px-4">No chat threads yet.</p>
+						) : filteredThreads.length === 0 ? (
+							<p className="text-caption text-text-tertiary text-center py-8 px-4">
+								{searchQuery ? "No matching chats found." : `No ongoing ${activeTab === "SPONSORSHIP" ? "sponsorship" : "campaign"} chats yet.`}
+							</p>
 						) : (
-							threads.map(t => (
+							filteredThreads.map((t) => (
 								<button
 									key={t.id}
 									onClick={() => handleSelectThread(t.id)}
@@ -116,7 +151,7 @@ export default function SponsorshipChatsPage() {
 													className="w-full h-full object-cover"
 												/>
 											) : (
-												t.brandName.charAt(0).toUpperCase()
+												t.brandName?.charAt(0).toUpperCase() ?? "B"
 											)}
 										</div>
 										{/* Community Logo or Initials (front/right overlapping) */}
@@ -128,7 +163,7 @@ export default function SponsorshipChatsPage() {
 													className="w-full h-full object-cover"
 												/>
 											) : (
-												t.communityName.charAt(0).toUpperCase()
+												t.communityName?.charAt(0).toUpperCase() ?? "C"
 											)}
 										</div>
 										{t.unreadCount > 0 && (
@@ -152,15 +187,12 @@ export default function SponsorshipChatsPage() {
 											</div>
 											<span className="text-[10px] font-semibold text-text-tertiary shrink-0 self-start mt-0.5">{timeAgo(t.lastMessageAt ?? t.createdAt)}</span>
 										</div>
-										<p className="text-[11px] text-text-tertiary truncate mt-1">{t.proposalName}</p>
+										<p className="text-[11px] text-text-tertiary truncate mt-1">
+											{t.targetName || t.proposalName || t.campaignName || "Deal"}
+										</p>
 										<div className="flex items-center gap-1.5 mt-1">
-											<span
-												className={cn(
-													"text-[9px] font-bold px-1.5 py-0.5 rounded",
-													t.chatStatus === "ACCEPTED" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700",
-												)}
-											>
-												{t.chatStatus === "ACCEPTED" ? "Accepted" : "Requested"}
+											<span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-green-100 text-green-700">
+												Accepted
 											</span>
 											{t.isDealLocked && (
 												<span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#FFC940]/30 text-amber-900 flex items-center gap-0.5">
@@ -179,7 +211,7 @@ export default function SponsorshipChatsPage() {
 				{/* Thread detail */}
 				<div className={cn(
 					"min-w-0 flex flex-col h-full bg-[#F8F9FB] md:bg-white",
-					selectedId ? "flex-1 w-full" : "hidden md:flex flex-1"
+					selectedId ? "flex-1 w-full" : "hidden md:flex flex-1",
 				)}>
 					{!selectedThread ? (
 						<div className="flex-1 flex items-center justify-center text-body-sm text-text-tertiary">Select a chat to view</div>
@@ -257,7 +289,7 @@ function AdminChatThreadPanel({
 			const next = input.slice(0, lastAt) + `@${tag} `
 			setInput(next)
 		} else {
-			setInput(prev => prev + `@${tag} `)
+			setInput((prev) => prev + `@${tag} `)
 		}
 		setIsMentionOpen(false)
 	}
@@ -298,277 +330,221 @@ function AdminChatThreadPanel({
 		onError: () => toast.error("Failed to send message."),
 	})
 
-	async function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
-		const file = e.target.files?.[0]
-		e.target.value = ""
-		if (!file) return
+	async function handleSend() {
+		const text = input.trim()
+		if (!text || sendMutation.isPending) return
+		sendMutation.mutate({
+			content: text,
+			replyToId: replyingTo?.id,
+		})
+	}
+
+	async function handleImageFile(file: File) {
 		if (!file.type.startsWith("image/")) {
-			toast.error("Only image files can be sent.")
+			toast.error("Only images can be attached.")
+			return
+		}
+		if (file.size > 10 * 1024 * 1024) {
+			toast.error("Image must be under 10 MB.")
 			return
 		}
 		setUploadingImage(true)
 		try {
-			const mediaKey = await uploadSponsorshipChatImage(file, thread.id)
-			sendMutation.mutate({ mediaKey })
+			const key = await uploadSponsorshipChatImage(file, thread.id)
+			sendMutation.mutate({ mediaKey: key, replyToId: replyingTo?.id })
 		} catch {
-			toast.error("Failed to send image.")
+			toast.error("Image upload failed.")
 		} finally {
 			setUploadingImage(false)
+			if (fileInputRef.current) fileInputRef.current.value = ""
 		}
 	}
 
-	function labelFor(senderType: SponsorshipChatMessage["senderType"]) {
-		if (senderType === "HOST") return `${thread.communityName} • Community`
-		if (senderType === "BRAND") return `${thread.brandName} • Brand`
-		return "Meetday • Admin"
-	}
-
-	function replySnippet(replyTo: SponsorshipChatMessage["replyTo"]) {
-		if (!replyTo) return ""
-		return replyTo.content?.trim() ? replyTo.content : replyTo.hasMedia ? "📷 Photo" : ""
-	}
-
-	function typingLabelFor(senderType: ChatSenderType) {
-		if (senderType === "HOST") return thread.communityName
-		if (senderType === "BRAND") return thread.brandName
-		return "Meetday"
-	}
-
 	return (
-		<div className="flex-1 min-h-0 flex flex-col h-full">
-			{/* Chat Header */}
-			<div className="px-3 sm:px-5 py-2.5 sm:py-3 border-b border-black/10 md:border-b-[3px] md:border-black bg-white shrink-0 flex items-center justify-between gap-2.5">
-				<div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+		<div className="flex flex-col h-full bg-white relative">
+			{/* Top Bar */}
+			<div className="px-6 py-4 border-b border-black/10 flex items-center justify-between gap-4">
+				<div className="flex items-center gap-3">
 					{onBack && (
 						<button
-							type="button"
 							onClick={onBack}
-							className="md:hidden p-1.5 -ml-1 text-black/70 hover:text-black hover:bg-neutral-100 rounded-full shrink-0 transition-colors"
-							aria-label="Back to chat list"
+							className="md:hidden p-1.5 -ml-2 rounded-lg hover:bg-neutral-100 text-black"
+							aria-label="Back to thread list"
 						>
 							<ArrowLeft size={18} />
 						</button>
 					)}
-					<div className="relative w-11 h-9 shrink-0 select-none">
-						{/* Brand Logo or Initials */}
-						<div className="absolute left-0 top-0.5 w-7 h-7 rounded-full border border-black/10 bg-neutral-100 flex items-center justify-center font-bold text-[10px] text-text-secondary z-0 overflow-hidden">
-							{thread.brandLogoUrl ? (
-								<img
-									src={thread.brandLogoUrl}
-									alt={thread.brandName}
-									className="w-full h-full object-cover"
-								/>
-							) : (
-								thread.brandName.charAt(0).toUpperCase()
-							)}
+					<div className="flex items-center gap-3">
+						<div className="relative w-10 h-8 shrink-0 select-none">
+							<div className="absolute left-0 top-0.5 w-6 h-6 rounded-full border border-black/10 bg-neutral-100 flex items-center justify-center font-bold text-[9px] text-text-secondary z-0 overflow-hidden">
+								{thread.brandLogoUrl ? (
+									<img src={thread.brandLogoUrl} alt={thread.brandName} className="w-full h-full object-cover" />
+								) : (
+									thread.brandName?.charAt(0).toUpperCase() ?? "B"
+								)}
+							</div>
+							<div className="absolute right-0 bottom-0 w-6 h-6 rounded-full border-2 border-black bg-[#FFC940] flex items-center justify-center font-black text-[9px] text-black z-10 shadow-xs overflow-hidden">
+								{thread.communityLogoUrl ? (
+									<img src={thread.communityLogoUrl} alt={thread.communityName} className="w-full h-full object-cover" />
+								) : (
+									thread.communityName?.charAt(0).toUpperCase() ?? "C"
+								)}
+							</div>
 						</div>
-						{/* Community Logo or Initials */}
-						<div className="absolute right-0 bottom-0 w-7 h-7 rounded-full border-2 border-black bg-[#FFC940] flex items-center justify-center font-black text-[10px] text-black z-10 shadow-xs overflow-hidden">
-							{thread.communityLogoUrl ? (
-								<img
-									src={thread.communityLogoUrl}
-									alt={thread.communityName}
-									className="w-full h-full object-cover"
-								/>
-							) : (
-								thread.communityName.charAt(0).toUpperCase()
-							)}
+						<div>
+							<p className="text-body-sm font-bold text-text-primary">
+								{thread.brandName} ↔ {thread.communityName}
+							</p>
+							<p className="text-caption text-text-tertiary">
+								{thread.targetName || thread.proposalName || thread.campaignName || "Deal"}
+							</p>
 						</div>
-					</div>
-					<div className="min-w-0 flex-1">
-						<p className="text-xs sm:text-sm font-heading font-black text-black truncate leading-tight">
-							{thread.brandName} ↔ {thread.communityName}
-						</p>
-						<p className="text-[10px] sm:text-[11px] font-semibold text-black/50 truncate">
-							{thread.proposalName}
-						</p>
 					</div>
 				</div>
 
-				{thread.isDealLocked && (
-					<span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FFC940] text-black border border-black/20">
-						🔒 Deal Locked
+				<div className="flex items-center gap-2">
+					<span className="text-xs font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700">
+						Accepted
 					</span>
-				)}
+					{thread.isDealLocked && (
+						<span className="text-xs font-semibold px-2 py-0.5 rounded bg-[#FFC940]/30 text-amber-900 flex items-center gap-1">
+							🔒 Deal Locked
+						</span>
+					)}
+				</div>
 			</div>
 
-			{/* Messages Stream */}
-			<div className="flex-1 overflow-y-auto px-3 sm:px-5 py-4 flex flex-col gap-3">
-				{messagesQuery.isLoading ? (
-					<p className="text-caption text-text-tertiary text-center">Loading…</p>
-				) : messages.length === 0 ? (
-					<p className="text-caption text-text-tertiary text-center m-auto">
-						{thread.chatStatus === "REQUESTED" ? "The community hasn't accepted this request yet." : "No messages yet."}
-					</p>
-				) : (
-					messages.map(m => {
-						if (m.messageType === "SYSTEM") {
-							return (
-								<div key={m.id} className="self-center max-w-[90%] px-3 py-1 rounded-full bg-white border border-black/10 text-black/60 text-[11px] font-semibold text-center shadow-xs">
-									{m.content}
-								</div>
-							)
-						}
-						const isMeetday = m.senderType === "ADMIN"
-						return (
-							<div
-								key={m.id}
-								id={`msg-${m.id}`}
-								className={cn(
-									"flex flex-col max-w-[85%] sm:max-w-[75%] md:max-w-[70%] transition-all duration-300 rounded-2xl p-1.5",
-									isMeetday ? "self-end items-end" : "self-start items-start",
-									highlightedMessageId === m.id && "ring-4 ring-[#EE2C2C] bg-[#FFC940]/40 shadow-xl scale-[1.03] animate-pulse"
-								)}
-							>
-								<div className="flex items-center gap-2 mb-0.5 px-1">
-									<span className="text-[10px] font-semibold uppercase tracking-wide text-black/40 font-heading">{labelFor(m.senderType)}</span>
-									<button type="button" onClick={() => setReplyingTo(m)} className="text-[10px] font-bold text-black/40 hover:text-black transition-colors">
-										Reply
-									</button>
-								</div>
+			{/* Messages View */}
+			<div className="flex-1 p-6 overflow-y-auto space-y-4">
+				{messages.map((m) => {
+					const isAdmin = m.senderType === "ADMIN"
+					const isHost = m.senderType === "HOST"
+					const isBrand = m.senderType === "BRAND"
+
+					return (
+						<div
+							key={m.id}
+							id={`msg-${m.id}`}
+							className={cn(
+								"flex flex-col max-w-[70%] transition-colors duration-500 rounded-2xl p-3",
+								isAdmin
+									? "ml-auto bg-[#EE2C2C] text-white"
+									: isBrand
+										? "mr-auto bg-neutral-100 text-text-primary"
+										: "mr-auto bg-[#FFC940]/30 text-text-primary border border-amber-300",
+								highlightedMessageId === m.id && "ring-2 ring-blue-500",
+							)}
+						>
+							<div className="flex items-center justify-between gap-4 mb-1">
+								<span className={cn("text-[10px] font-bold uppercase", isAdmin ? "text-white/80" : "text-text-tertiary")}>
+									{isAdmin ? "Meetday Admin" : isBrand ? `${thread.brandName} (Brand)` : `${thread.communityName} (Community)`}
+								</span>
+								<span className={cn("text-[10px]", isAdmin ? "text-white/70" : "text-text-tertiary")}>
+									{new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+								</span>
+							</div>
+
+							{m.replyTo && (
 								<div
+									onClick={() => m.replyTo && handleJumpToMessage(m.replyTo.id)}
 									className={cn(
-										"rounded-2xl p-2 sm:p-2.5 text-xs sm:text-body-sm break-words break-all border flex flex-col shadow-xs",
-										m.senderType === "BRAND" && "bg-[#EE2C2C] text-white rounded-bl-xs border-[#EE2C2C]",
-										m.senderType === "HOST" && "bg-[#FFC940] text-black rounded-bl-xs border-[#FFC940]",
-										m.senderType === "ADMIN" && "bg-neutral-100 text-black rounded-br-xs border-black/10",
-										m.deletedAt && "opacity-50 italic line-through",
+										"text-[11px] p-2 rounded-lg mb-2 border-l-2 cursor-pointer",
+										isAdmin ? "bg-black/10 border-white text-white/90" : "bg-white border-neutral-400 text-text-secondary",
 									)}
 								>
-									{m.replyTo && (
-										<button
-											type="button"
-											onClick={() => handleJumpToMessage(m.replyTo!.id)}
-											className={cn(
-												"w-full text-left mb-1.5 px-3 py-2 rounded-xl transition-all cursor-pointer block border-l-4 shadow-xs",
-												m.senderType === "BRAND"
-													? "bg-black/25 hover:bg-black/35 text-white border-white/80"
-													: m.senderType === "HOST"
-													? "bg-black/10 hover:bg-black/15 text-black border-black/40"
-													: "bg-white hover:bg-neutral-50 text-black border-[#EE2C2C] border border-black/10"
-											)}
-											title="Click to jump to message"
-										>
-											<p className={cn(
-												"text-[9px] font-black uppercase tracking-wider",
-												m.senderType === "BRAND" ? "text-white/80" : "text-black/60"
-											)}>
-												↩ Replying to {labelFor(m.replyTo.senderType)}
-											</p>
-											{m.replyTo.hasMedia && (
-												<p className={cn("text-xs font-semibold flex items-center gap-1 my-0.5", m.senderType === "BRAND" ? "text-white/90" : "text-black/70")}>
-													📷 Photo
-												</p>
-											)}
-											{m.replyTo.content && (
-												<p className={cn("text-xs font-medium break-words whitespace-pre-wrap leading-relaxed mt-0.5", m.senderType === "BRAND" ? "text-white/90" : "text-black/80")}>
-													{m.replyTo.content}
-												</p>
-											)}
-										</button>
-									)}
-									{m.deletedAt && (
-										<p className="text-[10px] font-bold italic text-black/40 mb-0.5">
-											🗑️ Deleted by {labelFor(m.senderType)}
-										</p>
-									)}
-									{m.mediaUrl && (
-										/* eslint-disable-next-line @next/next/no-img-element */
-										<img
-											src={m.mediaUrl}
-											alt="Shared image"
-											onClick={() => setViewingImage(m.mediaUrl!)}
-											className="max-w-[220px] max-h-[220px] rounded-xl border border-black/15 object-cover cursor-pointer mb-1 shadow-sm"
-										/>
-									)}
-									{m.content && (
-										<div className="px-1 py-0.5">
-											<LinkifiedText text={m.content} />
-										</div>
-									)}
+									<span className="font-bold">{m.replyTo.senderType}: </span>
+									<span>{m.replyTo.content}</span>
 								</div>
-								{(m.content || m.mediaUrl) && (
-									<div className={cn("flex items-center gap-1 mt-0.5 text-[9px] font-bold text-black/40 px-1", isMeetday ? "justify-end" : "justify-start")}>
-										<span>
-											{(() => {
-												try {
-													return new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-												} catch {
-													return ""
-												}
-											})()}
-										</span>
-										{m.senderType === "ADMIN" && (() => {
-											const isRead = !!m.hostReadAt && !!m.brandReadAt
-											return (
-												<span className={cn("text-[10px] leading-none font-bold", isRead ? "text-red-500 font-black" : "text-gray-400")}>
-													✓✓
-												</span>
-											)
-										})()}
-									</div>
-								)}
-							</div>
-						)
-					})
-				)}
+							)}
+
+							{m.content && (
+								<div className="text-body-sm whitespace-pre-wrap">
+									<LinkifiedText text={m.content} />
+								</div>
+							)}
+
+							{m.mediaUrl && (
+								<img
+									src={m.mediaUrl}
+									alt="Attached"
+									onClick={() => setViewingImage(m.mediaUrl ?? null)}
+									className="mt-2 rounded-xl max-h-60 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+								/>
+							)}
+						</div>
+					)
+				})}
 				<div ref={bottomRef} />
 			</div>
 
-			{/* Input & Action Bar */}
-			<div className="p-2 sm:p-3 border-t border-black/10 md:border-t-[3px] md:border-black bg-white flex flex-col gap-2 shrink-0 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-				{typingSenderType && (
-					<p className="text-[11px] font-bold text-black/40 italic">{typingLabelFor(typingSenderType)} is typing…</p>
-				)}
-				{replyingTo && (
-					<div className="flex items-center justify-between gap-2 px-1">
-						<div className="min-w-0 pl-2 border-l-2 border-[#EE2C2C]">
-							<p className="text-[10px] font-black uppercase text-black/40">Replying to {labelFor(replyingTo.senderType)}</p>
-							<p className="text-[11px] font-semibold text-black/60 truncate">{replyingTo.content?.trim() ? replyingTo.content : (replyingTo.mediaUrl ? "Photo" : "")}</p>
-						</div>
-						<button type="button" onClick={() => setReplyingTo(null)} className="text-[10px] font-bold text-[#EE2C2C] shrink-0">Cancel</button>
-					</div>
-				)}
-				<div className="relative flex items-center gap-1.5 sm:gap-2">
+			{/* Typing indicator */}
+			{typingSenderType && (
+				<div className="px-6 py-1 text-[11px] font-medium text-text-tertiary italic">
+					{typingSenderType === "BRAND" ? thread.brandName : thread.communityName} is typing…
+				</div>
+			)}
+
+			{/* Reply bar */}
+			{replyingTo && (
+				<div className="px-6 py-2 bg-neutral-50 border-t border-black/10 flex items-center justify-between text-xs">
+					<span className="truncate">
+						Replying to <span className="font-bold">{replyingTo.senderType}</span>: {replyingTo.content}
+					</span>
+					<button onClick={() => setReplyingTo(null)} className="text-neutral-500 hover:text-black">
+						✕
+					</button>
+				</div>
+			)}
+
+			{/* Input Box */}
+			<div className="p-4 border-t border-black/10 flex items-center gap-2 bg-white relative">
+				{isMentionOpen && (
 					<MentionPicker
-						suggestions={mentionSuggestions}
-						query={mentionQuery}
 						isOpen={isMentionOpen}
+						query={mentionQuery}
+						suggestions={mentionSuggestions}
 						onSelect={handleMentionSelect}
 						onClose={() => setIsMentionOpen(false)}
 					/>
-					<input type="file" accept="image/*" ref={fileInputRef} onChange={handleImagePick} className="hidden" />
-					<button
-						type="button"
-						onClick={() => fileInputRef.current?.click()}
-						disabled={uploadingImage}
-						className="shrink-0 size-9 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-black/70 hover:text-black transition-colors disabled:opacity-50"
-						aria-label="Attach image"
-					>
-						<ImageIcon size={18} />
-					</button>
-					<EmojiPicker onSelect={emoji => setInput(prev => prev + emoji)} />
-					<input
-						value={input}
-						onChange={e => handleInputChange(e.target.value)}
-						onKeyDown={e => {
-							if (e.key === "Enter" && !e.shiftKey && input.trim() && !isMentionOpen) {
-								e.preventDefault()
-								sendMutation.mutate({ content: input.trim(), replyToId: replyingTo?.id })
-							}
-						}}
-						placeholder="Message as Meetday… (type @ to tag)"
-						className="flex-1 min-w-0 rounded-full border border-black/15 focus:border-black bg-neutral-100 focus:bg-white px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-medium outline-none transition-all"
-					/>
-					<button
-						type="button"
-						onClick={() => input.trim() && sendMutation.mutate({ content: input.trim(), replyToId: replyingTo?.id })}
-						disabled={sendMutation.isPending || !input.trim()}
-						className="h-9 px-3.5 sm:px-4 rounded-full bg-[#EE2C2C] hover:bg-[#D12525] text-white font-black text-xs uppercase tracking-wider disabled:opacity-40 transition-all shrink-0 flex items-center justify-center whitespace-nowrap"
-					>
-						{sendMutation.isPending ? "…" : "Send"}
-					</button>
-				</div>
+				)}
+
+				<input
+					type="file"
+					ref={fileInputRef}
+					onChange={(e) => e.target.files?.[0] && handleImageFile(e.target.files[0])}
+					className="hidden"
+					accept="image/*"
+				/>
+
+				<button
+					type="button"
+					onClick={() => fileInputRef.current?.click()}
+					disabled={uploadingImage}
+					className="p-2 rounded-xl hover:bg-neutral-100 text-neutral-600 transition-colors"
+					title="Attach Photo"
+				>
+					<ImageIcon size={20} />
+				</button>
+
+				<EmojiPicker onSelect={(emoji) => setInput((prev) => prev + emoji)} />
+
+				<input
+					type="text"
+					value={input}
+					onChange={(e) => handleInputChange(e.target.value)}
+					onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+					placeholder="Reply as Meetday Admin… (@mention)"
+					className="flex-1 px-4 py-2 text-sm rounded-xl border border-neutral-300 focus:border-black focus:outline-none transition-colors"
+				/>
+
+				<button
+					type="button"
+					onClick={handleSend}
+					disabled={sendMutation.isPending || !input.trim()}
+					className="px-4 py-2 bg-[#EE2C2C] text-white text-xs font-bold uppercase rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50"
+				>
+					Send
+				</button>
 			</div>
 
 			{viewingImage && <ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />}

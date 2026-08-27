@@ -2,13 +2,24 @@ import { apiClient } from "./client"
 
 export type SponsorshipChatStatus = "REQUESTED" | "ACCEPTED"
 export type ChatSenderType = "HOST" | "BRAND" | "ADMIN"
+export type ChatThreadType = "SPONSORSHIP" | "CAMPAIGN"
 
 export type SponsorshipChatThread = {
 	id: string
-	proposalId: string
-	proposalName: string
+	type?: ChatThreadType
+	proposalId?: string | null
+	proposalName?: string | null
+	campaignId?: string | null
+	campaignName?: string | null
 	communityName: string
 	brandName: string
+	senderRole?: "BRAND" | "HOST"
+	senderName?: string
+	senderLogoUrl?: string | null
+	receiverRole?: "HOST" | "BRAND"
+	receiverName?: string
+	receiverLogoUrl?: string | null
+	targetName?: string
 	chatStatus: SponsorshipChatStatus
 	createdAt: string
 	chatAcceptedAt: string | null
@@ -42,9 +53,17 @@ export type SponsorshipChatMessage = {
 	replyTo?: SponsorshipChatReplyTo | null
 }
 
-export async function getSponsorshipChats(status?: SponsorshipChatStatus): Promise<SponsorshipChatThread[]> {
+export type GetSponsorshipChatsParams = {
+	status?: SponsorshipChatStatus
+	type?: ChatThreadType
+}
+
+export async function getSponsorshipChats(
+	paramsOrStatus?: SponsorshipChatStatus | GetSponsorshipChatsParams,
+): Promise<SponsorshipChatThread[]> {
+	const params = typeof paramsOrStatus === "string" ? { status: paramsOrStatus } : paramsOrStatus
 	const { data } = await apiClient.get<SponsorshipChatThread[]>("/admin/sponsorship-chats", {
-		params: status ? { status } : undefined,
+		params,
 	})
 	return data
 }
