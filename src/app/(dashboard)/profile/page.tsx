@@ -15,8 +15,6 @@ import { useEffect, useState } from "react"
 import { EditProfileDrawer } from "@/components/profile/edit-profile-drawer"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
-// Role badge
-
 // Helpers
 
 function getInitials(firstName: string, lastName: string): string {
@@ -27,21 +25,21 @@ function getInitials(firstName: string, lastName: string): string {
 
 function ProfileSkeleton() {
 	return (
-		<div className="p-6 space-y-6 max-w-2xl mx-auto animate-pulse">
-			<div className="h-5 w-32 bg-neutral-200 rounded" />
-			<div className="bg-surface-canvas rounded-xl border border-border-default p-6 space-y-6">
+		<div className="p-6 md:p-10 space-y-6 max-w-[620px] mx-auto w-full animate-pulse">
+			<div className="h-6 w-36 bg-neutral-200 rounded" />
+			<div className="bg-surface-canvas rounded-2xl border border-border-default p-6 space-y-6">
 				<div className="flex items-center gap-4">
-					<div className="w-16 h-16 rounded-full bg-neutral-200 shrink-0" />
+					<div className="w-16 h-16 rounded-2xl bg-neutral-200 shrink-0" />
 					<div className="space-y-2">
-						<div className="h-4 w-40 bg-neutral-200 rounded" />
-						<div className="h-3 w-24 bg-neutral-100 rounded" />
+						<div className="h-5 w-44 bg-neutral-200 rounded" />
+						<div className="h-4 w-24 bg-neutral-100 rounded" />
 					</div>
 				</div>
-				<div className="divide-y divide-neutral-100">
-					{Array.from({ length: 5 }).map((_, i) => (
-						<div key={i} className="py-3 flex items-center gap-3">
-							<div className="w-4 h-4 bg-neutral-200 rounded shrink-0" />
-							<div className="h-3 w-48 bg-neutral-100 rounded" />
+				<div className="space-y-3 pt-4 border-t border-neutral-100">
+					{Array.from({ length: 4 }).map((_, i) => (
+						<div key={i} className="py-1.5 flex items-center gap-3">
+							<div className="w-24 h-4 bg-neutral-200 rounded shrink-0" />
+							<div className="h-4 w-44 bg-neutral-100 rounded" />
 						</div>
 					))}
 				</div>
@@ -125,7 +123,7 @@ export default function ProfilePage() {
 
 	if (state === "access-denied") {
 		return (
-			<div className="p-6 max-w-2xl mx-auto">
+			<div className="p-6 max-w-[620px] mx-auto w-full">
 				<div className="flex flex-col items-center justify-center py-20 text-center">
 					<ShieldCheck size={32} className="mb-3 text-neutral-300" />
 					<p className="text-sm font-semibold text-text-primary">Access Denied</p>
@@ -139,7 +137,7 @@ export default function ProfilePage() {
 
 	if (state === "not-found") {
 		return (
-			<div className="p-6 max-w-2xl mx-auto">
+			<div className="p-6 max-w-[620px] mx-auto w-full">
 				<div className="flex flex-col items-center justify-center py-20 text-center">
 					<UserX size={32} className="mb-3 text-neutral-300" />
 					<p className="text-sm font-semibold text-text-primary">Profile Not Found</p>
@@ -153,7 +151,7 @@ export default function ProfilePage() {
 
 	if (state === "error") {
 		return (
-			<div className="p-6 max-w-2xl mx-auto">
+			<div className="p-6 max-w-[620px] mx-auto w-full">
 				<div className="flex flex-col items-center justify-center py-20 text-center">
 					<AlertTriangle size={32} className="mb-3 text-neutral-300" />
 					<p className="text-sm font-semibold text-text-primary">Something went wrong</p>
@@ -169,8 +167,9 @@ export default function ProfilePage() {
 
 	const initials = getInitials(profile.firstName, profile.lastName)
 	const roleName = profile.role.name
+
 	return (
-		<div className="max-w-2xl mx-auto py-10 px-6 space-y-8">
+		<div className="max-w-[620px] mx-auto py-10 md:py-14 px-6 space-y-8 w-full">
 			{/* Page Header */}
 			<div className="space-y-1">
 				<h1 className="text-[32px] font-black font-heading text-black tracking-tight leading-none">
@@ -189,8 +188,8 @@ export default function ProfilePage() {
 			/>
 
 			{/* Profile card: Yellow outer, white inner */}
-			<div className="bg-[#FFC940] border-[3px] border-black rounded-[24px] p-2.5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-				<div className="bg-white border-2 border-dashed border-black/10 rounded-[20px] p-6 flex flex-col gap-6">
+			<div className="bg-[#FFC940] border-[3px] border-black rounded-[24px] p-2.5 sm:p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] w-full">
+				<div className="bg-white border-2 border-dashed border-black/10 rounded-[20px] p-6 sm:p-7 flex flex-col gap-6">
 					{/* Avatar + name */}
 					<div className="flex items-center gap-4 pb-4 border-b border-dashed border-black/10">
 						{profile.avatarUrl ? (
@@ -219,30 +218,30 @@ export default function ProfilePage() {
 					</div>
 
 					{/* Info rows */}
-					<div className="flex flex-col gap-3">
-						<div className="flex gap-2 text-sm font-semibold">
-							<span className="text-black/50 w-28">Email ID :</span>
-							<span className="text-[#6C32D1] font-bold truncate max-w-[280px]">
+					<div className="flex flex-col gap-3.5 pt-1">
+						<div className="flex items-center gap-3 text-sm font-semibold">
+							<span className="text-black/50 w-28 shrink-0">Email ID :</span>
+							<span className="text-[#6C32D1] font-bold truncate">
 								{profile.email}
 							</span>
 						</div>
 
-						<div className="flex gap-2 text-sm font-semibold">
-							<span className="text-black/50 w-28">Phone No :</span>
+						<div className="flex items-center gap-3 text-sm font-semibold">
+							<span className="text-black/50 w-28 shrink-0">Phone No :</span>
 							<span className="text-[#6C32D1] font-bold">
 								{profile.phone || "Not specified"}
 							</span>
 						</div>
 
-						<div className="flex gap-2 text-sm font-semibold">
-							<span className="text-black/50 w-28">Member Since :</span>
+						<div className="flex items-center gap-3 text-sm font-semibold">
+							<span className="text-black/50 w-28 shrink-0">Member Since :</span>
 							<span className="text-[#6C32D1] font-bold">
 								{formatDateLong(profile.createdAt)}
 							</span>
 						</div>
 
-						<div className="flex gap-2 text-sm font-semibold">
-							<span className="text-black/50 w-28">Last Updated :</span>
+						<div className="flex items-center gap-3 text-sm font-semibold">
+							<span className="text-black/50 w-28 shrink-0">Last Updated :</span>
 							<span className="text-[#6C32D1] font-bold">
 								{formatDateLong(profile.updatedAt)}
 							</span>
@@ -252,16 +251,16 @@ export default function ProfilePage() {
 			</div>
 
 			{/* Options Menu List */}
-			<div className="flex flex-col mt-6 divide-y divide-black/10">
-				{/* Manage Admins \u2014 shown to anyone who can invite admins (Super Admin, Admin) */}
+			<div className="flex flex-col divide-y divide-black/10 w-full pt-3">
+				{/* Manage Admins — shown to anyone who can invite admins (Super Admin, Admin) */}
 				{(profile.role.name === "SUPER_ADMIN" || profile.role.name === "CITY_ADMIN") && (
-					<div className="flex items-center justify-between py-4 border-b border-black/10 hover:bg-black/[0.01]">
+					<div className="flex items-center justify-between py-4 border-b border-black/10 hover:bg-black/[0.01] transition-colors">
 						<span className="font-heading font-black text-base text-black">Manage Admins</span>
 						<div className="flex items-center gap-3">
 							<button
 								type="button"
 								onClick={() => router.push("/admins")}
-								className="bg-[#EE2C2C] text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
+								className="bg-[#EE2C2C] text-white text-[9px] font-black px-3 py-1.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none cursor-pointer"
 							>
 								MANAGE NOW
 							</button>
@@ -271,13 +270,13 @@ export default function ProfilePage() {
 				)}
 
 				{/* Edit Profile */}
-				<div className="flex items-center justify-between py-4 border-b border-black/10 hover:bg-black/[0.01]">
+				<div className="flex items-center justify-between py-4 border-b border-black/10 hover:bg-black/[0.01] transition-colors">
 					<span className="font-heading font-black text-base text-black">Edit Profile</span>
 					<div className="flex items-center gap-3">
 						<button
 							type="button"
 							onClick={() => setEditOpen(true)}
-							className="bg-[#EE2C2C] text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
+							className="bg-[#EE2C2C] text-white text-[9px] font-black px-3 py-1.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none cursor-pointer"
 						>
 							EDIT DETAILS
 						</button>
@@ -292,13 +291,13 @@ export default function ProfilePage() {
 						<button
 							onClick={handleResetPassword}
 							disabled={resetting}
-							className="bg-white border-[3px] border-black text-black rounded-2xl px-4 py-2 font-black text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all select-none"
+							className="bg-white border-[3px] border-black text-black rounded-2xl px-4 py-2 font-black text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all select-none cursor-pointer"
 						>
 							{resetting ? "SENDING…" : "RESET PASSWORD"}
 						</button>
 						<button
 							onClick={() => setConfirmOpen(true)}
-							className="bg-[#EE2C2C] border-[3px] border-black text-white rounded-2xl px-4 py-2 font-black text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all select-none"
+							className="bg-[#EE2C2C] border-[3px] border-black text-white rounded-2xl px-4 py-2 font-black text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all select-none cursor-pointer"
 						>
 							LOG OUT
 						</button>

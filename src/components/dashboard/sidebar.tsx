@@ -170,6 +170,7 @@ const NAV: NavItem[] = [
 			{
 				label: "Ongoing Chats",
 				href: "/sponsorship-chats",
+				badgeKey: "ongoingChats",
 				icon: MessagesSquare,
 			},
 			{
@@ -193,14 +194,17 @@ const NAV: NavItem[] = [
 			{
 				label: "Sponsorship Deals",
 				href: "/sponsorship-deals",
+				badgeKey: "sponsorshipDeals",
 			},
 			{
 				label: "Campaign Deals",
 				href: "/campaign-deals",
+				badgeKey: "campaignDeals",
 			},
 			{
 				label: "Payments",
 				href: "/sponsorship-payments",
+				badgeKey: "sponsorshipPayments",
 			},
 		],
 	},
