@@ -179,12 +179,6 @@ const NAV: NavItem[] = [
 				badgeKey: "chatRequests",
 				icon: MessageSquarePlus,
 			},
-			{
-				label: "Meetday Chats",
-				href: "/meetday-chats",
-				badgeKey: "meetdayChats",
-				icon: Headset,
-			},
 		],
 	},
 	{
@@ -223,11 +217,10 @@ const BOTTOM_NAV: NavItem[] = [
 		permission: "audit.read",
 	},
 	{
-		label: "Support Tickets",
-		href: "/support-tickets",
-		icon: LifeBuoy,
-		permission: "support.view",
-		badgeKey: "supportTickets",
+		label: "Support Chats",
+		href: "/meetday-chats",
+		icon: Headset,
+		badgeKey: "meetdayChats",
 	},
 ]
 

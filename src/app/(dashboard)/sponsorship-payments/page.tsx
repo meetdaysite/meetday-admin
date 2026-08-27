@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils"
 import { extractApiErrorMessage } from "@/lib/error-handler"
 import { Button } from "@/components/ui/Button"
+import PageHeader from "@/components/ui/PageHeader"
 import {
 	getSponsorshipDealPayments,
 	markSponsorshipDealPaidOffline,
@@ -330,16 +331,11 @@ export default function SponsorshipPaymentsPage() {
 	}, [payments, statusFilter, searchQuery])
 
 	return (
-		<div className="p-6 space-y-4 w-full max-w-7xl mx-auto">
-			{/* Compact Header */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
-				<div>
-					<h1 className="text-xl font-bold text-text-primary tracking-tight">Sponsorship Payments</h1>
-					<p className="text-xs text-text-secondary mt-0.5">
-						Brand payments for locked sponsorship deals — transaction fee + GST breakdown, due 3 days after locking.
-					</p>
-				</div>
-				<div className="flex items-center gap-2 shrink-0">
+		<div className="p-6 space-y-5 w-full max-w-7xl mx-auto">
+			<PageHeader
+				title="Payments"
+				description="Brand payments for locked sponsorship deals — transaction fee + GST breakdown, due 3 days after locking."
+				buttons={
 					<Button
 						variant="secondary"
 						size="sm"
@@ -349,8 +345,8 @@ export default function SponsorshipPaymentsPage() {
 					>
 						Refresh
 					</Button>
-				</div>
-			</div>
+				}
+			/>
 
 			{/* Top Metric Cards - Clean & Compact */}
 			<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
