@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { Image as ImageIcon, ArrowLeft } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, isPdfMediaUrl } from "@/lib/utils"
 import PageHeader from "@/components/ui/PageHeader"
 import { uploadSponsorshipChatImage } from "@/lib/api/storage"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
@@ -340,12 +340,12 @@ function AdminChatThreadPanel({
 	}
 
 	async function handleImageFile(file: File) {
-		if (!file.type.startsWith("image/")) {
-			toast.error("Only images can be attached.")
+		if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
+			toast.error("Only images or PDFs can be attached.")
 			return
 		}
 		if (file.size > 10 * 1024 * 1024) {
-			toast.error("Image must be under 10 MB.")
+			toast.error("File must be under 10 MB.")
 			return
 		}
 		setUploadingImage(true)
@@ -353,7 +353,7 @@ function AdminChatThreadPanel({
 			const key = await uploadSponsorshipChatImage(file, thread.id)
 			sendMutation.mutate({ mediaKey: key, replyToId: replyingTo?.id })
 		} catch {
-			toast.error("Image upload failed.")
+			toast.error("Upload failed.")
 		} finally {
 			setUploadingImage(false)
 			if (fileInputRef.current) fileInputRef.current.value = ""
@@ -464,12 +464,23 @@ function AdminChatThreadPanel({
 							)}
 
 							{m.mediaUrl && (
-								<img
-									src={m.mediaUrl}
-									alt="Attached"
-									onClick={() => setViewingImage(m.mediaUrl ?? null)}
-									className="mt-2 rounded-xl max-h-60 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-								/>
+								isPdfMediaUrl(m.mediaUrl) ? (
+									<a
+										href={m.mediaUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl border border-black/15 bg-white hover:bg-neutral-50 text-sm font-bold text-black w-fit"
+									>
+										📄 View PDF
+									</a>
+								) : (
+									<img
+										src={m.mediaUrl}
+										alt="Attached"
+										onClick={() => setViewingImage(m.mediaUrl ?? null)}
+										className="mt-2 rounded-xl max-h-60 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+									/>
+								)
 							)}
 						</div>
 					)
@@ -513,7 +524,7 @@ function AdminChatThreadPanel({
 					ref={fileInputRef}
 					onChange={(e) => e.target.files?.[0] && handleImageFile(e.target.files[0])}
 					className="hidden"
-					accept="image/*"
+					accept="image/*,application/pdf"
 				/>
 
 				<button
@@ -521,7 +532,7 @@ function AdminChatThreadPanel({
 					onClick={() => fileInputRef.current?.click()}
 					disabled={uploadingImage}
 					className="p-2 rounded-xl hover:bg-neutral-100 text-neutral-600 transition-colors"
-					title="Attach Photo"
+					title="Attach image or PDF"
 				>
 					<ImageIcon size={20} />
 				</button>

@@ -24,7 +24,7 @@ type PresignRequest =
 	| { context: "COMMUNITY_FEED_MEDIA";  contentType: ImageContentType | "video/mp4"; resourceId: string }
 	| { context: "SPONSORSHIP_MEDIA";     contentType: ImageContentType }
 	| { context: "SPONSORSHIP_DOCUMENT";  contentType: PitchDocContentType }
-	| { context: "SPONSORSHIP_CHAT_MEDIA"; contentType: ImageContentType; resourceId: string }
+	| { context: "SPONSORSHIP_CHAT_MEDIA"; contentType: ImageContentType | "application/pdf"; resourceId: string }
 	| { context: "MEETDAY_CHAT_MEDIA";     contentType: ImageContentType; resourceId?: string }
 	| { context: "COMMUNITY_PAST_EVENT_MEDIA"; contentType: ImageContentType; resourceId: string }
 
@@ -150,7 +150,7 @@ export async function uploadSponsorshipDocument(file: File): Promise<string> {
 export async function uploadSponsorshipChatImage(file: File, interestId: string): Promise<string> {
 	const { uploadUrl, key } = await getPresignedUploadUrl({
 		context: "SPONSORSHIP_CHAT_MEDIA",
-		contentType: file.type as ImageContentType,
+		contentType: file.type as ImageContentType | "application/pdf",
 		resourceId: interestId,
 	})
 	await uploadToStorage(uploadUrl, file)
