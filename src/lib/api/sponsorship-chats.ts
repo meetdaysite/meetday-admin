@@ -30,6 +30,7 @@ export type SponsorshipChatThread = {
 	brandLogoUrl?: string | null
 	communityLogoUrl?: string | null
 	isDealLocked?: boolean
+	isDealClosed?: boolean
 }
 
 export type SponsorshipChatReplyTo = {

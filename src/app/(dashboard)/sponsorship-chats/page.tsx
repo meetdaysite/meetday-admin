@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { Image as ImageIcon, ArrowLeft } from "lucide-react"
+import { Image as ImageIcon, ArrowLeft, CheckCircle2 } from "lucide-react"
 import { cn, isPdfMediaUrl } from "@/lib/utils"
 import PageHeader from "@/components/ui/PageHeader"
 import { uploadSponsorshipChatImage } from "@/lib/api/storage"
@@ -195,11 +195,24 @@ export default function SponsorshipChatsPage() {
 											<span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-green-100 text-green-700">
 												Accepted
 											</span>
-											{t.isDealLocked && (
-												<span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#FFC940]/30 text-amber-900 flex items-center gap-0.5">
-													🔒 Locked
-												</span>
-											)}
+											{(() => {
+												const isThreadClosed = t.isDealClosed || (!!t.lastMessagePreview && (t.lastMessagePreview.toLowerCase().includes("approved the deliverables report") || t.lastMessagePreview.toLowerCase().includes("report approved") || t.lastMessagePreview.toLowerCase().includes("deal is closed")))
+												if (isThreadClosed) {
+													return (
+														<span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-black text-white flex items-center gap-1">
+															<CheckCircle2 size={10} strokeWidth={2.5} /> Closed
+														</span>
+													)
+												}
+												if (t.isDealLocked) {
+													return (
+														<span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#FFC940]/30 text-amber-900 flex items-center gap-0.5">
+															🔒 Locked
+														</span>
+													)
+												}
+												return null
+											})()}
 										</div>
 										{t.lastMessagePreview && <p className="text-[11px] text-text-tertiary truncate mt-1">{t.lastMessagePreview}</p>}
 									</div>
@@ -407,11 +420,15 @@ function AdminChatThreadPanel({
 					<span className="text-xs font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700">
 						Accepted
 					</span>
-					{thread.isDealLocked && (
+					{thread.isDealClosed ? (
+						<span className="text-xs font-bold px-2 py-0.5 rounded bg-black text-white flex items-center gap-1">
+							<CheckCircle2 size={12} strokeWidth={2.5} /> Deal Closed
+						</span>
+					) : thread.isDealLocked ? (
 						<span className="text-xs font-semibold px-2 py-0.5 rounded bg-[#FFC940]/30 text-amber-900 flex items-center gap-1">
 							🔒 Deal Locked
 						</span>
-					)}
+					) : null}
 				</div>
 			</div>
 
