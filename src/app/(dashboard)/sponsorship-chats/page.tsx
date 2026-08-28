@@ -11,6 +11,7 @@ import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import { LinkifiedText } from "@/components/ui/linkified-text"
 import { MentionPicker, type MentionSuggestion } from "@/components/chat/MentionPicker"
+import { SystemMessageBubble } from "@/components/chat/SystemMessageBubble"
 import { useChatTyping } from "@/lib/hooks/use-chat-typing"
 import {
 	getSponsorshipChats,
@@ -417,6 +418,10 @@ function AdminChatThreadPanel({
 			{/* Messages View */}
 			<div className="flex-1 p-6 overflow-y-auto space-y-4">
 				{messages.map((m) => {
+					if (m.messageType === "SYSTEM") {
+						return <SystemMessageBubble key={m.id} content={m.content ?? ""} />
+					}
+
 					const isAdmin = m.senderType === "ADMIN"
 					const isHost = m.senderType === "HOST"
 					const isBrand = m.senderType === "BRAND"
