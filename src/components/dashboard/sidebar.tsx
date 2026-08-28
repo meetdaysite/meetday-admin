@@ -6,21 +6,8 @@ import { usePathname } from "next/navigation"
 import * as Tooltip from "@radix-ui/react-tooltip"
 import {
 	LayoutDashboard,
-	Clock,
-	CalendarDays,
-	CalendarRange,
-	FileEdit,
-	ShieldCheck,
-	Tag,
-	UserCircle,
-	LayoutGrid,
-	ShoppingBag,
 	ScrollText,
-	Star,
 	Sparkles,
-	Users,
-	LifeBuoy,
-	Settings,
 	HandCoins,
 	BadgeCheck,
 	ChevronDown,
@@ -164,7 +151,7 @@ const NAV: NavItem[] = [
 		],
 	},
 	{
-		label: "Chats",
+		label: "Project Chats",
 		icon: MessagesSquare,
 		subItems: [
 			{
@@ -321,7 +308,7 @@ export function Sidebar() {
 	// Moderators are chat-only — everything else (including Dashboard/Announcements, which have
 	// no per-permission gate) is hidden for them.
 	const isChatOnly = role === "MODERATOR"
-	const visibleNav = isChatOnly ? NAV.filter(item => item.label === "Chats") : NAV
+	const visibleNav = isChatOnly ? NAV.filter(item => item.label === "Project Chats") : NAV
 	const visibleBottomNav = isChatOnly ? [] : BOTTOM_NAV
 
 	useEffect(() => {

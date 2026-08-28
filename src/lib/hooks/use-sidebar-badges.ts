@@ -165,12 +165,18 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		queryFn: async () => {
 			if (pathname === "/sponsorship-deals") return 0
 			const lastSeen = getLastSeenTimestamp("meetday_seen_sponsorship_deals")
-			const deals = await getSponsorshipDeals("APPROVED")
-			const unread = deals.filter((d) => {
-				const dealTime = new Date(d.approvedAt || d.updatedAt || d.createdAt).getTime()
-				return dealTime > lastSeen
-			})
-			return unread.length
+			try {
+				const deals = await getSponsorshipDeals("APPROVED")
+				if (!Array.isArray(deals)) return 0
+				const unread = deals.filter((d) => {
+					if (!d) return false
+					const dealTime = new Date(d.approvedAt || d.updatedAt || d.createdAt).getTime()
+					return dealTime > lastSeen
+				})
+				return unread.length
+			} catch {
+				return 0
+			}
 		},
 		refetchInterval: FAST_REFETCH_INTERVAL,
 	})
@@ -181,12 +187,18 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		queryFn: async () => {
 			if (pathname === "/campaign-deals") return 0
 			const lastSeen = getLastSeenTimestamp("meetday_seen_campaign_deals")
-			const deals = await getCampaignDeals("APPROVED")
-			const unread = deals.filter((d) => {
-				const dealTime = new Date(d.approvedAt || d.updatedAt || d.createdAt).getTime()
-				return dealTime > lastSeen
-			})
-			return unread.length
+			try {
+				const deals = await getCampaignDeals("APPROVED")
+				if (!Array.isArray(deals)) return 0
+				const unread = deals.filter((d) => {
+					if (!d) return false
+					const dealTime = new Date(d.approvedAt || d.updatedAt || d.createdAt).getTime()
+					return dealTime > lastSeen
+				})
+				return unread.length
+			} catch {
+				return 0
+			}
 		},
 		refetchInterval: FAST_REFETCH_INTERVAL,
 	})
@@ -197,13 +209,18 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		queryFn: async () => {
 			if (pathname === "/sponsorship-payments") return 0
 			const lastSeen = getLastSeenTimestamp("meetday_seen_sponsorship_payments")
-			const payments = await getSponsorshipDealPayments()
-			const unread = payments.filter((d) => {
-				if (d.paymentStatus !== "PAID") return false
-				const paidTime = new Date(d.paidAt || d.approvedAt || 0).getTime()
-				return paidTime > lastSeen
-			})
-			return unread.length
+			try {
+				const payments = await getSponsorshipDealPayments()
+				if (!Array.isArray(payments)) return 0
+				const unread = payments.filter((d) => {
+					if (!d || d.paymentStatus !== "PAID") return false
+					const paidTime = new Date(d.paidAt || d.approvedAt || 0).getTime()
+					return paidTime > lastSeen
+				})
+				return unread.length
+			} catch {
+				return 0
+			}
 		},
 		refetchInterval: FAST_REFETCH_INTERVAL,
 	})
