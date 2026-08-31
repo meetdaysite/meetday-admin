@@ -563,7 +563,7 @@ export function CreateCommunityProfileDrawer({
 
 					<div className="flex flex-col gap-2">
 						<div className="flex items-center justify-between">
-							<label className={labelClass}>Brands Worked With</label>
+							<label className={labelClass}>Associated Brands</label>
 							<span className="text-[11px] text-text-tertiary">Brand name + logo</span>
 						</div>
 						{brandsWorkedWith.map((brand, i) => (

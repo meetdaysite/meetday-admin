@@ -201,7 +201,7 @@ function ProposedChangesSection({ detail }: { detail: CommunityProfileDetail }) 
 			{hasBrandsChange && (
 				<div className="rounded-lg bg-blue-50/60 border border-blue-100 px-3 py-2.5 space-y-2">
 					<p className="text-[11px] font-semibold text-blue-700">
-						{addedBrands.length > 0 ? `Brands worked with (${addedBrands.length} proposed)` : "Brands worked with changed"}
+						{addedBrands.length > 0 ? `Associated brands (${addedBrands.length} proposed)` : "Associated brands changed"}
 					</p>
 					{addedBrands.length > 0 && (
 						<div className="flex flex-wrap gap-2">
@@ -352,7 +352,7 @@ function CommunityProfileDetailContent({ detail }: { detail: CommunityProfileDet
 				<>
 					<div className="border-t border-border-subtle" />
 					<div>
-						<SectionLabel>Brands Worked With</SectionLabel>
+						<SectionLabel>Associated Brands</SectionLabel>
 						<div className="flex flex-wrap gap-2">
 							{detail.brandsWorkedWith.map((brand, i) => (
 								<div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-50 border border-border-subtle">
