@@ -17,9 +17,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 	}
 
 	return (
-		<div className="min-h-screen flex bg-[#EE2C2C] p-0 lg:p-4 gap-0 lg:gap-4 overflow-hidden h-[100dvh] lg:min-w-[1200px]">
+		<div className="min-h-screen flex bg-[#EE2C2C] p-4 gap-4 overflow-hidden h-screen">
 			<Sidebar />
-			<div className="flex-1 flex flex-col min-w-0 bg-white lg:rounded-[36px] overflow-hidden h-full lg:h-[calc(100vh-2rem)]">
+			<div className="flex-1 flex flex-col min-w-0 bg-white rounded-[36px] overflow-hidden h-[calc(100vh-2rem)]">
 				{/* Mobile top bar */}
 				<header className="lg:hidden shrink-0 flex items-center justify-between px-4 py-3 bg-white border-b border-black/10">
 					<span className="text-sm font-black text-[#EE2C2C] tracking-tight">Meetday Admin</span>

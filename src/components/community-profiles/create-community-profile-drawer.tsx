@@ -1,14 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Loader2, ChevronLeft, Search, Mail } from "lucide-react"
+import { Loader2, ChevronLeft, Search, Mail, Pencil, X, Upload } from "lucide-react"
 import { toast } from "sonner"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ImageUploadZone } from "@/components/communities/create/ui/image-upload-zone"
 import { getEligibleHosts, createCommunityProfile, updateCommunityProfile } from "@/lib/api/community-profiles"
 import { getCategories } from "@/lib/api/categories"
-import { uploadCommunityProfileLogo, uploadCommunityPastEventImage } from "@/lib/api/storage"
+import { uploadCommunityProfileLogo, uploadCommunityPastEventImage, uploadCommunityBrandLogo } from "@/lib/api/storage"
 import type { Category, CommunityProfileDetail, EligibleHost } from "@/types"
 
 // ─── Types ────────────────────────────────────────────
@@ -22,6 +22,15 @@ type PastEventDraft = {
 }
 
 const emptyPastEventDraft = (): PastEventDraft => ({ name: "", description: "", images: [] })
+
+type BrandWorkedWithDraft = {
+	brandName: string
+	logoKey?: string
+	logoUrl?: string
+	logoFile?: File
+}
+
+const emptyBrandWorkedWithDraft = (): BrandWorkedWithDraft => ({ brandName: "" })
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -74,6 +83,7 @@ export function CreateCommunityProfileDrawer({
 	const [youtube, setYoutube] = useState("")
 	const [website, setWebsite] = useState("")
 	const [pastEvents, setPastEvents] = useState<PastEventDraft[]>([])
+	const [brandsWorkedWith, setBrandsWorkedWith] = useState<BrandWorkedWithDraft[]>([])
 
 	const [isLoading, setIsLoading] = useState(false)
 	const [error, setError] = useState<string | null>(null)
@@ -124,6 +134,13 @@ export function CreateCommunityProfileDrawer({
 				images: e.imageKeys.map((key, i) => ({ key, url: e.imageUrls[i] ?? "" })),
 			})),
 		)
+		setBrandsWorkedWith(
+			(p.brandsWorkedWith ?? []).map((b) => ({
+				brandName: b.brandName ?? "",
+				logoKey: b.logoKey ?? undefined,
+				logoUrl: b.logoUrl ?? undefined,
+			})),
+		)
 	}, [open, editingProfile])
 
 	function reset() {
@@ -146,6 +163,7 @@ export function CreateCommunityProfileDrawer({
 		setYoutube("")
 		setWebsite("")
 		setPastEvents([])
+		setBrandsWorkedWith([])
 		setError(null)
 	}
 
@@ -182,40 +200,81 @@ export function CreateCommunityProfileDrawer({
 	}
 
 	function addPastEventImage(index: number, file: File) {
-		if (!file.type.startsWith("image/")) {
-			toast.error("Only image files are accepted.")
-			return
-		}
+		const url = URL.createObjectURL(file)
 		setPastEvents((prev) =>
-			prev.map((e, i) => {
-				if (i !== index) return e
-				if (e.images.length >= 2) {
-					toast.error("Only up to 2 images per event are allowed.")
-					return e
-				}
-				return { ...e, images: [...e.images, { file, url: URL.createObjectURL(file) }] }
-			}),
+			prev.map((e, i) =>
+				i === index && e.images.length < 2
+					? { ...e, images: [...e.images, { url, file }] }
+					: e,
+			),
 		)
 	}
 
 	function removePastEventImage(eventIndex: number, imageIndex: number) {
 		setPastEvents((prev) =>
-			prev.map((e, i) => (i === eventIndex ? { ...e, images: e.images.filter((_, j) => j !== imageIndex) } : e)),
+			prev.map((e, i) =>
+				i === eventIndex
+					? { ...e, images: e.images.filter((_, j) => j !== imageIndex) }
+					: e,
+			),
+		)
+	}
+
+	function addBrandWorkedWith() {
+		setBrandsWorkedWith((prev) => [...prev, emptyBrandWorkedWithDraft()])
+	}
+
+	function removeBrandWorkedWith(index: number) {
+		setBrandsWorkedWith((prev) => prev.filter((_, i) => i !== index))
+	}
+
+	function updateBrandWorkedWithName(index: number, value: string) {
+		setBrandsWorkedWith((prev) => prev.map((b, i) => (i === index ? { ...b, brandName: value } : b)))
+	}
+
+	function updateBrandWorkedWithLogo(index: number, file: File) {
+		const url = URL.createObjectURL(file)
+		setBrandsWorkedWith((prev) =>
+			prev.map((b, i) => (i === index ? { ...b, logoUrl: url, logoFile: file, logoKey: undefined } : b)),
 		)
 	}
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault()
 		setError(null)
-		if (!selectedHost) return
 
-		if (!name.trim()) return setError("Name is required.")
-		if (!about.trim()) return setError("About is required.")
-		if (!logoKey) return setError("Logo is required.")
-		if (!size.trim()) return setError("Community size is required.")
-		if (!avgGuestCount.trim()) return setError("Average guest count is required.")
-		if (!experiencesPerYear.trim()) return setError("Experiences/year is required.")
-		if (categoryIds.size === 0) return setError("At least one category is required.")
+		if (!selectedHost) {
+			setError("Please select a host.")
+			return
+		}
+		if (!name.trim()) {
+			setError("Community name is required.")
+			return
+		}
+		if (!about.trim()) {
+			setError("About is required.")
+			return
+		}
+		if (!logoKey) {
+			setError("Logo is required.")
+			return
+		}
+		if (!size.trim()) {
+			setError("Community size is required.")
+			return
+		}
+		if (!avgGuestCount.trim()) {
+			setError("Average guest count is required.")
+			return
+		}
+		if (!experiencesPerYear.trim()) {
+			setError("Experiences per year is required.")
+			return
+		}
+		if (categoryIds.size === 0) {
+			setError("At least one category is required.")
+			return
+		}
 
 		setIsLoading(true)
 		const socialLinksInput = {
@@ -224,9 +283,6 @@ export function CreateCommunityProfileDrawer({
 			youtube: youtube.trim() || undefined,
 			website: website.trim() || undefined,
 		}
-		// Omit entirely when nothing was typed — the create flow can't see a host's existing
-		// social links (not returned by the eligible-hosts list), so sending an empty object
-		// here would silently wipe out whatever they already set during onboarding.
 		const socialLinks = Object.values(socialLinksInput).some(Boolean) ? socialLinksInput : undefined
 		try {
 			const pastEventsPayload = await Promise.all(
@@ -237,6 +293,15 @@ export function CreateCommunityProfileDrawer({
 						event.images.map((img) => (img.key ? img.key : uploadCommunityPastEventImage(img.file!, selectedHost.id))),
 					),
 				})),
+			)
+
+			const brandsWorkedWithPayload = await Promise.all(
+				brandsWorkedWith
+					.filter((b) => b.brandName.trim() || b.logoFile || b.logoKey)
+					.map(async (b) => ({
+						brandName: b.brandName.trim() || undefined,
+						logoKey: b.logoFile ? await uploadCommunityBrandLogo(b.logoFile) : b.logoKey,
+					})),
 			)
 
 			if (isEditing && editingProfile) {
@@ -251,6 +316,7 @@ export function CreateCommunityProfileDrawer({
 					categoryIds: Array.from(categoryIds),
 					socialLinks,
 					pastEvents: pastEventsPayload,
+					brandsWorkedWith: brandsWorkedWithPayload,
 				})
 				toast.success("Community profile updated")
 				onUpdated?.(profile)
@@ -267,6 +333,7 @@ export function CreateCommunityProfileDrawer({
 					categoryIds: Array.from(categoryIds),
 					socialLinks,
 					pastEvents: pastEventsPayload,
+					brandsWorkedWith: brandsWorkedWithPayload,
 				})
 				toast.success("Community profile created and activated")
 				onCreated(profile)
@@ -491,6 +558,66 @@ export function CreateCommunityProfileDrawer({
 							className="self-start text-xs font-semibold text-text-brand hover:underline disabled:opacity-50"
 						>
 							+ Add past event
+						</button>
+					</div>
+
+					<div className="flex flex-col gap-2">
+						<div className="flex items-center justify-between">
+							<label className={labelClass}>Brands Worked With</label>
+							<span className="text-[11px] text-text-tertiary">Brand name + logo</span>
+						</div>
+						{brandsWorkedWith.map((brand, i) => (
+							<div key={i} className="relative flex items-center gap-2.5 p-2.5 pr-8 rounded-lg border border-border-default bg-surface-canvas">
+								<label className="group relative size-11 rounded-lg border border-dashed border-border-strong overflow-hidden shrink-0 bg-neutral-50 flex items-center justify-center cursor-pointer hover:border-text-primary transition-colors">
+									<input
+										type="file"
+										accept="image/*"
+										className="hidden"
+										disabled={isLoading}
+										onChange={(e) => {
+											const file = e.target.files?.[0]
+											e.target.value = ""
+											if (file) updateBrandWorkedWithLogo(i, file)
+										}}
+									/>
+									{brand.logoUrl ? (
+										<>
+											{/* eslint-disable-next-line @next/next/no-img-element */}
+											<img src={brand.logoUrl} alt={brand.brandName || "Brand"} className="size-full object-cover" />
+											<div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+												<Pencil size={14} className="text-white" />
+											</div>
+										</>
+									) : (
+										<Upload size={14} className="text-text-tertiary group-hover:text-text-primary transition-colors" />
+									)}
+								</label>
+								<input
+									type="text"
+									value={brand.brandName}
+									onChange={(e) => updateBrandWorkedWithName(i, e.target.value)}
+									placeholder="Brand name"
+									disabled={isLoading}
+									className={`${inputClass} flex-1`}
+								/>
+								<button
+									type="button"
+									onClick={() => removeBrandWorkedWith(i)}
+									disabled={isLoading}
+									aria-label="Remove brand"
+									className="absolute top-2 right-2 size-5 rounded-full text-text-tertiary hover:bg-red-50 hover:text-red-600 flex items-center justify-center transition-colors disabled:opacity-50 cursor-pointer"
+								>
+									<X size={13} />
+								</button>
+							</div>
+						))}
+						<button
+							type="button"
+							onClick={addBrandWorkedWith}
+							disabled={isLoading}
+							className="self-start text-xs font-semibold text-text-brand hover:underline disabled:opacity-50"
+						>
+							+ Add
 						</button>
 					</div>
 
