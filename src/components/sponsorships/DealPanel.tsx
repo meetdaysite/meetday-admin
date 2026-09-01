@@ -63,17 +63,17 @@ export function DealBanner({
 	const isClosed = isReportApproved(report)
 
 	return (
-		<div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b-[3px] border-black bg-neutral-50 flex items-center justify-between gap-3 shrink-0">
-			<div className="min-w-0 flex items-center gap-2">
+		<div className="px-3 sm:px-5 py-2 sm:py-2.5 border-b border-black/10 md:border-b-[3px] md:border-black bg-neutral-50 flex items-center justify-between gap-2 shrink-0">
+			<div className="min-w-0 flex items-center gap-1.5 sm:gap-2 flex-1">
 				<span
 					className={cn(
-						"px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0 border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] inline-flex items-center gap-1.5",
+						"px-2 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase shrink-0 border border-black md:border-2 md:border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] inline-flex items-center gap-1 sm:gap-1.5",
 						isClosed ? "bg-black text-white" : STATUS_COLOR[deal.status],
 					)}
 				>
 					{isClosed ? (
 						<>
-							<span className="inline-flex items-center justify-center size-3.5 rounded-full bg-[#10B981] text-white shrink-0">
+							<span className="inline-flex items-center justify-center size-3 sm:size-3.5 rounded-full bg-[#10B981] text-white shrink-0">
 								<svg className="size-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
 									<polyline points="20 6 9 17 4 12" />
 								</svg>
@@ -87,24 +87,24 @@ export function DealBanner({
 				{deal.status === "APPROVED" && (
 					<span
 						className={cn(
-							"px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0 border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
+							"px-2 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase shrink-0 border border-black md:border-2 md:border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
 							PAYMENT_STATUS_COLOR[getDealPaymentDisplayStatus(deal)],
 						)}
 					>
 						{PAYMENT_STATUS_LABEL[getDealPaymentDisplayStatus(deal)]}
 					</span>
 				)}
-				<p className="text-xs font-black text-black truncate">
+				<p className="text-[11px] sm:text-xs font-black text-black truncate">
 					{deal.projectName} · {formatAmount(deal.sponsorshipAmount)}
 				</p>
 			</div>
-			<div className="flex items-center gap-2.5 shrink-0">
+			<div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
 				<button
 					type="button"
 					onClick={onView}
-					className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#EE2C2C] hover:bg-[#d42525] text-white font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:scale-105 active:scale-95 transition-transform cursor-pointer select-none"
+					className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl bg-[#EE2C2C] hover:bg-[#d42525] text-white font-black text-[10px] sm:text-xs border-[2px] sm:border-[2.5px] border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] sm:shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:scale-105 active:scale-95 transition-transform cursor-pointer select-none"
 				>
-					<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+					<svg className="size-3 sm:size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
 						<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
 						<circle cx="12" cy="12" r="3" />
 					</svg>
@@ -114,15 +114,16 @@ export function DealBanner({
 					<button
 						type="button"
 						onClick={onReport}
-						className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#FFC940] hover:bg-[#ffbe1a] text-black font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none"
+						className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl bg-[#FFC940] hover:bg-[#ffbe1a] text-black font-black text-[10px] sm:text-xs border-[2px] sm:border-[2.5px] border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] sm:shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer select-none"
 					>
-						<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+						<svg className="size-3 sm:size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
 							<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
 							<polyline points="14 2 14 8 20 8" />
 							<line x1="16" y1="13" x2="8" y2="13" />
 							<line x1="16" y1="17" x2="8" y2="17" />
 						</svg>
-						<span>View Report</span>
+						<span className="hidden sm:inline">View Report</span>
+						<span className="sm:hidden">Report</span>
 					</button>
 				)}
 			</div>

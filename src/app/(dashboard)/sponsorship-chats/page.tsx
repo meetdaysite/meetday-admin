@@ -96,16 +96,25 @@ export default function SponsorshipChatsPage() {
 	}
 
 	return (
-		<div className="flex-1 min-h-0 flex flex-col h-full p-6 space-y-4 max-w-7xl mx-auto w-full">
-			<div className="flex items-center justify-between shrink-0">
+		<div className="flex-1 min-h-0 flex flex-col h-full md:p-6 md:space-y-4 md:max-w-7xl md:mx-auto w-full">
+			<div className="hidden md:flex items-center justify-between shrink-0">
 				<PageHeader title="Ongoing Chats" description="Active Community ↔ Brand chat threads — monitor and participate as Meetday." />
 			</div>
 
-			<div className="flex-1 min-h-0 flex flex-row bg-white overflow-hidden border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] h-[calc(100vh-250px)]">
+			<div className="flex-1 min-h-0 flex flex-col md:flex-row bg-white overflow-hidden md:border-[3px] md:border-black md:rounded-[24px] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:h-[calc(100vh-250px)] h-full">
 				{/* Thread list */}
-				<div className="w-80 shrink-0 flex flex-col h-full bg-white border-r-[3px] border-black">
+				<div className={cn(
+					"flex flex-col h-full bg-white border-r-0 md:border-r-[3px] md:border-black",
+					selectedId ? "hidden md:flex md:w-80 shrink-0" : "w-full md:w-80 shrink-0 flex-1 md:flex-initial"
+				)}>
+					{/* Mobile Header */}
+					<div className="px-4 py-3 border-b border-black/10 md:hidden flex items-center justify-between shrink-0">
+						<h2 className="font-heading font-black text-base text-black">Ongoing Chats</h2>
+						<span className="text-xs font-semibold text-black/50">{filteredThreads.length} chats</span>
+					</div>
+
 					{/* Dual Tabs: Sponsorships & Campaigns */}
-					<div className="flex border-b-[3px] border-black shrink-0">
+					<div className="flex border-b border-black/10 md:border-b-[3px] md:border-black shrink-0">
 						{(["SPONSORSHIP", "CAMPAIGN"] as const).map((tab) => (
 							<button
 								key={tab}
@@ -114,7 +123,7 @@ export default function SponsorshipChatsPage() {
 									setSelectedId(null)
 								}}
 								className={cn(
-									"flex-1 py-3 text-xs font-black uppercase tracking-wider transition-colors relative cursor-pointer",
+									"flex-1 py-2.5 sm:py-3 text-xs font-black uppercase tracking-wider transition-colors relative cursor-pointer",
 									activeTab === tab ? "bg-[#EE2C2C] text-white" : "bg-white text-black/60 hover:bg-neutral-50",
 								)}
 							>
@@ -124,13 +133,13 @@ export default function SponsorshipChatsPage() {
 					</div>
 
 					{/* Search in threads */}
-					<div className="p-2.5 border-b-[3px] border-black bg-neutral-50/50 shrink-0">
+					<div className="p-2.5 border-b border-black/10 md:border-b-[3px] md:border-black bg-neutral-50/50 shrink-0">
 						<input
 							type="text"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder={activeTab === "SPONSORSHIP" ? "Search sponsorships…" : "Search campaigns…"}
-							className="w-full px-3 py-2 text-xs font-semibold rounded-xl border-[2.5px] border-black bg-white placeholder:text-black/40 focus:bg-neutral-50 focus:outline-none transition-colors"
+							className="w-full px-3 py-2 text-xs font-semibold rounded-xl border-[2px] md:border-[2.5px] border-black bg-white placeholder:text-black/40 focus:bg-neutral-50 focus:outline-none transition-colors"
 						/>
 					</div>
 
@@ -147,7 +156,7 @@ export default function SponsorshipChatsPage() {
 									key={t.id}
 									onClick={() => handleSelectThread(t.id)}
 									className={cn(
-										"w-full text-left px-4 py-3.5 border-b-[2px] border-black/10 transition-colors flex items-center gap-3 cursor-pointer",
+										"w-full text-left px-4 py-3.5 border-b border-black/10 md:border-b-[2px] transition-colors flex items-center gap-3 cursor-pointer",
 										selectedId === t.id ? "bg-[#FFC940]/25" : "hover:bg-neutral-50",
 									)}
 								>
@@ -236,7 +245,10 @@ export default function SponsorshipChatsPage() {
 				</div>
 
 				{/* Thread detail */}
-				<div className="flex-1 min-w-0 flex flex-col h-full bg-white">
+				<div className={cn(
+					"min-w-0 flex flex-col h-full bg-[#F8F9FB] md:bg-white",
+					selectedId ? "flex-1 w-full" : "hidden md:flex flex-1"
+				)}>
 					{!selectedThread ? (
 						<div className="flex-1 flex items-center justify-center text-sm font-bold text-black/40">Select a chat to view</div>
 					) : (
@@ -454,20 +466,20 @@ function AdminChatThreadPanel({
 	return (
 		<div className="flex flex-col h-full bg-white relative">
 			{/* Top Bar */}
-			<div className="px-6 py-3.5 border-b-[3px] border-black flex items-center justify-between gap-4 shrink-0 bg-white">
-				<div className="flex items-center gap-3 min-w-0">
+			<div className="px-3 sm:px-6 py-2.5 sm:py-3.5 border-b border-black/10 md:border-b-[3px] md:border-black flex items-center justify-between gap-2.5 sm:gap-4 shrink-0 bg-white">
+				<div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
 					{onBack && (
 						<button
 							onClick={onBack}
-							className="md:hidden p-1.5 -ml-2 rounded-lg hover:bg-neutral-100 text-black cursor-pointer"
-							aria-label="Back to thread list"
+							className="md:hidden p-1.5 -ml-1 rounded-full hover:bg-neutral-100 text-black cursor-pointer transition-colors shrink-0"
+							aria-label="Back to chat list"
 						>
 							<ArrowLeft size={18} />
 						</button>
 					)}
-					<div className="flex items-center gap-3 min-w-0">
-						<div className="relative w-10 h-8 shrink-0 select-none">
-							<div className="absolute left-0 top-0.5 w-6 h-6 rounded-lg border-2 border-black bg-neutral-100 flex items-center justify-center font-bold text-[9px] text-text-secondary z-0 overflow-hidden shadow-xs">
+					<div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+						<div className="relative w-9 sm:w-10 h-7.5 sm:h-8 shrink-0 select-none">
+							<div className="absolute left-0 top-0.5 w-5.5 sm:w-6 h-5.5 sm:h-6 rounded-lg border border-black md:border-2 md:border-black bg-neutral-100 flex items-center justify-center font-bold text-[8px] sm:text-[9px] text-text-secondary z-0 overflow-hidden shadow-xs">
 								{thread.brandLogoUrl ? (
 									// eslint-disable-next-line @next/next/no-img-element
 									<img src={thread.brandLogoUrl} alt={thread.brandName} className="w-full h-full object-cover" />
@@ -475,7 +487,7 @@ function AdminChatThreadPanel({
 									thread.brandName?.charAt(0).toUpperCase() ?? "B"
 								)}
 							</div>
-							<div className="absolute right-0 bottom-0 w-6 h-6 rounded-lg border-2 border-black bg-[#FFC940] flex items-center justify-center font-black text-[9px] text-black z-10 shadow-xs overflow-hidden">
+							<div className="absolute right-0 bottom-0 w-5.5 sm:w-6 h-5.5 sm:h-6 rounded-lg border border-black md:border-2 md:border-black bg-[#FFC940] flex items-center justify-center font-black text-[8px] sm:text-[9px] text-black z-10 shadow-xs overflow-hidden">
 								{thread.communityLogoUrl ? (
 									// eslint-disable-next-line @next/next/no-img-element
 									<img src={thread.communityLogoUrl} alt={thread.communityName} className="w-full h-full object-cover" />
@@ -484,24 +496,24 @@ function AdminChatThreadPanel({
 								)}
 							</div>
 						</div>
-						<div className="min-w-0">
-							<p className="text-sm font-black text-black truncate">
+						<div className="min-w-0 flex-1">
+							<p className="text-xs sm:text-sm font-black text-black truncate leading-tight">
 								{thread.brandName} ↔ {thread.communityName}
 							</p>
-							<p className="text-xs font-bold text-black/50 truncate">
+							<p className="text-[10px] sm:text-xs font-bold text-black/50 truncate">
 								{thread.targetName || thread.proposalName || thread.campaignName || "Deal"}
 							</p>
 						</div>
 					</div>
 				</div>
 
-				<div className="flex items-center gap-2 shrink-0">
+				<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
 					{thread.isDealClosed ? (
-						<span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-black text-white flex items-center gap-1">
+						<span className="text-[9px] sm:text-[10px] font-black uppercase px-2 sm:px-2.5 py-0.5 rounded-full border border-black md:border-2 md:border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-black text-white flex items-center gap-1">
 							<CheckCircle2 size={11} strokeWidth={2.5} /> Closed
 						</span>
 					) : thread.isDealLocked ? (
-						<span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-[#FFC940] text-black flex items-center gap-0.5">
+						<span className="text-[9px] sm:text-[10px] font-black uppercase px-2 sm:px-2.5 py-0.5 rounded-full border border-black md:border-2 md:border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-[#FFC940] text-black flex items-center gap-0.5">
 							🔒 Locked
 						</span>
 					) : null}
@@ -518,7 +530,7 @@ function AdminChatThreadPanel({
 			/>
 
 			{/* Messages View */}
-			<div className="flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col gap-3 min-h-0 bg-white">
+			<div className="flex-1 p-3 sm:p-6 overflow-y-auto flex flex-col gap-2.5 sm:gap-3 min-h-0 bg-white">
 				{messages.map((m) => {
 					if (m.messageType === "SYSTEM") {
 						return <SystemMessageBubble key={m.id} content={m.content ?? ""} />
@@ -576,7 +588,7 @@ function AdminChatThreadPanel({
 							{/* Message Bubble - Thin border styling matching brand/community layout */}
 							<div
 								className={cn(
-									"rounded-2xl p-2 sm:p-2.5 text-sm font-semibold break-words flex flex-col shadow-xs max-w-full",
+									"rounded-2xl p-2 sm:p-2.5 text-xs sm:text-sm font-semibold break-words flex flex-col shadow-xs max-w-full",
 									isDeleted && "border-dashed opacity-90",
 									m.senderType === "BRAND" && "bg-[#EE2C2C] text-white rounded-br-sm border border-[#EE2C2C]",
 									m.senderType === "HOST" && "bg-[#FFC940] text-black rounded-bl-sm border-0",
@@ -697,7 +709,7 @@ function AdminChatThreadPanel({
 			</div>
 
 			{/* Typing indicator & Action Banners */}
-			<div className="border-t-[3px] border-black shrink-0 bg-white flex flex-col">
+			<div className="border-t border-black/10 md:border-t-[3px] md:border-black shrink-0 bg-white flex flex-col">
 				{typingSenderType && (
 					<p className="px-4 pt-2 text-[11px] font-bold text-black/40 italic">
 						{typingSenderType === "BRAND" ? thread.brandName : thread.communityName} is typing…
@@ -732,7 +744,7 @@ function AdminChatThreadPanel({
 				)}
 
 				{/* Input Row */}
-				<div className="relative p-2.5 sm:p-3 flex items-center gap-2 pb-[max(0.6rem,env(safe-area-inset-bottom))]">
+				<div className="relative p-2 sm:p-3 flex items-center gap-1.5 sm:gap-2 pb-[max(0.6rem,env(safe-area-inset-bottom))]">
 					<MentionPicker
 						suggestions={mentionSuggestions}
 						query={mentionQuery}
@@ -753,7 +765,7 @@ function AdminChatThreadPanel({
 						type="button"
 						onClick={() => fileInputRef.current?.click()}
 						disabled={uploadingImage || Boolean(editingMessageId)}
-						className="shrink-0 size-9 rounded-xl border-[3px] border-black flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50 cursor-pointer"
+						className="shrink-0 size-8 sm:size-9 rounded-xl border-[2px] md:border-[3px] border-black flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50 cursor-pointer transition-colors"
 						aria-label="Attach image or PDF"
 					>
 						<ImageIcon size={16} />
@@ -773,14 +785,14 @@ function AdminChatThreadPanel({
 							if (e.key === "Escape" && editingMessageId) handleEditCancel()
 						}}
 						placeholder={editingMessageId ? "Edit your message… (Enter to save)" : "Write a message… (type @ to tag)"}
-						className="flex-1 min-w-0 rounded-2xl border-[3px] border-black bg-white px-3.5 sm:px-4 py-2 text-sm font-semibold outline-none focus:bg-neutral-50"
+						className="flex-1 min-w-0 rounded-2xl border-[2px] md:border-[3px] border-black bg-white px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold outline-none focus:bg-neutral-50"
 					/>
 
 					<button
 						type="button"
 						onClick={handleSend}
 						disabled={sendMutation.isPending || editMutation.isPending || !input.trim()}
-						className="h-10 px-5 rounded-2xl bg-[#EE2C2C] hover:bg-[#d42525] text-white border-[3px] border-black font-black text-xs uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] active:translate-x-[2px] active:translate-y-[2px] disabled:opacity-50 cursor-pointer shrink-0"
+						className="h-8 sm:h-10 px-3.5 sm:px-5 rounded-xl sm:rounded-2xl bg-[#EE2C2C] hover:bg-[#d42525] text-white border-[2px] md:border-[3px] border-black font-black text-xs uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] active:translate-x-[2px] active:translate-y-[2px] disabled:opacity-50 cursor-pointer shrink-0 transition-all flex items-center justify-center"
 					>
 						{sendMutation.isPending || editMutation.isPending ? "…" : editingMessageId ? "Save" : "Send"}
 					</button>

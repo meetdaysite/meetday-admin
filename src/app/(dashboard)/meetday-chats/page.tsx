@@ -56,7 +56,7 @@ export default function MeetdayChatsPage() {
 				<PageHeader title="Support Chats" description="Direct support chats from Communities and Brands — reply as Meetday." />
 			</div>
 
-			<div className="flex-1 min-h-0 flex flex-col md:flex-row bg-white overflow-hidden md:border-[3px] md:border-black md:rounded-[24px] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:h-[calc(100vh-270px)]">
+			<div className="flex-1 min-h-0 flex flex-col md:flex-row bg-white overflow-hidden md:border-[3px] md:border-black md:rounded-[24px] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:h-[calc(100vh-270px)] h-full">
 				{/* Thread list */}
 				<div className={cn(
 					"flex flex-col h-full bg-white border-r-0 md:border-r-[3px] md:border-black",
