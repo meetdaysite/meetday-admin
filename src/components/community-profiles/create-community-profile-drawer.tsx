@@ -25,12 +25,13 @@ const emptyPastEventDraft = (): PastEventDraft => ({ name: "", description: "", 
 
 type BrandWorkedWithDraft = {
 	brandName: string
+	url?: string
 	logoKey?: string
 	logoUrl?: string
 	logoFile?: File
 }
 
-const emptyBrandWorkedWithDraft = (): BrandWorkedWithDraft => ({ brandName: "" })
+const emptyBrandWorkedWithDraft = (): BrandWorkedWithDraft => ({ brandName: "", url: "" })
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -137,6 +138,7 @@ export function CreateCommunityProfileDrawer({
 		setBrandsWorkedWith(
 			(p.brandsWorkedWith ?? []).map((b) => ({
 				brandName: b.brandName ?? "",
+				url: b.url ?? "",
 				logoKey: b.logoKey ?? undefined,
 				logoUrl: b.logoUrl ?? undefined,
 			})),
@@ -213,9 +215,7 @@ export function CreateCommunityProfileDrawer({
 	function removePastEventImage(eventIndex: number, imageIndex: number) {
 		setPastEvents((prev) =>
 			prev.map((e, i) =>
-				i === eventIndex
-					? { ...e, images: e.images.filter((_, j) => j !== imageIndex) }
-					: e,
+				i === eventIndex ? { ...e, images: e.images.filter((_, j) => j !== imageIndex) } : e,
 			),
 		)
 	}
@@ -230,6 +230,10 @@ export function CreateCommunityProfileDrawer({
 
 	function updateBrandWorkedWithName(index: number, value: string) {
 		setBrandsWorkedWith((prev) => prev.map((b, i) => (i === index ? { ...b, brandName: value } : b)))
+	}
+
+	function updateBrandWorkedWithUrl(index: number, value: string) {
+		setBrandsWorkedWith((prev) => prev.map((b, i) => (i === index ? { ...b, url: value } : b)))
 	}
 
 	function updateBrandWorkedWithLogo(index: number, file: File) {
@@ -297,9 +301,10 @@ export function CreateCommunityProfileDrawer({
 
 			const brandsWorkedWithPayload = await Promise.all(
 				brandsWorkedWith
-					.filter((b) => b.brandName.trim() || b.logoFile || b.logoKey)
+					.filter((b) => b.brandName.trim() || b.url?.trim() || b.logoFile || b.logoKey)
 					.map(async (b) => ({
 						brandName: b.brandName.trim() || undefined,
+						url: b.url?.trim() || undefined,
 						logoKey: b.logoFile ? await uploadCommunityBrandLogo(b.logoFile) : b.logoKey,
 					})),
 			)
@@ -564,11 +569,11 @@ export function CreateCommunityProfileDrawer({
 					<div className="flex flex-col gap-2">
 						<div className="flex items-center justify-between">
 							<label className={labelClass}>Associated Brands</label>
-							<span className="text-[11px] text-text-tertiary">Brand name + logo</span>
+							<span className="text-[11px] text-text-tertiary">Logo + brand name & URL (optional)</span>
 						</div>
 						{brandsWorkedWith.map((brand, i) => (
 							<div key={i} className="relative flex items-center gap-2.5 p-2.5 pr-8 rounded-lg border border-border-default bg-surface-canvas">
-								<label className="group relative size-11 rounded-lg border border-dashed border-border-strong overflow-hidden shrink-0 bg-neutral-50 flex items-center justify-center cursor-pointer hover:border-text-primary transition-colors">
+								<label className="group relative size-13 rounded-lg border border-dashed border-border-strong overflow-hidden shrink-0 bg-neutral-50 flex items-center justify-center cursor-pointer hover:border-text-primary transition-colors">
 									<input
 										type="file"
 										accept="image/*"
@@ -592,14 +597,24 @@ export function CreateCommunityProfileDrawer({
 										<Upload size={14} className="text-text-tertiary group-hover:text-text-primary transition-colors" />
 									)}
 								</label>
-								<input
-									type="text"
-									value={brand.brandName}
-									onChange={(e) => updateBrandWorkedWithName(i, e.target.value)}
-									placeholder="Brand name"
-									disabled={isLoading}
-									className={`${inputClass} flex-1`}
-								/>
+								<div className="flex-1 flex flex-col gap-1.5 min-w-0">
+									<input
+										type="text"
+										value={brand.brandName}
+										onChange={(e) => updateBrandWorkedWithName(i, e.target.value)}
+										placeholder="Brand name (optional)"
+										disabled={isLoading}
+										className="w-full rounded-md border border-border-default bg-surface-canvas px-2.5 py-1.5 text-xs font-medium placeholder:text-text-tertiary focus:border-border-focus focus:outline-none transition-colors disabled:opacity-50"
+									/>
+									<input
+										type="url"
+										value={brand.url ?? ""}
+										onChange={(e) => updateBrandWorkedWithUrl(i, e.target.value)}
+										placeholder="Website URL (optional)"
+										disabled={isLoading}
+										className="w-full rounded-md border border-border-subtle bg-surface-canvas px-2.5 py-1 text-[11px] placeholder:text-text-tertiary/70 focus:border-border-focus focus:outline-none transition-colors disabled:opacity-50"
+									/>
+								</div>
 								<button
 									type="button"
 									onClick={() => removeBrandWorkedWith(i)}

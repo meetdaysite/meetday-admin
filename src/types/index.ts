@@ -431,6 +431,7 @@ export type CommunityProfileBrandWorkedWith = {
 	brandName: string | null
 	logoKey: string | null
 	logoUrl: string | null
+	url?: string | null
 }
 
 export type CommunityProfile = {
@@ -518,6 +519,7 @@ export type CommunityProfilePastEventPayload = {
 export type CommunityProfileBrandWorkedWithPayload = {
 	brandName?: string
 	logoKey?: string
+	url?: string
 }
 
 export type SponsorshipInterest = {
