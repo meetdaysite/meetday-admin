@@ -427,6 +427,13 @@ export type CommunityProfilePastEvent = {
 	imageUrls: string[]
 }
 
+export type CommunityProfileBrandWorkedWith = {
+	brandName: string | null
+	logoKey: string | null
+	logoUrl: string | null
+	url?: string | null
+}
+
 export type CommunityProfile = {
 	id: string
 	name: string
@@ -441,6 +448,7 @@ export type CommunityProfile = {
 	reviewedAt: string | null
 	pendingRevision: Record<string, unknown> | null
 	pastEvents?: CommunityProfilePastEvent[]
+	brandsWorkedWith?: CommunityProfileBrandWorkedWith[]
 	isHidden: boolean
 	createdAt: string
 	updatedAt: string
@@ -458,7 +466,12 @@ export type CommunityProfile = {
 export type CommunityProfileDetail = CommunityProfile & {
 	logoUrl: string | null
 	secondaryImageUrl: string | null
-	pendingRevision: (Record<string, unknown> & { logoUrl?: string | null; secondaryImageUrl?: string | null }) | null
+	pendingRevision: (Record<string, unknown> & {
+		logoUrl?: string | null
+		secondaryImageUrl?: string | null
+		pastEvents?: CommunityProfilePastEvent[]
+		brandsWorkedWith?: CommunityProfileBrandWorkedWith[]
+	}) | null
 }
 
 export type CommunityProfileMember = {
@@ -502,12 +515,19 @@ export type CreateCommunityProfilePayload = {
 	categoryIds: string[]
 	socialLinks?: { instagram?: string; linkedin?: string; youtube?: string; website?: string }
 	pastEvents?: CommunityProfilePastEventPayload[]
+	brandsWorkedWith?: CommunityProfileBrandWorkedWithPayload[]
 }
 
 export type CommunityProfilePastEventPayload = {
 	name?: string
 	description?: string
 	imageKeys?: string[]
+}
+
+export type CommunityProfileBrandWorkedWithPayload = {
+	brandName?: string
+	logoKey?: string
+	url?: string
 }
 
 export type SponsorshipInterest = {

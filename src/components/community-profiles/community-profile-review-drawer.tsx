@@ -24,6 +24,13 @@ export type CommunityProfileReviewDrawerProps = {
 	onToggleVisibility?: (profileId: string, isHidden: boolean) => Promise<void>
 }
 
+function formatExternalUrl(url?: string | null) {
+	if (!url) return null
+	const trimmed = url.trim()
+	if (!trimmed) return null
+	return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+}
+
 function SectionLabel({ children }: { children: string }) {
 	return (
 		<p className="text-[10px] font-semibold uppercase tracking-wider text-text-tertiary mb-3">{children}</p>
@@ -120,6 +127,19 @@ function ProposedChangesSection({ detail }: { detail: CommunityProfileDetail }) 
 		: 0
 	const hasPastEventsChange = addedPastEvents.length > 0 || removedPastEventsCount > 0;
 
+	type BrandWorkedWithLike = { brandName?: string | null; logoKey?: string | null; logoUrl?: string | null; url?: string | null }
+	const brandIdentityOf = (b: BrandWorkedWithLike) =>
+		JSON.stringify({ brandName: b.brandName ?? null, logoKey: b.logoKey ?? null, url: b.url ?? null })
+	const revisionBrands = (revision.brandsWorkedWith as BrandWorkedWithLike[] | undefined) ?? []
+	const currentBrands = (detail.brandsWorkedWith as BrandWorkedWithLike[] | undefined) ?? []
+	const currentBrandIdentities = new Set(currentBrands.map(brandIdentityOf))
+	const revisionBrandIdentities = new Set(revisionBrands.map(brandIdentityOf))
+	const addedBrands = revision.brandsWorkedWith ? revisionBrands.filter((b) => !currentBrandIdentities.has(brandIdentityOf(b))) : []
+	const removedBrandsCount = revision.brandsWorkedWith
+		? currentBrands.filter((b) => !revisionBrandIdentities.has(brandIdentityOf(b))).length
+		: 0
+	const hasBrandsChange = addedBrands.length > 0 || removedBrandsCount > 0;
+
 	return (
 		<div className="rounded-xl border-2 border-blue-200 bg-blue-50/30 p-4 space-y-3">
 			<p className="text-xs font-bold text-blue-700 uppercase tracking-wider">Proposed changes — awaiting review</p>
@@ -185,7 +205,55 @@ function ProposedChangesSection({ detail }: { detail: CommunityProfileDetail }) 
 				</div>
 			)}
 
-			{changedText.length === 0 && !hasNewLogo && !hasNewSecondaryImage && !hasCategoryChange && !hasPastEventsChange && (
+			{hasBrandsChange && (
+				<div className="rounded-lg bg-blue-50/60 border border-blue-100 px-3 py-2.5 space-y-2">
+					<p className="text-[11px] font-semibold text-blue-700">
+						{addedBrands.length > 0 ? `Associated brands (${addedBrands.length} proposed)` : "Associated brands changed"}
+					</p>
+					{addedBrands.length > 0 && (
+						<div className="flex flex-wrap gap-2">
+							{addedBrands.map((brand, i) => {
+								const href = formatExternalUrl(brand.url)
+								const content = (
+									<div className="group relative flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-border-subtle hover:border-text-primary transition-all duration-200 cursor-pointer">
+										{brand.logoUrl ? (
+											// eslint-disable-next-line @next/next/no-img-element
+											<img src={brand.logoUrl} alt={brand.brandName || "Brand logo"} className="size-5 rounded-md object-cover border border-border-subtle shrink-0 group-hover:scale-115 transition-transform duration-200" />
+										) : (
+											<span className="size-5 rounded-md bg-neutral-100 flex items-center justify-center text-[9px] font-bold text-neutral-600 shrink-0 group-hover:scale-115 transition-transform duration-200">
+												{(brand.brandName || "B").charAt(0).toUpperCase()}
+											</span>
+										)}
+										<span className="text-xs font-medium text-text-primary">{brand.brandName || (href ? brand.url : "Unnamed Brand")}</span>
+										{(brand.brandName || brand.url) && (
+											<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none">
+												<span className="px-2 py-0.5 bg-black text-white text-[10px] font-bold rounded-md whitespace-nowrap shadow-md">
+													{brand.brandName || brand.url}
+												</span>
+												<div className="w-1.5 h-1.5 bg-black rotate-45 -mt-0.5" />
+											</div>
+										)}
+									</div>
+								)
+								return href ? (
+									<a key={i} href={href} target="_blank" rel="noopener noreferrer">
+										{content}
+									</a>
+								) : (
+									<div key={i}>{content}</div>
+								)
+							})}
+						</div>
+					)}
+					{removedBrandsCount > 0 && (
+						<p className="text-xs text-text-tertiary">
+							{removedBrandsCount} brand{removedBrandsCount > 1 ? "s" : ""} removed.
+						</p>
+					)}
+				</div>
+			)}
+
+			{changedText.length === 0 && !hasNewLogo && !hasNewSecondaryImage && !hasCategoryChange && !hasPastEventsChange && !hasBrandsChange && (
 				<p className="text-[11px] text-text-tertiary">No visible field changes detected.</p>
 			)}
 		</div>
@@ -362,6 +430,51 @@ function CommunityProfileDetailContent({ detail }: { detail: CommunityProfileDet
 					<div>
 						<SectionLabel>About</SectionLabel>
 						<p className="text-xs text-text-primary leading-relaxed whitespace-pre-wrap">{detail.about}</p>
+					</div>
+				</>
+			)}
+
+			{detail.brandsWorkedWith && detail.brandsWorkedWith.length > 0 && (
+				<>
+					<div className="border-t border-border-subtle" />
+					<div>
+						<SectionLabel>Associated Brands</SectionLabel>
+						<div className="flex flex-wrap gap-2.5">
+							{detail.brandsWorkedWith.map((brand, i) => {
+								const href = formatExternalUrl(brand.url)
+								const content = (
+									<div className="group relative flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-50 border border-border-subtle hover:border-text-primary transition-all duration-200 cursor-pointer">
+										{brand.logoUrl ? (
+											// eslint-disable-next-line @next/next/no-img-element
+											<img src={brand.logoUrl} alt={brand.brandName || "Brand logo"} className="size-6 rounded-md object-cover border border-border-subtle shrink-0 group-hover:scale-115 transition-transform duration-200" />
+										) : (
+											<span className="size-6 rounded-md bg-neutral-200 flex items-center justify-center text-[10px] font-bold text-neutral-700 shrink-0 group-hover:scale-115 transition-transform duration-200">
+												{(brand.brandName || "B").charAt(0).toUpperCase()}
+											</span>
+										)}
+										<span className="text-xs font-semibold text-text-primary">
+											{brand.brandName || (href ? brand.url : "Unnamed Brand")}
+										</span>
+										{(brand.brandName || brand.url) && (
+											<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none">
+												<span className="px-2.5 py-1 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap shadow-md">
+													{brand.brandName || brand.url}
+												</span>
+												<div className="w-2 h-2 bg-black rotate-45 -mt-1" />
+											</div>
+										)}
+									</div>
+								)
+
+								return href ? (
+									<a key={i} href={href} target="_blank" rel="noopener noreferrer">
+										{content}
+									</a>
+								) : (
+									<div key={i}>{content}</div>
+								)
+							})}
+						</div>
 					</div>
 				</>
 			)}
