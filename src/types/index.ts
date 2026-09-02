@@ -130,8 +130,10 @@ export type Admin = {
 	lastName: string
 	email: string
 	isActive: boolean
+	mustCompleteProfile: boolean
 	createdAt: string
 	role: { name: Role }
+	adminRole: { name: Role } | null
 	adminProfile: { managedCities: string[] } | null
 }
 

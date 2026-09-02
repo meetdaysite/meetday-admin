@@ -152,7 +152,14 @@ export default function AdminsPage() {
 				header: "Role",
 				accessorKey: "role",
 				enableSorting: true,
-				cell: ({ row }) => <StatusCell status={row.original.role.name} />,
+				cell: ({ row }) => {
+					const admin = row.original
+					// A user primarily HOST/BRAND/USER can hold admin access as a secondary grant
+					// (adminRole) instead of their primary role — show whichever is the admin one.
+					const ADMIN_ROLES = ["SUPER_ADMIN", "CITY_ADMIN", "MODERATOR", "SUPPORT"]
+					const effectiveRole = ADMIN_ROLES.includes(admin.role.name) ? admin.role.name : admin.adminRole?.name
+					return <StatusCell status={effectiveRole ?? admin.role.name} />
+				},
 			},
 			{
 				id: "scope",
@@ -177,7 +184,13 @@ export default function AdminsPage() {
 			{
 				id: "status",
 				header: "Status",
-				cell: ({ row }) => <StatusCell status={row.original.isActive ? "ACTIVE" : "DISABLED"} />,
+				cell: ({ row }) => {
+					const admin = row.original
+					// Invited-but-not-yet-set-up (fresh invite, hasn't clicked the reset link and completed
+					// their profile) vs genuinely deactivated — both look like isActive=false otherwise.
+					const status = !admin.isActive && admin.mustCompleteProfile ? "PENDING" : admin.isActive ? "ACTIVE" : "DISABLED"
+					return <StatusCell status={status} />
+				},
 			},
 			{
 				id: "joined",
