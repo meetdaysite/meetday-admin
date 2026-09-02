@@ -154,10 +154,12 @@ export default function AdminsPage() {
 				enableSorting: true,
 				cell: ({ row }) => {
 					const admin = row.original
-					// A user primarily HOST/BRAND/USER can hold admin access as a secondary grant
-					// (adminRole) instead of their primary role — show whichever is the admin one.
+					// A user primarily HOST/BRAND/USER can hold (or be pending for) admin access as a
+					// secondary grant instead of their primary role — show whichever is the admin one.
 					const ADMIN_ROLES = ["SUPER_ADMIN", "CITY_ADMIN", "MODERATOR", "SUPPORT"]
-					const effectiveRole = ADMIN_ROLES.includes(admin.role.name) ? admin.role.name : admin.adminRole?.name
+					const effectiveRole = ADMIN_ROLES.includes(admin.role.name)
+						? admin.role.name
+						: (admin.adminRole?.name ?? admin.pendingAdminRole?.name)
 					return <StatusCell status={effectiveRole ?? admin.role.name} />
 				},
 			},
@@ -186,18 +188,24 @@ export default function AdminsPage() {
 				header: "Status",
 				cell: ({ row }) => {
 					const admin = row.original
-					// Invited-but-not-yet-set-up (fresh invite, hasn't clicked the reset link and completed
-					// their profile) vs genuinely deactivated — both look like isActive=false otherwise.
-					const status = !admin.isActive && admin.mustCompleteProfile ? "PENDING" : admin.isActive ? "ACTIVE" : "DISABLED"
+					// Invited but not yet confirmed (fresh invite hasn't set a password yet, OR an
+					// existing account's admin grant hasn't been accepted yet) vs genuinely deactivated
+					// — both can otherwise look like isActive=false.
+					const isPending = admin.pendingAdminRole || (!admin.isActive && admin.mustCompleteProfile)
+					const status = isPending ? "PENDING" : admin.isActive ? "ACTIVE" : "DISABLED"
 					return <StatusCell status={status} />
 				},
 			},
 			{
 				id: "joined",
-				header: "Member since",
+				header: "Admin since",
 				accessorKey: "createdAt",
 				enableSorting: true,
-				cell: ({ row }) => <DateCell value={row.original.createdAt} format={formatDate} secondary />,
+				// The date admin access was requested/granted, NOT the account's original signup date
+				// (relevant for a secondary grant on a pre-existing HOST/BRAND/USER account).
+				cell: ({ row }) => (
+					<DateCell value={row.original.adminInviteRequestedAt ?? row.original.createdAt} format={formatDate} secondary />
+				),
 			},
 			...(canInvite
 				? ([

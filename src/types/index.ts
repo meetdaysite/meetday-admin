@@ -132,8 +132,10 @@ export type Admin = {
 	isActive: boolean
 	mustCompleteProfile: boolean
 	createdAt: string
+	adminInviteRequestedAt: string | null
 	role: { name: Role }
 	adminRole: { name: Role } | null
+	pendingAdminRole: { name: Role } | null
 	adminProfile: { managedCities: string[] } | null
 }
 
