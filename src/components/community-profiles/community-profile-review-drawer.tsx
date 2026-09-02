@@ -6,9 +6,9 @@ import { Loader2, Mail, Users, Calendar, AlertTriangle, ShieldAlert, Tag, MapPin
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ReasonDialog } from "@/components/events/event-review-drawer"
-import { getCommunityProfileById } from "@/lib/api/community-profiles"
+import { getCommunityProfileById, getCommunityProfileMembers } from "@/lib/api/community-profiles"
 import { formatDate } from "@/lib/formatters"
-import type { CommunityProfile, CommunityProfileDetail } from "@/types"
+import type { CommunityProfile, CommunityProfileDetail, CommunityProfileMember } from "@/types"
 
 export type CommunityProfileAction = "approve" | "reject"
 
@@ -192,6 +192,65 @@ function ProposedChangesSection({ detail }: { detail: CommunityProfileDetail }) 
 	)
 }
 
+function MembersSection({ communityProfileId }: { communityProfileId: string }) {
+	const [members, setMembers] = useState<CommunityProfileMember[] | null>(null)
+	const [failed, setFailed] = useState(false)
+
+	useEffect(() => {
+		let cancelled = false
+		setMembers(null)
+		setFailed(false)
+		getCommunityProfileMembers(communityProfileId)
+			.then((data) => {
+				if (!cancelled) setMembers(data)
+			})
+			.catch(() => {
+				if (!cancelled) setFailed(true)
+			})
+		return () => {
+			cancelled = true
+		}
+	}, [communityProfileId])
+
+	if (failed) return null
+
+	return (
+		<>
+			<div className="border-t border-border-subtle" />
+			<div>
+				<SectionLabel>{`Members (${members?.length ?? "…"})`}</SectionLabel>
+				{!members ? (
+					<div className="space-y-2">
+						<Skeleton className="h-10 w-full" />
+						<Skeleton className="h-10 w-full" />
+					</div>
+				) : (
+					<div className="space-y-2">
+						{members.map((m) => (
+							<div key={m.id} className="flex items-center justify-between rounded-lg bg-neutral-50 border border-border-subtle px-3 py-2">
+								<div className="min-w-0">
+									<p className="text-xs font-semibold text-text-primary truncate">{m.name || "Pending signup"}</p>
+									<p className="text-[11px] text-text-tertiary truncate">{m.email}</p>
+								</div>
+								<div className="flex items-center gap-1.5 shrink-0">
+									<span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
+										{m.role === "OWNER" ? "Owner" : "Member"}
+									</span>
+									{m.status === "PENDING" && (
+										<span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
+											Pending
+										</span>
+									)}
+								</div>
+							</div>
+						))}
+					</div>
+				)}
+			</div>
+		</>
+	)
+}
+
 function CommunityProfileDetailContent({ detail }: { detail: CommunityProfileDetail }) {
 	return (
 		<div className="space-y-6">
@@ -271,6 +330,8 @@ function CommunityProfileDetailContent({ detail }: { detail: CommunityProfileDet
 					)}
 				</div>
 			</div>
+
+			<MembersSection communityProfileId={detail.id} />
 
 			{detail.hostProfile.socialLinks && Object.values(detail.hostProfile.socialLinks).some(Boolean) && (
 				<>

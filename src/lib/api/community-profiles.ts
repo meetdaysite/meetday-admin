@@ -2,6 +2,7 @@ import { apiClient } from "./client"
 import type {
 	ApprovalStatus,
 	CommunityProfileDetail,
+	CommunityProfileMember,
 	CommunityProfilesListResponse,
 	CreateCommunityProfilePayload,
 	EligibleHostsListResponse,
@@ -25,6 +26,11 @@ export async function getCommunityProfiles(
 
 export async function getCommunityProfileById(id: string): Promise<CommunityProfileDetail> {
 	const { data } = await apiClient.get<CommunityProfileDetail>(`/admin/community-profiles/${id}`)
+	return data
+}
+
+export async function getCommunityProfileMembers(id: string): Promise<CommunityProfileMember[]> {
+	const { data } = await apiClient.get<CommunityProfileMember[]>(`/admin/community-profiles/${id}/members`)
 	return data
 }
 

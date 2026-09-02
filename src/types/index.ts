@@ -461,6 +461,14 @@ export type CommunityProfileDetail = CommunityProfile & {
 	pendingRevision: (Record<string, unknown> & { logoUrl?: string | null; secondaryImageUrl?: string | null }) | null
 }
 
+export type CommunityProfileMember = {
+	id: string
+	name: string | null
+	email: string
+	role: "OWNER" | "MEMBER"
+	status: "PENDING" | "ACTIVE"
+}
+
 export type CommunityProfilesListResponse = {
 	profiles: CommunityProfile[]
 	total: number
