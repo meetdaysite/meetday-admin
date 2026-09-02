@@ -1,32 +1,23 @@
 ﻿"use client"
 
-import { useEffect, useRef, useState } from "react"
-import { useForm, Controller } from "react-hook-form"
+import { useEffect, useState } from "react"
+import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Loader2, X } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { fetchAdminRoles } from "@/lib/api/roles"
 import type { Role, RoleDefinition } from "@/types"
 
 //  Schema
 
-const inviteSchema = z
-	.object({
-		email: z.string().min(1, "Email is required").email("Enter a valid email"),
-		firstName: z.string().min(1, "First name is required"),
-		lastName: z.string().min(1, "Last name is required"),
-		roleId: z.string().min(1, "Role is required"),
-		roleName: z.string(),
-		managedCities: z.array(z.string()),
-	})
-	.refine(
-		(data) => {
-			if (data.roleName === "CITY_ADMIN") return data.managedCities.length > 0
-			return true
-		},
-		{ message: "At least one city is required for Admin", path: ["managedCities"] },
-	)
+const inviteSchema = z.object({
+	email: z.string().min(1, "Email is required").email("Enter a valid email"),
+	firstName: z.string().min(1, "First name is required"),
+	lastName: z.string().min(1, "Last name is required"),
+	roleId: z.string().min(1, "Role is required"),
+	roleName: z.string(),
+})
 
 type InviteFormValues = z.infer<typeof inviteSchema>
 
@@ -59,85 +50,6 @@ function toLabel(name: string) {
 		.join(" ")
 }
 
-//  City tag input
-
-function CityTagInput({
-	value,
-	onChange,
-	error,
-}: {
-	value: string[]
-	onChange: (cities: string[]) => void
-	error?: string
-}) {
-	const [draft, setDraft] = useState("")
-	const inputRef = useRef<HTMLInputElement>(null)
-
-	function addCity(raw: string) {
-		const city = raw.trim()
-		if (!city || value.includes(city)) {
-			setDraft("")
-			return
-		}
-		onChange([...value, city])
-		setDraft("")
-	}
-
-	function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-		if (e.key === "Enter" || e.key === ",") {
-			e.preventDefault()
-			addCity(draft)
-		} else if (e.key === "Backspace" && draft === "" && value.length > 0) {
-			onChange(value.slice(0, -1))
-		}
-	}
-
-	function removeCity(city: string) {
-		onChange(value.filter((c) => c !== city))
-	}
-
-	return (
-		<div>
-			<div
-				className="flex min-h-10 w-full flex-wrap gap-1.5 rounded-lg border border-border-default bg-surface-canvas px-3 py-2 focus-within:border-border-focus focus-within:ring-2 focus-within:ring-border-focus/10 transition-colors cursor-text"
-				onClick={() => inputRef.current?.focus()}
-			>
-				{value.map((city) => (
-					<span
-						key={city}
-						className="inline-flex items-center gap-1 rounded-md bg-surface-brand-soft px-2 py-0.5 text-[11px] font-semibold text-text-brand"
-					>
-						{city}
-						<button
-							type="button"
-							onClick={(e) => {
-								e.stopPropagation()
-								removeCity(city)
-							}}
-							className="rounded-sm hover:bg-surface-brand-soft transition-colors"
-						>
-							<X size={10} />
-						</button>
-					</span>
-				))}
-				<input
-					ref={inputRef}
-					value={draft}
-					onChange={(e) => setDraft(e.target.value)}
-					onKeyDown={handleKeyDown}
-					onBlur={() => addCity(draft)}
-					placeholder={value.length === 0 ? "Type a city and press Enter" : ""}
-					className="min-w-35 flex-1 bg-transparent text-sm placeholder:text-text-tertiary outline-none"
-				/>
-			</div>
-			{error && <p className="mt-1 text-[11px] text-red-600">{error}</p>}
-			<p className="mt-1 text-[11px] text-text-tertiary">
-				Press Enter or comma to add each city.
-			</p>
-		</div>
-	)
-}
-
 //  Component
 
 export function InviteAdminDrawer({
@@ -153,7 +65,6 @@ export function InviteAdminDrawer({
 		register,
 		handleSubmit,
 		watch,
-		control,
 		reset,
 		setValue,
 		formState: { errors },
@@ -165,7 +76,6 @@ export function InviteAdminDrawer({
 			lastName: "",
 			roleId: "",
 			roleName: "",
-			managedCities: [],
 		},
 	})
 
@@ -182,8 +92,7 @@ export function InviteAdminDrawer({
 		fetchAdminRoles()
 			.then((data) => {
 				// Support is not offered here \u2014 Moderator now covers the same chat-only scope.
-				// City Admin is not offered either — removed from the invite flow per product ask.
-				const allowed = data.filter((r) => r.name === "SUPER_ADMIN" || r.name === "MODERATOR")
+				const allowed = data.filter((r) => r.name === "SUPER_ADMIN" || r.name === "CITY_ADMIN" || r.name === "MODERATOR")
 				setRoles(allowed)
 				if (allowed[0]) {
 					setValue("roleId", allowed[0].id)
@@ -200,8 +109,6 @@ export function InviteAdminDrawer({
 			lastName: values.lastName,
 			roleId: values.roleId,
 			roleName: values.roleName as Role,
-			managedCities:
-				values.roleName === "CITY_ADMIN" ? values.managedCities : undefined,
 		})
 	}
 
@@ -295,10 +202,7 @@ export function InviteAdminDrawer({
 										onChange={() => {
 											setValue("roleId", opt.id)
 											setValue("roleName", opt.name)
-											// Clear cities when switching away from CITY_ADMIN
-											if (opt.name !== "CITY_ADMIN") {
-												setValue("managedCities", [])
-											}
+
 										}}
 										className="mt-0.5 accent-brand-red"
 									/>
@@ -319,26 +223,6 @@ export function InviteAdminDrawer({
 						<p className="text-[11px] text-red-600">{errors.roleId.message}</p>
 					)}
 				</div>
-
-				{/* Managed cities â€” shown only for CITY_ADMIN */}
-				{roleName === "CITY_ADMIN" && (
-					<div className="space-y-1.5">
-						<label className="block text-xs font-medium text-text-primary">
-							Managed cities
-						</label>
-						<Controller
-							name="managedCities"
-							control={control}
-							render={({ field }) => (
-								<CityTagInput
-									value={field.value}
-									onChange={field.onChange}
-									error={errors.managedCities?.message}
-								/>
-							)}
-						/>
-					</div>
-				)}
 			</form>
 
 			<DrawerFooter>
