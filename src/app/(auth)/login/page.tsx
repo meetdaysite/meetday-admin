@@ -26,8 +26,11 @@ type MeResponse = {
 	isActive: boolean
 	mustCompleteProfile: boolean
 	role: Record<string, Role>
+	adminRole: Role | null
 	cityScope?: string
 }
+
+const ADMIN_ROLES = ["SUPER_ADMIN", "CITY_ADMIN", "MODERATOR", "SUPPORT"] as const
 
 const loginSchema = z.object({
 	email: z.email("Invalid email address"),
@@ -71,13 +74,26 @@ export default function LoginPage() {
 				return
 			}
 
+			// A user primarily HOST/BRAND/USER can hold admin access as a secondary grant
+			// (adminRole) instead of their primary role — the primary role.name is NOT a
+			// valid value for ROLE_PERMISSIONS in that case.
+			const effectiveRole = (ADMIN_ROLES as readonly string[]).includes(data.role?.name)
+				? (data.role.name as Role)
+				: data.adminRole
+
+			if (!effectiveRole) {
+				await signOut(firebaseAuth)
+				toast.error("Your account does not have admin panel access.")
+				return
+			}
+
 			setAuth(
 				{ id: data.id, name: `${data.firstName} ${data.lastName}`, email: data.email },
-				data?.role?.name,
+				effectiveRole,
 				idToken,
 				data.cityScope,
 			)
-			router.push(data?.role?.name === "MODERATOR" ? "/sponsorship-chats" : "/dashboard")
+			router.push(effectiveRole === "MODERATOR" ? "/sponsorship-chats" : "/dashboard")
 		} catch {
 			toast.error("Invalid credentials. Please try again.")
 		}

@@ -15,8 +15,11 @@ type MeResponse = {
 	firstName: string
 	lastName: string
 	role: { name: Role }
+	adminRole: Role | null
 	cityScope?: string
 }
+
+const ADMIN_ROLES = ["SUPER_ADMIN", "CITY_ADMIN", "MODERATOR", "SUPPORT"] as const
 
 export function useAuthInit() {
 	const token = useAuthStore((s) => s.token)
@@ -59,12 +62,20 @@ export function useAuthInit() {
 		// old localStorage format). Restore session by calling /auth/me.
 		apiClient
 			.get<MeResponse>("/auth/me")
-			.then(({ data }) => setAuth(
-				{ id: data.id, name: `${data.firstName} ${data.lastName}`, email: data.email },
-				data.role?.name,
-				token,
-				data.cityScope,
-			))
+			.then(({ data }) => {
+				// A user primarily HOST/BRAND/USER can hold admin access as a secondary
+				// grant (adminRole) instead of their primary role.
+				const effectiveRole = (ADMIN_ROLES as readonly string[]).includes(data.role?.name)
+					? data.role.name
+					: data.adminRole
+				if (!effectiveRole) throw new Error("No admin access")
+				setAuth(
+					{ id: data.id, name: `${data.firstName} ${data.lastName}`, email: data.email },
+					effectiveRole,
+					token,
+					data.cityScope,
+				)
+			})
 			.catch(() => clearAuth())
 			.finally(() => setInitialized())
 	// eslint-disable-next-line react-hooks/exhaustive-deps
