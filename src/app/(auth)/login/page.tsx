@@ -54,6 +54,13 @@ export default function LoginPage() {
 			const credential = await signInWithEmailAndPassword(firebaseAuth, values.email, values.password)
 			const idToken = await credential.user.getIdToken()
 
+			// Confirms a fresh invite (mustCompleteProfile) or a pending admin grant on an
+			// already-existing HOST/BRAND/USER account (pendingAdminRoleId) on first successful
+			// sign-in after setting a password — the invite email's reset link can't do this
+			// itself (Firebase's own hosted reset-password page consumes the one-time code before
+			// our app ever sees it). A 400 here just means there was nothing pending; ignore it.
+			await apiClient.post("/auth/activate", {}, { headers: { Authorization: `Bearer ${idToken}` } }).catch(() => {})
+
 			const { data } = await apiClient.get<MeResponse>("/auth/me", {
 				headers: { Authorization: `Bearer ${idToken}` },
 			})
