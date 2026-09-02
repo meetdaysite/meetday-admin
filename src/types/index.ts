@@ -358,6 +358,7 @@ export type SponsorshipProposal = {
 	createdAt: string
 	updatedAt: string
 	pendingRevision: Record<string, unknown> | null
+	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
 	hostProfile: EventHostProfile
 }
 
@@ -390,6 +391,7 @@ export type SponsorshipDetail = {
 	docType: string | null
 	docSize: number | null
 	sponsorTiers: SponsorTier[]
+	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
 	status: SponsorshipStatus
 	pendingRevision: (Record<string, unknown> & { imageUrl?: string | null; docUrl?: string | null }) | null
 	adminRejectionRemark: string | null
@@ -419,6 +421,7 @@ export type CreateSponsorshipPayload = {
 	docType: string
 	docSize: number
 	sponsorTiers: SponsorTier[]
+	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
 }
 
 // ─── Host community profiles ───────────────────────────────────────────────────

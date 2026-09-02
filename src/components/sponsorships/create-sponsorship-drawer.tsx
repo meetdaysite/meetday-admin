@@ -81,6 +81,7 @@ export function CreateSponsorshipDrawer({
 	const [uploadingDoc, setUploadingDoc] = useState(false)
 
 	const [sponsorTiers, setSponsorTiers] = useState<SponsorTier[]>([{ name: "", price: "" }])
+	const [sponsorshipType, setSponsorshipType] = useState<"CASH" | "BARTER" | "BOTH">("CASH")
 
 	const [isLoading, setIsLoading] = useState(false)
 	const [error, setError] = useState<string | null>(null)
@@ -117,6 +118,7 @@ export function CreateSponsorshipDrawer({
 		setDocName(p.docName)
 		setDocType(p.docType)
 		setDocSize(p.docSize)
+		setSponsorshipType(p.sponsorshipType ?? "CASH")
 		setSponsorTiers(p.sponsorTiers.length > 0 ? p.sponsorTiers : [{ name: "", price: "" }])
 	}, [open, editingProposal])
 
@@ -141,6 +143,7 @@ export function CreateSponsorshipDrawer({
 		setDocName(null)
 		setDocType(null)
 		setDocSize(null)
+		setSponsorshipType("CASH")
 		setSponsorTiers([{ name: "", price: "" }])
 		setError(null)
 	}
@@ -212,7 +215,7 @@ export function CreateSponsorshipDrawer({
 		if (!ageGroup.trim()) return setError("Age group is required.")
 		if (!guestCount.trim()) return setError("Guest count is required.")
 		if (!docKey || !docName || !docType || docSize == null) return setError("Pitch document is required.")
-		if (validTiers.length === 0) return setError("At least one sponsor tier is required.")
+		if (sponsorshipType !== "BARTER" && validTiers.length === 0) return setError("At least one sponsor tier is required.")
 
 		setIsLoading(true)
 		try {
@@ -234,7 +237,8 @@ export function CreateSponsorshipDrawer({
 				docName,
 				docType,
 				docSize,
-				sponsorTiers: validTiers,
+				sponsorshipType,
+				sponsorTiers: sponsorshipType === "BARTER" ? [] : validTiers,
 			}
 			if (isEditing && editingProposal) {
 				const proposal = await updateSponsorship(editingProposal.id, payload)
@@ -613,47 +617,71 @@ export function CreateSponsorshipDrawer({
 
 				<div>
 					<label className={labelClass}>
-						Sponsor tiers <span className="text-red-500" aria-hidden>*</span>
+						Sponsorship type <span className="text-red-500" aria-hidden>*</span>
 					</label>
-					<div className="space-y-2">
-						{sponsorTiers.map((tier, idx) => (
-							<div key={idx} className="flex gap-2">
-								<input
-									type="text"
-									value={tier.name}
-									onChange={(e) => updateTier(idx, "name", e.target.value)}
-									placeholder="e.g. Gold Sponsor"
-									disabled={isLoading}
-									className={inputClass}
-								/>
-								<input
-									type="text"
-									value={tier.price}
-									onChange={(e) => updateTier(idx, "price", e.target.value)}
-									placeholder="e.g. 50000"
-									disabled={isLoading}
-									className={`${inputClass} max-w-[120px]`}
-								/>
-								<button
-									type="button"
-									onClick={() => removeTier(idx)}
-									disabled={isLoading || sponsorTiers.length === 1}
-									className="shrink-0 rounded-lg border border-border-default px-2 hover:bg-neutral-50 disabled:opacity-30"
-								>
-									<X size={14} />
-								</button>
-							</div>
+					<div className="flex gap-2">
+						{(["CASH", "BARTER", "BOTH"] as const).map((t) => (
+							<button
+								key={t}
+								type="button"
+								onClick={() => setSponsorshipType(t)}
+								className={`flex-1 rounded-xl py-2 text-xs font-semibold border transition-colors ${
+									sponsorshipType === t
+										? "bg-text-brand text-white border-text-brand"
+										: "bg-surface-card border-border-default text-text-secondary hover:border-border-strong"
+								}`}
+							>
+								{t === "CASH" ? "Cash" : t === "BARTER" ? "Barter" : "Both"}
+							</button>
 						))}
 					</div>
-					<button
-						type="button"
-						onClick={addTier}
-						disabled={isLoading}
-						className="mt-2 flex items-center gap-1 text-xs font-semibold text-text-brand hover:underline disabled:opacity-50"
-					>
-						<Plus size={12} /> Add tier
-					</button>
 				</div>
+
+				{sponsorshipType !== "BARTER" && (
+					<div>
+						<label className={labelClass}>
+							Sponsor tiers <span className="text-red-500" aria-hidden>*</span>
+						</label>
+						<div className="space-y-2">
+							{sponsorTiers.map((tier, idx) => (
+								<div key={idx} className="flex gap-2">
+									<input
+										type="text"
+										value={tier.name}
+										onChange={(e) => updateTier(idx, "name", e.target.value)}
+										placeholder="e.g. Gold Sponsor"
+										disabled={isLoading}
+										className={inputClass}
+									/>
+									<input
+										type="text"
+										value={tier.price}
+										onChange={(e) => updateTier(idx, "price", e.target.value)}
+										placeholder="e.g. 50000"
+										disabled={isLoading}
+										className={`${inputClass} max-w-[120px]`}
+									/>
+									<button
+										type="button"
+										onClick={() => removeTier(idx)}
+										disabled={isLoading || sponsorTiers.length === 1}
+										className="shrink-0 rounded-lg border border-border-default px-2 hover:bg-neutral-50 disabled:opacity-30"
+									>
+										<X size={14} />
+									</button>
+								</div>
+							))}
+						</div>
+						<button
+							type="button"
+							onClick={addTier}
+							disabled={isLoading}
+							className="mt-2 flex items-center gap-1 text-xs font-semibold text-text-brand hover:underline disabled:opacity-50"
+						>
+							<Plus size={12} /> Add tier
+						</button>
+					</div>
+				)}
 
 				{error && (
 					<div className="rounded-xl border border-red-100 bg-red-50 px-3.5 py-3 text-xs text-red-700">

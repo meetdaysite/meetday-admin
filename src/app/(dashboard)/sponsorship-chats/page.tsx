@@ -512,10 +512,6 @@ function AdminChatThreadPanel({
 						<span className="text-[9px] sm:text-[10px] font-black uppercase px-2 sm:px-2.5 py-0.5 rounded-full border border-black md:border-2 md:border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-black text-white flex items-center gap-1">
 							<CheckCircle2 size={11} strokeWidth={2.5} /> Closed
 						</span>
-					) : thread.isDealLocked ? (
-						<span className="text-[9px] sm:text-[10px] font-black uppercase px-2 sm:px-2.5 py-0.5 rounded-full border border-black md:border-2 md:border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-[#FFC940] text-black flex items-center gap-0.5">
-							🔒 Locked
-						</span>
 					) : null}
 				</div>
 			</div>

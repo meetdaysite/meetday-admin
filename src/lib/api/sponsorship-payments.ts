@@ -11,6 +11,7 @@ export type SponsorshipDealPayment = {
 	communityName: string
 	brandName: string
 	projectName: string
+	dealType?: "SPONSORSHIP" | "CAMPAIGN"
 	sponsorshipAmount: string | number
 	platformFeeAmount: string | number | null
 	transactionFeeAmount: string | number | null
@@ -25,10 +26,21 @@ export type SponsorshipDealPayment = {
 }
 
 export async function getSponsorshipDealPayments(): Promise<SponsorshipDealPayment[]> {
-	const { data } = await apiClient.get<SponsorshipDealPayment[]>("/admin/sponsorship-deals", {
-		params: { status: "APPROVED" },
+	const [sponsorshipRes, campaignRes] = await Promise.all([
+		apiClient.get<SponsorshipDealPayment[]>("/admin/sponsorship-deals", {
+			params: { status: "APPROVED" },
+		}).then((res) => (res.data || []).map((d) => ({ ...d, dealType: "SPONSORSHIP" as const }))).catch(() => []),
+		apiClient.get<SponsorshipDealPayment[]>("/admin/campaign-deals", {
+			params: { status: "APPROVED" },
+		}).then((res) => (res.data || []).map((d) => ({ ...d, dealType: "CAMPAIGN" as const }))).catch(() => []),
+	])
+
+	const combined = [...sponsorshipRes, ...campaignRes]
+	return combined.sort((a, b) => {
+		const timeA = new Date(a.approvedAt || 0).getTime()
+		const timeB = new Date(b.approvedAt || 0).getTime()
+		return timeB - timeA
 	})
-	return data
 }
 
 export async function markSponsorshipDealPaidOffline(

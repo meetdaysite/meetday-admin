@@ -252,6 +252,19 @@ function SponsorshipDetailContent({
 					{display.audienceProfile.length > 0 && (
 						<DetailRow icon={Tag} label="Audience profile" value={<TagList items={display.audienceProfile} />} />
 					)}
+					<DetailRow
+						icon={Tag}
+						label="Sponsorship type"
+						value={
+							<span className="inline-flex items-center gap-1 font-bold text-xs uppercase px-2 py-0.5 rounded-full border border-border-default">
+								{display.sponsorshipType === "BARTER"
+									? "🎁 Barter"
+									: display.sponsorshipType === "BOTH"
+									? "💰 Cash & 🎁 Barter"
+									: "💰 Cash"}
+							</span>
+						}
+					/>
 				</div>
 			</div>
 
@@ -266,13 +279,20 @@ function SponsorshipDetailContent({
 				</>
 			)}
 
-			{/* Sponsor tiers */}
-			{display.sponsorTiers.length > 0 && (
+			{/* Sponsor tiers / Barter */}
+			{display.sponsorshipType === "BARTER" ? (
+				<>
+					<div className="border-t border-border-subtle" />
+					<div className="rounded-xl border border-border-subtle bg-neutral-50 p-3.5 text-xs text-text-secondary">
+						<span className="font-semibold text-text-primary">🎁 Barter Only:</span> This proposal is open to barter collaborations without fixed pricing tiers.
+					</div>
+				</>
+			) : display.sponsorTiers.length > 0 ? (
 				<>
 					<div className="border-t border-border-subtle" />
 					<SponsorTiersTable tiers={display.sponsorTiers} />
 				</>
-			)}
+			) : null}
 
 			{/* Pitch document */}
 			{display.docUrl && (

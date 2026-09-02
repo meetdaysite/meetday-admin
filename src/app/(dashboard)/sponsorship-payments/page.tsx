@@ -321,7 +321,8 @@ export default function SponsorshipPaymentsPage() {
 				const matchCommunity = row.communityName?.toLowerCase().includes(q)
 				const matchProposal = row.proposalName?.toLowerCase().includes(q)
 				const matchProject = row.projectName?.toLowerCase().includes(q)
-				if (!matchBrand && !matchCommunity && !matchProposal && !matchProject) {
+				const matchType = (row.dealType || "SPONSORSHIP").toLowerCase().includes(q)
+				if (!matchBrand && !matchCommunity && !matchProposal && !matchProject && !matchType) {
 					return false
 				}
 			}
@@ -334,7 +335,7 @@ export default function SponsorshipPaymentsPage() {
 		<div className="p-6 space-y-5 w-full max-w-7xl mx-auto">
 			<PageHeader
 				title="Payments"
-				description="Brand payments for locked sponsorship deals — transaction fee + GST breakdown, due 3 days after locking."
+				description="Brand payments for locked sponsorship &amp; campaign deals — transaction fee + GST breakdown, due 3 days after locking."
 				buttons={
 					<Button
 						variant="secondary"
@@ -355,7 +356,7 @@ export default function SponsorshipPaymentsPage() {
 					<div className="space-y-0.5">
 						<p className="text-[11px] font-medium text-text-tertiary uppercase tracking-wider">Total Deals</p>
 						<p className="text-lg font-bold text-text-primary leading-tight">{stats.totalCount}</p>
-						<p className="text-[11px] text-text-muted">Locked sponsorships</p>
+						<p className="text-[11px] text-text-muted">Locked sponsorships &amp; campaigns</p>
 					</div>
 					<div className="size-9 rounded-lg bg-amber-50 border border-amber-200/60 text-amber-700 flex items-center justify-center shrink-0">
 						<Receipt className="size-4.5" />
@@ -448,7 +449,7 @@ export default function SponsorshipPaymentsPage() {
 							type="text"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							placeholder="Search brand, community…"
+							placeholder="Search brand, community, type…"
 							className="pl-8 pr-7 py-1 text-xs rounded-md border border-border-default bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:border-border-focused w-full sm:w-60"
 						/>
 						{searchQuery && (
@@ -467,9 +468,10 @@ export default function SponsorshipPaymentsPage() {
 					<table className="w-full min-w-full text-left table-auto">
 						<thead>
 							<tr className="border-b border-border-default text-caption text-text-tertiary bg-neutral-50/40">
-								<th className="px-3.5 py-2.5 font-semibold min-w-[160px]">Brand &amp; Community</th>
-								<th className="px-3.5 py-2.5 font-semibold min-w-[160px]">Proposal / Project</th>
-								<th className="px-3.5 py-2.5 font-semibold min-w-[120px]">Sponsorship</th>
+								<th className="px-3.5 py-2.5 font-semibold min-w-[150px]">Brand &amp; Community</th>
+								<th className="px-3.5 py-2.5 font-semibold min-w-[120px]">Deal Type</th>
+								<th className="px-3.5 py-2.5 font-semibold min-w-[160px]">Proposal / Campaign</th>
+								<th className="px-3.5 py-2.5 font-semibold min-w-[110px]">Deal Amount</th>
 								<th className="px-3.5 py-2.5 font-semibold min-w-[110px]">Fee + GST</th>
 								<th className="px-3.5 py-2.5 font-semibold min-w-[110px]">Total Amount</th>
 								<th className="px-3.5 py-2.5 font-semibold min-w-[90px]">Status</th>
@@ -481,7 +483,7 @@ export default function SponsorshipPaymentsPage() {
 						<tbody className="divide-y divide-border-subtle">
 							{paymentsQuery.isLoading ? (
 								<tr>
-									<td colSpan={9} className="text-center py-12 text-caption text-text-tertiary">
+									<td colSpan={10} className="text-center py-12 text-caption text-text-tertiary">
 										<div className="flex items-center justify-center gap-2">
 											<Loader2 className="size-4 animate-spin text-text-tertiary" />
 											<span>Loading payments…</span>
@@ -490,7 +492,7 @@ export default function SponsorshipPaymentsPage() {
 								</tr>
 							) : filteredPayments.length === 0 ? (
 								<tr>
-									<td colSpan={9} className="text-center py-12 text-caption text-text-tertiary">
+									<td colSpan={10} className="text-center py-12 text-caption text-text-tertiary">
 										{searchQuery ? "No matching payment records." : "No locked deals in this status."}
 									</td>
 								</tr>
@@ -517,6 +519,20 @@ export default function SponsorshipPaymentsPage() {
 												</div>
 											</td>
 
+											{/* Deal Type */}
+											<td className="px-3.5 py-2.5">
+												<span
+													className={cn(
+														"inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border",
+														row.dealType === "CAMPAIGN"
+															? "bg-blue-50 text-blue-800 border-blue-200"
+															: "bg-amber-50 text-amber-800 border-amber-200"
+													)}
+												>
+													{row.dealType === "CAMPAIGN" ? "🚀 Campaign" : "🤝 Sponsorship"}
+												</span>
+											</td>
+
 											{/* Proposal / Project */}
 											<td className="px-3.5 py-2.5 text-xs text-text-primary max-w-[200px]">
 												<p className="truncate font-medium">{row.proposalName || row.projectName || "—"}</p>
@@ -525,7 +541,7 @@ export default function SponsorshipPaymentsPage() {
 												)}
 											</td>
 
-											{/* Sponsorship Amount */}
+											{/* Deal Amount */}
 											<td className="px-3.5 py-2.5 text-xs text-text-primary font-medium">
 												{formatAmount(row.sponsorshipAmount)}
 											</td>
