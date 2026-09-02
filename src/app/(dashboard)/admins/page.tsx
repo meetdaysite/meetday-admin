@@ -14,7 +14,7 @@ import { usePermission } from "@/lib/hooks/use-permission"
 import { useAuthStore } from "@/stores/auth.store"
 import type { Admin, Role } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
-import { Globe, MapPin, UserPlus } from "lucide-react"
+import { UserPlus } from "lucide-react"
 import { useCallback, useMemo, useState } from "react"
 import { toast } from "sonner"
 
@@ -164,10 +164,16 @@ export default function AdminsPage() {
 				id: "admin",
 				header: "Admin",
 				cell: ({ row }) => (
-					<TwoLineCell
-						primary={`${row.original.firstName} ${row.original.lastName}`}
-						secondary={row.original.email}
-					/>
+					<div className="flex items-center gap-2">
+						<span
+							className={`h-2 w-2 shrink-0 rounded-full ${row.original.isOnline ? "bg-green-500" : "bg-neutral-300"}`}
+							title={row.original.isOnline ? "Online now" : "Offline"}
+						/>
+						<TwoLineCell
+							primary={`${row.original.firstName} ${row.original.lastName}`}
+							secondary={row.original.email}
+						/>
+					</div>
 				),
 			},
 			{
@@ -184,26 +190,6 @@ export default function AdminsPage() {
 						? admin.role.name
 						: (admin.adminRole?.name ?? admin.pendingAdminRole?.name)
 					return <StatusCell status={effectiveRole ?? admin.role.name} />
-				},
-			},
-			{
-				id: "scope",
-				header: "Scope",
-				cell: ({ row }) => {
-					const cities = row.original.adminProfile?.managedCities ?? []
-					if (cities.length === 0)
-						return (
-							<span className="inline-flex items-center gap-1 text-xs text-text-tertiary">
-								<Globe size={12} />
-								All cities
-							</span>
-						)
-					return (
-						<span className="inline-flex items-center gap-1 text-xs text-text-primary">
-							<MapPin size={12} className="text-text-tertiary" />
-							{cities.join(", ")}
-						</span>
-					)
 				},
 			},
 			{

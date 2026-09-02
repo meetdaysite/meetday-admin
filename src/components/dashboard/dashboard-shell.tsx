@@ -4,6 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Sidebar } from "./sidebar"
 import { useAuthInit } from "@/lib/hooks/use-auth-init"
+import { usePresenceSocket } from "@/lib/hooks/use-presence-socket"
 import { useAuthStore } from "@/stores/auth.store"
 import { SkeletonDashboardShell } from "@/components/ui/skeleton"
 import { useUIStore } from "@/stores/ui.store"
@@ -11,6 +12,7 @@ import { Menu } from "lucide-react"
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
 	useAuthInit()
+	usePresenceSocket()
 	const isInitializing = useAuthStore((s) => s.isInitializing)
 	const role = useAuthStore((s) => s.role)
 	const { sidebarOpen, setSidebarOpen } = useUIStore()

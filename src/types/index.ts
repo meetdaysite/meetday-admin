@@ -137,6 +137,7 @@ export type Admin = {
 	adminRole: { name: Role } | null
 	pendingAdminRole: { name: Role } | null
 	adminProfile: { managedCities: string[] } | null
+	isOnline: boolean
 }
 
 export type Host = {
