@@ -6,7 +6,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { DataView } from "@/components/ui/data-view"
 import { FilterSelect } from "@/components/ui/filter-select"
 import PageHeader from "@/components/ui/PageHeader"
-import { deactivateAdmin, getAdmins, inviteAdmin, reactivateAdmin } from "@/lib/api/admins"
+import { deactivateAdmin, deleteAdmin, getAdmins, inviteAdmin, reactivateAdmin } from "@/lib/api/admins"
 import { formatDate } from "@/lib/formatters"
 import { DateCell, StatusCell, TwoLineCell } from "@/components/ui/table-cells"
 import { usePaginatedFetch } from "@/lib/hooks/use-paginated-fetch"
@@ -40,7 +40,9 @@ const ACTIVE_FILTER_OPTIONS: { label: string; value: ActiveFilter }[] = [
 
 export default function AdminsPage() {
 	const currentUserId = useAuthStore(s => s.user?.id)
+	const currentUserRole = useAuthStore(s => s.role)
 	const canInvite = usePermission("admin.invite")
+	const canDelete = currentUserRole === "SUPER_ADMIN"
 
 	const [page, setPage] = useState(1)
 	const [roleFilter, setRoleFilter] = useState<RoleFilter>("ALL")
@@ -52,6 +54,8 @@ export default function AdminsPage() {
 	const [isDeactivating, setIsDeactivating] = useState(false)
 	const [reactivateTarget, setReactivateTarget] = useState<Admin | null>(null)
 	const [isReactivating, setIsReactivating] = useState(false)
+	const [deleteTarget, setDeleteTarget] = useState<Admin | null>(null)
+	const [isDeleting, setIsDeleting] = useState(false)
 
 	const fetcher = useCallback(
 		() =>
@@ -132,6 +136,25 @@ export default function AdminsPage() {
 			toast.error("Reactivation failed", { description: message })
 		} finally {
 			setIsReactivating(false)
+		}
+	}
+
+	async function handleDelete() {
+		if (!deleteTarget) return
+		setIsDeleting(true)
+		try {
+			await deleteAdmin(deleteTarget.id)
+			fetchAdmins()
+			setDeleteTarget(null)
+			toast.success("Admin deleted", {
+				description: `${deleteTarget.firstName} ${deleteTarget.lastName}'s account has been removed.`,
+			})
+		} catch (err: unknown) {
+			const message =
+				err instanceof Error ? err.message : "Failed to delete admin. Please try again."
+			toast.error("Delete failed", { description: message })
+		} finally {
+			setIsDeleting(false)
 		}
 	}
 
@@ -217,39 +240,51 @@ export default function AdminsPage() {
 								const isSelf = admin.id === currentUserId
 								const isTargetSuperAdmin = admin.role.name === "SUPER_ADMIN"
 
-								if (isSelf || isTargetSuperAdmin) return null
-
-								if (admin.isActive) {
-									return (
-										<button
-											onClick={e => {
-												e.stopPropagation()
-												setDeactivateTarget(admin)
-											}}
-											className="rounded-md px-2.5 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-50 transition-colors"
-										>
-											Deactivate
-										</button>
-									)
-								}
+								if (isSelf) return null
 
 								return (
-									<button
-										onClick={e => {
-											e.stopPropagation()
-											setReactivateTarget(admin)
-										}}
-										className="rounded-md px-2.5 py-1 text-[11px] font-semibold text-green-600 hover:bg-green-50 transition-colors"
-									>
-										Reactivate
-									</button>
+									<div className="flex items-center justify-end gap-1">
+										{!isTargetSuperAdmin &&
+											(admin.isActive ? (
+												<button
+													onClick={e => {
+														e.stopPropagation()
+														setDeactivateTarget(admin)
+													}}
+													className="rounded-md px-2.5 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-50 transition-colors"
+												>
+													Deactivate
+												</button>
+											) : (
+												<button
+													onClick={e => {
+														e.stopPropagation()
+														setReactivateTarget(admin)
+													}}
+													className="rounded-md px-2.5 py-1 text-[11px] font-semibold text-green-600 hover:bg-green-50 transition-colors"
+												>
+													Reactivate
+												</button>
+											))}
+										{canDelete && (
+											<button
+												onClick={e => {
+													e.stopPropagation()
+													setDeleteTarget(admin)
+												}}
+												className="rounded-md px-2.5 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-50 transition-colors"
+											>
+												Delete
+											</button>
+										)}
+									</div>
 								)
 							},
 						},
 					] as ColumnDef<Admin>[])
 				: []),
 		],
-		[canInvite, currentUserId],
+		[canInvite, canDelete, currentUserId],
 	)
 
 	const totalPages = Math.ceil(total / PAGE_LIMIT)
@@ -338,6 +373,22 @@ export default function AdminsPage() {
 				}
 				confirmLabel="Reactivate"
 				isLoading={isReactivating}
+			/>
+
+			{/* Delete confirm dialog */}
+			<ConfirmDialog
+				open={!!deleteTarget}
+				onClose={() => setDeleteTarget(null)}
+				onConfirm={handleDelete}
+				title="Delete admin"
+				description={
+					deleteTarget
+						? `This will permanently remove ${deleteTarget.firstName} ${deleteTarget.lastName}'s account and disable their login. This cannot be undone.`
+						: ""
+				}
+				confirmLabel="Delete"
+				destructive
+				isLoading={isDeleting}
 			/>
 		</div>
 	)

@@ -41,6 +41,10 @@ export async function reactivateAdmin(id: string): Promise<void> {
 	await apiClient.patch(`/admin/admins/${id}/reactivate`)
 }
 
+export async function deleteAdmin(id: string): Promise<void> {
+	await apiClient.delete(`/admin/admins/${id}`)
+}
+
 export type InviteTokenInfo = {
 	email: string
 }
