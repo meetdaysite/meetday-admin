@@ -1,8 +1,9 @@
 import React from "react"
 import { Check, Lock, FileText, AlertTriangle, CreditCard, ClipboardCheck } from "lucide-react"
 
-export function SystemMessageBubble({ content }: { content: string }) {
+export function SystemMessageBubble({ content, isCampaign }: { content: string; isCampaign?: boolean }) {
 	const lower = content.toLowerCase()
+	const effectiveIsCampaign = isCampaign ?? (lower.includes("campaign") && !lower.includes("sponsorship proposal"))
 
 	// 1. Report Approved / Deal Closed
 	if (
@@ -82,6 +83,7 @@ export function SystemMessageBubble({ content }: { content: string }) {
 	if (
 		lower.includes("created") ||
 		lower.includes("proposal") ||
+		lower.includes("campaign") ||
 		lower.includes("shared") ||
 		lower.includes("deal terms")
 	) {
@@ -91,7 +93,7 @@ export function SystemMessageBubble({ content }: { content: string }) {
 					<FileText size={13} strokeWidth={2.5} />
 				</div>
 				<span className="leading-snug">
-					A new <strong className="font-bold">deal proposal</strong> was shared for approval.
+					A new <strong className="font-bold">{effectiveIsCampaign ? "campaign deal" : "deal proposal"}</strong> was shared for approval.
 				</span>
 			</div>
 		)
@@ -105,7 +107,7 @@ export function SystemMessageBubble({ content }: { content: string }) {
 					<AlertTriangle size={13} strokeWidth={2.5} />
 				</div>
 				<span className="leading-snug">
-					<strong className="font-bold">Changes were requested</strong> on the proposal.
+					<strong className="font-bold">Changes were requested</strong> on the {effectiveIsCampaign ? "campaign deal" : "proposal"}.
 				</span>
 			</div>
 		)
