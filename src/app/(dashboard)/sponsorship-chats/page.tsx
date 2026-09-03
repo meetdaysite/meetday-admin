@@ -529,7 +529,7 @@ function AdminChatThreadPanel({
 			<div className="flex-1 p-3 sm:p-6 overflow-y-auto flex flex-col gap-2.5 sm:gap-3 min-h-0 bg-white">
 				{messages.map((m) => {
 					if (m.messageType === "SYSTEM") {
-						return <SystemMessageBubble key={m.id} content={m.content ?? ""} isCampaign={thread.isCampaign} />
+						return <SystemMessageBubble key={m.id} content={m.content ?? ""} isCampaign={Boolean(thread.campaignId || thread.type === "CAMPAIGN" || thread.isCampaign)} />
 					}
 
 					const isAdmin = m.senderType === "ADMIN"

@@ -11,6 +11,7 @@ export type SponsorshipChatThread = {
 	proposalName?: string | null
 	campaignId?: string | null
 	campaignName?: string | null
+	isCampaign?: boolean
 	communityName: string
 	brandName: string
 	senderRole?: "BRAND" | "HOST"
