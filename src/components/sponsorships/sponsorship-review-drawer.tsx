@@ -12,6 +12,7 @@ import {
 	Ticket,
 	Tag,
 	FileText,
+	Download,
 	ShieldAlert,
 	Link2,
 } from "lucide-react"
@@ -307,7 +308,8 @@ function SponsorshipDetailContent({
 							className="flex items-center gap-2 rounded-xl border border-border-subtle px-3.5 py-3 text-xs text-text-brand hover:bg-neutral-50 transition-colors"
 						>
 							<FileText size={14} />
-							{display.docName ?? "View document"}
+							<span className="flex-1 truncate">{display.docName ?? "Proposal document"}</span>
+							<Download size={14} className="shrink-0" />
 						</a>
 					</div>
 				</>

@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useRef, useState, useCallback } from "react"
+import { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { Image as ImageIcon, ArrowLeft } from "lucide-react"
+import { Image as ImageIcon, ArrowLeft, Plus, Search, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import PageHeader from "@/components/ui/PageHeader"
 import { uploadMeetdayChatImage } from "@/lib/api/storage"
@@ -11,17 +11,32 @@ import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import { LinkifiedText } from "@/components/ui/linkified-text"
 import { MentionPicker, type MentionSuggestion } from "@/components/chat/MentionPicker"
+import { getBrands } from "@/lib/api/brands"
+import { getHosts } from "@/lib/api/hosts"
+import type { Brand, Host } from "@/types"
 import {
 	getMeetdayChats,
 	getMeetdayChatMessages,
 	sendMeetdayChatMessage,
 	resolveMeetdayChat,
+	getMeetdayChatByUserId,
+	startMeetdayChatByUser,
 	type MeetdayChatThread,
 	type MeetdayChatMessage,
 } from "@/lib/api/meetday-chats"
 
 const THREADS_POLL_MS = 8000
 const MESSAGES_POLL_MS = 4000
+
+// A Brand/Community picked from the search dropdown before any support chat thread exists
+// between them and Meetday — the thread is only created once the first message is sent.
+type PendingChatTarget = {
+	userId: string
+	userName: string
+	userEmail: string
+	userRole: "BRAND" | "HOST"
+	userLogoUrl: string | null
+}
 
 function timeAgo(iso: string | null) {
 	if (!iso) return ""
@@ -36,6 +51,9 @@ function timeAgo(iso: string | null) {
 
 export default function MeetdayChatsPage() {
 	const [selectedId, setSelectedId] = useState<string | null>(null)
+	const [pendingTarget, setPendingTarget] = useState<PendingChatTarget | null>(null)
+	const [pickerOpen, setPickerOpen] = useState(false)
+	const queryClient = useQueryClient()
 
 	const threadsQuery = useQuery({
 		queryKey: ["admin-meetday-chats"],
@@ -50,21 +68,68 @@ export default function MeetdayChatsPage() {
 	})
 	const selectedThread = threads.find(t => t.id === selectedId) ?? null
 
+	// A Brand/Community picked from the "New Chat" search — opens their existing thread if one
+	// already exists, otherwise shows an empty pending-conversation panel.
+	async function handlePickTarget(target: PendingChatTarget) {
+		setPickerOpen(false)
+		try {
+			const existing = await getMeetdayChatByUserId(target.userId)
+			if (existing.threadId) {
+				await queryClient.invalidateQueries({ queryKey: ["admin-meetday-chats"] })
+				setPendingTarget(null)
+				setSelectedId(existing.threadId)
+			} else {
+				setSelectedId(null)
+				setPendingTarget(target)
+			}
+		} catch {
+			toast.error("Failed to open chat.")
+		}
+	}
+
+	function handleThreadCreated(threadId: string) {
+		queryClient.invalidateQueries({ queryKey: ["admin-meetday-chats"] })
+		setPendingTarget(null)
+		setSelectedId(threadId)
+	}
+
 	return (
 		<div className="flex-1 min-h-0 flex flex-col h-full md:p-6 md:space-y-5 md:max-w-7xl md:mx-auto w-full">
 			<div className="hidden md:block shrink-0">
-				<PageHeader title="Support Chats" description="Direct support chats from Communities and Brands — reply as Meetday." />
+				<PageHeader
+					title="Support Chats"
+					description="Direct support chats from Communities and Brands — reply as Meetday."
+					buttons={
+						<button
+							type="button"
+							onClick={() => setPickerOpen(true)}
+							className="flex items-center gap-1.5 bg-[#EE2C2C] text-white text-xs font-black px-3.5 py-2 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
+						>
+							<Plus size={14} /> New Chat
+						</button>
+					}
+				/>
 			</div>
 
 			<div className="flex-1 min-h-0 flex flex-col md:flex-row bg-white overflow-hidden md:border-[3px] md:border-black md:rounded-[24px] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:h-[calc(100vh-270px)] h-full">
 				{/* Thread list */}
 				<div className={cn(
 					"flex flex-col h-full bg-white border-r-0 md:border-r-[3px] md:border-black",
-					selectedId ? "hidden md:flex md:w-80 shrink-0" : "w-full md:w-80 shrink-0 flex-1 md:flex-initial"
+					(selectedId || pendingTarget) ? "hidden md:flex md:w-80 shrink-0" : "w-full md:w-80 shrink-0 flex-1 md:flex-initial"
 				)}>
 					<div className="px-4 py-3 border-b border-black/10 md:hidden flex items-center justify-between shrink-0">
 						<h2 className="font-heading font-black text-base text-black">Support Chats</h2>
-						<span className="text-xs font-semibold text-black/50">{threads.length} chats</span>
+						<div className="flex items-center gap-2">
+							<span className="text-xs font-semibold text-black/50">{threads.length} chats</span>
+							<button
+								type="button"
+								onClick={() => setPickerOpen(true)}
+								className="flex items-center justify-center size-7 rounded-full bg-[#EE2C2C] text-white shrink-0"
+								aria-label="Start new chat"
+							>
+								<Plus size={15} />
+							</button>
+						</div>
 					</div>
 
 					<div className="flex-1 overflow-y-auto">
@@ -76,7 +141,10 @@ export default function MeetdayChatsPage() {
 							threads.map(t => (
 								<button
 									key={t.id}
-									onClick={() => setSelectedId(t.id)}
+									onClick={() => {
+										setPendingTarget(null)
+										setSelectedId(t.id)
+									}}
 									className={cn(
 										"w-full text-left px-4 py-3 border-b border-black/10 transition-colors flex items-center gap-3",
 										selectedId === t.id ? "bg-[#FFC940]/20" : "hover:bg-neutral-50",
@@ -124,19 +192,33 @@ export default function MeetdayChatsPage() {
 				{/* Thread detail */}
 				<div className={cn(
 					"min-w-0 flex flex-col h-full bg-[#F8F9FB] md:bg-white",
-					selectedId ? "flex-1 w-full" : "hidden md:flex flex-1"
+					(selectedId || pendingTarget) ? "flex-1 w-full" : "hidden md:flex flex-1"
 				)}>
-					{!selectedThread ? (
-						<div className="flex-1 flex items-center justify-center text-body-sm text-text-tertiary">Select a chat to view</div>
-					) : (
+					{selectedThread ? (
 						<MeetdayAdminChatPanel
 							key={selectedThread.id}
 							thread={selectedThread}
 							onBack={() => setSelectedId(null)}
 						/>
+					) : pendingTarget ? (
+						<PendingChatPanel
+							key={pendingTarget.userId}
+							target={pendingTarget}
+							onBack={() => setPendingTarget(null)}
+							onThreadCreated={handleThreadCreated}
+						/>
+					) : (
+						<div className="flex-1 flex items-center justify-center text-body-sm text-text-tertiary">Select a chat to view</div>
 					)}
 				</div>
 			</div>
+
+			{pickerOpen && (
+				<NewSupportChatPicker
+					onClose={() => setPickerOpen(false)}
+					onPick={handlePickTarget}
+				/>
+			)}
 		</div>
 	)
 }
@@ -497,6 +579,250 @@ function MeetdayAdminChatPanel({
 			</div>
 
 			{viewingImage && <ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />}
+		</div>
+	)
+}
+
+// Chat window for a Brand/Community picked from search before any thread exists yet — a
+// stripped-down version of MeetdayAdminChatPanel (text-only, no polling, nothing to show) that
+// hands off to the real thread view the moment the first message creates it.
+function PendingChatPanel({
+	target,
+	onBack,
+	onThreadCreated,
+}: {
+	target: PendingChatTarget
+	onBack?: () => void
+	onThreadCreated: (threadId: string) => void
+}) {
+	const [input, setInput] = useState("")
+
+	const sendMutation = useMutation({
+		mutationFn: (content: string) => startMeetdayChatByUser(target.userId, { content }),
+		onSuccess: (message) => onThreadCreated(message.threadId),
+		onError: () => toast.error("Failed to send message."),
+	})
+
+	function handleSend() {
+		const content = input.trim()
+		if (!content) return
+		sendMutation.mutate(content)
+	}
+
+	return (
+		<div className="flex-1 min-h-0 flex flex-col h-full">
+			<div className="px-3 sm:px-5 py-2.5 sm:py-3 border-b border-black/10 md:border-b-[3px] md:border-black bg-white shrink-0 flex items-center gap-2.5">
+				{onBack && (
+					<button
+						type="button"
+						onClick={onBack}
+						className="md:hidden p-1.5 -ml-1 text-black/70 hover:text-black hover:bg-neutral-100 rounded-full shrink-0 transition-colors"
+						aria-label="Back to chat list"
+					>
+						<ArrowLeft size={18} />
+					</button>
+				)}
+				<div className="size-9 rounded-full border border-black/15 bg-neutral-100 flex items-center justify-center font-black text-xs text-black/60 shrink-0 overflow-hidden">
+					{target.userLogoUrl ? (
+						<img src={target.userLogoUrl} alt={target.userName} className="w-full h-full object-cover" />
+					) : (
+						target.userName.charAt(0).toUpperCase()
+					)}
+				</div>
+				<div className="min-w-0 flex-1">
+					<p className="text-xs sm:text-sm font-heading font-black text-black truncate leading-tight">{target.userName}</p>
+					<p className="text-[10px] sm:text-[11px] font-semibold text-black/50 truncate">
+						{target.userRole === "HOST" ? "Community" : "Brand"} • {target.userEmail}
+					</p>
+				</div>
+			</div>
+
+			<div className="flex-1 overflow-y-auto px-3 sm:px-5 py-4 flex flex-col">
+				<p className="text-caption text-text-tertiary text-center m-auto">
+					No messages yet — send one to start the conversation.
+				</p>
+			</div>
+
+			<div className="p-2 sm:p-3 border-t border-black/10 md:border-t-[3px] md:border-black bg-white flex items-center gap-1.5 sm:gap-2 shrink-0 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+				<input
+					value={input}
+					onChange={e => setInput(e.target.value)}
+					onKeyDown={e => {
+						if (e.key === "Enter" && !e.shiftKey && input.trim()) {
+							e.preventDefault()
+							handleSend()
+						}
+					}}
+					placeholder={`Message ${target.userName} as Meetday…`}
+					className="flex-1 min-w-0 rounded-full border border-black/15 focus:border-black bg-neutral-100 focus:bg-white px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-medium outline-none transition-all"
+				/>
+				<button
+					type="button"
+					onClick={handleSend}
+					disabled={sendMutation.isPending || !input.trim()}
+					className="h-9 px-3.5 sm:px-4 rounded-full bg-[#EE2C2C] hover:bg-[#D12525] text-white font-black text-xs uppercase tracking-wider disabled:opacity-40 transition-all shrink-0 flex items-center justify-center whitespace-nowrap"
+				>
+					{sendMutation.isPending ? "…" : "Send"}
+				</button>
+			</div>
+		</div>
+	)
+}
+
+// Brand/Community search picker for starting a new admin-initiated support chat — mirrors the
+// recipient-search UX already used on the Announcements page.
+function NewSupportChatPicker({
+	onClose,
+	onPick,
+}: {
+	onClose: () => void
+	onPick: (target: PendingChatTarget) => void
+}) {
+	const [tab, setTab] = useState<"BRAND" | "HOST">("HOST")
+	const [search, setSearch] = useState("")
+
+	const brandsQuery = useQuery({
+		queryKey: ["meetday-chat-picker", "brands"],
+		queryFn: () => getBrands({ limit: 100 }).then(r => r.brands),
+		enabled: tab === "BRAND",
+	})
+	const hostsQuery = useQuery({
+		queryKey: ["meetday-chat-picker", "hosts"],
+		queryFn: () => getHosts({ limit: 100 }).then(r => r.hosts),
+		enabled: tab === "HOST",
+	})
+
+	const filteredBrands = useMemo(() => {
+		const q = search.trim().toLowerCase()
+		const list = brandsQuery.data ?? []
+		if (!q) return list
+		return list.filter((b: Brand) => b.brandName?.toLowerCase().includes(q) || b.user.email?.toLowerCase().includes(q))
+	}, [brandsQuery.data, search])
+
+	const filteredHosts = useMemo(() => {
+		const q = search.trim().toLowerCase()
+		const list = hostsQuery.data ?? []
+		if (!q) return list
+		return list.filter((h: Host) => h.displayName?.toLowerCase().includes(q) || h.user.email?.toLowerCase().includes(q))
+	}, [hostsQuery.data, search])
+
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+			<div
+				className="w-full max-w-md bg-white border-[3px] border-black rounded-[24px] shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] flex flex-col max-h-[80vh]"
+				onClick={e => e.stopPropagation()}
+			>
+				<div className="flex items-center justify-between px-5 py-4 border-b-[2px] border-black/10 shrink-0">
+					<h2 className="font-heading font-black text-lg text-black">New Support Chat</h2>
+					<button type="button" onClick={onClose} className="p-1 text-black/50 hover:text-black rounded-full transition-colors">
+						<X size={18} />
+					</button>
+				</div>
+
+				<div className="flex gap-2 px-5 pt-4 shrink-0">
+					<button
+						type="button"
+						onClick={() => setTab("HOST")}
+						className={cn(
+							"flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-wider border-2 border-black transition-colors",
+							tab === "HOST" ? "bg-[#FFC940] text-black" : "bg-white text-black/50 hover:bg-neutral-50",
+						)}
+					>
+						Community
+					</button>
+					<button
+						type="button"
+						onClick={() => setTab("BRAND")}
+						className={cn(
+							"flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-wider border-2 border-black transition-colors",
+							tab === "BRAND" ? "bg-[#FFC940] text-black" : "bg-white text-black/50 hover:bg-neutral-50",
+						)}
+					>
+						Brand
+					</button>
+				</div>
+
+				<div className="px-5 pt-3 shrink-0">
+					<div className="relative">
+						<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+						<input
+							type="text"
+							value={search}
+							onChange={e => setSearch(e.target.value)}
+							placeholder={tab === "HOST" ? "Search communities by name or email…" : "Search brands by name or email…"}
+							className="w-full rounded-xl border-2 border-black bg-white pl-8 pr-3 py-2 text-xs font-semibold outline-none focus:bg-neutral-50 text-black placeholder:text-neutral-400"
+						/>
+					</div>
+				</div>
+
+				<div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-1">
+					{tab === "HOST" ? (
+						hostsQuery.isLoading ? (
+							<p className="text-xs font-semibold text-neutral-500 py-4 text-center">Loading communities…</p>
+						) : filteredHosts.length === 0 ? (
+							<p className="text-xs font-semibold text-neutral-500 py-4 text-center">No communities found.</p>
+						) : (
+							filteredHosts.map((h: Host) => (
+								<button
+									key={h.id}
+									type="button"
+									onClick={() =>
+										onPick({
+											userId: h.user.id,
+											userName: h.displayName,
+											userEmail: h.user.email ?? "",
+											userRole: "HOST",
+											userLogoUrl: null,
+										})
+									}
+									className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-[#FFC940]/15 text-left transition-colors"
+								>
+									<div className="size-8 rounded-full bg-neutral-100 border border-black/10 flex items-center justify-center font-black text-xs text-black/60 shrink-0">
+										{h.displayName.charAt(0).toUpperCase()}
+									</div>
+									<span className="flex flex-col min-w-0 flex-1">
+										<span className="text-xs font-bold text-black truncate">{h.displayName}</span>
+										<span className="text-[11px] text-neutral-500 truncate">{h.user.email}</span>
+									</span>
+								</button>
+							))
+						)
+					) : brandsQuery.isLoading ? (
+						<p className="text-xs font-semibold text-neutral-500 py-4 text-center">Loading brands…</p>
+					) : filteredBrands.length === 0 ? (
+						<p className="text-xs font-semibold text-neutral-500 py-4 text-center">No brands found.</p>
+					) : (
+						filteredBrands.map((b: Brand) => (
+							<button
+								key={b.id}
+								type="button"
+								onClick={() =>
+									onPick({
+										userId: b.user.id,
+										userName: b.brandName,
+										userEmail: b.user.email ?? "",
+										userRole: "BRAND",
+										userLogoUrl: b.logoUrl,
+									})
+								}
+								className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-[#FFC940]/15 text-left transition-colors"
+							>
+								<div className="size-8 rounded-full bg-neutral-100 border border-black/10 flex items-center justify-center font-black text-xs text-black/60 shrink-0 overflow-hidden">
+									{b.logoUrl ? (
+										<img src={b.logoUrl} alt={b.brandName} className="w-full h-full object-cover" />
+									) : (
+										b.brandName.charAt(0).toUpperCase()
+									)}
+								</div>
+								<span className="flex flex-col min-w-0 flex-1">
+									<span className="text-xs font-bold text-black truncate">{b.brandName}</span>
+									<span className="text-[11px] text-neutral-500 truncate">{b.user.email}</span>
+								</span>
+							</button>
+						))
+					)}
+				</div>
+			</div>
 		</div>
 	)
 }

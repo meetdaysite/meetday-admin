@@ -62,3 +62,25 @@ export async function resolveMeetdayChat(threadId: string): Promise<MeetdayChatM
 	const { data } = await apiClient.post<MeetdayChatMessage>(`/admin/meetday-chats/${threadId}/resolve`)
 	return data
 }
+
+// ─── Admin-initiated conversations ──────────────────────────────────────────
+// Lets an admin pick a Brand/Community from search and open a chat window before any thread
+// exists yet — the thread is only actually created once the first message is sent.
+
+export async function getMeetdayChatByUserId(userId: string): Promise<{ threadId: string | null; messages: MeetdayChatMessage[] }> {
+	const { data } = await apiClient.get<{ threadId: string | null; messages: MeetdayChatMessage[] }>(
+		`/admin/meetday-chats/by-user/${userId}`,
+	)
+	return data
+}
+
+export async function startMeetdayChatByUser(
+	userId: string,
+	payload: { content?: string; mediaKey?: string; replyToId?: string },
+): Promise<MeetdayChatMessage & { threadId: string }> {
+	const { data } = await apiClient.post<MeetdayChatMessage & { threadId: string }>(
+		`/admin/meetday-chats/by-user/${userId}/messages`,
+		payload,
+	)
+	return data
+}

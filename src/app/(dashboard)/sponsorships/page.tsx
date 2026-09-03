@@ -23,7 +23,7 @@ import { usePermission } from "@/lib/hooks/use-permission"
 import type { SponsorshipDetail, SponsorshipProposal, SponsorshipStatus } from "@/types"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/Button"
-import { Plus } from "lucide-react"
+import { Plus, Download } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
@@ -64,6 +64,50 @@ function SponsorshipLogoCell({ id, name }: { id: string; name: string }) {
 		<div className="size-8 rounded-lg bg-neutral-100 flex items-center justify-center font-bold text-xs border-2 border-black text-neutral-700 select-none">
 			{name.slice(0, 2).toUpperCase()}
 		</div>
+	)
+}
+
+// Lazily fetches the proposal's pitch document (PDF or other file uploaded by the community)
+// and renders a one-click download button — the URL is signed with a forced Content-Disposition
+// so it saves to disk instead of opening an inline preview tab.
+function SponsorshipDocCell({ id }: { id: string }) {
+	const [docUrl, setDocUrl] = useState<string | null>(null)
+	const [docName, setDocName] = useState<string | null>(null)
+	const [loading, setLoading] = useState(true)
+
+	useEffect(() => {
+		let active = true
+		getSponsorshipById(id)
+			.then((data: SponsorshipDetail) => {
+				if (active) {
+					setDocUrl(data.docUrl)
+					setDocName(data.docName)
+				}
+			})
+			.catch(() => {})
+			.finally(() => {
+				if (active) setLoading(false)
+			})
+		return () => {
+			active = false
+		}
+	}, [id])
+
+	if (loading) return <div className="h-6 w-6 rounded-md bg-neutral-100 animate-pulse" />
+	if (!docUrl) return <span className="text-neutral-300">—</span>
+
+	return (
+		<button
+			type="button"
+			onClick={e => {
+				e.stopPropagation()
+				window.open(docUrl, "_blank")
+			}}
+			title={docName ? `Download ${docName}` : "Download pitch document"}
+			className="flex items-center justify-center size-7 rounded-lg border-2 border-black bg-white hover:bg-[#FFC940]/20 transition-colors shrink-0"
+		>
+			<Download size={13} className="text-black" />
+		</button>
 	)
 }
 
@@ -220,6 +264,11 @@ export default function SponsorshipsPage() {
 						)}
 					</div>
 				),
+			},
+			{
+				id: "document",
+				header: "Document",
+				cell: ({ row }) => <SponsorshipDocCell id={row.original.id} />,
 			},
 		],
 		[],
