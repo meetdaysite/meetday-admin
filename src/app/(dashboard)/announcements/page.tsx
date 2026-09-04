@@ -242,7 +242,7 @@ export default function AnnouncementsPage() {
 			? "All Brands & Community"
 			: [
 					selectBrands ? "All Brands" : selectedBrandIds.size ? `${selectedBrandIds.size} Brand(s)` : null,
-					selectCommunity ? "All Community" : selectedHostIds.size ? `${selectedHostIds.size} Host(s)` : null,
+					selectCommunity ? "All Community" : selectedHostIds.size ? `${selectedHostIds.size} Community` : null,
 				]
 					.filter(Boolean)
 					.join(", ")
@@ -353,7 +353,7 @@ export default function AnnouncementsPage() {
 		<div className="p-4 sm:p-6 space-y-8 max-w-7xl mx-auto w-full">
 			<PageHeader
 				title="Announcements"
-				description="Compose, format, and broadcast email announcements to hosts and brands in your network."
+				description="Compose, format, and broadcast email announcements to community and brands in your network."
 			/>
 
 			{/* ── FULL-WIDTH ANNOUNCEMENT COMPOSER ───────────────────────── */}
@@ -396,7 +396,7 @@ export default function AnnouncementsPage() {
 								/>
 								<div className="min-w-0">
 									<p className="text-xs sm:text-sm font-black text-black leading-tight">All Audience</p>
-									<p className="text-[11px] font-semibold text-neutral-500 truncate mt-0.5">Brands + Community Hosts</p>
+									<p className="text-[11px] font-semibold text-neutral-500 truncate mt-0.5">Brands + Community</p>
 								</div>
 							</label>
 
@@ -464,7 +464,7 @@ export default function AnnouncementsPage() {
 								)}
 							</div>
 
-							{/* Community/Host Group */}
+							{/* Community Group */}
 							<div className="border-[3px] border-black rounded-2xl bg-white overflow-hidden">
 								<div
 									onClick={() => setCommunityExpanded(v => !v)}
@@ -480,7 +480,7 @@ export default function AnnouncementsPage() {
 											onChange={e => toggleCommunity(e.target.checked)}
 											className="rounded-full border-2 border-black accent-[#EE2C2C] size-4.5 cursor-pointer focus:ring-0 shrink-0"
 										/>
-										<span className="truncate">Community (Hosts)</span>
+										<span className="truncate">Community</span>
 										{selectedHostIds.size > 0 && !selectCommunity && (
 											<span className="text-[10px] font-bold bg-[#EE2C2C] text-white px-2 py-0.5 rounded-full shrink-0">
 												{selectedHostIds.size}
@@ -497,17 +497,17 @@ export default function AnnouncementsPage() {
 												type="text"
 												value={communitySearch}
 												onChange={e => setCommunitySearch(e.target.value)}
-												placeholder="Search hosts…"
+												placeholder="Search community…"
 												className="w-full rounded-xl border-2 border-black bg-white pl-8 pr-3 py-1.5 text-xs font-semibold outline-none focus:bg-neutral-50 text-black placeholder:text-neutral-400"
 											/>
 										</div>
 										<div className="max-h-40 overflow-y-auto flex flex-col gap-0.5 mt-1 pr-1">
 											{hostsQuery.isLoading ? (
-												<p className="text-xs font-semibold text-neutral-500 py-2 text-center">Loading hosts…</p>
+												<p className="text-xs font-semibold text-neutral-500 py-2 text-center">Loading community…</p>
 											) : hostsQuery.isError ? (
-												<p className="text-xs font-semibold text-red-600 py-2 text-center">Failed to load hosts.</p>
+												<p className="text-xs font-semibold text-red-600 py-2 text-center">Failed to load community.</p>
 											) : filteredHosts.length === 0 ? (
-												<p className="text-xs font-semibold text-neutral-500 py-2 text-center">No hosts found.</p>
+												<p className="text-xs font-semibold text-neutral-500 py-2 text-center">No community found.</p>
 											) : (
 												filteredHosts.map(h => (
 													<label key={h.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-[#FFC940]/15 text-xs font-semibold text-black cursor-pointer select-none transition-colors">
