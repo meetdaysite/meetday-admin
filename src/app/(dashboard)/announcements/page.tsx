@@ -35,6 +35,15 @@ function formatFileSize(bytes?: number): string {
 	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+function formatRecipientsSummary(summary?: string): string {
+	if (!summary) return ""
+	return summary
+		.replace(/\bHost\(s\)/gi, "Community")
+		.replace(/\bHosts\b/gi, "Community")
+		.replace(/\bHost\b/gi, "Community")
+		.replace(/Community\(s\)/gi, "Community")
+}
+
 export default function AnnouncementsPage() {
 	const queryClient = useQueryClient()
 	const [selectAll, setSelectAll] = useState(false)
@@ -312,7 +321,7 @@ export default function AnnouncementsPage() {
 				cell: ({ row }) => (
 					<div className="max-w-[200px] overflow-hidden truncate">
 						<span className="text-xs font-bold text-[#EE2C2C] bg-red-50 px-2.5 py-1 rounded-full border border-red-200 truncate inline-block max-w-full">
-							{row.original.recipientsSummary}
+							{formatRecipientsSummary(row.original.recipientsSummary)}
 						</span>
 					</div>
 				),
@@ -886,7 +895,7 @@ export default function AnnouncementsPage() {
 								</div>
 								<div className="flex items-center gap-1.5 text-[#EE2C2C] bg-red-50 px-3 py-1 rounded-full border border-red-200">
 									<Mail size={12} />
-									<span>To: {selectedAnn.recipientsSummary}</span>
+									<span>To: {formatRecipientsSummary(selectedAnn.recipientsSummary)}</span>
 								</div>
 							</div>
 						</div>
