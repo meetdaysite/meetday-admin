@@ -242,7 +242,7 @@ export default function AnnouncementsPage() {
 			? "All Brands & Community"
 			: [
 					selectBrands ? "All Brands" : selectedBrandIds.size ? `${selectedBrandIds.size} Brand(s)` : null,
-					selectCommunity ? "All Community" : selectedHostIds.size ? `${selectedHostIds.size} Community(s)` : null,
+					selectCommunity ? "All Community" : selectedHostIds.size ? `${selectedHostIds.size} Community` : null,
 				]
 					.filter(Boolean)
 					.join(", ")
