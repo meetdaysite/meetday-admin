@@ -1,5 +1,13 @@
 import { apiClient } from "./client"
 
+export type AnnouncementAttachment = {
+	name: string
+	key: string
+	size?: number
+	type: string
+	url?: string
+}
+
 export type SendAnnouncementPayload = {
 	allBrands?: boolean
 	allCommunity?: boolean
@@ -8,6 +16,7 @@ export type SendAnnouncementPayload = {
 	subject?: string
 	message: string
 	recipientsSummary?: string
+	attachments?: AnnouncementAttachment[]
 }
 
 export type SendAnnouncementResponse = {
@@ -25,6 +34,7 @@ export type Announcement = {
 	message: string
 	recipientCount: number
 	recipientsSummary: string
+	attachments?: AnnouncementAttachment[]
 	createdAt: string
 	sentBy: { firstName: string; lastName: string; email: string }
 }

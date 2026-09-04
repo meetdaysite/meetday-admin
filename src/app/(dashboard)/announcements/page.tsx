@@ -1,12 +1,13 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useRef } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import axios from "axios"
 import { toast } from "sonner"
-import { Megaphone, ChevronDown, Search, Mail } from "lucide-react"
+import { Megaphone, ChevronDown, Search, Mail, Paperclip, FileText, ImageIcon, Trash2, UploadCloud, ExternalLink, CheckCircle2, Loader2, Download } from "lucide-react"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { sendAnnouncement, getAnnouncements, type Announcement } from "@/lib/api/announcements"
+import { sendAnnouncement, getAnnouncements, type Announcement, type AnnouncementAttachment } from "@/lib/api/announcements"
+import { uploadAnnouncementAttachment } from "@/lib/api/storage"
 import { getBrands } from "@/lib/api/brands"
 import { getHosts } from "@/lib/api/hosts"
 import { cn } from "@/lib/utils"
@@ -15,6 +16,24 @@ import { DataTable } from "@/components/ui/data-table"
 import { type ColumnDef } from "@tanstack/react-table"
 
 import { RichTextEditor } from "@/components/ui/RichTextEditor"
+
+type UploadingAttachment = {
+	id: string
+	file: File
+	name: string
+	size: number
+	type: string
+	key?: string
+	status: "uploading" | "done" | "error"
+	previewUrl?: string
+}
+
+function formatFileSize(bytes?: number): string {
+	if (!bytes) return ""
+	if (bytes < 1024) return `${bytes} B`
+	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
 
 export default function AnnouncementsPage() {
 	const queryClient = useQueryClient()
@@ -29,7 +48,9 @@ export default function AnnouncementsPage() {
 	const [selectedHostIds, setSelectedHostIds] = useState<Set<string>>(new Set())
 	const [subject, setSubject] = useState("")
 	const [message, setMessage] = useState("")
+	const [attachments, setAttachments] = useState<UploadingAttachment[]>([])
 	const [confirmOpen, setConfirmOpen] = useState(false)
+	const fileInputRef = useRef<HTMLInputElement>(null)
 
 	// Past Announcements Search & Filters
 	const pastAnnouncementsQuery = useQuery({
@@ -105,6 +126,74 @@ export default function AnnouncementsPage() {
 		(selectBrands ? (brandsQuery.data?.length ?? 0) : selectedBrandIds.size) +
 		(selectCommunity ? (hostsQuery.data?.length ?? 0) : selectedHostIds.size)
 
+	async function handleFiles(files: FileList | File[]) {
+		const validFiles: File[] = []
+		const allowedTypes = [
+			"application/pdf",
+			"image/jpeg",
+			"image/jpg",
+			"image/png",
+			"image/webp",
+		]
+		const maxFiles = 10
+		if (attachments.length + files.length > maxFiles) {
+			toast.error(`You can attach up to ${maxFiles} files per announcement.`)
+			return
+		}
+
+		for (let i = 0; i < files.length; i++) {
+			const f = files[i]
+			if (!allowedTypes.includes(f.type)) {
+				toast.error(`${f.name} is not supported. Please attach PDFs or JPEG/PNG/WEBP images.`)
+				continue
+			}
+			if (f.size > 15 * 1024 * 1024) {
+				toast.error(`${f.name} exceeds the 15MB limit.`)
+				continue
+			}
+			validFiles.push(f)
+		}
+
+		if (validFiles.length === 0) return
+
+		const newItems: UploadingAttachment[] = validFiles.map((f) => ({
+			id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+			file: f,
+			name: f.name,
+			size: f.size,
+			type: f.type,
+			status: "uploading",
+			previewUrl: f.type.startsWith("image/") ? URL.createObjectURL(f) : undefined,
+		}))
+
+		setAttachments((prev) => [...prev, ...newItems])
+
+		for (const item of newItems) {
+			try {
+				const key = await uploadAnnouncementAttachment(item.file)
+				setAttachments((prev) =>
+					prev.map((a) => (a.id === item.id ? { ...a, key, status: "done" } : a))
+				)
+			} catch (err) {
+				console.error("Failed to upload announcement attachment", err)
+				toast.error(`Failed to upload ${item.name}`)
+				setAttachments((prev) =>
+					prev.map((a) => (a.id === item.id ? { ...a, status: "error" } : a))
+				)
+			}
+		}
+	}
+
+	function removeAttachment(id: string) {
+		setAttachments((prev) => {
+			const target = prev.find((a) => a.id === id)
+			if (target?.previewUrl) {
+				URL.revokeObjectURL(target.previewUrl)
+			}
+			return prev.filter((a) => a.id !== id)
+		})
+	}
+
 	const sendMutation = useMutation({
 		mutationFn: sendAnnouncement,
 		onSuccess: (data) => {
@@ -119,6 +208,8 @@ export default function AnnouncementsPage() {
 			setSelectCommunity(false)
 			setSelectedBrandIds(new Set())
 			setSelectedHostIds(new Set())
+			attachments.forEach((a) => a.previewUrl && URL.revokeObjectURL(a.previewUrl))
+			setAttachments([])
 		},
 		onError: (err) => {
 			const msg = axios.isAxiosError(err) ? err.response?.data?.message : undefined
@@ -135,6 +226,14 @@ export default function AnnouncementsPage() {
 			toast.error("Select at least one recipient.")
 			return
 		}
+		if (attachments.some((a) => a.status === "uploading")) {
+			toast.error("Please wait for all attachments to finish uploading.")
+			return
+		}
+		if (attachments.some((a) => a.status === "error" || !a.key)) {
+			toast.error("Some attachments failed to upload. Please remove them or re-upload.")
+			return
+		}
 		setConfirmOpen(true)
 	}
 
@@ -148,6 +247,15 @@ export default function AnnouncementsPage() {
 					.filter(Boolean)
 					.join(", ")
 
+		const validAttachments: AnnouncementAttachment[] = attachments
+			.filter((a) => a.status === "done" && a.key)
+			.map((a) => ({
+				name: a.name,
+				key: a.key!,
+				size: a.size,
+				type: a.type,
+			}))
+
 		sendMutation.mutate({
 			allBrands: selectBrands,
 			allCommunity: selectCommunity,
@@ -156,6 +264,7 @@ export default function AnnouncementsPage() {
 			subject: subject.trim() || undefined,
 			message: message.trim(),
 			recipientsSummary,
+			attachments: validAttachments.length > 0 ? validAttachments : undefined,
 		})
 	}
 
@@ -184,8 +293,16 @@ export default function AnnouncementsPage() {
 				id: "subject",
 				header: () => <span className="whitespace-nowrap font-bold">Subject / Name</span>,
 				cell: ({ row }) => (
-					<div className="font-black text-black font-heading truncate w-full max-w-[280px]">
-						{row.original.subject || <span className="text-neutral-400 italic">No subject</span>}
+					<div className="flex flex-col gap-1 w-full max-w-[280px]">
+						<div className="font-black text-black font-heading truncate">
+							{row.original.subject || <span className="text-neutral-400 italic">No subject</span>}
+						</div>
+						{row.original.attachments && row.original.attachments.length > 0 && (
+							<span className="inline-flex items-center gap-1 text-[10px] font-black text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded-md border border-black/15 shadow-xs w-fit">
+								<Paperclip size={10} className="text-[#EE2C2C]" />
+								{row.original.attachments.length} attachment{row.original.attachments.length > 1 ? "s" : ""}
+							</span>
+						)}
 					</div>
 				),
 			},
@@ -442,7 +559,135 @@ export default function AnnouncementsPage() {
 						/>
 					</div>
 
-					{/* 4. Bottom Action Bar */}
+					{/* 4. File Attachments (PDFs & JPEGs / Images) */}
+					<div className="flex flex-col gap-2">
+						<div className="flex items-center justify-between">
+							<label className="text-xs font-black uppercase tracking-wider text-black/60">
+								4. Attachments (PDFs & Images)
+							</label>
+							<span className="text-[11px] font-bold text-neutral-400">
+								PDF, JPEG, PNG, WEBP (Max 15MB each, up to 10 files)
+							</span>
+						</div>
+
+						<input
+							ref={fileInputRef}
+							type="file"
+							multiple
+							accept="application/pdf,image/jpeg,image/jpg,image/png,image/webp"
+							className="hidden"
+							onChange={e => {
+								if (e.target.files && e.target.files.length > 0) {
+									handleFiles(e.target.files)
+									e.target.value = ""
+								}
+							}}
+						/>
+
+						{/* Dropzone / Upload button */}
+						<div
+							onDragOver={e => {
+								e.preventDefault()
+								e.stopPropagation()
+							}}
+							onDrop={e => {
+								e.preventDefault()
+								e.stopPropagation()
+								if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+									handleFiles(e.dataTransfer.files)
+								}
+							}}
+							onClick={() => fileInputRef.current?.click()}
+							className="group border-2 border-dashed border-black/30 hover:border-black rounded-2xl p-4 sm:p-6 bg-neutral-50/70 hover:bg-[#FFC940]/10 transition-all cursor-pointer flex flex-col sm:flex-row items-center justify-center gap-3 text-center sm:text-left select-none"
+						>
+							<div className="size-11 rounded-2xl bg-white border-2 border-black flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform shrink-0">
+								<UploadCloud size={20} className="text-[#EE2C2C]" />
+							</div>
+							<div className="flex flex-col">
+								<p className="text-xs sm:text-sm font-black text-black">
+									<span className="text-[#EE2C2C] underline underline-offset-2">Click to browse</span> or drag and drop files here
+								</p>
+								<p className="text-[11px] font-semibold text-neutral-500 mt-0.5">
+									Attach brochures, event schedules, posters, agreements, or product sheets (PDF, JPG, PNG)
+								</p>
+							</div>
+						</div>
+
+						{/* Attached Files List */}
+						{attachments.length > 0 && (
+							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mt-2">
+								{attachments.map(att => {
+									const isPdf = att.type === "application/pdf"
+									return (
+										<div
+											key={att.id}
+											className="flex items-center gap-3 p-2.5 rounded-2xl border-2 border-black bg-white shadow-xs relative overflow-hidden group"
+										>
+											{/* Thumbnail / Icon */}
+											<div className="size-10 rounded-xl border border-black/20 overflow-hidden bg-neutral-100 flex items-center justify-center shrink-0">
+												{att.previewUrl ? (
+													<img
+														src={att.previewUrl}
+														alt={att.name}
+														className="w-full h-full object-cover"
+													/>
+												) : isPdf ? (
+													<div className="flex flex-col items-center justify-center bg-red-50 text-[#EE2C2C] w-full h-full">
+														<FileText size={18} />
+														<span className="text-[8px] font-black uppercase tracking-tighter">PDF</span>
+													</div>
+												) : (
+													<ImageIcon size={18} className="text-neutral-400" />
+												)}
+											</div>
+
+											{/* File details */}
+											<div className="flex-1 min-w-0 flex flex-col">
+												<p className="text-xs font-black text-black truncate leading-tight" title={att.name}>
+													{att.name}
+												</p>
+												<div className="flex items-center gap-1.5 mt-0.5">
+													<span className="text-[10px] font-bold text-neutral-400">
+														{formatFileSize(att.size)}
+													</span>
+													{att.status === "uploading" && (
+														<span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-600 bg-amber-50 px-1.5 py-0.2 rounded">
+															<Loader2 size={10} className="animate-spin" /> Uploading…
+														</span>
+													)}
+													{att.status === "done" && (
+														<span className="inline-flex items-center gap-0.5 text-[10px] font-black text-emerald-600">
+															<CheckCircle2 size={11} /> Ready
+														</span>
+													)}
+													{att.status === "error" && (
+														<span className="text-[10px] font-black text-red-600">
+															Upload failed
+														</span>
+													)}
+												</div>
+											</div>
+
+											{/* Remove button */}
+											<button
+												type="button"
+												onClick={e => {
+													e.stopPropagation()
+													removeAttachment(att.id)
+												}}
+												className="size-7 rounded-lg border border-black/10 hover:border-black hover:bg-red-50 text-neutral-400 hover:text-[#EE2C2C] flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+												title="Remove file"
+											>
+												<Trash2 size={13} />
+											</button>
+										</div>
+									)
+								})}
+							</div>
+						)}
+					</div>
+
+					{/* 5. Bottom Action Bar */}
 					<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-2 border-t-[2px] border-black/10">
 						<p className="text-xs font-semibold text-neutral-500 flex items-center gap-1.5">
 							<Mail size={14} className="text-[#EE2C2C] shrink-0" />
@@ -461,6 +706,8 @@ export default function AnnouncementsPage() {
 										setSelectCommunity(false)
 										setSelectedBrandIds(new Set())
 										setSelectedHostIds(new Set())
+										attachments.forEach((a) => a.previewUrl && URL.revokeObjectURL(a.previewUrl))
+										setAttachments([])
 									}
 								}}
 								className="px-4 py-2.5 rounded-2xl border-2 border-black/20 bg-white hover:bg-neutral-100 text-xs font-black text-black/70 transition-colors cursor-pointer"
@@ -484,7 +731,7 @@ export default function AnnouncementsPage() {
 						onClose={() => setConfirmOpen(false)}
 						onConfirm={confirmSend}
 						title="Broadcast announcement"
-						description={`This will send an email broadcast to ${recipientCount} recipient(s). This cannot be undone.`}
+						description={`This will send an email broadcast${attachments.length > 0 ? ` with ${attachments.length} attachment(s)` : ""} to ${recipientCount} recipient(s). This cannot be undone.`}
 						confirmLabel="Send Broadcast"
 						isLoading={sendMutation.isPending}
 					/>
@@ -588,6 +835,47 @@ export default function AnnouncementsPage() {
 									"[&_hr]:border-t-2 [&_hr]:border-black/10 [&_hr]:my-4",
 								)}
 							/>
+
+							{/* Attached Files View */}
+							{selectedAnn.attachments && selectedAnn.attachments.length > 0 && (
+								<div className="flex flex-col gap-2 pt-1">
+									<span className="text-xs font-black uppercase tracking-wider text-black/60 flex items-center gap-1.5">
+										<Paperclip size={13} className="text-[#EE2C2C]" />
+										Attached Files ({selectedAnn.attachments.length})
+									</span>
+									<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+										{selectedAnn.attachments.map((att, idx) => {
+											const isPdf = att.type === "application/pdf" || att.name?.toLowerCase().endsWith(".pdf")
+											return (
+												<a
+													key={idx}
+													href={att.url || "#"}
+													target="_blank"
+													rel="noopener noreferrer"
+													className="flex items-center gap-2.5 p-2.5 rounded-xl border-2 border-black bg-neutral-50 hover:bg-[#FFC940]/15 transition-all text-xs font-bold text-black group shadow-xs"
+												>
+													<div className="size-8 rounded-lg bg-white border border-black/20 flex items-center justify-center shrink-0">
+														{isPdf ? (
+															<FileText size={16} className="text-[#EE2C2C]" />
+														) : (
+															<ImageIcon size={16} className="text-amber-500" />
+														)}
+													</div>
+													<div className="flex-1 min-w-0">
+														<p className="truncate text-xs font-black text-black group-hover:text-[#EE2C2C] transition-colors" title={att.name}>
+															{att.name}
+														</p>
+														{att.size ? (
+															<p className="text-[10px] text-neutral-400 font-semibold">{formatFileSize(att.size)}</p>
+														) : null}
+													</div>
+													<ExternalLink size={13} className="text-neutral-400 group-hover:text-black shrink-0" />
+												</a>
+											)
+										})}
+									</div>
+								</div>
+							)}
 
 							<div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t-[2px] border-black/10 text-xs font-bold text-neutral-500">
 								<div className="flex items-center gap-1.5">

@@ -28,6 +28,7 @@ type PresignRequest =
 	| { context: "MEETDAY_CHAT_MEDIA";     contentType: ImageContentType; resourceId?: string }
 	| { context: "COMMUNITY_PAST_EVENT_MEDIA"; contentType: ImageContentType; resourceId: string }
 	| { context: "COMMUNITY_BRAND_LOGO_MEDIA"; contentType: ImageContentType }
+	| { context: "ADMIN_ANNOUNCEMENT_ATTACHMENT"; contentType: ImageContentType | "application/pdf" }
 
 interface PresignResponse {
 	uploadUrl: string
@@ -172,6 +173,15 @@ export async function uploadCommunityBrandLogo(file: File): Promise<string> {
 	const { uploadUrl, key } = await getPresignedUploadUrl({
 		context: "COMMUNITY_BRAND_LOGO_MEDIA",
 		contentType: file.type as ImageContentType,
+	})
+	await uploadToStorage(uploadUrl, file)
+	return key
+}
+
+export async function uploadAnnouncementAttachment(file: File): Promise<string> {
+	const { uploadUrl, key } = await getPresignedUploadUrl({
+		context: "ADMIN_ANNOUNCEMENT_ATTACHMENT",
+		contentType: file.type as ImageContentType | "application/pdf",
 	})
 	await uploadToStorage(uploadUrl, file)
 	return key
