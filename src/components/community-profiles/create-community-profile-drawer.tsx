@@ -305,7 +305,7 @@ export function CreateCommunityProfileDrawer({
 					.map(async (b) => ({
 						brandName: b.brandName.trim() || undefined,
 						url: b.url?.trim() || undefined,
-						logoKey: b.logoFile ? await uploadCommunityBrandLogo(b.logoFile) : b.logoKey,
+						logoKey: b.logoFile ? await uploadCommunityBrandLogo(b.logoFile, selectedHost.id) : b.logoKey,
 					})),
 			)
 
