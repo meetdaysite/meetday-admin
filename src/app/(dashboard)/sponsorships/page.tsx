@@ -111,16 +111,30 @@ function SponsorshipDocCell({ id }: { id: string }) {
 	)
 }
 
+function isProposalCompleted(proposal: { eventDate?: string | null; eventEndDate?: string | null }): boolean {
+	const raw = proposal.eventEndDate || proposal.eventDate
+	if (!raw) return false
+	try {
+		const d = new Date(raw)
+		const today = new Date()
+		today.setHours(0, 0, 0, 0)
+		return d < today
+	} catch {
+		return false
+	}
+}
+
 // Constants
 
 const PAGE_LIMIT = 20
 
-type StatusFilter = SponsorshipStatus | "ALL"
+type StatusFilter = SponsorshipStatus | "COMPLETED" | "ALL"
 
 const STATUS_TABS: { label: string; value: StatusFilter }[] = [
 	{ label: "All", value: "ALL" },
 	{ label: "Under Review", value: "UNDER_REVIEW" },
 	{ label: "Published", value: "PUBLISHED" },
+	{ label: "Completed", value: "COMPLETED" },
 	{ label: "Draft", value: "DRAFT" },
 	{ label: "Rejected", value: "REJECTED" },
 ]
@@ -254,16 +268,19 @@ export default function SponsorshipsPage() {
 			{
 				id: "status",
 				header: "Status",
-				cell: ({ row }) => (
-					<div className="flex items-center gap-1.5">
-						<StatusCell status={row.original.status} />
-						{row.original.pendingRevision && (
-							<span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 border border-blue-200">
-								Edit pending
-							</span>
-						)}
-					</div>
-				),
+				cell: ({ row }) => {
+					const isCompleted = row.original.status === "PUBLISHED" && isProposalCompleted(row.original)
+					return (
+						<div className="flex items-center gap-1.5">
+							<StatusCell status={isCompleted ? "COMPLETED" : row.original.status} />
+							{row.original.pendingRevision && (
+								<span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 border border-blue-200">
+									Edit pending
+								</span>
+							)}
+						</div>
+					)
+				},
 			},
 			{
 				id: "document",

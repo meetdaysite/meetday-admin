@@ -2,7 +2,7 @@ import { apiClient } from "./client"
 import type { CreateSponsorshipPayload, SponsorshipDetail, SponsorshipInterestsListResponse, SponsorshipsListResponse, SponsorshipStatus } from "@/types"
 
 export type GetSponsorshipsParams = {
-	status?: SponsorshipStatus
+	status?: SponsorshipStatus | "COMPLETED"
 	city?: string
 	hostProfileId?: string
 	page?: number

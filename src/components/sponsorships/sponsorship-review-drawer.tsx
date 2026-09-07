@@ -153,6 +153,19 @@ function DrawerSkeleton() {
 	)
 }
 
+function isProposalCompleted(proposal: { eventDate?: string | null; eventEndDate?: string | null }): boolean {
+	const raw = proposal.eventEndDate || proposal.eventDate
+	if (!raw) return false
+	try {
+		const d = new Date(raw)
+		const today = new Date()
+		today.setHours(0, 0, 0, 0)
+		return d < today
+	} catch {
+		return false
+	}
+}
+
 function SponsorshipDetailContent({
 	detail,
 	mode = "proposal",
@@ -164,12 +177,18 @@ function SponsorshipDetailContent({
 	// proposed changes (e.g. a new cover image) rather than the still-live values.
 	const showingRevision = mode === "revision" && !!detail.pendingRevision
 	const display: SponsorshipDetail = showingRevision ? { ...detail, ...detail.pendingRevision } : detail
+	const isCompleted = detail.status === "PUBLISHED" && isProposalCompleted(detail)
 
 	return (
 		<div className="space-y-6">
 			{/* Status row */}
 			<div className="flex items-center gap-2 flex-wrap">
-				<StatusBadge status={detail.status} />
+				<StatusBadge status={isCompleted ? "COMPLETED" : detail.status} />
+				{isCompleted && (
+					<span className="text-[11px] font-semibold text-text-tertiary">
+						(Event date has passed)
+					</span>
+				)}
 				{detail.pendingRevision && (
 					<span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1.5 text-[11px] font-semibold text-blue-700 border border-blue-200">
 						Edit pending review
