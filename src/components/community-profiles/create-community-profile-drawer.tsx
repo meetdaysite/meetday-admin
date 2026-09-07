@@ -83,6 +83,8 @@ export function CreateCommunityProfileDrawer({
 	const [linkedin, setLinkedin] = useState("")
 	const [youtube, setYoutube] = useState("")
 	const [website, setWebsite] = useState("")
+	const [operatingCities, setOperatingCities] = useState<string[]>([])
+	const [cityInput, setCityInput] = useState("")
 	const [pastEvents, setPastEvents] = useState<PastEventDraft[]>([])
 	const [brandsWorkedWith, setBrandsWorkedWith] = useState<BrandWorkedWithDraft[]>([])
 
@@ -108,6 +110,13 @@ export function CreateCommunityProfileDrawer({
 			.catch(() => toast.error("Failed to load categories"))
 	}, [open, step])
 
+	function addCity() {
+		const trimmed = cityInput.trim()
+		if (!trimmed) return
+		setOperatingCities((prev) => (prev.includes(trimmed) ? prev : [...prev, trimmed]))
+		setCityInput("")
+	}
+
 	// Pre-fill every field from the profile being edited, skipping host selection.
 	useEffect(() => {
 		if (!open || !editingProfile) return
@@ -128,6 +137,7 @@ export function CreateCommunityProfileDrawer({
 		setLinkedin(p.hostProfile.socialLinks?.linkedin ?? "")
 		setYoutube(p.hostProfile.socialLinks?.youtube ?? "")
 		setWebsite(p.hostProfile.socialLinks?.website ?? "")
+		setOperatingCities(p.hostProfile.operatingCities ?? [])
 		setPastEvents(
 			(p.pastEvents ?? []).map((e) => ({
 				name: e.name ?? "",
@@ -164,6 +174,8 @@ export function CreateCommunityProfileDrawer({
 		setLinkedin("")
 		setYoutube("")
 		setWebsite("")
+		setOperatingCities([])
+		setCityInput("")
 		setPastEvents([])
 		setBrandsWorkedWith([])
 		setError(null)
@@ -177,6 +189,7 @@ export function CreateCommunityProfileDrawer({
 
 	function selectHost(host: EligibleHost) {
 		setSelectedHost(host)
+		setOperatingCities(host.operatingCities ?? [])
 		setStep("form")
 	}
 
@@ -279,6 +292,10 @@ export function CreateCommunityProfileDrawer({
 			setError("At least one category is required.")
 			return
 		}
+		if (operatingCities.length === 0) {
+			setError("At least one operating city is required.")
+			return
+		}
 
 		setIsLoading(true)
 		const socialLinksInput = {
@@ -320,6 +337,7 @@ export function CreateCommunityProfileDrawer({
 					experiencesPerYear: experiencesPerYear.trim(),
 					categoryIds: Array.from(categoryIds),
 					socialLinks,
+					operatingCities,
 					pastEvents: pastEventsPayload,
 					brandsWorkedWith: brandsWorkedWithPayload,
 				})
@@ -337,6 +355,7 @@ export function CreateCommunityProfileDrawer({
 					experiencesPerYear: experiencesPerYear.trim(),
 					categoryIds: Array.from(categoryIds),
 					socialLinks,
+					operatingCities,
 					pastEvents: pastEventsPayload,
 					brandsWorkedWith: brandsWorkedWithPayload,
 				})
@@ -709,6 +728,51 @@ export function CreateCommunityProfileDrawer({
 										</button>
 									)
 								})}
+							</div>
+						)}
+					</div>
+
+					<div>
+						<label className={labelClass}>Operating cities *</label>
+						<div className="flex items-center gap-2">
+							<input
+								type="text"
+								value={cityInput}
+								onChange={(e) => setCityInput(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") { e.preventDefault(); addCity() }
+								}}
+								placeholder="e.g. Mumbai"
+								disabled={isLoading}
+								className={inputClass}
+							/>
+							<button
+								type="button"
+								onClick={addCity}
+								disabled={isLoading}
+								className="shrink-0 rounded-lg border border-border-default px-3 py-2 text-xs font-semibold hover:bg-surface-canvas transition-colors disabled:opacity-50"
+							>
+								Add
+							</button>
+						</div>
+						{operatingCities.length > 0 && (
+							<div className="flex flex-wrap gap-2 mt-2">
+								{operatingCities.map((city) => (
+									<span
+										key={city}
+										className="flex items-center gap-1.5 rounded-full border border-border-default bg-surface-canvas px-3 py-1 text-xs font-semibold"
+									>
+										{city}
+										<button
+											type="button"
+											onClick={() => setOperatingCities((prev) => prev.filter((c) => c !== city))}
+											disabled={isLoading}
+											className="text-text-tertiary hover:text-text-primary transition-colors disabled:opacity-50"
+										>
+											<X className="size-3" />
+										</button>
+									</span>
+								))}
 							</div>
 						)}
 					</div>

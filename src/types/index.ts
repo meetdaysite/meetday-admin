@@ -502,6 +502,7 @@ export type CommunityProfilesListResponse = {
 export type EligibleHost = {
 	id: string
 	displayName: string | null
+	operatingCities: string[]
 	user: { id: string; firstName: string; lastName: string; email: string | null }
 }
 
@@ -523,6 +524,7 @@ export type CreateCommunityProfilePayload = {
 	experiencesPerYear: string
 	categoryIds: string[]
 	socialLinks?: { instagram?: string; linkedin?: string; youtube?: string; website?: string }
+	operatingCities?: string[]
 	pastEvents?: CommunityProfilePastEventPayload[]
 	brandsWorkedWith?: CommunityProfileBrandWorkedWithPayload[]
 }
