@@ -11,6 +11,8 @@ export type NotificationType =
 	| "subscription_upgraded"
 	| "subscription_expiring"
 	| "sponsorship_deal_locked"
+	| "kyc_pending_review"
+	| "kyc_resubmitted"
 
 export type Notification = {
 	id: string

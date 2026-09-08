@@ -36,6 +36,9 @@ function getIconConfig(type: NotificationType): IconConfig {
 			return { icon: DangerTriangleSvg, iconBg: "bg-amber-50", iconColor: "text-amber-500" }
 		case "sponsorship_deal_locked":
 			return { icon: CheckCircleSvg, iconBg: "bg-emerald-50", iconColor: "text-emerald-600" }
+		case "kyc_pending_review":
+		case "kyc_resubmitted":
+			return { icon: DangerCircleSvg, iconBg: "bg-blue-50", iconColor: "text-blue-500" }
 		default:
 			return { icon: BellSvg, iconBg: "bg-neutral-200", iconColor: "text-neutral-500" }
 	}
