@@ -8,6 +8,7 @@ import PageHeader from "@/components/ui/PageHeader"
 import { PermissionGuard } from "@/components/ui/permission-guard"
 import { SearchInput } from "@/components/ui/search-input"
 import { AgeDateCell, ChipCell, StatusCell, TwoLineCell } from "@/components/ui/table-cells"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { approveCommunityProfile, approveCommunityProfileRevision, getCommunityProfileById, getCommunityProfiles, rejectCommunityProfile, rejectCommunityProfileRevision, setCommunityProfileVisibility } from "@/lib/api/community-profiles"
 import { formatDate, getDaysSince } from "@/lib/formatters"
 import { useDrawer } from "@/lib/hooks/use-drawer"
@@ -209,6 +210,11 @@ export default function AllCommunityProfilesPage() {
 				cell: ({ row }) => (
 					<AgeDateCell iso={row.original.updatedAt} getDaysSince={getDaysSince} format={formatDate} />
 				),
+			},
+			{
+				id: "kyc",
+				header: "KYC Status",
+				cell: ({ row }) => <StatusBadge status={row.original.hostProfile.kycStatus} />,
 			},
 			{
 				id: "status",

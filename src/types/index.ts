@@ -467,6 +467,9 @@ export type CommunityProfile = {
 		displayName: string | null
 		operatingCities: string[]
 		socialLinks: { instagram?: string; linkedin?: string; youtube?: string; website?: string } | null
+		kycStatus: KycStatus
+		panVerificationStatus: KycStatus
+		bankVerificationStatus: KycStatus
 		user: { id: string; firstName: string; lastName: string; email: string | null }
 	}
 }
@@ -489,6 +492,33 @@ export type CommunityProfileMember = {
 	email: string
 	role: "OWNER" | "MEMBER"
 	status: "PENDING" | "ACTIVE"
+}
+
+// Full KYC details for manual admin review — fetched on-demand (not part of the list view)
+// since it decrypts sensitive PAN/bank data server-side. Every fetch is audit-logged.
+export type HostKycDetails = {
+	id: string
+	legalName: string | null
+	pan: string | null
+	gstin: string | null
+	kycStatus: KycStatus
+	panVerificationStatus: KycStatus
+	bankVerificationStatus: KycStatus
+	kycFailureReason: string | null
+	kycVerifiedAt: string | null
+	user: { firstName: string; lastName: string; email: string; phone: string | null }
+	bankDetails: {
+		id: string
+		status: string
+		accountHolderName: string | null
+		bankName: string | null
+		maskedAccountNumber: string | null
+		accountNumber: string | null
+		ifscCode: string | null
+		verifiedBy: string | null
+		adminReviewedAt: string | null
+		rejectionReason: string | null
+	} | null
 }
 
 export type CommunityProfilesListResponse = {

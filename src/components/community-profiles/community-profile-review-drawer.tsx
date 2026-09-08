@@ -2,13 +2,16 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, Mail, Users, Calendar, AlertTriangle, ShieldAlert, Tag, MapPin, Link2, Globe } from "lucide-react"
+import { Loader2, Mail, Users, Calendar, AlertTriangle, ShieldAlert, Tag, MapPin, Link2, Globe, CreditCard, Landmark } from "lucide-react"
+import { toast } from "sonner"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { Skeleton } from "@/components/ui/skeleton"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { ReasonDialog } from "@/components/events/event-review-drawer"
 import { getCommunityProfileById, getCommunityProfileMembers } from "@/lib/api/community-profiles"
+import { getHostKycDetails, verifyHostKyc, rejectHostKyc } from "@/lib/api/kyc"
 import { formatDate } from "@/lib/formatters"
-import type { CommunityProfile, CommunityProfileDetail, CommunityProfileMember } from "@/types"
+import type { CommunityProfile, CommunityProfileDetail, CommunityProfileMember, HostKycDetails } from "@/types"
 
 export type CommunityProfileAction = "approve" | "reject"
 
@@ -319,6 +322,136 @@ function MembersSection({ communityProfileId }: { communityProfileId: string }) 
 	)
 }
 
+// KYC is now manually reviewed by an admin (no automated Sandbox/Razorpay check) — full PAN
+// and bank details are fetched on demand (not part of the list/detail payload) since they're
+// decrypted server-side; every fetch is audit-logged there.
+function KycReviewSection({ hostProfileId, kycStatus }: { hostProfileId: string; kycStatus: string }) {
+	const [kyc, setKyc] = useState<HostKycDetails | null>(null)
+	const [loading, setLoading] = useState(false)
+	const [actionLoading, setActionLoading] = useState<"verify" | "reject" | null>(null)
+	const [rejectOpen, setRejectOpen] = useState(false)
+
+	async function loadDetails() {
+		setLoading(true)
+		try {
+			const data = await getHostKycDetails(hostProfileId)
+			setKyc(data)
+		} catch {
+			toast.error("Failed to load KYC details.")
+		} finally {
+			setLoading(false)
+		}
+	}
+
+	async function handleVerify() {
+		setActionLoading("verify")
+		try {
+			const data = await verifyHostKyc(hostProfileId)
+			setKyc(data)
+			toast.success("KYC marked as verified.")
+		} catch {
+			toast.error("Failed to verify KYC.")
+		} finally {
+			setActionLoading(null)
+		}
+	}
+
+	async function handleRejectConfirm(reason: string) {
+		setActionLoading("reject")
+		try {
+			const data = await rejectHostKyc(hostProfileId, reason)
+			setKyc(data)
+			toast.success("KYC rejected.")
+		} catch {
+			toast.error("Failed to reject KYC.")
+		} finally {
+			setActionLoading(null)
+			setRejectOpen(false)
+		}
+	}
+
+	const effectiveStatus = kyc?.kycStatus ?? kycStatus
+	const canReview = effectiveStatus === "PENDING"
+
+	return (
+		<>
+			<div className="border-t border-border-subtle" />
+			<div>
+				<div className="flex items-center justify-between mb-3">
+					<SectionLabel>KYC Details</SectionLabel>
+					<StatusBadge status={effectiveStatus} />
+				</div>
+
+				{!kyc && (
+					<button
+						onClick={loadDetails}
+						disabled={loading || effectiveStatus === "NOT_SUBMITTED"}
+						className="rounded-lg border border-border-default px-3 py-1.5 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors disabled:opacity-50"
+					>
+						{loading ? "Loading…" : effectiveStatus === "NOT_SUBMITTED" ? "Not submitted yet" : "View KYC Details"}
+					</button>
+				)}
+
+				{kyc && (
+					<div className="space-y-3.5">
+						<DetailRow icon={CreditCard} label="PAN" value={kyc.pan ?? "—"} />
+						<DetailRow icon={Users} label="Legal name" value={kyc.legalName ?? "—"} />
+						{kyc.bankDetails && (
+							<DetailRow
+								icon={Landmark}
+								label="Bank account"
+								value={
+									<span>
+										<span className="block">{kyc.bankDetails.accountNumber ?? kyc.bankDetails.maskedAccountNumber ?? "—"}</span>
+										<span className="text-[11px] text-text-tertiary block">
+											{kyc.bankDetails.accountHolderName} · {kyc.bankDetails.bankName} · {kyc.bankDetails.ifscCode}
+										</span>
+									</span>
+								}
+							/>
+						)}
+						{kyc.kycFailureReason && (
+							<div className="flex items-start gap-2 rounded-xl bg-red-50 border border-red-100 px-3.5 py-3">
+								<ShieldAlert size={13} className="mt-0.5 text-red-600 shrink-0" />
+								<p className="text-xs text-red-800 leading-relaxed">{kyc.kycFailureReason}</p>
+							</div>
+						)}
+						{canReview && (
+							<div className="flex items-center gap-2 pt-1">
+								<button
+									onClick={handleVerify}
+									disabled={actionLoading !== null}
+									className="rounded-lg bg-green-600 hover:bg-green-700 px-3.5 py-2 text-xs font-semibold text-white transition-colors disabled:opacity-50"
+								>
+									{actionLoading === "verify" ? "Verifying…" : "Verify KYC"}
+								</button>
+								<button
+									onClick={() => setRejectOpen(true)}
+									disabled={actionLoading !== null}
+									className="rounded-lg bg-red-600 hover:bg-red-700 px-3.5 py-2 text-xs font-semibold text-white transition-colors disabled:opacity-50"
+								>
+									Reject KYC
+								</button>
+							</div>
+						)}
+					</div>
+				)}
+			</div>
+
+			<ReasonDialog
+				open={rejectOpen}
+				title="Reject KYC"
+				description="Provide a reason the host's KYC submission is being rejected. They'll be notified and can resubmit their PAN/bank details."
+				placeholder="e.g. Bank account holder name does not match the PAN legal name."
+				confirmLabel="Reject KYC"
+				confirmClassName="bg-red-600 hover:bg-red-700"
+				onClose={() => setRejectOpen(false)}
+				onConfirm={handleRejectConfirm}
+			/>
+		</>
+	)
+}
+
 function CommunityProfileDetailContent({ detail }: { detail: CommunityProfileDetail }) {
 	return (
 		<div className="space-y-6">
@@ -400,6 +533,8 @@ function CommunityProfileDetailContent({ detail }: { detail: CommunityProfileDet
 			</div>
 
 			<MembersSection communityProfileId={detail.id} />
+
+			<KycReviewSection hostProfileId={detail.hostProfile.id} kycStatus={detail.hostProfile.kycStatus} />
 
 			{detail.hostProfile.socialLinks && Object.values(detail.hostProfile.socialLinks).some(Boolean) && (
 				<>
