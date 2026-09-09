@@ -86,6 +86,30 @@ const NAV: NavItem[] = [
 		],
 	},
 	{
+		label: "Community Spaces",
+		icon: BadgeCheck,
+		subItems: [
+			{
+				label: "Space Profile Queue",
+				href: "/community-spaces/queue",
+				permission: "spaceProfile.approve",
+				badgeKey: "spaceCommunityProfileQueue",
+			},
+			{
+				label: "Space Profile Revisions",
+				href: "/community-spaces/revisions",
+				permission: "spaceProfile.approve",
+				badgeKey: "spaceCommunityProfileRevisions",
+			},
+			{
+				label: "All Community Spaces",
+				href: "/community-spaces",
+				permission: "spaceProfile.approve",
+				exact: true,
+			},
+		],
+	},
+	{
 		label: "Brands",
 		icon: Sparkles,
 		subItems: [

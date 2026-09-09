@@ -38,6 +38,8 @@ function getIconConfig(type: NotificationType): IconConfig {
 			return { icon: CheckCircleSvg, iconBg: "bg-emerald-50", iconColor: "text-emerald-600" }
 		case "kyc_pending_review":
 		case "kyc_resubmitted":
+		case "space_profile_pending_review":
+		case "space_profile_revision_submitted":
 			return { icon: DangerCircleSvg, iconBg: "bg-blue-50", iconColor: "text-blue-500" }
 		default:
 			return { icon: BellSvg, iconBg: "bg-neutral-200", iconColor: "text-neutral-500" }

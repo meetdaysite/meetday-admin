@@ -13,6 +13,8 @@ export type NotificationType =
 	| "sponsorship_deal_locked"
 	| "kyc_pending_review"
 	| "kyc_resubmitted"
+	| "space_profile_pending_review"
+	| "space_profile_revision_submitted"
 
 export type Notification = {
 	id: string

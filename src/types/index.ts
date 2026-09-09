@@ -21,6 +21,7 @@ export type Permission =
 	| "event.revision.review"
 	| "sponsorship.approve"
 	| "communityProfile.approve"
+	| "spaceProfile.approve"
 	| "coupon.create"
 	| "coupon.view"
 	| "moderation.read"
@@ -569,6 +570,94 @@ export type CommunityProfileBrandWorkedWithPayload = {
 	brandName?: string
 	logoKey?: string
 	url?: string
+}
+
+// ─── Community Space profiles (Space Partner listings) ────────────────────────
+
+export type SpaceCommunityProfile = {
+	id: string
+	name: string
+	about: string
+	logoKey: string
+	posterKey?: string | null
+	numberOfVenues: string
+	venueCapacity: string
+	communitySize: string
+	experiencesPerYear: string
+	activeLocations: string[]
+	centreShowcaseImageKeys: string[]
+	videoLink: string | null
+	approvalStatus: ApprovalStatus
+	adminRejectionRemark: string | null
+	reviewedAt: string | null
+	pendingRevision: Record<string, unknown> | null
+	pastEvents?: CommunityProfilePastEvent[]
+	brandsWorkedWith?: CommunityProfileBrandWorkedWith[]
+	isHidden: boolean
+	createdAt: string
+	updatedAt: string
+	categories: CommunityProfileCategory[]
+	spaceProfile: {
+		id: string
+		businessName: string
+		operatingCities: string[]
+		socialLinks: { instagram?: string; linkedin?: string; youtube?: string; website?: string } | null
+		user: { id: string; firstName: string; lastName: string; email: string | null }
+	}
+}
+
+export type SpaceCommunityProfileDetail = SpaceCommunityProfile & {
+	logoUrl: string | null
+	posterUrl: string | null
+	centreShowcaseUrls: string[]
+	pendingRevision: (Record<string, unknown> & {
+		logoUrl?: string | null
+		posterUrl?: string | null
+		pastEvents?: CommunityProfilePastEvent[]
+		brandsWorkedWith?: CommunityProfileBrandWorkedWith[]
+	}) | null
+}
+
+export type SpaceCommunityProfilesListResponse = {
+	profiles: SpaceCommunityProfile[]
+	total: number
+	page: number
+	limit: number
+}
+
+// A space partner that doesn't have a community profile yet — eligible for admin-direct creation.
+export type EligibleSpacePartner = {
+	id: string
+	businessName: string
+	operatingCities: string[]
+	user: { id: string; firstName: string; lastName: string; email: string | null }
+}
+
+export type EligibleSpacePartnersListResponse = {
+	spacePartners: EligibleSpacePartner[]
+	total: number
+	page: number
+	limit: number
+}
+
+export type CreateSpaceCommunityProfilePayload = {
+	spaceProfileId: string
+	name: string
+	about: string
+	logoKey: string
+	posterKey?: string
+	numberOfVenues: string
+	venueCapacity: string
+	communitySize: string
+	experiencesPerYear: string
+	categoryIds: string[]
+	activeLocations?: string[]
+	centreShowcaseImageKeys?: string[]
+	videoLink?: string
+	socialLinks?: { instagram?: string; linkedin?: string; youtube?: string; website?: string }
+	operatingCities?: string[]
+	pastEvents?: CommunityProfilePastEventPayload[]
+	brandsWorkedWith?: CommunityProfileBrandWorkedWithPayload[]
 }
 
 export type SponsorshipInterest = {

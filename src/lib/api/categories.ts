@@ -1,8 +1,8 @@
 import { apiClient } from "./client"
 import type { Category } from "@/types"
 
-export async function getCategories(): Promise<Category[]> {
-	const { data } = await apiClient.get<Category[]>("/admin/categories")
+export async function getCategories(type?: "EXPERIENCE" | "SPACE"): Promise<Category[]> {
+	const { data } = await apiClient.get<Category[]>("/admin/categories", { params: type ? { type } : undefined })
 	return data
 }
 

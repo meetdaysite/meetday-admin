@@ -7,6 +7,7 @@ import { getPendingHosts } from "@/lib/api/hosts"
 import { getPendingSponsorships, getPendingSponsorshipRevisions } from "@/lib/api/sponsorships"
 import { getPendingCampaigns } from "@/lib/api/campaigns"
 import { getPendingCommunityProfiles, getPendingCommunityProfileRevisions } from "@/lib/api/community-profiles"
+import { getPendingSpaceCommunityProfiles, getPendingSpaceCommunityProfileRevisions } from "@/lib/api/space-community-profiles"
 import { getPendingBrands } from "@/lib/api/brands"
 import { getSupportTickets } from "@/lib/api/support-tickets"
 import { getPendingSponsorshipChatsCount, getSponsorshipChats } from "@/lib/api/sponsorship-chats"
@@ -28,6 +29,8 @@ export type SidebarBadgeKey =
 	| "sponsorshipRevisions"
 	| "communityProfileQueue"
 	| "communityProfileRevisions"
+	| "spaceCommunityProfileQueue"
+	| "spaceCommunityProfileRevisions"
 	| "brandQueue"
 	| "campaignQueue"
 	| "pendingChats"
@@ -117,6 +120,21 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		queryKey: ["sidebar-badge", "community-profile-revisions"],
 		queryFn: () => getPendingCommunityProfileRevisions({ limit: 1 }).then((r) => r.total),
 		enabled: canSeeCommunityProfileQueue,
+		refetchInterval: REFETCH_INTERVAL,
+	})
+
+	const canSeeSpaceCommunityProfileQueue = usePermission("spaceProfile.approve")
+	const spaceCommunityProfileQueue = useQuery({
+		queryKey: ["sidebar-badge", "space-community-profile-queue"],
+		queryFn: () => getPendingSpaceCommunityProfiles({ limit: 1 }).then((r) => r.total),
+		enabled: canSeeSpaceCommunityProfileQueue,
+		refetchInterval: REFETCH_INTERVAL,
+	})
+
+	const spaceCommunityProfileRevisions = useQuery({
+		queryKey: ["sidebar-badge", "space-community-profile-revisions"],
+		queryFn: () => getPendingSpaceCommunityProfileRevisions({ limit: 1 }).then((r) => r.total),
+		enabled: canSeeSpaceCommunityProfileQueue,
 		refetchInterval: REFETCH_INTERVAL,
 	})
 
@@ -251,6 +269,8 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		sponsorshipRevisions: sponsorshipRevisions.data,
 		communityProfileQueue: communityProfileQueue.data,
 		communityProfileRevisions: communityProfileRevisions.data,
+		spaceCommunityProfileQueue: spaceCommunityProfileQueue.data,
+		spaceCommunityProfileRevisions: spaceCommunityProfileRevisions.data,
 		brandQueue: brandQueue.data,
 		campaignQueue: campaignQueue.data,
 		pendingChats: chatRequests.data,
