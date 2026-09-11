@@ -14,6 +14,7 @@ import { getPendingSponsorshipChatsCount, getSponsorshipChats } from "@/lib/api/
 import { getSpaceChats } from "@/lib/api/space-chats"
 import { getMeetdayChatUnreadCount } from "@/lib/api/meetday-chats"
 import { getSponsorshipDeals, getCampaignDeals } from "@/lib/api/sponsorship-deals"
+import { getSpaceDeals } from "@/lib/api/space-deals"
 import { getSponsorshipDealPayments } from "@/lib/api/sponsorship-payments"
 import { playMessageChime } from "@/lib/notificationSound"
 import { usePermission } from "@/lib/hooks/use-permission"
@@ -41,6 +42,7 @@ export type SidebarBadgeKey =
 	| "meetdayChats"
 	| "sponsorshipDeals"
 	| "campaignDeals"
+	| "spaceDeals"
 	| "sponsorshipPayments"
 
 function getLastSeenTimestamp(key: string): number {
@@ -75,6 +77,9 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		} else if (pathname === "/campaign-deals") {
 			setLastSeenTimestamp("meetday_seen_campaign_deals")
 			queryClient.invalidateQueries({ queryKey: ["sidebar-badge", "campaign-deals"] })
+		} else if (pathname === "/space-deals") {
+			setLastSeenTimestamp("meetday_seen_space_deals")
+			queryClient.invalidateQueries({ queryKey: ["sidebar-badge", "space-deals"] })
 		} else if (pathname === "/sponsorship-payments") {
 			setLastSeenTimestamp("meetday_seen_sponsorship_payments")
 			queryClient.invalidateQueries({ queryKey: ["sidebar-badge", "sponsorship-payments"] })
@@ -233,6 +238,28 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		refetchInterval: FAST_REFETCH_INTERVAL,
 	})
 
+	// Space Deals: counts locked space deals newer than the last time the admin visited the tab
+	const spaceDeals = useQuery({
+		queryKey: ["sidebar-badge", "space-deals"],
+		queryFn: async () => {
+			if (pathname === "/space-deals") return 0
+			const lastSeen = getLastSeenTimestamp("meetday_seen_space_deals")
+			try {
+				const deals = await getSpaceDeals("APPROVED")
+				if (!Array.isArray(deals)) return 0
+				const unread = deals.filter((d) => {
+					if (!d) return false
+					const dealTime = new Date(d.approvedAt || d.updatedAt || d.createdAt).getTime()
+					return dealTime > lastSeen
+				})
+				return unread.length
+			} catch {
+				return 0
+			}
+		},
+		refetchInterval: FAST_REFETCH_INTERVAL,
+	})
+
 	// Payments: counts completed payments newer than the last time the admin visited the tab
 	const sponsorshipPayments = useQuery({
 		queryKey: ["sidebar-badge", "sponsorship-payments"],
@@ -292,6 +319,7 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		meetdayChats: meetdayChats.data,
 		sponsorshipDeals: sponsorshipDeals.data,
 		campaignDeals: campaignDeals.data,
+		spaceDeals: spaceDeals.data,
 		sponsorshipPayments: sponsorshipPayments.data,
 	}
 }

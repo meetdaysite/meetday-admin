@@ -213,6 +213,11 @@ const NAV: NavItem[] = [
 				badgeKey: "campaignDeals",
 			},
 			{
+				label: "Space Deals",
+				href: "/space-deals",
+				badgeKey: "spaceDeals",
+			},
+			{
 				label: "Payments",
 				href: "/sponsorship-payments",
 				badgeKey: "sponsorshipPayments",
