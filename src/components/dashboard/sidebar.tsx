@@ -190,6 +190,12 @@ const NAV: NavItem[] = [
 				badgeKey: "chatRequests",
 				icon: MessageSquarePlus,
 			},
+			{
+				label: "Space Chats",
+				href: "/space-chats",
+				badgeKey: "spaceChats",
+				icon: MessagesSquare,
+			},
 		],
 	},
 	{

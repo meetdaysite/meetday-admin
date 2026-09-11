@@ -11,6 +11,7 @@ import { getPendingSpaceCommunityProfiles, getPendingSpaceCommunityProfileRevisi
 import { getPendingBrands } from "@/lib/api/brands"
 import { getSupportTickets } from "@/lib/api/support-tickets"
 import { getPendingSponsorshipChatsCount, getSponsorshipChats } from "@/lib/api/sponsorship-chats"
+import { getSpaceChats } from "@/lib/api/space-chats"
 import { getMeetdayChatUnreadCount } from "@/lib/api/meetday-chats"
 import { getSponsorshipDeals, getCampaignDeals } from "@/lib/api/sponsorship-deals"
 import { getSponsorshipDealPayments } from "@/lib/api/sponsorship-payments"
@@ -36,6 +37,7 @@ export type SidebarBadgeKey =
 	| "pendingChats"
 	| "ongoingChats"
 	| "chatRequests"
+	| "spaceChats"
 	| "meetdayChats"
 	| "sponsorshipDeals"
 	| "campaignDeals"
@@ -170,6 +172,16 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		refetchInterval: FAST_REFETCH_INTERVAL,
 	})
 
+	// Space Chats unread count — tracks unread messages in accepted space chats
+	const spaceChats = useQuery({
+		queryKey: ["sidebar-badge", "space-chats-unread"],
+		queryFn: () =>
+			getSpaceChats("ACCEPTED")
+				.then((threads) => threads.reduce((acc, t) => acc + (t.unreadCount || 0), 0))
+				.catch(() => 0),
+		refetchInterval: FAST_REFETCH_INTERVAL,
+	})
+
 	// Meetday support chats unread count
 	const meetdayChats = useQuery({
 		queryKey: ["sidebar-badge", "meetday-chats"],
@@ -276,6 +288,7 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		pendingChats: chatRequests.data,
 		ongoingChats: ongoingChats.data,
 		chatRequests: chatRequests.data,
+		spaceChats: spaceChats.data,
 		meetdayChats: meetdayChats.data,
 		sponsorshipDeals: sponsorshipDeals.data,
 		campaignDeals: campaignDeals.data,
