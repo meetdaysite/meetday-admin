@@ -34,6 +34,7 @@ export type SpaceChatMessage = {
 	senderId: string
 	content: string
 	mediaUrl?: string | null
+	messageType?: string
 	deletedAt?: string | null
 	createdAt: string
 	replyTo?: SpaceChatReplyTo | null
