@@ -13,11 +13,14 @@ import { LinkifiedText } from "@/components/ui/linkified-text"
 import { MentionPicker, type MentionSuggestion } from "@/components/chat/MentionPicker"
 import { getBrands } from "@/lib/api/brands"
 import { getHosts } from "@/lib/api/hosts"
+import { getSpacePartners, type SpacePartnerListItem } from "@/lib/api/space-profiles"
 import type { Brand, Host } from "@/types"
 import {
 	getMeetdayChats,
 	getMeetdayChatMessages,
 	sendMeetdayChatMessage,
+	editMeetdayChatMessage,
+	deleteMeetdayChatMessage,
 	resolveMeetdayChat,
 	getMeetdayChatByUserId,
 	startMeetdayChatByUser,
@@ -34,8 +37,15 @@ type PendingChatTarget = {
 	userId: string
 	userName: string
 	userEmail: string
-	userRole: "BRAND" | "HOST"
+	userRole: "BRAND" | "HOST" | "SPACE_PARTNER"
 	userLogoUrl: string | null
+}
+
+function roleLabel(role: string | null | undefined): string {
+	if (role === "BRAND") return "Brand"
+	if (role === "HOST") return "Community"
+	if (role === "SPACE_PARTNER") return "Space"
+	return role ?? ""
 }
 
 function timeAgo(iso: string | null) {
@@ -178,7 +188,7 @@ export default function MeetdayChatsPage() {
 											<p className="text-sm font-black text-black truncate">{t.userName}</p>
 											<span className="text-[10px] font-semibold text-black/40 shrink-0">{timeAgo(t.lastMessageAt ?? t.createdAt)}</span>
 										</div>
-										<p className="text-[11px] font-semibold text-black/50 truncate mt-0.5">{t.userRole ? `${t.userRole === "HOST" ? "Community" : t.userRole} • ` : ""}{t.userEmail}</p>
+										<p className="text-[11px] font-semibold text-black/50 truncate mt-0.5">{t.userRole ? `${roleLabel(t.userRole)} • ` : ""}{t.userEmail}</p>
 										{t.lastMessagePreview && (
 											<p className="text-[11px] text-black/60 truncate mt-1">{t.lastMessagePreview}</p>
 										)}
@@ -233,6 +243,7 @@ function MeetdayAdminChatPanel({
 	const queryClient = useQueryClient()
 	const [input, setInput] = useState("")
 	const [uploadingImage, setUploadingImage] = useState(false)
+	const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
 	const [viewingImage, setViewingImage] = useState<string | null>(null)
 	const [replyingTo, setReplyingTo] = useState<MeetdayChatMessage | null>(null)
 	const [mentionQuery, setMentionQuery] = useState("")
@@ -247,7 +258,7 @@ function MeetdayAdminChatPanel({
 			id: "user",
 			name: thread.userName,
 			tag: thread.userName.replace(/\s+/g, ""),
-			role: thread.userRole === "BRAND" ? "Brand" : thread.userRole === "HOST" ? "Community" : "User",
+			role: thread.userRole === "BRAND" ? "Brand" : thread.userRole === "HOST" ? "Community" : thread.userRole === "SPACE_PARTNER" ? "Space" : "User",
 			avatarUrl: thread.userLogoUrl,
 		},
 	]
@@ -313,6 +324,44 @@ function MeetdayAdminChatPanel({
 		onError: () => toast.error("Failed to send message."),
 	})
 
+	const editMutation = useMutation({
+		mutationFn: ({ messageId, content }: { messageId: string; content: string }) =>
+			editMeetdayChatMessage(thread.id, messageId, content),
+		onSuccess: () => {
+			setEditingMessageId(null)
+			setInput("")
+			toast.success("Message edited.")
+			queryClient.invalidateQueries({ queryKey: ["admin-meetday-chat-messages", thread.id] })
+		},
+		onError: () => toast.error("Failed to edit message."),
+	})
+
+	const deleteMutation = useMutation({
+		mutationFn: (messageId: string) => deleteMeetdayChatMessage(thread.id, messageId),
+		onSuccess: () => {
+			toast.success("Message deleted.")
+			queryClient.invalidateQueries({ queryKey: ["admin-meetday-chat-messages", thread.id] })
+		},
+		onError: () => toast.error("Failed to delete message."),
+	})
+
+	function handleEditStart(m: MeetdayChatMessage) {
+		setReplyingTo(null)
+		setEditingMessageId(m.id)
+		setInput(m.content)
+	}
+
+	function handleEditCancel() {
+		setEditingMessageId(null)
+		setInput("")
+	}
+
+	function handleDelete(m: MeetdayChatMessage) {
+		if (!window.confirm("Delete this message? This can't be undone.")) return
+		deleteMutation.mutate(m.id)
+		if (editingMessageId === m.id) handleEditCancel()
+	}
+
 	const resolveMutation = useMutation({
 		mutationFn: () => resolveMeetdayChat(thread.id),
 		onSuccess: () => {
@@ -371,7 +420,7 @@ function MeetdayAdminChatPanel({
 					<div className="min-w-0 flex-1">
 						<p className="text-xs sm:text-sm font-heading font-black text-black truncate leading-tight">{thread.userName}</p>
 						<p className="text-[10px] sm:text-[11px] font-semibold text-black/50 truncate">
-							{thread.userRole ? `${thread.userRole === "HOST" ? "Community" : thread.userRole} • ` : ""}{thread.userEmail}
+							{thread.userRole ? `${roleLabel(thread.userRole)} • ` : ""}{thread.userEmail}
 						</p>
 					</div>
 				</div>
@@ -398,6 +447,9 @@ function MeetdayAdminChatPanel({
 					messages.map(m => {
 						const isMeetday = m.senderType === "ADMIN" || m.senderType === "BOT"
 						const isBot = m.senderType === "BOT"
+						const isAdminOwn = m.senderType === "ADMIN"
+						const isDeleted = !!m.deletedAt
+						const isDarkUserBubble = !isMeetday && (thread.userRole === "BRAND" || thread.userRole === "SPACE_PARTNER")
 						const isSystemMessage = m.content?.startsWith("[System]")
 						if (isSystemMessage) {
 							return (
@@ -408,7 +460,7 @@ function MeetdayAdminChatPanel({
 								</div>
 							)
 						}
-						const userRoleLabel = thread.userRole === "BRAND" ? "Brand" : thread.userRole === "HOST" ? "Community" : (thread.userRole || "")
+						const userRoleLabel = roleLabel(thread.userRole)
 						const senderLabel = isBot ? "Meetday" : isMeetday ? "Meetday • Admin" : `${thread.userName}${userRoleLabel ? ` • ${userRoleLabel}` : ""}`
 						return (
 							<div
@@ -426,20 +478,43 @@ function MeetdayAdminChatPanel({
 									</span>
 									<button
 										type="button"
-										onClick={() => setReplyingTo(m)}
+										onClick={() => { setEditingMessageId(null); setReplyingTo(m) }}
 										className="text-[10px] font-bold text-black/40 hover:text-black transition-colors"
 									>
 										Reply
 									</button>
+									{isAdminOwn && m.content && !isDeleted && (
+										<button
+											type="button"
+											onClick={() => handleEditStart(m)}
+											className="text-[10px] font-bold text-black/40 hover:text-black transition-colors"
+										>
+											Edit
+										</button>
+									)}
+									{isAdminOwn && !isDeleted && (
+										<button
+											type="button"
+											onClick={() => handleDelete(m)}
+											className="text-[10px] font-bold text-black/40 hover:text-[#EE2C2C] transition-colors"
+										>
+											Delete
+										</button>
+									)}
 								</div>
 								<div
 									className={cn(
 										"rounded-2xl p-2 sm:p-2.5 text-xs sm:text-body-sm break-words break-all border flex flex-col shadow-xs",
+										isDeleted && "border-dashed opacity-90",
 										isBot
 											? "bg-black text-white rounded-br-xs border-black"
 											: isMeetday
 												? "bg-neutral-100 text-black rounded-br-xs border-black/10"
-												: (thread.userRole === "BRAND" ? "bg-[#EE2C2C] text-white rounded-bl-xs border-[#EE2C2C]" : "bg-[#FFC940] text-black rounded-bl-xs border-[#FFC940]"),
+												: thread.userRole === "BRAND"
+													? "bg-[#EE2C2C] text-white rounded-bl-xs border-[#EE2C2C]"
+													: thread.userRole === "SPACE_PARTNER"
+														? "bg-black text-white rounded-bl-xs border-black"
+														: "bg-[#FFC940] text-black rounded-bl-xs border-[#FFC940]",
 									)}
 								>
 									{m.replyTo && (
@@ -450,8 +525,8 @@ function MeetdayAdminChatPanel({
 												"w-full text-left mb-1.5 px-3 py-2 rounded-xl transition-all cursor-pointer block border-l-4 shadow-xs",
 												isBot
 													? "bg-white/15 hover:bg-white/25 text-white border-white/70"
-													: !isMeetday && thread.userRole === "BRAND"
-													? "bg-black/25 hover:bg-black/35 text-white border-white/80"
+													: isDarkUserBubble
+													? "bg-white/15 hover:bg-white/25 text-white border-white/80"
 													: !isMeetday && thread.userRole === "HOST"
 													? "bg-black/10 hover:bg-black/15 text-black border-black/40"
 													: "bg-white hover:bg-neutral-50 text-black border-[#EE2C2C] border border-black/10"
@@ -460,21 +535,27 @@ function MeetdayAdminChatPanel({
 										>
 											<p className={cn(
 												"text-[9px] font-black uppercase tracking-wider",
-												(isBot || (!isMeetday && thread.userRole === "BRAND")) ? "text-white/80" : "text-black/60"
+												(isBot || isDarkUserBubble) ? "text-white/80" : "text-black/60"
 											)}>
 												↩ Replying to {m.replyTo.senderType === "BOT" ? "Meetday" : m.replyTo.senderType === "ADMIN" ? "Meetday • Admin" : thread.userName}
 											</p>
 											{m.replyTo.hasMedia && (
-												<p className={cn("text-xs font-semibold flex items-center gap-1 my-0.5", (isBot || (!isMeetday && thread.userRole === "BRAND")) ? "text-white/90" : "text-black/70")}>
+												<p className={cn("text-xs font-semibold flex items-center gap-1 my-0.5", (isBot || isDarkUserBubble) ? "text-white/90" : "text-black/70")}>
 													📷 Photo
 												</p>
 											)}
 											{m.replyTo.content && (
-												<p className={cn("text-xs font-medium break-words whitespace-pre-wrap leading-relaxed mt-0.5", (isBot || (!isMeetday && thread.userRole === "BRAND")) ? "text-white/90" : "text-black/80")}>
+												<p className={cn("text-xs font-medium break-words whitespace-pre-wrap leading-relaxed mt-0.5", (isBot || isDarkUserBubble) ? "text-white/90" : "text-black/80")}>
 													{m.replyTo.content}
 												</p>
 											)}
 										</button>
+									)}
+									{isDeleted && (
+										<div className="flex items-center gap-1.5 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-dashed border-red-200 mb-1 w-fit">
+											<span>🗑️</span>
+											<span>This message was deleted</span>
+										</div>
 									)}
 									{m.mediaUrl && (
 										/* eslint-disable-next-line @next/next/no-img-element */
@@ -486,7 +567,7 @@ function MeetdayAdminChatPanel({
 										/>
 									)}
 									{m.content && (
-										<div className="px-1 py-0.5">
+										<div className={cn("px-1 py-0.5", isDeleted && "opacity-80")}>
 											<LinkifiedText text={m.content} />
 										</div>
 									)}
@@ -502,6 +583,7 @@ function MeetdayAdminChatPanel({
 												}
 											})()}
 										</span>
+										{m.editedAt && !isDeleted && <span>(edited)</span>}
 										{isMeetday && (() => {
 											const isRead = thread.userRole === "BRAND" ? !!m.brandReadAt : !!m.hostReadAt
 											return (
@@ -521,7 +603,15 @@ function MeetdayAdminChatPanel({
 
 			{/* Input Bar */}
 			<div className="p-2 sm:p-3 border-t border-black/10 md:border-t-[3px] md:border-black bg-white flex flex-col gap-2 shrink-0 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-				{replyingTo && (
+				{editingMessageId && (
+					<div className="flex items-center justify-between px-1">
+						<span className="text-[10px] font-black uppercase text-black/40">Editing message</span>
+						<button type="button" onClick={handleEditCancel} className="text-[10px] font-bold text-[#EE2C2C] shrink-0">
+							Cancel
+						</button>
+					</div>
+				)}
+				{replyingTo && !editingMessageId && (
 					<div className="flex items-center justify-between gap-2 px-1">
 						<div className="min-w-0 pl-2 border-l-2 border-[#EE2C2C]">
 							<p className="text-[10px] font-black uppercase text-black/40">
@@ -548,7 +638,7 @@ function MeetdayAdminChatPanel({
 					<button
 						type="button"
 						onClick={() => fileInputRef.current?.click()}
-						disabled={uploadingImage}
+						disabled={uploadingImage || !!editingMessageId}
 						className="shrink-0 size-9 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-black/70 hover:text-black transition-colors disabled:opacity-50"
 						aria-label="Attach image"
 					>
@@ -561,19 +651,31 @@ function MeetdayAdminChatPanel({
 						onKeyDown={e => {
 							if (e.key === "Enter" && !e.shiftKey && input.trim() && !isMentionOpen) {
 								e.preventDefault()
-								sendMutation.mutate({ content: input.trim(), replyToId: replyingTo?.id })
+								if (editingMessageId) {
+									editMutation.mutate({ messageId: editingMessageId, content: input.trim() })
+								} else {
+									sendMutation.mutate({ content: input.trim(), replyToId: replyingTo?.id })
+								}
 							}
+							if (e.key === "Escape" && editingMessageId) handleEditCancel()
 						}}
-						placeholder="Message as Meetday… (type @ to tag)"
+						placeholder={editingMessageId ? "Edit your message… (Enter to save)" : "Message as Meetday… (type @ to tag)"}
 						className="flex-1 min-w-0 rounded-full border border-black/15 focus:border-black bg-neutral-100 focus:bg-white px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-medium outline-none transition-all"
 					/>
 					<button
 						type="button"
-						onClick={() => input.trim() && sendMutation.mutate({ content: input.trim(), replyToId: replyingTo?.id })}
-						disabled={sendMutation.isPending || !input.trim()}
+						onClick={() => {
+							if (!input.trim()) return
+							if (editingMessageId) {
+								editMutation.mutate({ messageId: editingMessageId, content: input.trim() })
+							} else {
+								sendMutation.mutate({ content: input.trim(), replyToId: replyingTo?.id })
+							}
+						}}
+						disabled={sendMutation.isPending || editMutation.isPending || !input.trim()}
 						className="h-9 px-3.5 sm:px-4 rounded-full bg-[#EE2C2C] hover:bg-[#D12525] text-white font-black text-xs uppercase tracking-wider disabled:opacity-40 transition-all shrink-0 flex items-center justify-center whitespace-nowrap"
 					>
-						{sendMutation.isPending ? "…" : "Send"}
+						{sendMutation.isPending || editMutation.isPending ? "…" : editingMessageId ? "Save" : "Send"}
 					</button>
 				</div>
 			</div>
@@ -632,7 +734,7 @@ function PendingChatPanel({
 				<div className="min-w-0 flex-1">
 					<p className="text-xs sm:text-sm font-heading font-black text-black truncate leading-tight">{target.userName}</p>
 					<p className="text-[10px] sm:text-[11px] font-semibold text-black/50 truncate">
-						{target.userRole === "HOST" ? "Community" : "Brand"} • {target.userEmail}
+						{roleLabel(target.userRole)} • {target.userEmail}
 					</p>
 				</div>
 			</div>
@@ -678,7 +780,7 @@ function NewSupportChatPicker({
 	onClose: () => void
 	onPick: (target: PendingChatTarget) => void
 }) {
-	const [tab, setTab] = useState<"BRAND" | "HOST">("HOST")
+	const [tab, setTab] = useState<"BRAND" | "HOST" | "SPACE">("HOST")
 	const [search, setSearch] = useState("")
 
 	const brandsQuery = useQuery({
@@ -690,6 +792,11 @@ function NewSupportChatPicker({
 		queryKey: ["meetday-chat-picker", "hosts"],
 		queryFn: () => getHosts({ limit: 100 }).then(r => r.hosts),
 		enabled: tab === "HOST",
+	})
+	const spacesQuery = useQuery({
+		queryKey: ["meetday-chat-picker", "spaces"],
+		queryFn: () => getSpacePartners(),
+		enabled: tab === "SPACE",
 	})
 
 	const filteredBrands = useMemo(() => {
@@ -705,6 +812,13 @@ function NewSupportChatPicker({
 		if (!q) return list
 		return list.filter((h: Host) => h.displayName?.toLowerCase().includes(q) || h.user.email?.toLowerCase().includes(q))
 	}, [hostsQuery.data, search])
+
+	const filteredSpaces = useMemo(() => {
+		const q = search.trim().toLowerCase()
+		const list = spacesQuery.data ?? []
+		if (!q) return list
+		return list.filter((s: SpacePartnerListItem) => s.businessName?.toLowerCase().includes(q) || s.user.email?.toLowerCase().includes(q))
+	}, [spacesQuery.data, search])
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
@@ -740,6 +854,16 @@ function NewSupportChatPicker({
 					>
 						Brand
 					</button>
+					<button
+						type="button"
+						onClick={() => setTab("SPACE")}
+						className={cn(
+							"flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-wider border-2 border-black transition-colors",
+							tab === "SPACE" ? "bg-[#FFC940] text-black" : "bg-white text-black/50 hover:bg-neutral-50",
+						)}
+					>
+						Spaces
+					</button>
 				</div>
 
 				<div className="px-5 pt-3 shrink-0">
@@ -749,7 +873,7 @@ function NewSupportChatPicker({
 							type="text"
 							value={search}
 							onChange={e => setSearch(e.target.value)}
-							placeholder={tab === "HOST" ? "Search communities by name or email…" : "Search brands by name or email…"}
+							placeholder={tab === "HOST" ? "Search communities by name or email…" : tab === "BRAND" ? "Search brands by name or email…" : "Search spaces by name or email…"}
 							className="w-full rounded-xl border-2 border-black bg-white pl-8 pr-3 py-2 text-xs font-semibold outline-none focus:bg-neutral-50 text-black placeholder:text-neutral-400"
 						/>
 					</div>
@@ -787,36 +911,71 @@ function NewSupportChatPicker({
 								</button>
 							))
 						)
-					) : brandsQuery.isLoading ? (
-						<p className="text-xs font-semibold text-neutral-500 py-4 text-center">Loading brands…</p>
-					) : filteredBrands.length === 0 ? (
-						<p className="text-xs font-semibold text-neutral-500 py-4 text-center">No brands found.</p>
+					) : tab === "BRAND" ? (
+						brandsQuery.isLoading ? (
+							<p className="text-xs font-semibold text-neutral-500 py-4 text-center">Loading brands…</p>
+						) : filteredBrands.length === 0 ? (
+							<p className="text-xs font-semibold text-neutral-500 py-4 text-center">No brands found.</p>
+						) : (
+							filteredBrands.map((b: Brand) => (
+								<button
+									key={b.id}
+									type="button"
+									onClick={() =>
+										onPick({
+											userId: b.user.id,
+											userName: b.brandName,
+											userEmail: b.user.email ?? "",
+											userRole: "BRAND",
+											userLogoUrl: b.logoUrl,
+										})
+									}
+									className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-[#FFC940]/15 text-left transition-colors"
+								>
+									<div className="size-8 rounded-full bg-neutral-100 border border-black/10 flex items-center justify-center font-black text-xs text-black/60 shrink-0 overflow-hidden">
+										{b.logoUrl ? (
+											<img src={b.logoUrl} alt={b.brandName} className="w-full h-full object-cover" />
+										) : (
+											b.brandName.charAt(0).toUpperCase()
+										)}
+									</div>
+									<span className="flex flex-col min-w-0 flex-1">
+										<span className="text-xs font-bold text-black truncate">{b.brandName}</span>
+										<span className="text-[11px] text-neutral-500 truncate">{b.user.email}</span>
+									</span>
+								</button>
+							))
+						)
+					) : spacesQuery.isLoading ? (
+						<p className="text-xs font-semibold text-neutral-500 py-4 text-center">Loading spaces…</p>
+					) : filteredSpaces.length === 0 ? (
+						<p className="text-xs font-semibold text-neutral-500 py-4 text-center">No spaces found.</p>
 					) : (
-						filteredBrands.map((b: Brand) => (
+						filteredSpaces.map((s: SpacePartnerListItem) => (
 							<button
-								key={b.id}
+								key={s.id}
 								type="button"
 								onClick={() =>
 									onPick({
-										userId: b.user.id,
-										userName: b.brandName,
-										userEmail: b.user.email ?? "",
-										userRole: "BRAND",
-										userLogoUrl: b.logoUrl,
+										userId: s.user.id,
+										userName: s.businessName,
+										userEmail: s.user.email ?? "",
+										userRole: "SPACE_PARTNER",
+										userLogoUrl: s.logoUrl,
 									})
 								}
 								className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-[#FFC940]/15 text-left transition-colors"
 							>
 								<div className="size-8 rounded-full bg-neutral-100 border border-black/10 flex items-center justify-center font-black text-xs text-black/60 shrink-0 overflow-hidden">
-									{b.logoUrl ? (
-										<img src={b.logoUrl} alt={b.brandName} className="w-full h-full object-cover" />
+									{s.logoUrl ? (
+										<img src={s.logoUrl} alt={s.businessName} className="w-full h-full object-cover" />
 									) : (
-										b.brandName.charAt(0).toUpperCase()
+										s.businessName.charAt(0).toUpperCase()
 									)}
 								</div>
 								<span className="flex flex-col min-w-0 flex-1">
-									<span className="text-xs font-bold text-black truncate">{b.brandName}</span>
-									<span className="text-[11px] text-neutral-500 truncate">{b.user.email}</span>
+									<span className="text-xs font-bold text-black truncate">{s.businessName}</span>
+									<span className="text-[11px] text-neutral-500 truncate">{s.user.email}</span>
 								</span>
 							</button>
 						))

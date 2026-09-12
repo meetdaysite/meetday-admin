@@ -29,6 +29,8 @@ export type MeetdayChatMessage = {
 	senderId: string | null
 	content: string
 	mediaUrl?: string | null
+	editedAt?: string | null
+	deletedAt?: string | null
 	createdAt: string
 	hostReadAt?: string | null
 	brandReadAt?: string | null
@@ -60,6 +62,28 @@ export async function sendMeetdayChatMessage(
 
 export async function resolveMeetdayChat(threadId: string): Promise<MeetdayChatMessage> {
 	const { data } = await apiClient.post<MeetdayChatMessage>(`/admin/meetday-chats/${threadId}/resolve`)
+	return data
+}
+
+export async function editMeetdayChatMessage(
+	threadId: string,
+	messageId: string,
+	content: string,
+): Promise<MeetdayChatMessage> {
+	const { data } = await apiClient.patch<MeetdayChatMessage>(
+		`/admin/meetday-chats/${threadId}/messages/${messageId}`,
+		{ content },
+	)
+	return data
+}
+
+export async function deleteMeetdayChatMessage(
+	threadId: string,
+	messageId: string,
+): Promise<{ message: string; deleted: boolean }> {
+	const { data } = await apiClient.delete<{ message: string; deleted: boolean }>(
+		`/admin/meetday-chats/${threadId}/messages/${messageId}`,
+	)
 	return data
 }
 
