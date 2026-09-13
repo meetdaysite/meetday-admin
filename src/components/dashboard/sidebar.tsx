@@ -107,6 +107,12 @@ const NAV: NavItem[] = [
 				permission: "spaceProfile.approve",
 				exact: true,
 			},
+			{
+				label: "Community Space Reps",
+				href: "/space-partners",
+				permission: "spaceProfile.approve",
+				exact: true,
+			},
 		],
 	},
 	{

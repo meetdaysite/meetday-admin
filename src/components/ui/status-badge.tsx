@@ -51,6 +51,7 @@ const BADGE_CONFIG: Partial<Record<string, { label: string; className: string }>
 		className: "bg-amber-50 text-amber-700 border-amber-200",
 	},
 	DEACTIVATED: { label: "Deactivated", className: "bg-neutral-100 text-text-secondary border-neutral-200" },
+	NOT_ACTIVATED: { label: "Not Activated", className: "bg-neutral-100 text-text-secondary border-neutral-200" },
 	PAUSED: { label: "Paused", className: "bg-neutral-100 text-text-secondary border-neutral-200" },
 	PENDING_PAYMENT: { label: "Pending Payment", className: "bg-amber-50 text-amber-700 border-amber-200" },
 	CONFIRMED: { label: "Confirmed", className: "bg-green-50 text-green-700 border-green-200" },
