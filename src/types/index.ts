@@ -347,6 +347,17 @@ export type SponsorTier = {
 	price: string
 }
 
+export type SponsorshipSpaceProfile = {
+	id: string
+	businessName: string
+	user: {
+		id: string
+		firstName: string
+		lastName: string
+		email: string
+	}
+}
+
 export type SponsorshipProposal = {
 	id: string
 	name: string | null
@@ -361,7 +372,8 @@ export type SponsorshipProposal = {
 	updatedAt: string
 	pendingRevision: Record<string, unknown> | null
 	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
-	hostProfile: EventHostProfile
+	hostProfile: EventHostProfile | null
+	spaceProfile?: SponsorshipSpaceProfile | null
 }
 
 export type SponsorshipsListResponse = {
@@ -373,7 +385,8 @@ export type SponsorshipsListResponse = {
 
 export type SponsorshipDetail = {
 	id: string
-	hostProfileId: string
+	hostProfileId: string | null
+	spaceProfileId?: string | null
 	name: string | null
 	about: string | null
 	imageKey: string | null
@@ -402,7 +415,8 @@ export type SponsorshipDetail = {
 	submittedAt: string | null
 	createdAt: string
 	updatedAt: string
-	hostProfile: EventHostProfile
+	hostProfile: EventHostProfile | null
+	spaceProfile?: SponsorshipSpaceProfile | null
 	videoUrl: string | null
 }
 

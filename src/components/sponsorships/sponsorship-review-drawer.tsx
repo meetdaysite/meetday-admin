@@ -220,13 +220,16 @@ function SponsorshipDetailContent({
 				<div className="space-y-3.5">
 					<DetailRow
 						icon={Mail}
-						label="Host"
+						label={detail.hostProfile ? "Host" : "Space Partner"}
 						value={
 							<span>
-								<span className="block">{detail.hostProfile.displayName}</span>
+								<span className="block">{detail.hostProfile?.displayName ?? detail.spaceProfile?.businessName ?? "—"}</span>
 								<span className="text-[11px] text-text-tertiary">
-									{detail.hostProfile.user.firstName} {detail.hostProfile.user.lastName} ·{" "}
-									{detail.hostProfile.user.email}
+									{detail.hostProfile
+										? `${detail.hostProfile.user.firstName} ${detail.hostProfile.user.lastName} · ${detail.hostProfile.user.email}`
+										: detail.spaceProfile
+											? `${detail.spaceProfile.user.firstName} ${detail.spaceProfile.user.lastName} · ${detail.spaceProfile.user.email}`
+											: ""}
 								</span>
 							</span>
 						}
@@ -455,7 +458,11 @@ export function SponsorshipReviewDrawer({ open, onClose, proposal, onAction, onE
 	const isBusy = actionLoading !== null
 
 	const hostDisplay = proposal
-		? `${proposal.hostProfile.displayName} · ${proposal.hostProfile.user.email}`
+		? proposal.hostProfile
+			? `${proposal.hostProfile.displayName} · ${proposal.hostProfile.user.email}`
+			: proposal.spaceProfile
+				? `${proposal.spaceProfile.businessName} · ${proposal.spaceProfile.user.email}`
+				: undefined
 		: undefined
 
 	return (
