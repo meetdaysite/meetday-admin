@@ -11,7 +11,7 @@ import { getPendingSpaceCommunityProfiles, getPendingSpaceCommunityProfileRevisi
 import { getPendingBrands } from "@/lib/api/brands"
 import { getSupportTickets } from "@/lib/api/support-tickets"
 import { getPendingSponsorshipChatsCount, getSponsorshipChats } from "@/lib/api/sponsorship-chats"
-import { getSpaceChats } from "@/lib/api/space-chats"
+import { getPendingSpaceChatsCount, getSpaceChats } from "@/lib/api/space-chats"
 import { getMeetdayChatUnreadCount } from "@/lib/api/meetday-chats"
 import { getSponsorshipDeals, getCampaignDeals } from "@/lib/api/sponsorship-deals"
 import { getSpaceDeals } from "@/lib/api/space-deals"
@@ -38,7 +38,6 @@ export type SidebarBadgeKey =
 	| "pendingChats"
 	| "ongoingChats"
 	| "chatRequests"
-	| "spaceChats"
 	| "meetdayChats"
 	| "sponsorshipDeals"
 	| "campaignDeals"
@@ -160,30 +159,31 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		refetchInterval: REFETCH_INTERVAL,
 	})
 
-	// Ongoing chats unread count — tracks unread messages in accepted chats
+	// Ongoing chats unread count — tracks unread messages in accepted sponsorship, campaign, and space chats
 	const ongoingChats = useQuery({
 		queryKey: ["sidebar-badge", "ongoing-chats-unread"],
-		queryFn: () =>
-			getSponsorshipChats("ACCEPTED")
-				.then((threads) => threads.reduce((acc, t) => acc + (t.unreadCount || 0), 0))
-				.catch(() => 0),
+		queryFn: async () => {
+			const [sponsorshipThreads, spaceThreads] = await Promise.all([
+				getSponsorshipChats("ACCEPTED").catch(() => []),
+				getSpaceChats("ACCEPTED").catch(() => []),
+			])
+			const sCount = sponsorshipThreads.reduce((acc, t) => acc + (t.unreadCount || 0), 0)
+			const spCount = spaceThreads.reduce((acc, t) => acc + (t.unreadCount || 0), 0)
+			return sCount + spCount
+		},
 		refetchInterval: FAST_REFETCH_INTERVAL,
 	})
 
-	// Chat Requests pending count — tracks requests awaiting acceptance
+	// Chat Requests pending count — tracks requests awaiting acceptance (sponsorship, campaign, space)
 	const chatRequests = useQuery({
 		queryKey: ["sidebar-badge", "chat-requests"],
-		queryFn: () => getPendingSponsorshipChatsCount(),
-		refetchInterval: FAST_REFETCH_INTERVAL,
-	})
-
-	// Space Chats unread count — tracks unread messages in accepted space chats
-	const spaceChats = useQuery({
-		queryKey: ["sidebar-badge", "space-chats-unread"],
-		queryFn: () =>
-			getSpaceChats("ACCEPTED")
-				.then((threads) => threads.reduce((acc, t) => acc + (t.unreadCount || 0), 0))
-				.catch(() => 0),
+		queryFn: async () => {
+			const [sCount, spCount] = await Promise.all([
+				getPendingSponsorshipChatsCount().catch(() => 0),
+				getPendingSpaceChatsCount().catch(() => 0),
+			])
+			return sCount + spCount
+		},
 		refetchInterval: FAST_REFETCH_INTERVAL,
 	})
 
@@ -315,7 +315,6 @@ export function useSidebarBadgeCounts(): Partial<Record<SidebarBadgeKey, number>
 		pendingChats: chatRequests.data,
 		ongoingChats: ongoingChats.data,
 		chatRequests: chatRequests.data,
-		spaceChats: spaceChats.data,
 		meetdayChats: meetdayChats.data,
 		sponsorshipDeals: sponsorshipDeals.data,
 		campaignDeals: campaignDeals.data,

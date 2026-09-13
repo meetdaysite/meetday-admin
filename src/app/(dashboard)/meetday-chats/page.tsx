@@ -504,17 +504,17 @@ function MeetdayAdminChatPanel({
 								</div>
 								<div
 									className={cn(
-										"rounded-2xl p-2 sm:p-2.5 text-xs sm:text-body-sm break-words break-all border flex flex-col shadow-xs",
-										isDeleted && "border-dashed opacity-90",
+										"rounded-2xl p-2 sm:p-2.5 text-xs sm:text-body-sm break-words break-all flex flex-col shadow-xs",
+										isDeleted && "opacity-90",
 										isBot
-											? "bg-black text-white rounded-br-xs border-black"
+											? "bg-black text-white rounded-br-xs"
 											: isMeetday
-												? "bg-neutral-100 text-black rounded-br-xs border-black/10"
+												? "bg-neutral-100 text-black rounded-br-xs"
 												: thread.userRole === "BRAND"
-													? "bg-[#EE2C2C] text-white rounded-bl-xs border-[#EE2C2C]"
-													: thread.userRole === "SPACE_PARTNER"
-														? "bg-black text-white rounded-bl-xs border-black"
-														: "bg-[#FFC940] text-black rounded-bl-xs border-[#FFC940]",
+													? "bg-[#EE2C2C] text-white rounded-bl-xs"
+													: thread.userRole === "SPACE_PARTNER" || thread.userRole === "SPACE"
+														? "bg-black text-white rounded-bl-xs"
+														: "bg-[#FFC940] text-black rounded-bl-xs",
 									)}
 								>
 									{m.replyTo && (

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
 	Clock,
@@ -17,10 +18,15 @@ import PageHeader from "@/components/ui/PageHeader"
 import { Button } from "@/components/ui/Button"
 import {
 	getSponsorshipChats,
+	getSponsorshipChatMessages,
 	type SponsorshipChatThread,
 } from "@/lib/api/sponsorship-chats"
+import {
+	getSpaceChats,
+	getSpaceChatMessages,
+	type SpaceChatThread,
+} from "@/lib/api/space-chats"
 import { Drawer } from "@/components/ui/drawer"
-import { getSponsorshipChatMessages } from "@/lib/api/sponsorship-chats"
 
 const POLL_MS = 8000
 
@@ -47,7 +53,10 @@ function timeAgo(iso: string | null) {
 	return `${days}d ago`
 }
 
-function RequestDetailDrawer({
+type MainTab = "SPONSORSHIP" | "CAMPAIGN" | "SPACES"
+type SpaceSubTab = "BRAND" | "COMMUNITY"
+
+function SponsorshipRequestDetailDrawer({
 	thread,
 	onClose,
 }: {
@@ -183,30 +192,183 @@ function RequestDetailDrawer({
 	)
 }
 
-export default function ChatRequestsPage() {
-	const queryClient = useQueryClient()
-	const [activeTab, setActiveTab] = useState<"SPONSORSHIP" | "CAMPAIGN">("SPONSORSHIP")
-	const [searchQuery, setSearchQuery] = useState("")
-	const [inspectThread, setInspectThread] = useState<SponsorshipChatThread | null>(null)
+function SpaceRequestDetailDrawer({
+	thread,
+	onClose,
+}: {
+	thread: SpaceChatThread
+	onClose: () => void
+}) {
+	const messagesQuery = useQuery({
+		queryKey: ["admin-space-chat-messages", thread.id],
+		queryFn: () => getSpaceChatMessages(thread.id),
+	})
+	const messages = messagesQuery.data?.messages ?? []
 
-	// Fetch all pending requests across both types
+	return (
+		<Drawer
+			open={true}
+			onClose={onClose}
+			title="Space Interest Request"
+			description={`Requested on ${formatDateTime(thread.createdAt)}`}
+			width="max-w-lg"
+		>
+			<div className="space-y-5 p-6 text-body-sm">
+				{/* Sender & Receiver Card */}
+				<div className="rounded-2xl border-[2px] border-neutral-200 bg-neutral-50/70 p-4 space-y-3">
+					<div className="flex items-center justify-between">
+						<span className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
+							Connection Request
+						</span>
+						<span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-100/80 px-2.5 py-0.5 rounded-full border border-amber-200">
+							<Clock className="size-3" />
+							<span>Pending Acceptance</span>
+						</span>
+					</div>
+
+					<div className="flex items-center justify-between gap-3 pt-1">
+						{/* Sender (Brand or Community) */}
+						<div className="flex items-center gap-2.5 min-w-0">
+							<div className="size-10 rounded-xl border border-neutral-200 bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-2xs font-bold text-xs">
+								{thread.requesterLogoUrl ? (
+									<img src={thread.requesterLogoUrl} alt={thread.requesterName} className="w-full h-full object-cover" />
+								) : (
+									thread.requesterName.charAt(0).toUpperCase()
+								)}
+							</div>
+							<div className="min-w-0">
+								<p className="text-caption font-bold text-text-tertiary uppercase tracking-wider">
+									{thread.requesterType === "BRAND" ? "Brand (Requester)" : "Community (Requester)"}
+								</p>
+								<p className="font-bold text-text-primary text-body-sm truncate">{thread.requesterName}</p>
+							</div>
+						</div>
+
+						{/* Direction */}
+						<div className="size-8 rounded-full bg-neutral-200/80 text-neutral-600 flex items-center justify-center shrink-0">
+							<ArrowRight className="size-4" />
+						</div>
+
+						{/* Receiver (Community Space) */}
+						<div className="flex items-center gap-2.5 min-w-0 justify-end text-right">
+							<div className="min-w-0">
+								<p className="text-caption font-bold text-text-tertiary uppercase tracking-wider">
+									Space (Recipient)
+								</p>
+								<p className="font-bold text-text-primary text-body-sm truncate">{thread.spaceName}</p>
+							</div>
+							<div className="size-10 rounded-xl border border-neutral-200 bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-2xs font-bold text-xs">
+								{thread.spaceLogoUrl ? (
+									<img src={thread.spaceLogoUrl} alt={thread.spaceName} className="w-full h-full object-cover" />
+								) : (
+									thread.spaceName.charAt(0).toUpperCase()
+								)}
+							</div>
+						</div>
+					</div>
+				</div>
+
+				{/* Target Community Space */}
+				<div className="rounded-xl border border-border-default bg-white p-4 space-y-1">
+					<p className="text-caption font-bold text-text-tertiary uppercase tracking-wider">
+						Target Community Space
+					</p>
+					<p className="text-body-md font-bold text-text-primary">
+						{thread.spaceName}
+					</p>
+				</div>
+
+				{/* Initial Messages / Pitch */}
+				<div className="space-y-2">
+					<p className="text-caption font-bold text-text-tertiary uppercase tracking-wider">
+						Message History ({messages.length})
+					</p>
+					{messagesQuery.isLoading ? (
+						<p className="text-caption text-text-tertiary py-4 text-center">Loading message history…</p>
+					) : messages.length === 0 ? (
+						<div className="rounded-xl border border-border-subtle bg-neutral-50 p-4 text-center text-caption text-text-tertiary">
+							No introductory messages sent with this request.
+						</div>
+					) : (
+						<div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+							{messages.map((m) => (
+								<div key={m.id} className="rounded-xl border border-border-default bg-white p-3 space-y-1">
+									<div className="flex items-center justify-between text-caption text-text-tertiary">
+										<span className="font-semibold text-text-primary">{m.senderType}</span>
+										<span>{formatDateTime(m.createdAt)}</span>
+									</div>
+									<p className="text-body-sm text-text-primary whitespace-pre-wrap">{m.content}</p>
+								</div>
+							))}
+						</div>
+					)}
+				</div>
+
+				{/* Info note */}
+				<div className="rounded-xl bg-blue-50 border border-blue-200/80 p-3.5 text-xs text-blue-900 flex items-start gap-2.5">
+					<CheckCircle2 className="size-4 text-blue-600 shrink-0 mt-0.5" />
+					<p>
+						Once accepted by the Space partner, this chat automatically transitions into <strong>Ongoing Chats</strong> under <strong>Spaces</strong>.
+					</p>
+				</div>
+			</div>
+		</Drawer>
+	)
+}
+
+function ChatRequestsContent() {
+	const queryClient = useQueryClient()
+	const searchParams = useSearchParams()
+	const tabParam = searchParams.get("tab")?.toUpperCase()
+	const initialTab: MainTab = tabParam === "CAMPAIGN" ? "CAMPAIGN" : tabParam === "SPACES" || tabParam === "SPACE" ? "SPACES" : "SPONSORSHIP"
+
+	const [activeTab, setActiveTab] = useState<MainTab>(initialTab)
+	const [spaceSubTab, setSpaceSubTab] = useState<SpaceSubTab>("BRAND")
+	const [searchQuery, setSearchQuery] = useState("")
+	const [inspectSponsorshipThread, setInspectSponsorshipThread] = useState<SponsorshipChatThread | null>(null)
+	const [inspectSpaceThread, setInspectSpaceThread] = useState<SpaceChatThread | null>(null)
+
+	// Fetch all pending sponsorship/campaign requests
 	const requestsQuery = useQuery({
 		queryKey: ["admin-sponsorship-chat-requests"],
 		queryFn: () => getSponsorshipChats("REQUESTED"),
 		refetchInterval: POLL_MS,
 	})
 
-	const allRequests = requestsQuery.data ?? []
-
-	// Categorize into Sponsorships vs Campaigns
-	const tabRequests = allRequests.filter((t) => {
-		const isCampaign = t.type === "CAMPAIGN" || Boolean(t.campaignId) || (!t.proposalId && !t.proposalName && Boolean(t.campaignName))
-		return activeTab === "CAMPAIGN" ? isCampaign : !isCampaign
+	// Fetch all pending space requests
+	const spaceRequestsQuery = useQuery({
+		queryKey: ["admin-space-chat-requests"],
+		queryFn: () => getSpaceChats("REQUESTED"),
+		refetchInterval: POLL_MS,
 	})
 
-	// Filter by search query
-	const filteredRequests = useMemo(() => {
-		return tabRequests.filter((t) => {
+	const allSponsorshipRequests = requestsQuery.data ?? []
+	const allSpaceRequests = spaceRequestsQuery.data ?? []
+
+	// Counts
+	const sponsorshipCount = allSponsorshipRequests.filter(
+		(t) => !(t.type === "CAMPAIGN" || Boolean(t.campaignId) || (!t.proposalId && !t.proposalName && Boolean(t.campaignName)))
+	).length
+
+	const campaignCount = allSponsorshipRequests.filter(
+		(t) => t.type === "CAMPAIGN" || Boolean(t.campaignId) || (!t.proposalId && !t.proposalName && Boolean(t.campaignName))
+	).length
+
+	const spacesCount = allSpaceRequests.length
+	const spacesBrandCount = allSpaceRequests.filter((t) => t.requesterType === "BRAND").length
+	const spacesCommunityCount = allSpaceRequests.filter((t) => t.requesterType === "COMMUNITY").length
+
+	// Categorize into Sponsorships vs Campaigns
+	const tabSponsorshipRequests = useMemo(() => {
+		return allSponsorshipRequests.filter((t) => {
+			const isCampaign = t.type === "CAMPAIGN" || Boolean(t.campaignId) || (!t.proposalId && !t.proposalName && Boolean(t.campaignName))
+			return activeTab === "CAMPAIGN" ? isCampaign : !isCampaign
+		})
+	}, [allSponsorshipRequests, activeTab])
+
+	// Filter sponsorship by search query
+	const filteredSponsorshipRequests = useMemo(() => {
+		return tabSponsorshipRequests.filter((t) => {
 			if (!searchQuery.trim()) return true
 			const q = searchQuery.toLowerCase()
 			return (
@@ -219,7 +381,18 @@ export default function ChatRequestsPage() {
 				(t.targetName && t.targetName.toLowerCase().includes(q))
 			)
 		})
-	}, [tabRequests, searchQuery])
+	}, [tabSponsorshipRequests, searchQuery])
+
+	// Filter space by sub-tab and search query
+	const filteredSpaceRequests = useMemo(() => {
+		return allSpaceRequests
+			.filter((t) => t.requesterType === spaceSubTab)
+			.filter((t) => {
+				if (!searchQuery.trim()) return true
+				const q = searchQuery.toLowerCase()
+				return t.spaceName?.toLowerCase().includes(q) || t.requesterName?.toLowerCase().includes(q)
+			})
+	}, [allSpaceRequests, spaceSubTab, searchQuery])
 
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto w-full">
@@ -228,16 +401,19 @@ export default function ChatRequestsPage() {
 				<div>
 					<h1 className="text-xl font-bold text-text-primary tracking-tight">Chat Requests</h1>
 					<p className="text-xs text-text-secondary mt-0.5">
-						Inbound connection requests between Communities and Brands awaiting acceptance.
+						Inbound connection requests between Communities, Brands, and Space Partners awaiting acceptance.
 					</p>
 				</div>
 				<div className="flex items-center gap-2 shrink-0">
 					<Button
 						variant="secondary"
 						size="sm"
-						onClick={() => queryClient.invalidateQueries({ queryKey: ["admin-sponsorship-chat-requests"] })}
-						disabled={requestsQuery.isFetching}
-						leftIcon={<RotateCw className={cn("size-3.5", requestsQuery.isFetching && "animate-spin")} />}
+						onClick={() => {
+							queryClient.invalidateQueries({ queryKey: ["admin-sponsorship-chat-requests"] })
+							queryClient.invalidateQueries({ queryKey: ["admin-space-chat-requests"] })
+						}}
+						disabled={requestsQuery.isFetching || spaceRequestsQuery.isFetching}
+						leftIcon={<RotateCw className={cn("size-3.5", (requestsQuery.isFetching || spaceRequestsQuery.isFetching) && "animate-spin")} />}
 					>
 						Refresh
 					</Button>
@@ -246,22 +422,18 @@ export default function ChatRequestsPage() {
 
 			{/* Main Card Container */}
 			<div className="border border-border-default rounded-action overflow-hidden bg-surface-card w-full">
-				{/* Dual Tabs & Search Toolbar */}
+				{/* 3 Main Tabs & Search Toolbar */}
 				<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b border-border-default bg-neutral-50/60 px-4 py-2.5 gap-3 w-full">
-					{/* Dual Tabs: Sponsorships & Campaigns */}
-					<div className="flex items-center gap-1.5">
+					{/* 3 Main Tabs: Sponsorships, Campaigns, Spaces */}
+					<div className="flex items-center gap-1.5 flex-wrap">
 						{(
 							[
-								{ key: "SPONSORSHIP", label: "Sponsorships" },
-								{ key: "CAMPAIGN", label: "Campaigns" },
+								{ key: "SPONSORSHIP", label: "Sponsorships", count: sponsorshipCount },
+								{ key: "CAMPAIGN", label: "Campaigns", count: campaignCount },
+								{ key: "SPACES", label: "Spaces", count: spacesCount },
 							] as const
 						).map((tab) => {
 							const isActive = activeTab === tab.key
-							const count = allRequests.filter((t) => {
-								const isCampaign = t.type === "CAMPAIGN" || Boolean(t.campaignId) || (!t.proposalId && !t.proposalName && Boolean(t.campaignName))
-								return tab.key === "CAMPAIGN" ? isCampaign : !isCampaign
-							}).length
-
 							return (
 								<button
 									key={tab.key}
@@ -278,7 +450,7 @@ export default function ChatRequestsPage() {
 										"px-1.5 py-0.2 rounded-full text-[10px] font-black",
 										isActive ? "bg-black text-white" : "bg-neutral-200 text-neutral-700",
 									)}>
-										{count}
+										{tab.count}
 									</span>
 								</button>
 							)
@@ -292,7 +464,13 @@ export default function ChatRequestsPage() {
 							type="text"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							placeholder={activeTab === "SPONSORSHIP" ? "Search sender, proposal…" : "Search applicant, campaign…"}
+							placeholder={
+								activeTab === "SPACES"
+									? `Search ${spaceSubTab === "BRAND" ? "brand" : "community"} space requests…`
+									: activeTab === "SPONSORSHIP"
+									? "Search sender, proposal…"
+									: "Search applicant, campaign…"
+							}
 							className="pl-8 pr-7 py-1 text-xs rounded-md border border-border-default bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:border-border-focused w-full sm:w-64"
 						/>
 						{searchQuery && (
@@ -306,74 +484,94 @@ export default function ChatRequestsPage() {
 					</div>
 				</div>
 
+				{/* Spaces Sub-tabs (Brand / Community) */}
+				{activeTab === "SPACES" && (
+					<div className="flex items-center gap-2 border-b border-border-default bg-neutral-100/60 px-4 py-2">
+						{(
+							[
+								{ key: "BRAND", label: "Brand Requests", count: spacesBrandCount },
+								{ key: "COMMUNITY", label: "Community Requests", count: spacesCommunityCount },
+							] as const
+						).map((sub) => {
+							const isSubActive = spaceSubTab === sub.key
+							return (
+								<button
+									key={sub.key}
+									onClick={() => setSpaceSubTab(sub.key)}
+									className={cn(
+										"inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer",
+										isSubActive
+											? "bg-black text-white shadow-xs"
+											: "bg-white text-neutral-600 hover:text-black border border-neutral-200",
+									)}
+								>
+									<span>{sub.label}</span>
+									<span className={cn(
+										"px-1.5 py-0.2 rounded-full text-[9px] font-black",
+										isSubActive ? "bg-[#FFC940] text-black" : "bg-neutral-100 text-neutral-600",
+									)}>
+										{sub.count}
+									</span>
+								</button>
+							)
+						})}
+					</div>
+				)}
+
 				{/* Table / List View */}
 				<div className="overflow-x-auto w-full">
-					<table className="w-full min-w-full text-left table-auto">
-						<thead>
-							<tr className="border-b border-border-default text-caption text-text-tertiary bg-neutral-50/40">
-								<th className="px-4 py-2.5 font-semibold min-w-[200px]">Sent By (Sender)</th>
-								<th className="px-4 py-2.5 font-semibold min-w-[200px]">Sent To (Recipient)</th>
-								<th className="px-4 py-2.5 font-semibold min-w-[200px]">
-									{activeTab === "SPONSORSHIP" ? "Target Proposal" : "Target Campaign"}
-								</th>
-								<th className="px-4 py-2.5 font-semibold min-w-[140px]">Date &amp; Time</th>
-								<th className="px-4 py-2.5 font-semibold min-w-[140px]">Status</th>
-								<th className="px-4 py-2.5 font-semibold min-w-[100px] text-right">Action</th>
-							</tr>
-						</thead>
-						<tbody className="divide-y divide-border-subtle">
-							{requestsQuery.isLoading ? (
-								<tr>
-									<td colSpan={6} className="text-center py-12 text-caption text-text-tertiary">
-										Loading requests…
-									</td>
+					{activeTab === "SPACES" ? (
+						<table className="w-full min-w-full text-left table-auto">
+							<thead>
+								<tr className="border-b border-border-default text-caption text-text-tertiary bg-neutral-50/40">
+									<th className="px-4 py-2.5 font-semibold min-w-[200px]">Sent By (Requester)</th>
+									<th className="px-4 py-2.5 font-semibold min-w-[200px]">Sent To (Community Space)</th>
+									<th className="px-4 py-2.5 font-semibold min-w-[200px]">Target Space</th>
+									<th className="px-4 py-2.5 font-semibold min-w-[140px]">Date &amp; Time</th>
+									<th className="px-4 py-2.5 font-semibold min-w-[140px]">Status</th>
+									<th className="px-4 py-2.5 font-semibold min-w-[100px] text-right">Action</th>
 								</tr>
-							) : filteredRequests.length === 0 ? (
-								<tr>
-									<td colSpan={6} className="text-center py-12 text-caption text-text-tertiary">
-										<div className="flex flex-col items-center justify-center gap-1.5">
-											<Inbox className="size-8 text-neutral-300" />
-											<p className="font-semibold text-text-secondary text-xs">
-												{searchQuery
-													? "No chat requests match your search."
-													: `No pending ${activeTab === "SPONSORSHIP" ? "sponsorship" : "campaign"} requests.`}
-											</p>
-											<p className="text-[11px] text-text-tertiary">
-												New connection requests sent between brands and communities will appear here.
-											</p>
-										</div>
-									</td>
-								</tr>
-							) : (
-								filteredRequests.map((row) => {
-									const isCampaign = row.type === "CAMPAIGN" || Boolean(row.campaignId)
-
-									const senderName = row.senderName ?? (isCampaign ? row.communityName : row.brandName)
-									const senderRole = row.senderRole ?? (isCampaign ? "HOST" : "BRAND")
-									const senderLogoUrl = row.senderLogoUrl ?? (isCampaign ? row.communityLogoUrl : row.brandLogoUrl)
-
-									const receiverName = row.receiverName ?? (isCampaign ? row.brandName : row.communityName)
-									const receiverRole = row.receiverRole ?? (isCampaign ? "BRAND" : "HOST")
-									const receiverLogoUrl = row.receiverLogoUrl ?? (isCampaign ? row.brandLogoUrl : row.communityLogoUrl)
-
-									const targetTitle = row.targetName || (isCampaign ? row.campaignName : row.proposalName) || "—"
-
-									return (
+							</thead>
+							<tbody className="divide-y divide-border-subtle">
+								{spaceRequestsQuery.isLoading ? (
+									<tr>
+										<td colSpan={6} className="text-center py-12 text-caption text-text-tertiary">
+											Loading space requests…
+										</td>
+									</tr>
+								) : filteredSpaceRequests.length === 0 ? (
+									<tr>
+										<td colSpan={6} className="text-center py-12 text-caption text-text-tertiary">
+											<div className="flex flex-col items-center justify-center gap-1.5">
+												<Inbox className="size-8 text-neutral-300" />
+												<p className="font-semibold text-text-secondary text-xs">
+													{searchQuery
+														? "No space requests match your search."
+														: `No pending ${spaceSubTab === "BRAND" ? "brand" : "community"} space requests.`}
+												</p>
+												<p className="text-[11px] text-text-tertiary">
+													Inbound connection requests from {spaceSubTab === "BRAND" ? "brands" : "communities"} to Community Spaces will appear here.
+												</p>
+											</div>
+										</td>
+									</tr>
+								) : (
+									filteredSpaceRequests.map((row) => (
 										<tr key={row.id} className="hover:bg-neutral-50/70 transition-colors group">
 											{/* Sent By */}
 											<td className="px-4 py-3 text-xs">
 												<div className="flex items-center gap-2.5">
 													<div className="size-9 rounded-xl border border-neutral-200 bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-2xs font-bold text-xs text-text-secondary">
-														{senderLogoUrl ? (
-															<img src={senderLogoUrl} alt={senderName ?? "Sender"} className="w-full h-full object-cover" />
+														{row.requesterLogoUrl ? (
+															<img src={row.requesterLogoUrl} alt={row.requesterName} className="w-full h-full object-cover" />
 														) : (
-															(senderName ?? "S").charAt(0).toUpperCase()
+															row.requesterName.charAt(0).toUpperCase()
 														)}
 													</div>
 													<div className="min-w-0">
-														<p className="font-semibold text-text-primary truncate">{senderName}</p>
+														<p className="font-semibold text-text-primary truncate">{row.requesterName}</p>
 														<span className="inline-block text-[10px] font-medium px-1.5 py-0.2 rounded bg-neutral-100 text-text-secondary">
-															{senderRole === "BRAND" ? "Brand" : "Community"}
+															{row.requesterType === "BRAND" ? "Brand" : "Community"}
 														</span>
 													</div>
 												</div>
@@ -383,28 +581,28 @@ export default function ChatRequestsPage() {
 											<td className="px-4 py-3 text-xs">
 												<div className="flex items-center gap-2.5">
 													<div className="size-9 rounded-xl border border-neutral-200 bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-2xs font-bold text-xs text-text-secondary">
-														{receiverLogoUrl ? (
-															<img src={receiverLogoUrl} alt={receiverName ?? "Receiver"} className="w-full h-full object-cover" />
+														{row.spaceLogoUrl ? (
+															<img src={row.spaceLogoUrl} alt={row.spaceName} className="w-full h-full object-cover" />
 														) : (
-															(receiverName ?? "R").charAt(0).toUpperCase()
+															row.spaceName.charAt(0).toUpperCase()
 														)}
 													</div>
 													<div className="min-w-0">
-														<p className="font-semibold text-text-primary truncate">{receiverName}</p>
-														<span className="inline-block text-[10px] font-medium px-1.5 py-0.2 rounded bg-neutral-100 text-text-secondary">
-															{receiverRole === "BRAND" ? "Brand" : "Community"}
+														<p className="font-semibold text-text-primary truncate">{row.spaceName}</p>
+														<span className="inline-block text-[10px] font-medium px-1.5 py-0.2 rounded bg-[#FFC940]/40 text-black font-semibold">
+															Community Space
 														</span>
 													</div>
 												</div>
 											</td>
 
-											{/* Target Item */}
+											{/* Target Space */}
 											<td className="px-4 py-3 text-xs max-w-[240px]">
-												<p className="font-semibold text-text-primary truncate" title={targetTitle}>
-													{targetTitle}
+												<p className="font-semibold text-text-primary truncate" title={row.spaceName}>
+													{row.spaceName}
 												</p>
 												<p className="text-[11px] text-text-tertiary">
-													{isCampaign ? "Campaign Application" : "Proposal Sponsorship"}
+													Space Booking / Partnership
 												</p>
 											</td>
 
@@ -428,7 +626,7 @@ export default function ChatRequestsPage() {
 											<td className="px-4 py-3 text-right whitespace-nowrap">
 												<button
 													type="button"
-													onClick={() => setInspectThread(row)}
+													onClick={() => setInspectSpaceThread(row)}
 													className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md text-text-primary bg-white hover:bg-neutral-100 border border-border-default transition-colors shadow-2xs cursor-pointer"
 												>
 													<Eye className="size-3.5 text-text-secondary" />
@@ -436,21 +634,171 @@ export default function ChatRequestsPage() {
 												</button>
 											</td>
 										</tr>
-									)
-								})
-							)}
-						</tbody>
-					</table>
+									))
+								)}
+							</tbody>
+						</table>
+					) : (
+						<table className="w-full min-w-full text-left table-auto">
+							<thead>
+								<tr className="border-b border-border-default text-caption text-text-tertiary bg-neutral-50/40">
+									<th className="px-4 py-2.5 font-semibold min-w-[200px]">Sent By (Sender)</th>
+									<th className="px-4 py-2.5 font-semibold min-w-[200px]">Sent To (Recipient)</th>
+									<th className="px-4 py-2.5 font-semibold min-w-[200px]">
+										{activeTab === "SPONSORSHIP" ? "Target Proposal" : "Target Campaign"}
+									</th>
+									<th className="px-4 py-2.5 font-semibold min-w-[140px]">Date &amp; Time</th>
+									<th className="px-4 py-2.5 font-semibold min-w-[140px]">Status</th>
+									<th className="px-4 py-2.5 font-semibold min-w-[100px] text-right">Action</th>
+								</tr>
+							</thead>
+							<tbody className="divide-y divide-border-subtle">
+								{requestsQuery.isLoading ? (
+									<tr>
+										<td colSpan={6} className="text-center py-12 text-caption text-text-tertiary">
+											Loading requests…
+										</td>
+									</tr>
+								) : filteredSponsorshipRequests.length === 0 ? (
+									<tr>
+										<td colSpan={6} className="text-center py-12 text-caption text-text-tertiary">
+											<div className="flex flex-col items-center justify-center gap-1.5">
+												<Inbox className="size-8 text-neutral-300" />
+												<p className="font-semibold text-text-secondary text-xs">
+													{searchQuery
+														? "No chat requests match your search."
+														: `No pending ${activeTab === "SPONSORSHIP" ? "sponsorship" : "campaign"} requests.`}
+												</p>
+												<p className="text-[11px] text-text-tertiary">
+													New connection requests sent between brands and communities will appear here.
+												</p>
+											</div>
+										</td>
+									</tr>
+								) : (
+									filteredSponsorshipRequests.map((row) => {
+										const isCampaign = row.type === "CAMPAIGN" || Boolean(row.campaignId)
+
+										const senderName = row.senderName ?? (isCampaign ? row.communityName : row.brandName)
+										const senderRole = row.senderRole ?? (isCampaign ? "HOST" : "BRAND")
+										const senderLogoUrl = row.senderLogoUrl ?? (isCampaign ? row.communityLogoUrl : row.brandLogoUrl)
+
+										const receiverName = row.receiverName ?? (isCampaign ? row.brandName : row.communityName)
+										const receiverRole = row.receiverRole ?? (isCampaign ? "BRAND" : "HOST")
+										const receiverLogoUrl = row.receiverLogoUrl ?? (isCampaign ? row.brandLogoUrl : row.communityLogoUrl)
+
+										const targetTitle = row.targetName || (isCampaign ? row.campaignName : row.proposalName) || "—"
+
+										return (
+											<tr key={row.id} className="hover:bg-neutral-50/70 transition-colors group">
+												{/* Sent By */}
+												<td className="px-4 py-3 text-xs">
+													<div className="flex items-center gap-2.5">
+														<div className="size-9 rounded-xl border border-neutral-200 bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-2xs font-bold text-xs text-text-secondary">
+															{senderLogoUrl ? (
+																<img src={senderLogoUrl} alt={senderName ?? "Sender"} className="w-full h-full object-cover" />
+															) : (
+																(senderName ?? "S").charAt(0).toUpperCase()
+															)}
+														</div>
+														<div className="min-w-0">
+															<p className="font-semibold text-text-primary truncate">{senderName}</p>
+															<span className="inline-block text-[10px] font-medium px-1.5 py-0.2 rounded bg-neutral-100 text-text-secondary">
+																{senderRole === "BRAND" ? "Brand" : "Community"}
+															</span>
+														</div>
+													</div>
+												</td>
+
+												{/* Sent To */}
+												<td className="px-4 py-3 text-xs">
+													<div className="flex items-center gap-2.5">
+														<div className="size-9 rounded-xl border border-neutral-200 bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-2xs font-bold text-xs text-text-secondary">
+															{receiverLogoUrl ? (
+																<img src={receiverLogoUrl} alt={receiverName ?? "Receiver"} className="w-full h-full object-cover" />
+															) : (
+																(receiverName ?? "R").charAt(0).toUpperCase()
+															)}
+														</div>
+														<div className="min-w-0">
+															<p className="font-semibold text-text-primary truncate">{receiverName}</p>
+															<span className="inline-block text-[10px] font-medium px-1.5 py-0.2 rounded bg-neutral-100 text-text-secondary">
+																{receiverRole === "BRAND" ? "Brand" : "Community"}
+															</span>
+														</div>
+													</div>
+												</td>
+
+												{/* Target Item */}
+												<td className="px-4 py-3 text-xs max-w-[240px]">
+													<p className="font-semibold text-text-primary truncate" title={targetTitle}>
+														{targetTitle}
+													</p>
+													<p className="text-[11px] text-text-tertiary">
+														{isCampaign ? "Campaign Application" : "Proposal Sponsorship"}
+													</p>
+												</td>
+
+												{/* Timestamp */}
+												<td className="px-4 py-3 text-xs">
+													<div className="flex flex-col">
+														<span className="font-medium text-text-primary">{formatDateTime(row.createdAt)}</span>
+														<span className="text-[11px] text-text-tertiary">{timeAgo(row.createdAt)}</span>
+													</div>
+												</td>
+
+												{/* Status */}
+												<td className="px-4 py-3 text-xs">
+													<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/80">
+														<Clock className="size-3 shrink-0" />
+														<span>Awaiting Accept</span>
+													</span>
+												</td>
+
+												{/* Action */}
+												<td className="px-4 py-3 text-right whitespace-nowrap">
+													<button
+														type="button"
+														onClick={() => setInspectSponsorshipThread(row)}
+														className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md text-text-primary bg-white hover:bg-neutral-100 border border-border-default transition-colors shadow-2xs cursor-pointer"
+													>
+														<Eye className="size-3.5 text-text-secondary" />
+														<span>View Details</span>
+													</button>
+												</td>
+											</tr>
+										)
+									})
+								)}
+							</tbody>
+						</table>
+					)}
 				</div>
 			</div>
 
-			{/* Detail Drawer */}
-			{inspectThread && (
-				<RequestDetailDrawer
-					thread={inspectThread}
-					onClose={() => setInspectThread(null)}
+			{/* Detail Drawer for Sponsorship / Campaign */}
+			{inspectSponsorshipThread && (
+				<SponsorshipRequestDetailDrawer
+					thread={inspectSponsorshipThread}
+					onClose={() => setInspectSponsorshipThread(null)}
+				/>
+			)}
+
+			{/* Detail Drawer for Spaces */}
+			{inspectSpaceThread && (
+				<SpaceRequestDetailDrawer
+					thread={inspectSpaceThread}
+					onClose={() => setInspectSpaceThread(null)}
 				/>
 			)}
 		</div>
+	)
+}
+
+export default function ChatRequestsPage() {
+	return (
+		<Suspense fallback={null}>
+			<ChatRequestsContent />
+		</Suspense>
 	)
 }

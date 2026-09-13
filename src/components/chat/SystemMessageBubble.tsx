@@ -1,42 +1,47 @@
 import React from "react"
-import { Check, Lock, FileText, AlertTriangle, CreditCard, ClipboardCheck } from "lucide-react"
 
 export function SystemMessageBubble({ content, isCampaign }: { content: string; isCampaign?: boolean }) {
 	const lower = content.toLowerCase()
 	const effectiveIsCampaign = isCampaign ?? (lower.includes("campaign") && !lower.includes("sponsorship proposal"))
 
-	// 1. Report Approved / Deal Closed
+	// 1. Report Approved / Deal Closed / Completed (Check first)
 	if (
 		lower.includes("report approved") ||
 		lower.includes("deliverables approved") ||
 		lower.includes("deal is closed") ||
 		lower.includes("closed") ||
+		lower.includes("completed") ||
 		(lower.includes("approved") && (lower.includes("deliverables") || lower.includes("report")))
 	) {
 		return (
-			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#ECFDF5] border border-black/15 text-[#065F46] flex items-center gap-2.5 text-xs sm:text-sm font-semibold">
-				<div className="size-6 rounded-full bg-[#10B981] text-white flex items-center justify-center shrink-0">
-					<Check size={14} strokeWidth={2.5} />
+			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#ECFDF5] border-2 border-black text-[#065F46] shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2.5 text-xs sm:text-sm font-semibold transition-all">
+				<div className="size-6 rounded-full bg-[#10B981] border-2 border-black text-white flex items-center justify-center shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+					<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+						<polyline points="20 6 9 17 4 12" />
+					</svg>
 				</div>
 				<span className="leading-snug">
-					Congratulations! The <strong className="font-bold">deal is officially closed</strong>!
+					Congratulations! The <strong className="font-black">deal is officially completed and closed</strong>!
 				</span>
 			</div>
 		)
 	}
 
-	// 2. Deliverables Report Revision Requested (Check before generic report submitted)
+	// 2. Deliverables Report Revision Requested
 	if (
 		(lower.includes("deliverables") || lower.includes("report")) &&
 		(lower.includes("revision") || lower.includes("requested change") || lower.includes("requested changes"))
 	) {
 		return (
-			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#FFFBEB] border border-black/15 text-[#92400E] flex items-center gap-2.5 text-xs sm:text-sm font-semibold">
-				<div className="size-6 rounded-full bg-[#FFC940] text-black flex items-center justify-center shrink-0">
-					<AlertTriangle size={13} strokeWidth={2.5} />
+			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#FFFBEB] border-2 border-black text-[#92400E] shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2.5 text-xs sm:text-sm font-semibold transition-all">
+				<div className="size-6 rounded-full bg-[#FFC940] border-2 border-black text-black flex items-center justify-center shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+					<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+						<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+						<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+					</svg>
 				</div>
 				<span className="leading-snug">
-					<strong className="font-bold">Revision was requested</strong> on the deliverables report.
+					<strong className="font-black">Revision was requested</strong> on the deliverables report.
 				</span>
 			</div>
 		)
@@ -49,12 +54,16 @@ export function SystemMessageBubble({ content, isCampaign }: { content: string; 
 		(lower.includes("submitted") && (lower.includes("deliverables") || lower.includes("report")))
 	) {
 		return (
-			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#FEF2F2] border border-black/15 text-[#991B1B] flex items-center gap-2.5 text-xs sm:text-sm font-semibold">
-				<div className="size-6 rounded-full bg-[#EE2C2C] text-white flex items-center justify-center shrink-0">
-					<ClipboardCheck size={13} strokeWidth={2.5} />
+			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#FEF2F2] border-2 border-black text-[#991B1B] shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2.5 text-xs sm:text-sm font-semibold transition-all">
+				<div className="size-6 rounded-full bg-[#EE2C2C] border-2 border-black text-white flex items-center justify-center shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+					<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+						<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+						<rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+						<path d="M9 14l2 2 4-4" />
+					</svg>
 				</div>
 				<span className="leading-snug">
-					The <strong className="font-bold">deliverables report</strong> was submitted for review.
+					The <strong className="font-black">deliverables report</strong> was submitted for review.
 				</span>
 			</div>
 		)
@@ -68,12 +77,15 @@ export function SystemMessageBubble({ content, isCampaign }: { content: string; 
 		lower.includes("approved")
 	) {
 		return (
-			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#ECFDF5] border border-black/15 text-[#065F46] flex items-center gap-2.5 text-xs sm:text-sm font-semibold">
-				<div className="size-6 rounded-full bg-[#10B981] text-white flex items-center justify-center shrink-0">
-					<Lock size={13} strokeWidth={2.5} />
+			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#ECFDF5] border-2 border-black text-[#065F46] shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2.5 text-xs sm:text-sm font-semibold transition-all">
+				<div className="size-6 rounded-full bg-[#10B981] border-2 border-black text-white flex items-center justify-center shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+					<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+						<rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+						<path d="M7 11V7a5 5 0 0 1 10 0v4" />
+					</svg>
 				</div>
 				<span className="leading-snug">
-					The <strong className="font-bold">deal is officially locked</strong> and confirmed!
+					The <strong className="font-black">deal is officially locked</strong> and confirmed!
 				</span>
 			</div>
 		)
@@ -88,12 +100,17 @@ export function SystemMessageBubble({ content, isCampaign }: { content: string; 
 		lower.includes("deal terms")
 	) {
 		return (
-			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#FEF2F2] border border-black/15 text-[#991B1B] flex items-center gap-2.5 text-xs sm:text-sm font-semibold">
-				<div className="size-6 rounded-full bg-[#EE2C2C] text-white flex items-center justify-center shrink-0">
-					<FileText size={13} strokeWidth={2.5} />
+			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#FEF2F2] border-2 border-black text-[#991B1B] shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2.5 text-xs sm:text-sm font-semibold transition-all">
+				<div className="size-6 rounded-full bg-[#EE2C2C] border-2 border-black text-white flex items-center justify-center shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+					<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+						<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+						<polyline points="14 2 14 8 20 8" />
+						<line x1="16" y1="13" x2="8" y2="13" />
+						<line x1="16" y1="17" x2="8" y2="17" />
+					</svg>
 				</div>
 				<span className="leading-snug">
-					A new <strong className="font-bold">{effectiveIsCampaign ? "campaign deal" : "deal proposal"}</strong> was shared for approval.
+					A new <strong className="font-black">{effectiveIsCampaign ? "campaign deal" : "deal proposal"}</strong> was shared for approval.
 				</span>
 			</div>
 		)
@@ -102,12 +119,15 @@ export function SystemMessageBubble({ content, isCampaign }: { content: string; 
 	// 6. Proposal Changes Requested
 	if (lower.includes("changes") || lower.includes("requested change") || lower.includes("revision")) {
 		return (
-			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#FFFBEB] border border-black/15 text-[#92400E] flex items-center gap-2.5 text-xs sm:text-sm font-semibold">
-				<div className="size-6 rounded-full bg-[#FFC940] text-black flex items-center justify-center shrink-0">
-					<AlertTriangle size={13} strokeWidth={2.5} />
+			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#FFFBEB] border-2 border-black text-[#92400E] shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2.5 text-xs sm:text-sm font-semibold transition-all">
+				<div className="size-6 rounded-full bg-[#FFC940] border-2 border-black text-black flex items-center justify-center shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+					<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+						<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+						<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+					</svg>
 				</div>
 				<span className="leading-snug">
-					<strong className="font-bold">Changes were requested</strong> on the {effectiveIsCampaign ? "campaign deal" : "proposal"}.
+					<strong className="font-black">Changes were requested</strong> on the {effectiveIsCampaign ? "campaign deal" : "proposal"}.
 				</span>
 			</div>
 		)
@@ -116,21 +136,24 @@ export function SystemMessageBubble({ content, isCampaign }: { content: string; 
 	// 7. Payment Made
 	if (lower.includes("paid") || lower.includes("payment")) {
 		return (
-			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#F0FDF4] border border-black/15 text-[#15803D] flex items-center gap-2.5 text-xs sm:text-sm font-semibold">
-				<div className="size-6 rounded-full bg-[#10B981] text-white flex items-center justify-center shrink-0">
-					<CreditCard size={13} strokeWidth={2.5} />
+			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#F0FDF4] border-2 border-black text-[#15803D] shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2.5 text-xs sm:text-sm font-semibold transition-all">
+				<div className="size-6 rounded-full bg-[#10B981] border-2 border-black text-white flex items-center justify-center shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+					<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+						<rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+						<line x1="1" y1="10" x2="23" y2="10" />
+					</svg>
 				</div>
 				<span className="leading-snug">
-					<strong className="font-bold">Payment completed</strong> successfully!
+					<strong className="font-black">Payment completed</strong> successfully!
 				</span>
 			</div>
 		)
 	}
 
 	// 8. Generic Fallback
-	const cleaned = content.replace(/^[📝✏️🎉🔒💳🔁⚠️📄✅🎟️\s]+/, "").trim()
+	const cleaned = content.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/gu, "").trim()
 	return (
-		<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2 rounded-2xl bg-neutral-100 border border-black/15 text-black/80 text-xs sm:text-sm font-bold text-center">
+		<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2 rounded-2xl bg-neutral-100 border-2 border-black text-black/80 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-xs sm:text-sm font-bold text-center">
 			{cleaned}
 		</div>
 	)
