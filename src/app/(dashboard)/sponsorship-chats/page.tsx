@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { Image as ImageIcon, ArrowLeft, CheckCircle2 } from "lucide-react"
 import { cn, isPdfMediaUrl } from "@/lib/utils"
 import PageHeader from "@/components/ui/PageHeader"
-import { uploadSponsorshipChatImage, uploadSpaceChatImage } from "@/lib/api/storage"
+import { uploadSponsorshipChatImage, uploadSpaceChatImage, uploadSpaceHostChatImage } from "@/lib/api/storage"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import { LinkifiedText } from "@/components/ui/linkified-text"
@@ -34,6 +34,14 @@ import {
 	type SpaceChatMessage,
 	type SpaceChatThread,
 } from "@/lib/api/space-chats"
+import {
+	getSpaceHostChats,
+	getSpaceHostChatMessages,
+	sendSpaceHostChatMessage,
+	deleteSpaceHostChatMessage,
+	type SpaceHostChatMessage,
+	type SpaceHostChatThread,
+} from "@/lib/api/space-host-chats"
 
 const THREADS_POLL_MS = 8000
 const MESSAGES_POLL_MS = 4000
@@ -56,14 +64,15 @@ function replyLabel(senderType: string) {
 	return "Community"
 }
 
-type MainTab = "SPONSORSHIP" | "CAMPAIGN" | "SPACES"
+type MainTab = "SPONSORSHIP" | "CAMPAIGN" | "SPACES" | "SPACE_HOST"
 type SpaceSubTab = "BRAND" | "COMMUNITY"
 
 function SponsorshipChatsContent() {
 	const queryClient = useQueryClient()
 	const searchParams = useSearchParams()
 	const tabParam = searchParams.get("tab")?.toUpperCase()
-	const initialTab: MainTab = tabParam === "CAMPAIGN" ? "CAMPAIGN" : tabParam === "SPACES" || tabParam === "SPACE" ? "SPACES" : "SPONSORSHIP"
+	const initialTab: MainTab =
+		tabParam === "CAMPAIGN" ? "CAMPAIGN" : tabParam === "SPACES" || tabParam === "SPACE" ? "SPACES" : tabParam === "SPACE_HOST" ? "SPACE_HOST" : "SPONSORSHIP"
 
 	const [activeTab, setActiveTab] = useState<MainTab>(initialTab)
 	const [spaceSubTab, setSpaceSubTab] = useState<SpaceSubTab>("BRAND")
@@ -84,8 +93,17 @@ function SponsorshipChatsContent() {
 		refetchInterval: THREADS_POLL_MS,
 	})
 
+	// Fetch every Space Partner <-> Community partnership thread (all statuses — this tab is the
+	// only admin surface for this feature, so pending requests must be visible here too).
+	const spaceHostThreadsQuery = useQuery({
+		queryKey: ["admin-space-host-chats"],
+		queryFn: () => getSpaceHostChats(),
+		refetchInterval: THREADS_POLL_MS,
+	})
+
 	const allSponsorshipThreads = sponsorshipThreadsQuery.data ?? []
 	const allSpaceThreads = spaceThreadsQuery.data ?? []
+	const allSpaceHostThreads = spaceHostThreadsQuery.data ?? []
 
 	// Compute unread counts for tab badges
 	const sponsorshipUnreadCount = allSponsorshipThreads
@@ -105,6 +123,8 @@ function SponsorshipChatsContent() {
 	const spacesCommunityUnreadCount = allSpaceThreads
 		.filter((t) => t.requesterType === "COMMUNITY")
 		.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
+
+	const spaceHostUnreadCount = allSpaceHostThreads.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
 
 	// Filter sponsorship/campaign threads
 	const filteredSponsorshipThreads = allSponsorshipThreads
@@ -143,8 +163,21 @@ function SponsorshipChatsContent() {
 			return tB - tA
 		})
 
+	// Filter Space Partner <-> Community partnership threads
+	const filteredSpaceHostThreads = allSpaceHostThreads
+		.filter((t) => {
+			if (!searchQuery.trim()) return true
+			const q = searchQuery.toLowerCase()
+			return t.spaceName?.toLowerCase().includes(q) || t.communityName?.toLowerCase().includes(q)
+		})
+		.sort((a, b) => {
+			const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
+			const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+			return tB - tA
+		})
+
 	const selectedSponsorshipThread =
-		activeTab !== "SPACES"
+		activeTab !== "SPACES" && activeTab !== "SPACE_HOST"
 			? filteredSponsorshipThreads.find((t) => t.id === selectedId) ??
 			  (filteredSponsorshipThreads.length > 0 && selectedId ? allSponsorshipThreads.find((t) => t.id === selectedId) ?? null : null)
 			: null
@@ -155,10 +188,20 @@ function SponsorshipChatsContent() {
 			  (filteredSpaceThreads.length > 0 && selectedId ? allSpaceThreads.find((t) => t.id === selectedId) ?? null : null)
 			: null
 
+	const selectedSpaceHostThread =
+		activeTab === "SPACE_HOST"
+			? filteredSpaceHostThreads.find((t) => t.id === selectedId) ??
+			  (filteredSpaceHostThreads.length > 0 && selectedId ? allSpaceHostThreads.find((t) => t.id === selectedId) ?? null : null)
+			: null
+
 	function handleSelectThread(id: string) {
 		setSelectedId(id)
 		if (activeTab === "SPACES") {
 			queryClient.setQueryData<SpaceChatThread[]>(["admin-space-chats", "ACCEPTED"], (prev) =>
+				prev?.map((t) => (t.id === id ? { ...t, unreadCount: 0 } : t)),
+			)
+		} else if (activeTab === "SPACE_HOST") {
+			queryClient.setQueryData<SpaceHostChatThread[]>(["admin-space-host-chats"], (prev) =>
 				prev?.map((t) => (t.id === id ? { ...t, unreadCount: 0 } : t)),
 			)
 		} else {
@@ -184,7 +227,7 @@ function SponsorshipChatsContent() {
 					<div className="px-4 py-3 border-b border-black/10 md:hidden flex items-center justify-between shrink-0">
 						<h2 className="font-heading font-black text-base text-black">Ongoing Chats</h2>
 						<span className="text-xs font-semibold text-black/50">
-							{activeTab === "SPACES" ? filteredSpaceThreads.length : filteredSponsorshipThreads.length} chats
+							{activeTab === "SPACES" ? filteredSpaceThreads.length : activeTab === "SPACE_HOST" ? filteredSpaceHostThreads.length : filteredSponsorshipThreads.length} chats
 						</span>
 					</div>
 
@@ -195,6 +238,7 @@ function SponsorshipChatsContent() {
 								{ key: "SPONSORSHIP", label: "Sponsorship", unread: sponsorshipUnreadCount },
 								{ key: "CAMPAIGN", label: "Campaign", unread: campaignUnreadCount },
 								{ key: "SPACES", label: "Spaces", unread: spacesUnreadCount },
+								{ key: "SPACE_HOST", label: "Community Partners", unread: spaceHostUnreadCount },
 							] as const
 						).map((tab) => {
 							const isActive = activeTab === tab.key
@@ -276,6 +320,8 @@ function SponsorshipChatsContent() {
 							placeholder={
 								activeTab === "SPACES"
 									? `Search ${spaceSubTab === "BRAND" ? "brand" : "community"} space chats…`
+									: activeTab === "SPACE_HOST"
+									? "Search community partner chats…"
 									: activeTab === "SPONSORSHIP"
 									? "Search sponsorships…"
 									: "Search campaigns…"
@@ -286,7 +332,91 @@ function SponsorshipChatsContent() {
 
 					{/* Thread list content */}
 					<div className="flex-1 overflow-y-auto">
-						{activeTab === "SPACES" ? (
+						{activeTab === "SPACE_HOST" ? (
+							spaceHostThreadsQuery.isLoading ? (
+								<p className="text-caption text-text-tertiary text-center py-8">Loading…</p>
+							) : filteredSpaceHostThreads.length === 0 ? (
+								<p className="text-caption text-text-tertiary text-center py-8 px-4">
+									{searchQuery ? "No matching chats found." : "No community partner requests yet."}
+								</p>
+							) : (
+								filteredSpaceHostThreads.map((t) => (
+									<button
+										key={t.id}
+										onClick={() => handleSelectThread(t.id)}
+										className={cn(
+											"w-full text-left px-4 py-3.5 border-b border-black/10 md:border-b-[2px] transition-colors flex items-center gap-3 cursor-pointer",
+											selectedId === t.id ? "bg-[#FFC940]/25" : "hover:bg-neutral-50",
+										)}
+									>
+										{/* Cascading Logos */}
+										<div className="relative w-11 h-9 shrink-0 select-none">
+											<div className="absolute left-0 top-0.5 w-7 h-7 rounded-lg border-2 border-black bg-neutral-100 flex items-center justify-center font-bold text-[10px] text-text-secondary z-0 overflow-hidden shadow-xs">
+												{t.spaceLogoUrl ? (
+													// eslint-disable-next-line @next/next/no-img-element
+													<img src={t.spaceLogoUrl} alt={t.spaceName} className="w-full h-full object-cover" />
+												) : (
+													t.spaceName?.charAt(0).toUpperCase() ?? "S"
+												)}
+											</div>
+											<div className="absolute right-0 bottom-0 w-7 h-7 rounded-lg border-2 border-black bg-[#FFC940] flex items-center justify-center font-black text-[10px] text-black z-10 shadow-xs overflow-hidden">
+												{t.communityLogoUrl ? (
+													// eslint-disable-next-line @next/next/no-img-element
+													<img src={t.communityLogoUrl} alt={t.communityName} className="w-full h-full object-cover" />
+												) : (
+													t.communityName?.charAt(0).toUpperCase() ?? "C"
+												)}
+											</div>
+											{t.unreadCount > 0 && (
+												<div className="absolute -top-1.5 -right-2 flex items-center gap-0.5 z-20">
+													{t.hasUnreadMention && (
+														<span
+															className="size-4 rounded-full bg-black text-[#FFC940] text-[9px] font-black flex items-center justify-center border border-white shadow-xs"
+															title="You were mentioned or replied to"
+														>
+															@
+														</span>
+													)}
+													<span className="min-w-[16px] h-[16px] px-1 rounded-full bg-[#EE2C2C] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-xs">
+														{t.unreadCount > 9 ? "9+" : t.unreadCount}
+													</span>
+												</div>
+											)}
+										</div>
+										<div className="flex-1 min-w-0">
+											<div className="flex items-center justify-between gap-2">
+												<div className="min-w-0 flex-1">
+													<p className="text-xs font-black text-black truncate">
+														{t.spaceName} • Space
+													</p>
+													<p className="text-xs font-bold text-black/70 truncate mt-0.5">{t.communityName} • Community</p>
+												</div>
+												<span className="text-[10px] font-bold text-black/40 shrink-0 self-start mt-0.5">
+													{timeAgo(t.lastMessageAt ?? t.createdAt)}
+												</span>
+											</div>
+											<div className="flex items-center gap-1.5 mt-1">
+												<span
+													className={cn(
+														"text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full border",
+														t.chatStatus === "ACCEPTED"
+															? "bg-green-50 text-green-700 border-green-300"
+															: t.chatStatus === "DECLINED"
+																? "bg-red-50 text-red-600 border-red-300"
+																: "bg-amber-50 text-amber-700 border-amber-300",
+													)}
+												>
+													{t.chatStatus === "ACCEPTED" ? "Accepted" : t.chatStatus === "DECLINED" ? "Declined" : "Pending"}
+												</span>
+											</div>
+											{t.lastMessagePreview && (
+												<p className="text-[11px] font-medium text-black/40 truncate mt-1">{t.lastMessagePreview}</p>
+											)}
+										</div>
+									</button>
+								))
+							)
+						) : activeTab === "SPACES" ? (
 							spaceThreadsQuery.isLoading ? (
 								<p className="text-caption text-text-tertiary text-center py-8">Loading…</p>
 							) : filteredSpaceThreads.length === 0 ? (
@@ -466,6 +596,12 @@ function SponsorshipChatsContent() {
 							<div className="flex-1 flex items-center justify-center text-sm font-bold text-black/40">Select a space chat to view</div>
 						) : (
 							<AdminSpaceChatThreadPanel key={selectedSpaceThread.id} thread={selectedSpaceThread} onBack={() => setSelectedId(null)} />
+						)
+					) : activeTab === "SPACE_HOST" ? (
+						!selectedSpaceHostThread ? (
+							<div className="flex-1 flex items-center justify-center text-sm font-bold text-black/40">Select a chat to view</div>
+						) : (
+							<AdminSpaceHostChatThreadPanel key={selectedSpaceHostThread.id} thread={selectedSpaceHostThread} onBack={() => setSelectedId(null)} />
 						)
 					) : !selectedSponsorshipThread ? (
 						<div className="flex-1 flex items-center justify-center text-sm font-bold text-black/40">Select a chat to view</div>
@@ -1348,6 +1484,408 @@ function AdminSpaceChatThreadPanel({
 											className={cn(
 												"mt-1.5 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold w-fit transition-colors",
 												m.senderType === "ADMIN" || m.senderType === "BRAND" || m.senderType === "SPACE"
+													? "bg-white/20 hover:bg-white/30 text-white border border-white/30"
+													: "bg-white hover:bg-neutral-100 text-black border border-black/10 shadow-xs",
+											)}
+										>
+											<span className="text-base">📄</span>
+											<span>View PDF</span>
+										</a>
+									) : (
+										// eslint-disable-next-line @next/next/no-img-element
+										<img
+											src={m.mediaUrl}
+											alt="Attachment"
+											onClick={() => setViewingImage(m.mediaUrl ?? null)}
+											className={cn(
+												"mt-1.5 rounded-xl max-h-60 max-w-full object-cover cursor-pointer hover:opacity-95 shadow-xs border border-black/10",
+												isDeleted && "opacity-70",
+											)}
+										/>
+									))}
+
+								{!m.content && !m.mediaUrl && isDeleted && (
+									<span className="italic text-black/40 text-xs">This message was deleted</span>
+								)}
+							</div>
+
+							{/* Bottom timestamp line */}
+							<div
+								className={cn(
+									"flex items-center gap-1 text-[9px] font-bold mt-0.5 px-0.5 select-none text-neutral-400",
+									isAdmin ? "flex-row-reverse" : "flex-row",
+								)}
+							>
+								<span>{new Date(m.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true })}</span>
+								{isAdmin && <span className="font-bold">✓✓</span>}
+							</div>
+						</div>
+					)
+				})}
+				<div ref={bottomRef} />
+			</div>
+
+			{/* Reply bar & Input Row */}
+			<div className="border-t border-black/10 md:border-t-[3px] md:border-black shrink-0 bg-white flex flex-col">
+				{replyingTo && (
+					<div className="px-4 pt-2 flex items-center justify-between gap-2 border-b border-black/10 pb-2">
+						<div className="min-w-0 pl-2 border-l-2 border-[#EE2C2C]">
+							<p className="text-[10px] font-black uppercase text-black/40">Replying to {replyLabel(replyingTo.senderType)}</p>
+							<p className="text-[11px] font-semibold text-black/50 truncate">
+								{replyingTo.content?.trim() ? replyingTo.content : replyingTo.mediaUrl ? "Attachment" : ""}
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setReplyingTo(null)}
+							className="text-[10px] font-bold text-[#EE2C2C] shrink-0 hover:underline cursor-pointer"
+						>
+							Cancel
+						</button>
+					</div>
+				)}
+
+				<div className="relative p-2 sm:p-3 flex items-center gap-1.5 sm:gap-2 pb-[max(0.6rem,env(safe-area-inset-bottom))]">
+					<input
+						type="file"
+						accept="image/*,application/pdf"
+						ref={fileInputRef}
+						onChange={(e) => e.target.files?.[0] && handleImageFile(e.target.files[0])}
+						className="hidden"
+					/>
+
+					<button
+						type="button"
+						onClick={() => fileInputRef.current?.click()}
+						disabled={uploadingImage}
+						className="shrink-0 size-8 sm:size-9 rounded-xl border-[2px] md:border-[3px] border-black flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50 cursor-pointer transition-colors"
+						aria-label="Attach image or PDF"
+					>
+						<ImageIcon size={16} />
+					</button>
+
+					<EmojiPicker onSelect={(emoji) => setInput((prev) => prev + emoji)} />
+
+					<input
+						ref={inputRef}
+						value={input}
+						onChange={(e) => setInput(e.target.value)}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" && !e.shiftKey) {
+								e.preventDefault()
+								handleSend()
+							}
+						}}
+						placeholder="Write a message…"
+						className="flex-1 min-w-0 rounded-2xl border-[2px] md:border-[3px] border-black bg-white px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold outline-none focus:bg-neutral-50"
+					/>
+
+					<button
+						type="button"
+						onClick={handleSend}
+						disabled={sendMutation.isPending || !input.trim()}
+						className="h-8 sm:h-10 px-3.5 sm:px-5 rounded-xl sm:rounded-2xl bg-[#EE2C2C] hover:bg-[#d42525] text-white border-[2px] md:border-[3px] border-black font-black text-xs uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] active:translate-x-[2px] active:translate-y-[2px] disabled:opacity-50 cursor-pointer shrink-0 transition-all flex items-center justify-center"
+					>
+						{sendMutation.isPending ? "…" : "Send"}
+					</button>
+				</div>
+			</div>
+
+			{/* Image Lightbox */}
+			{viewingImage && <ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />}
+		</div>
+	)
+}
+
+function AdminSpaceHostChatThreadPanel({
+	thread,
+	onBack,
+}: {
+	thread: SpaceHostChatThread
+	onBack?: () => void
+}) {
+	const queryClient = useQueryClient()
+	const [input, setInput] = useState("")
+	const [replyingTo, setReplyingTo] = useState<SpaceHostChatMessage | null>(null)
+	const [viewingImage, setViewingImage] = useState<string | null>(null)
+	const [uploadingImage, setUploadingImage] = useState(false)
+	const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null)
+	const highlightTimerRef = useRef<NodeJS.Timeout | null>(null)
+	const bottomRef = useRef<HTMLDivElement>(null)
+	const fileInputRef = useRef<HTMLInputElement>(null)
+	const inputRef = useRef<HTMLInputElement>(null)
+
+	const handleJumpToMessage = useCallback((messageId: string) => {
+		const el = document.getElementById(`space-host-msg-${messageId}`)
+		if (el) {
+			el.scrollIntoView({ behavior: "smooth", block: "center" })
+			if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current)
+			setHighlightedMessageId(messageId)
+			highlightTimerRef.current = setTimeout(() => {
+				setHighlightedMessageId(null)
+			}, 2000)
+		}
+	}, [])
+
+	const messagesQuery = useQuery({
+		queryKey: ["admin-space-host-chat-messages", thread.id],
+		queryFn: () => getSpaceHostChatMessages(thread.id),
+		refetchInterval: MESSAGES_POLL_MS,
+	})
+	const messages = messagesQuery.data?.messages ?? []
+
+	useEffect(() => {
+		bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+	}, [messages.length])
+
+	const sendMutation = useMutation({
+		mutationFn: (payload: { content?: string; mediaKey?: string; replyToId?: string }) =>
+			sendSpaceHostChatMessage(thread.id, payload),
+		onSuccess: () => {
+			setInput("")
+			setReplyingTo(null)
+			queryClient.invalidateQueries({ queryKey: ["admin-space-host-chat-messages", thread.id] })
+			queryClient.invalidateQueries({ queryKey: ["admin-space-host-chats"] })
+		},
+		onError: () => toast.error("Failed to send message."),
+	})
+
+	const deleteMutation = useMutation({
+		mutationFn: (messageId: string) => deleteSpaceHostChatMessage(thread.id, messageId),
+		onSuccess: () => {
+			toast.success("Message deleted.")
+			queryClient.invalidateQueries({ queryKey: ["admin-space-host-chat-messages", thread.id] })
+		},
+		onError: () => toast.error("Failed to delete message."),
+	})
+
+	function handleReplyStart(m: SpaceHostChatMessage) {
+		setReplyingTo(m)
+		inputRef.current?.focus()
+	}
+
+	function handleDelete(m: SpaceHostChatMessage) {
+		if (!window.confirm("Delete this message? This can't be undone.")) return
+		deleteMutation.mutate(m.id)
+	}
+
+	async function handleSend() {
+		const text = input.trim()
+		if (!text) return
+		if (sendMutation.isPending) return
+		sendMutation.mutate({
+			content: text,
+			replyToId: replyingTo?.id,
+		})
+	}
+
+	async function handleImageFile(file: File) {
+		if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
+			toast.error("Only images or PDFs can be attached.")
+			return
+		}
+		if (file.size > 10 * 1024 * 1024) {
+			toast.error("File must be under 10 MB.")
+			return
+		}
+		setUploadingImage(true)
+		try {
+			const key = await uploadSpaceHostChatImage(file, thread.id)
+			sendMutation.mutate({ mediaKey: key, replyToId: replyingTo?.id })
+		} catch {
+			toast.error("Upload failed.")
+		} finally {
+			setUploadingImage(false)
+			if (fileInputRef.current) fileInputRef.current.value = ""
+		}
+	}
+
+	return (
+		<div className="flex flex-col h-full bg-white relative">
+			{/* Top Bar */}
+			<div className="px-3 sm:px-6 py-2.5 sm:py-3.5 border-b border-black/10 md:border-b-[3px] md:border-black flex items-center justify-between gap-2.5 sm:gap-4 shrink-0 bg-white">
+				<div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+					{onBack && (
+						<button
+							onClick={onBack}
+							className="md:hidden p-1.5 -ml-1 rounded-full hover:bg-neutral-100 text-black cursor-pointer transition-colors shrink-0"
+							aria-label="Back to chat list"
+						>
+							<ArrowLeft size={18} />
+						</button>
+					)}
+					<div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+						<div className="relative w-9 sm:w-10 h-7.5 sm:h-8 shrink-0 select-none">
+							<div className="absolute left-0 top-0.5 w-5.5 sm:w-6 h-5.5 sm:h-6 rounded-lg border border-black md:border-2 md:border-black bg-neutral-100 flex items-center justify-center font-bold text-[8px] sm:text-[9px] text-text-secondary z-0 overflow-hidden shadow-xs">
+								{thread.spaceLogoUrl ? (
+									// eslint-disable-next-line @next/next/no-img-element
+									<img src={thread.spaceLogoUrl} alt={thread.spaceName} className="w-full h-full object-cover" />
+								) : (
+									thread.spaceName?.charAt(0).toUpperCase() ?? "S"
+								)}
+							</div>
+							<div className="absolute right-0 bottom-0 w-5.5 sm:w-6 h-5.5 sm:h-6 rounded-lg border border-black md:border-2 md:border-black bg-[#FFC940] flex items-center justify-center font-black text-[8px] sm:text-[9px] text-black z-10 shadow-xs overflow-hidden">
+								{thread.communityLogoUrl ? (
+									// eslint-disable-next-line @next/next/no-img-element
+									<img src={thread.communityLogoUrl} alt={thread.communityName} className="w-full h-full object-cover" />
+								) : (
+									thread.communityName?.charAt(0).toUpperCase() ?? "C"
+								)}
+							</div>
+						</div>
+						<div className="min-w-0 flex-1">
+							<p className="text-xs sm:text-sm font-black text-black truncate leading-tight">
+								{thread.spaceName} ↔ {thread.communityName}
+							</p>
+							<p className="text-[10px] sm:text-xs font-bold text-black/50 truncate">
+								Space Partner interest in this Community
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			{/* Messages View */}
+			<div className="flex-1 p-3 sm:p-6 overflow-y-auto flex flex-col gap-2.5 sm:gap-3 min-h-0 bg-white">
+				{messages.map((m) => {
+					const isSystemMessage =
+						m.messageType === "SYSTEM" ||
+						(m.senderType as string) === "SYSTEM" ||
+						m.content?.startsWith("[System]") ||
+						(typeof m.content === "string" && (
+							m.content.toLowerCase().includes("deal is locked") ||
+							m.content.toLowerCase().includes("deal is officially locked") ||
+							m.content.toLowerCase().includes("deal is closed") ||
+							m.content.toLowerCase().includes("deal is officially closed") ||
+							m.content.toLowerCase().includes("deliverables report was submitted") ||
+							m.content.toLowerCase().includes("revision was requested on the deliverables") ||
+							m.content.toLowerCase().includes("deal proposal was shared")
+						))
+
+					if (isSystemMessage) {
+						return <SystemMessageBubble key={m.id} content={m.content ?? ""} />
+					}
+
+					const isAdmin = m.senderType === "ADMIN"
+					const isSpace = m.senderType === "SPACE"
+					const isDeleted = Boolean(m.deletedAt)
+
+					return (
+						<div
+							key={m.id}
+							id={`space-host-msg-${m.id}`}
+							className={cn(
+								"flex flex-col max-w-[85%] sm:max-w-[75%] md:max-w-[70%] transition-all duration-300 rounded-2xl p-1",
+								isAdmin ? "self-end items-end" : "self-start items-start",
+								highlightedMessageId === m.id && "ring-4 ring-[#EE2C2C] bg-[#FFC940]/30 shadow-lg scale-[1.02]",
+							)}
+						>
+							{/* Top role label and action buttons */}
+							<div className={cn("flex items-center gap-2 mb-0.5 px-1 select-none", isAdmin ? "flex-row-reverse" : "flex-row")}>
+								<span className="text-[10px] font-bold uppercase tracking-wide text-neutral-400">
+									{isAdmin ? "Meetday Admin" : isSpace ? `${thread.spaceName} (Space)` : `${thread.communityName} (Community)`}
+								</span>
+								<div className="flex items-center gap-2 text-[10px] font-bold text-neutral-400">
+									<button
+										type="button"
+										onClick={() => handleReplyStart(m)}
+										className="text-neutral-400 hover:text-black transition-colors cursor-pointer"
+									>
+										Reply
+									</button>
+									{isAdmin && !isDeleted && (
+										<button
+											type="button"
+											onClick={() => handleDelete(m)}
+											className="text-neutral-400 hover:text-[#EE2C2C] transition-colors cursor-pointer"
+										>
+											Delete
+										</button>
+									)}
+								</div>
+							</div>
+
+							{/* Message Bubble */}
+							<div
+								className={cn(
+									"rounded-2xl p-2 sm:p-2.5 text-xs sm:text-sm font-semibold break-words flex flex-col shadow-xs max-w-full",
+									isDeleted && "opacity-90",
+									m.senderType === "HOST" && "bg-[#FFC940] text-black rounded-bl-sm",
+									m.senderType === "SPACE" && "bg-black text-white rounded-bl-sm",
+									m.senderType === "ADMIN" && "bg-neutral-200 text-black rounded-br-sm",
+								)}
+							>
+								{/* Quoted reply */}
+								{m.replyTo && (
+									<button
+										type="button"
+										onClick={() => m.replyTo && handleJumpToMessage(m.replyTo.id)}
+										className={cn(
+											"w-full text-left mb-1.5 px-3 py-2 rounded-xl transition-all cursor-pointer block border-l-4 shadow-xs",
+											m.senderType === "ADMIN"
+												? "bg-black/25 hover:bg-black/35 text-white border-white/80"
+												: m.senderType === "SPACE"
+													? "bg-black/10 hover:bg-black/15 text-black border-black/40"
+													: "bg-white hover:bg-neutral-50 text-black border-[#EE2C2C] border border-black/10",
+										)}
+										title="Click to jump to message"
+									>
+										<p
+											className={cn(
+												"text-[9px] font-black uppercase tracking-wider",
+												m.senderType === "ADMIN" ? "text-white/80" : "text-black/60",
+											)}
+										>
+											↩ Replying to {replyLabel(m.replyTo.senderType)}
+										</p>
+										{m.replyTo.hasMedia && (
+											<p
+												className={cn(
+													"text-xs font-semibold flex items-center gap-1 my-0.5",
+													m.senderType === "ADMIN" ? "text-white/90" : "text-black/70",
+												)}
+											>
+												📄 Attachment
+											</p>
+										)}
+										{m.replyTo.content && (
+											<p
+												className={cn(
+													"text-xs font-medium break-words whitespace-pre-wrap leading-relaxed mt-0.5",
+													m.senderType === "ADMIN" ? "text-white/90" : "text-black/80",
+												)}
+											>
+												{m.replyTo.content}
+											</p>
+										)}
+									</button>
+								)}
+
+								{/* Deleted Message Sidenote */}
+								{isDeleted && (
+									<div className="flex items-center gap-1.5 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-dashed border-red-200 mb-1 w-fit">
+										<span>🗑️</span>
+										<span>This message was deleted by {replyLabel(m.senderType)}</span>
+									</div>
+								)}
+
+								{/* Message text content */}
+								{m.content && (
+									<div className={cn("whitespace-pre-wrap leading-relaxed", isDeleted && "opacity-80")}>
+										<LinkifiedText text={m.content} />
+									</div>
+								)}
+
+								{/* Media attachments */}
+								{m.mediaUrl &&
+									(isPdfMediaUrl(m.mediaUrl) ? (
+										<a
+											href={m.mediaUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+											className={cn(
+												"mt-1.5 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold w-fit transition-colors",
+												m.senderType === "ADMIN" || m.senderType === "SPACE"
 													? "bg-white/20 hover:bg-white/30 text-white border border-white/30"
 													: "bg-white hover:bg-neutral-100 text-black border border-black/10 shadow-xs",
 											)}
