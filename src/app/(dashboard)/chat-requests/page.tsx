@@ -129,7 +129,7 @@ function SponsorshipRequestDetailDrawer({
 						<div className="flex items-center gap-2.5 min-w-0 justify-end text-right">
 							<div className="min-w-0">
 								<p className="text-caption font-bold text-text-tertiary uppercase tracking-wider">
-									{receiverRole === "BRAND" ? "Brand (Recipient)" : "Community (Recipient)"}
+									{receiverRole === "BRAND" ? "Brand (Recipient)" : receiverRole === "SPACE" ? "Space (Recipient)" : "Community (Recipient)"}
 								</p>
 								<p className="font-bold text-text-primary text-body-sm truncate">{receiverName}</p>
 							</div>
@@ -723,7 +723,7 @@ function ChatRequestsContent() {
 														<div className="min-w-0">
 															<p className="font-semibold text-text-primary truncate">{receiverName}</p>
 															<span className="inline-block text-[10px] font-medium px-1.5 py-0.2 rounded bg-neutral-100 text-text-secondary">
-																{receiverRole === "BRAND" ? "Brand" : "Community"}
+																{receiverRole === "BRAND" ? "Brand" : receiverRole === "SPACE" ? "Space" : "Community"}
 															</span>
 														</div>
 													</div>

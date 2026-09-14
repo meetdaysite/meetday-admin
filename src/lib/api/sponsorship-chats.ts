@@ -1,7 +1,7 @@
 import { apiClient } from "./client"
 
 export type SponsorshipChatStatus = "REQUESTED" | "ACCEPTED"
-export type ChatSenderType = "HOST" | "BRAND" | "ADMIN"
+export type ChatSenderType = "HOST" | "SPACE" | "BRAND" | "ADMIN"
 export type ChatThreadType = "SPONSORSHIP" | "CAMPAIGN"
 
 export type SponsorshipChatThread = {
@@ -13,11 +13,13 @@ export type SponsorshipChatThread = {
 	campaignName?: string | null
 	isCampaign?: boolean
 	communityName: string
+	// Whether the proposal owner (labeled "community" above) is a Host/Community or a Space Partner.
+	ownerType?: "HOST" | "SPACE"
 	brandName: string
 	senderRole?: "BRAND" | "HOST"
 	senderName?: string
 	senderLogoUrl?: string | null
-	receiverRole?: "HOST" | "BRAND"
+	receiverRole?: "HOST" | "SPACE" | "BRAND"
 	receiverName?: string
 	receiverLogoUrl?: string | null
 	targetName?: string

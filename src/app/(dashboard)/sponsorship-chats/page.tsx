@@ -412,7 +412,7 @@ function SponsorshipChatsContent() {
 										<div className="flex items-center justify-between gap-2">
 											<div className="min-w-0 flex-1">
 												<p className="text-xs font-black text-black truncate">{t.brandName} • Brand</p>
-												<p className="text-xs font-bold text-black/70 truncate mt-0.5">{t.communityName} • Community</p>
+												<p className="text-xs font-bold text-black/70 truncate mt-0.5">{t.communityName} • {t.ownerType === "SPACE" ? "Space" : "Community"}</p>
 											</div>
 											<span className="text-[10px] font-bold text-black/40 shrink-0 self-start mt-0.5">
 												{timeAgo(t.lastMessageAt ?? t.createdAt)}
@@ -791,7 +791,11 @@ function AdminChatThreadPanel({
 							{/* Top role label and action buttons */}
 							<div className={cn("flex items-center gap-2 mb-0.5 px-1 select-none", isAdmin ? "flex-row-reverse" : "flex-row")}>
 								<span className="text-[10px] font-bold uppercase tracking-wide text-neutral-400">
-									{isAdmin ? "Meetday Admin" : isBrand ? `${thread.brandName} (Brand)` : `${thread.communityName} (Community)`}
+									{isAdmin
+										? "Meetday Admin"
+										: isBrand
+											? `${thread.brandName} (Brand)`
+											: `${thread.communityName} (${thread.ownerType === "SPACE" ? "Space" : "Community"})`}
 								</span>
 								<div className="flex items-center gap-2 text-[10px] font-bold text-neutral-400">
 									<button
