@@ -159,6 +159,11 @@ export default function SponsorshipRevisionsPage() {
 				),
 			},
 			{
+				id: "type",
+				header: "Type",
+				cell: ({ row }) => <ChipCell>{row.original.hostProfile ? "Community" : "Community Space"}</ChipCell>,
+			},
+			{
 				id: "city",
 				header: "City",
 				cell: ({ row }) => <ChipCell>{row.original.city ?? "—"}</ChipCell>,
