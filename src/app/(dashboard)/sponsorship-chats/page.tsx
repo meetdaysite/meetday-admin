@@ -64,7 +64,7 @@ function replyLabel(senderType: string) {
 	return "Community"
 }
 
-type MainTab = "SPONSORSHIP" | "CAMPAIGN" | "SPACES" | "SPACE_HOST"
+type MainTab = "SPONSORSHIP" | "CAMPAIGN" | "SPACES"
 type SpaceSubTab = "BRAND" | "COMMUNITY"
 
 function SponsorshipChatsContent() {
@@ -72,10 +72,12 @@ function SponsorshipChatsContent() {
 	const searchParams = useSearchParams()
 	const tabParam = searchParams.get("tab")?.toUpperCase()
 	const initialTab: MainTab =
-		tabParam === "CAMPAIGN" ? "CAMPAIGN" : tabParam === "SPACES" || tabParam === "SPACE" ? "SPACES" : tabParam === "SPACE_HOST" ? "SPACE_HOST" : "SPONSORSHIP"
+		tabParam === "CAMPAIGN" ? "CAMPAIGN" : "SPONSORSHIP"
 
-	const [activeTab, setActiveTab] = useState<MainTab>(initialTab)
-	const [spaceSubTab, setSpaceSubTab] = useState<SpaceSubTab>("BRAND")
+	const [activeTab, setActiveTab] = useState<MainTab>(
+		tabParam === "SPACES" || tabParam === "SPACE" || tabParam === "SPACE_HOST" ? "SPACES" : initialTab
+	)
+	const [spaceSubTab, setSpaceSubTab] = useState<SpaceSubTab>(tabParam === "SPACE_HOST" ? "COMMUNITY" : "BRAND")
 	const [searchQuery, setSearchQuery] = useState("")
 	const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -93,8 +95,7 @@ function SponsorshipChatsContent() {
 		refetchInterval: THREADS_POLL_MS,
 	})
 
-	// Fetch every Space Partner <-> Community partnership thread (all statuses — this tab is the
-	// only admin surface for this feature, so pending requests must be visible here too).
+	// Fetch every Space Partner <-> Community partnership thread
 	const spaceHostThreadsQuery = useQuery({
 		queryKey: ["admin-space-host-chats"],
 		queryFn: () => getSpaceHostChats(),
@@ -114,17 +115,19 @@ function SponsorshipChatsContent() {
 		.filter((t) => t.type === "CAMPAIGN" || Boolean(t.campaignId) || (!t.proposalId && !t.proposalName && Boolean(t.campaignName)))
 		.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
 
-	const spacesUnreadCount = allSpaceThreads.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
-
 	const spacesBrandUnreadCount = allSpaceThreads
 		.filter((t) => t.requesterType === "BRAND")
 		.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
 
-	const spacesCommunityUnreadCount = allSpaceThreads
+	const spacesCommunityDirectUnreadCount = allSpaceThreads
 		.filter((t) => t.requesterType === "COMMUNITY")
 		.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
 
 	const spaceHostUnreadCount = allSpaceHostThreads.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
+
+	// Inter-entity chats between Spaces and Communities are consolidated under Spaces -> Community
+	const spacesCommunityUnreadCount = spacesCommunityDirectUnreadCount + spaceHostUnreadCount
+	const spacesUnreadCount = spacesBrandUnreadCount + spacesCommunityUnreadCount
 
 	// Filter sponsorship/campaign threads
 	const filteredSponsorshipThreads = allSponsorshipThreads
@@ -149,9 +152,9 @@ function SponsorshipChatsContent() {
 			return tB - tA
 		})
 
-	// Filter space threads
-	const filteredSpaceThreads = allSpaceThreads
-		.filter((t) => t.requesterType === spaceSubTab)
+	// Filter space brand threads
+	const filteredSpaceBrandThreads = allSpaceThreads
+		.filter((t) => t.requesterType === "BRAND")
 		.filter((t) => {
 			if (!searchQuery.trim()) return true
 			const q = searchQuery.toLowerCase()
@@ -163,35 +166,51 @@ function SponsorshipChatsContent() {
 			return tB - tA
 		})
 
-	// Filter Space Partner <-> Community partnership threads
-	const filteredSpaceHostThreads = allSpaceHostThreads
-		.filter((t) => {
+	// Consolidated Space <-> Community threads
+	type ConsolidatedSpaceCommunityItem =
+		| { kind: "SPACE_CHAT"; id: string; thread: SpaceChatThread; sortTime: number }
+		| { kind: "SPACE_HOST_CHAT"; id: string; thread: SpaceHostChatThread; sortTime: number }
+
+	const consolidatedSpaceCommunityThreads: ConsolidatedSpaceCommunityItem[] = [
+		...allSpaceThreads
+			.filter((t) => t.requesterType === "COMMUNITY")
+			.map((t) => ({
+				kind: "SPACE_CHAT" as const,
+				id: t.id,
+				thread: t,
+				sortTime: t.lastMessageAt ? new Date(t.lastMessageAt).getTime() : 0,
+			})),
+		...allSpaceHostThreads.map((t) => ({
+			kind: "SPACE_HOST_CHAT" as const,
+			id: t.id,
+			thread: t,
+			sortTime: t.lastMessageAt ? new Date(t.lastMessageAt).getTime() : 0,
+		})),
+	]
+		.filter((item) => {
 			if (!searchQuery.trim()) return true
 			const q = searchQuery.toLowerCase()
-			return t.spaceName?.toLowerCase().includes(q) || t.communityName?.toLowerCase().includes(q)
+			if (item.kind === "SPACE_CHAT") {
+				return item.thread.spaceName?.toLowerCase().includes(q) || item.thread.requesterName?.toLowerCase().includes(q)
+			}
+			return item.thread.spaceName?.toLowerCase().includes(q) || item.thread.communityName?.toLowerCase().includes(q)
 		})
-		.sort((a, b) => {
-			const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
-			const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
-			return tB - tA
-		})
+		.sort((a, b) => b.sortTime - a.sortTime)
 
 	const selectedSponsorshipThread =
-		activeTab !== "SPACES" && activeTab !== "SPACE_HOST"
+		activeTab !== "SPACES"
 			? filteredSponsorshipThreads.find((t) => t.id === selectedId) ??
 			  (filteredSponsorshipThreads.length > 0 && selectedId ? allSponsorshipThreads.find((t) => t.id === selectedId) ?? null : null)
 			: null
 
 	const selectedSpaceThread =
 		activeTab === "SPACES"
-			? filteredSpaceThreads.find((t) => t.id === selectedId) ??
-			  (filteredSpaceThreads.length > 0 && selectedId ? allSpaceThreads.find((t) => t.id === selectedId) ?? null : null)
+			? allSpaceThreads.find((t) => t.id === selectedId) ?? null
 			: null
 
 	const selectedSpaceHostThread =
-		activeTab === "SPACE_HOST"
-			? filteredSpaceHostThreads.find((t) => t.id === selectedId) ??
-			  (filteredSpaceHostThreads.length > 0 && selectedId ? allSpaceHostThreads.find((t) => t.id === selectedId) ?? null : null)
+		activeTab === "SPACES"
+			? allSpaceHostThreads.find((t) => t.id === selectedId) ?? null
 			: null
 
 	function handleSelectThread(id: string) {
@@ -200,7 +219,6 @@ function SponsorshipChatsContent() {
 			queryClient.setQueryData<SpaceChatThread[]>(["admin-space-chats", "ACCEPTED"], (prev) =>
 				prev?.map((t) => (t.id === id ? { ...t, unreadCount: 0 } : t)),
 			)
-		} else if (activeTab === "SPACE_HOST") {
 			queryClient.setQueryData<SpaceHostChatThread[]>(["admin-space-host-chats"], (prev) =>
 				prev?.map((t) => (t.id === id ? { ...t, unreadCount: 0 } : t)),
 			)
@@ -210,6 +228,8 @@ function SponsorshipChatsContent() {
 			)
 		}
 	}
+
+	const totalSpacesTabChats = spaceSubTab === "BRAND" ? filteredSpaceBrandThreads.length : consolidatedSpaceCommunityThreads.length
 
 	return (
 		<div className="flex-1 min-h-0 flex flex-col h-full md:p-6 md:space-y-4 md:max-w-7xl md:mx-auto w-full">
@@ -227,7 +247,7 @@ function SponsorshipChatsContent() {
 					<div className="px-4 py-3 border-b border-black/10 md:hidden flex items-center justify-between shrink-0">
 						<h2 className="font-heading font-black text-base text-black">Ongoing Chats</h2>
 						<span className="text-xs font-semibold text-black/50">
-							{activeTab === "SPACES" ? filteredSpaceThreads.length : activeTab === "SPACE_HOST" ? filteredSpaceHostThreads.length : filteredSponsorshipThreads.length} chats
+							{activeTab === "SPACES" ? totalSpacesTabChats : filteredSponsorshipThreads.length} chats
 						</span>
 					</div>
 
@@ -238,7 +258,6 @@ function SponsorshipChatsContent() {
 								{ key: "SPONSORSHIP", label: "Sponsorship", unread: sponsorshipUnreadCount },
 								{ key: "CAMPAIGN", label: "Campaign", unread: campaignUnreadCount },
 								{ key: "SPACES", label: "Spaces", unread: spacesUnreadCount },
-								{ key: "SPACE_HOST", label: "Community Partners", unread: spaceHostUnreadCount },
 							] as const
 						).map((tab) => {
 							const isActive = activeTab === tab.key
@@ -320,8 +339,6 @@ function SponsorshipChatsContent() {
 							placeholder={
 								activeTab === "SPACES"
 									? `Search ${spaceSubTab === "BRAND" ? "brand" : "community"} space chats…`
-									: activeTab === "SPACE_HOST"
-									? "Search community partner chats…"
 									: activeTab === "SPONSORSHIP"
 									? "Search sponsorships…"
 									: "Search campaigns…"
@@ -332,161 +349,228 @@ function SponsorshipChatsContent() {
 
 					{/* Thread list content */}
 					<div className="flex-1 overflow-y-auto">
-						{activeTab === "SPACE_HOST" ? (
-							spaceHostThreadsQuery.isLoading ? (
+						{activeTab === "SPACES" ? (
+							(spaceSubTab === "BRAND" ? spaceThreadsQuery.isLoading : (spaceThreadsQuery.isLoading || spaceHostThreadsQuery.isLoading)) ? (
 								<p className="text-caption text-text-tertiary text-center py-8">Loading…</p>
-							) : filteredSpaceHostThreads.length === 0 ? (
-								<p className="text-caption text-text-tertiary text-center py-8 px-4">
-									{searchQuery ? "No matching chats found." : "No community partner requests yet."}
-								</p>
-							) : (
-								filteredSpaceHostThreads.map((t) => (
-									<button
-										key={t.id}
-										onClick={() => handleSelectThread(t.id)}
-										className={cn(
-											"w-full text-left px-4 py-3.5 border-b border-black/10 md:border-b-[2px] transition-colors flex items-center gap-3 cursor-pointer",
-											selectedId === t.id ? "bg-[#FFC940]/25" : "hover:bg-neutral-50",
-										)}
-									>
-										{/* Cascading Logos */}
-										<div className="relative w-11 h-9 shrink-0 select-none">
-											<div className="absolute left-0 top-0.5 w-7 h-7 rounded-lg border-2 border-black bg-neutral-100 flex items-center justify-center font-bold text-[10px] text-text-secondary z-0 overflow-hidden shadow-xs">
-												{t.spaceLogoUrl ? (
-													// eslint-disable-next-line @next/next/no-img-element
-													<img src={t.spaceLogoUrl} alt={t.spaceName} className="w-full h-full object-cover" />
-												) : (
-													t.spaceName?.charAt(0).toUpperCase() ?? "S"
-												)}
-											</div>
-											<div className="absolute right-0 bottom-0 w-7 h-7 rounded-lg border-2 border-black bg-[#FFC940] flex items-center justify-center font-black text-[10px] text-black z-10 shadow-xs overflow-hidden">
-												{t.communityLogoUrl ? (
-													// eslint-disable-next-line @next/next/no-img-element
-													<img src={t.communityLogoUrl} alt={t.communityName} className="w-full h-full object-cover" />
-												) : (
-													t.communityName?.charAt(0).toUpperCase() ?? "C"
-												)}
-											</div>
-											{t.unreadCount > 0 && (
-												<div className="absolute -top-1.5 -right-2 flex items-center gap-0.5 z-20">
-													{t.hasUnreadMention && (
-														<span
-															className="size-4 rounded-full bg-black text-[#FFC940] text-[9px] font-black flex items-center justify-center border border-white shadow-xs"
-															title="You were mentioned or replied to"
-														>
-															@
-														</span>
+							) : spaceSubTab === "BRAND" ? (
+								filteredSpaceBrandThreads.length === 0 ? (
+									<p className="text-caption text-text-tertiary text-center py-8 px-4">
+										{searchQuery
+											? "No matching space chats found."
+											: "No ongoing brand space chats yet."}
+									</p>
+								) : (
+									filteredSpaceBrandThreads.map((t) => (
+										<button
+											key={t.id}
+											onClick={() => handleSelectThread(t.id)}
+											className={cn(
+												"w-full text-left px-4 py-3.5 border-b border-black/10 md:border-b-[2px] transition-colors flex items-center gap-3 cursor-pointer",
+												selectedId === t.id ? "bg-[#FFC940]/25" : "hover:bg-neutral-50",
+											)}
+										>
+											{/* Cascading Logos */}
+											<div className="relative w-11 h-9 shrink-0 select-none">
+												<div className="absolute left-0 top-0.5 w-7 h-7 rounded-lg border-2 border-black bg-neutral-100 flex items-center justify-center font-bold text-[10px] text-text-secondary z-0 overflow-hidden shadow-xs">
+													{t.requesterLogoUrl ? (
+														// eslint-disable-next-line @next/next/no-img-element
+														<img src={t.requesterLogoUrl} alt={t.requesterName} className="w-full h-full object-cover" />
+													) : (
+														t.requesterName?.charAt(0).toUpperCase() ?? "R"
 													)}
-													<span className="min-w-[16px] h-[16px] px-1 rounded-full bg-[#EE2C2C] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-xs">
-														{t.unreadCount > 9 ? "9+" : t.unreadCount}
+												</div>
+												<div className="absolute right-0 bottom-0 w-7 h-7 rounded-lg border-2 border-black bg-[#FFC940] flex items-center justify-center font-black text-[10px] text-black z-10 shadow-xs overflow-hidden">
+													{t.spaceLogoUrl ? (
+														// eslint-disable-next-line @next/next/no-img-element
+														<img src={t.spaceLogoUrl} alt={t.spaceName} className="w-full h-full object-cover" />
+													) : (
+														t.spaceName?.charAt(0).toUpperCase() ?? "S"
+													)}
+												</div>
+												{t.unreadCount > 0 && (
+													<div className="absolute -top-1.5 -right-2 flex items-center gap-0.5 z-20">
+														{t.hasUnreadMention && (
+															<span
+																className="size-4 rounded-full bg-black text-[#FFC940] text-[9px] font-black flex items-center justify-center border border-white shadow-xs"
+																title="You were mentioned or replied to"
+															>
+																@
+															</span>
+														)}
+														<span className="min-w-[16px] h-[16px] px-1 rounded-full bg-[#EE2C2C] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-xs">
+															{t.unreadCount > 9 ? "9+" : t.unreadCount}
+														</span>
+													</div>
+												)}
+											</div>
+											<div className="flex-1 min-w-0">
+												<div className="flex items-center justify-between gap-2">
+													<div className="min-w-0 flex-1">
+														<p className="text-xs font-black text-black truncate">
+															{t.requesterName} • Brand
+														</p>
+														<p className="text-xs font-bold text-black/70 truncate mt-0.5">{t.spaceName} • Space</p>
+													</div>
+													<span className="text-[10px] font-bold text-black/40 shrink-0 self-start mt-0.5">
+														{timeAgo(t.lastMessageAt ?? t.createdAt)}
 													</span>
 												</div>
-											)}
-										</div>
-										<div className="flex-1 min-w-0">
-											<div className="flex items-center justify-between gap-2">
-												<div className="min-w-0 flex-1">
-													<p className="text-xs font-black text-black truncate">
-														{t.spaceName} • Space
-													</p>
-													<p className="text-xs font-bold text-black/70 truncate mt-0.5">{t.communityName} • Community</p>
-												</div>
-												<span className="text-[10px] font-bold text-black/40 shrink-0 self-start mt-0.5">
-													{timeAgo(t.lastMessageAt ?? t.createdAt)}
-												</span>
+												{t.lastMessagePreview && (
+													<p className="text-[11px] font-medium text-black/40 truncate mt-1">{t.lastMessagePreview}</p>
+												)}
 											</div>
-											<div className="flex items-center gap-1.5 mt-1">
-												<span
+										</button>
+									))
+								)
+							) : (
+								consolidatedSpaceCommunityThreads.length === 0 ? (
+									<p className="text-caption text-text-tertiary text-center py-8 px-4">
+										{searchQuery
+											? "No matching space chats found."
+											: "No ongoing community space chats yet."}
+									</p>
+								) : (
+									consolidatedSpaceCommunityThreads.map((item) => {
+										if (item.kind === "SPACE_CHAT") {
+											const t = item.thread
+											return (
+												<button
+													key={`sc-${t.id}`}
+													onClick={() => handleSelectThread(t.id)}
 													className={cn(
-														"text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full border",
-														t.chatStatus === "ACCEPTED"
-															? "bg-green-50 text-green-700 border-green-300"
-															: t.chatStatus === "DECLINED"
-																? "bg-red-50 text-red-600 border-red-300"
-																: "bg-amber-50 text-amber-700 border-amber-300",
+														"w-full text-left px-4 py-3.5 border-b border-black/10 md:border-b-[2px] transition-colors flex items-center gap-3 cursor-pointer",
+														selectedId === t.id ? "bg-[#FFC940]/25" : "hover:bg-neutral-50",
 													)}
 												>
-													{t.chatStatus === "ACCEPTED" ? "Accepted" : t.chatStatus === "DECLINED" ? "Declined" : "Pending"}
-												</span>
-											</div>
-											{t.lastMessagePreview && (
-												<p className="text-[11px] font-medium text-black/40 truncate mt-1">{t.lastMessagePreview}</p>
-											)}
-										</div>
-									</button>
-								))
-							)
-						) : activeTab === "SPACES" ? (
-							spaceThreadsQuery.isLoading ? (
-								<p className="text-caption text-text-tertiary text-center py-8">Loading…</p>
-							) : filteredSpaceThreads.length === 0 ? (
-								<p className="text-caption text-text-tertiary text-center py-8 px-4">
-									{searchQuery
-										? "No matching space chats found."
-										: `No ongoing ${spaceSubTab === "BRAND" ? "brand" : "community"} space chats yet.`}
-								</p>
-							) : (
-								filteredSpaceThreads.map((t) => (
-									<button
-										key={t.id}
-										onClick={() => handleSelectThread(t.id)}
-										className={cn(
-											"w-full text-left px-4 py-3.5 border-b border-black/10 md:border-b-[2px] transition-colors flex items-center gap-3 cursor-pointer",
-											selectedId === t.id ? "bg-[#FFC940]/25" : "hover:bg-neutral-50",
-										)}
-									>
-										{/* Cascading Logos */}
-										<div className="relative w-11 h-9 shrink-0 select-none">
-											<div className="absolute left-0 top-0.5 w-7 h-7 rounded-lg border-2 border-black bg-neutral-100 flex items-center justify-center font-bold text-[10px] text-text-secondary z-0 overflow-hidden shadow-xs">
-												{t.requesterLogoUrl ? (
-													// eslint-disable-next-line @next/next/no-img-element
-													<img src={t.requesterLogoUrl} alt={t.requesterName} className="w-full h-full object-cover" />
-												) : (
-													t.requesterName?.charAt(0).toUpperCase() ?? "R"
+													<div className="relative w-11 h-9 shrink-0 select-none">
+														<div className="absolute left-0 top-0.5 w-7 h-7 rounded-lg border-2 border-black bg-neutral-100 flex items-center justify-center font-bold text-[10px] text-text-secondary z-0 overflow-hidden shadow-xs">
+															{t.requesterLogoUrl ? (
+																// eslint-disable-next-line @next/next/no-img-element
+																<img src={t.requesterLogoUrl} alt={t.requesterName} className="w-full h-full object-cover" />
+															) : (
+																t.requesterName?.charAt(0).toUpperCase() ?? "C"
+															)}
+														</div>
+														<div className="absolute right-0 bottom-0 w-7 h-7 rounded-lg border-2 border-black bg-[#FFC940] flex items-center justify-center font-black text-[10px] text-black z-10 shadow-xs overflow-hidden">
+															{t.spaceLogoUrl ? (
+																// eslint-disable-next-line @next/next/no-img-element
+																<img src={t.spaceLogoUrl} alt={t.spaceName} className="w-full h-full object-cover" />
+															) : (
+																t.spaceName?.charAt(0).toUpperCase() ?? "S"
+															)}
+														</div>
+														{t.unreadCount > 0 && (
+															<div className="absolute -top-1.5 -right-2 flex items-center gap-0.5 z-20">
+																{t.hasUnreadMention && (
+																	<span
+																		className="size-4 rounded-full bg-black text-[#FFC940] text-[9px] font-black flex items-center justify-center border border-white shadow-xs"
+																		title="You were mentioned or replied to"
+																	>
+																		@
+																	</span>
+																)}
+																<span className="min-w-[16px] h-[16px] px-1 rounded-full bg-[#EE2C2C] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-xs">
+																	{t.unreadCount > 9 ? "9+" : t.unreadCount}
+																</span>
+															</div>
+														)}
+													</div>
+													<div className="flex-1 min-w-0">
+														<div className="flex items-center justify-between gap-2">
+															<div className="min-w-0 flex-1">
+																<p className="text-xs font-black text-black truncate">
+																	{t.requesterName} • Community
+																</p>
+																<p className="text-xs font-bold text-black/70 truncate mt-0.5">{t.spaceName} • Space</p>
+															</div>
+															<span className="text-[10px] font-bold text-black/40 shrink-0 self-start mt-0.5">
+																{timeAgo(t.lastMessageAt ?? t.createdAt)}
+															</span>
+														</div>
+														{t.lastMessagePreview && (
+															<p className="text-[11px] font-medium text-black/40 truncate mt-1">{t.lastMessagePreview}</p>
+														)}
+													</div>
+												</button>
+											)
+										}
+										const t = item.thread
+										return (
+											<button
+												key={`sh-${t.id}`}
+												onClick={() => handleSelectThread(t.id)}
+												className={cn(
+													"w-full text-left px-4 py-3.5 border-b border-black/10 md:border-b-[2px] transition-colors flex items-center gap-3 cursor-pointer",
+													selectedId === t.id ? "bg-[#FFC940]/25" : "hover:bg-neutral-50",
 												)}
-											</div>
-											<div className="absolute right-0 bottom-0 w-7 h-7 rounded-lg border-2 border-black bg-[#FFC940] flex items-center justify-center font-black text-[10px] text-black z-10 shadow-xs overflow-hidden">
-												{t.spaceLogoUrl ? (
-													// eslint-disable-next-line @next/next/no-img-element
-													<img src={t.spaceLogoUrl} alt={t.spaceName} className="w-full h-full object-cover" />
-												) : (
-													t.spaceName?.charAt(0).toUpperCase() ?? "S"
-												)}
-											</div>
-											{t.unreadCount > 0 && (
-												<div className="absolute -top-1.5 -right-2 flex items-center gap-0.5 z-20">
-													{t.hasUnreadMention && (
-														<span
-															className="size-4 rounded-full bg-black text-[#FFC940] text-[9px] font-black flex items-center justify-center border border-white shadow-xs"
-															title="You were mentioned or replied to"
-														>
-															@
-														</span>
+											>
+												<div className="relative w-11 h-9 shrink-0 select-none">
+													<div className="absolute left-0 top-0.5 w-7 h-7 rounded-lg border-2 border-black bg-neutral-100 flex items-center justify-center font-bold text-[10px] text-text-secondary z-0 overflow-hidden shadow-xs">
+														{t.spaceLogoUrl ? (
+															// eslint-disable-next-line @next/next/no-img-element
+															<img src={t.spaceLogoUrl} alt={t.spaceName} className="w-full h-full object-cover" />
+														) : (
+															t.spaceName?.charAt(0).toUpperCase() ?? "S"
+														)}
+													</div>
+													<div className="absolute right-0 bottom-0 w-7 h-7 rounded-lg border-2 border-black bg-[#FFC940] flex items-center justify-center font-black text-[10px] text-black z-10 shadow-xs overflow-hidden">
+														{t.communityLogoUrl ? (
+															// eslint-disable-next-line @next/next/no-img-element
+															<img src={t.communityLogoUrl} alt={t.communityName} className="w-full h-full object-cover" />
+														) : (
+															t.communityName?.charAt(0).toUpperCase() ?? "C"
+														)}
+													</div>
+													{t.unreadCount > 0 && (
+														<div className="absolute -top-1.5 -right-2 flex items-center gap-0.5 z-20">
+															{t.hasUnreadMention && (
+																<span
+																	className="size-4 rounded-full bg-black text-[#FFC940] text-[9px] font-black flex items-center justify-center border border-white shadow-xs"
+																	title="You were mentioned or replied to"
+																>
+																	@
+																</span>
+															)}
+															<span className="min-w-[16px] h-[16px] px-1 rounded-full bg-[#EE2C2C] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-xs">
+																{t.unreadCount > 9 ? "9+" : t.unreadCount}
+															</span>
+														</div>
 													)}
-													<span className="min-w-[16px] h-[16px] px-1 rounded-full bg-[#EE2C2C] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-xs">
-														{t.unreadCount > 9 ? "9+" : t.unreadCount}
-													</span>
 												</div>
-											)}
-										</div>
-										<div className="flex-1 min-w-0">
-											<div className="flex items-center justify-between gap-2">
-												<div className="min-w-0 flex-1">
-													<p className="text-xs font-black text-black truncate">
-														{t.requesterName} • {t.requesterType === "BRAND" ? "Brand" : "Community"}
-													</p>
-													<p className="text-xs font-bold text-black/70 truncate mt-0.5">{t.spaceName} • Space</p>
+												<div className="flex-1 min-w-0">
+													<div className="flex items-center justify-between gap-2">
+														<div className="min-w-0 flex-1">
+															<p className="text-xs font-black text-black truncate">
+																{t.spaceName} • Space
+															</p>
+															<p className="text-xs font-bold text-black/70 truncate mt-0.5">{t.communityName} • Community</p>
+														</div>
+														<span className="text-[10px] font-bold text-black/40 shrink-0 self-start mt-0.5">
+															{timeAgo(t.lastMessageAt ?? t.createdAt)}
+														</span>
+													</div>
+													<div className="flex items-center gap-1.5 mt-1">
+														<span
+															className={cn(
+																"text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full border",
+																t.chatStatus === "ACCEPTED"
+																	? "bg-green-50 text-green-700 border-green-300"
+																	: t.chatStatus === "DECLINED"
+																		? "bg-red-50 text-red-600 border-red-300"
+																		: "bg-amber-50 text-amber-700 border-amber-300",
+															)}
+														>
+															{t.chatStatus === "ACCEPTED" ? "Accepted" : t.chatStatus === "DECLINED" ? "Declined" : "Pending"}
+														</span>
+													</div>
+													{t.lastMessagePreview && (
+														<p className="text-[11px] font-medium text-black/40 truncate mt-1">{t.lastMessagePreview}</p>
+													)}
 												</div>
-												<span className="text-[10px] font-bold text-black/40 shrink-0 self-start mt-0.5">
-													{timeAgo(t.lastMessageAt ?? t.createdAt)}
-												</span>
-											</div>
-											{t.lastMessagePreview && (
-												<p className="text-[11px] font-medium text-black/40 truncate mt-1">{t.lastMessagePreview}</p>
-											)}
-										</div>
-									</button>
-								))
+											</button>
+										)
+									})
+								)
 							)
 						) : sponsorshipThreadsQuery.isLoading ? (
 							<p className="text-caption text-text-tertiary text-center py-8">Loading…</p>
@@ -592,16 +676,12 @@ function SponsorshipChatsContent() {
 					selectedId ? "flex-1 w-full" : "hidden md:flex flex-1"
 				)}>
 					{activeTab === "SPACES" ? (
-						!selectedSpaceThread ? (
-							<div className="flex-1 flex items-center justify-center text-sm font-bold text-black/40">Select a space chat to view</div>
-						) : (
-							<AdminSpaceChatThreadPanel key={selectedSpaceThread.id} thread={selectedSpaceThread} onBack={() => setSelectedId(null)} />
-						)
-					) : activeTab === "SPACE_HOST" ? (
-						!selectedSpaceHostThread ? (
-							<div className="flex-1 flex items-center justify-center text-sm font-bold text-black/40">Select a chat to view</div>
-						) : (
+						selectedSpaceHostThread ? (
 							<AdminSpaceHostChatThreadPanel key={selectedSpaceHostThread.id} thread={selectedSpaceHostThread} onBack={() => setSelectedId(null)} />
+						) : selectedSpaceThread ? (
+							<AdminSpaceChatThreadPanel key={selectedSpaceThread.id} thread={selectedSpaceThread} onBack={() => setSelectedId(null)} />
+						) : (
+							<div className="flex-1 flex items-center justify-center text-sm font-bold text-black/40">Select a space chat to view</div>
 						)
 					) : !selectedSponsorshipThread ? (
 						<div className="flex-1 flex items-center justify-center text-sm font-bold text-black/40">Select a chat to view</div>
