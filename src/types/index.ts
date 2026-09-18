@@ -601,6 +601,12 @@ export type SpaceCommunityProfile = {
 	activeLocations: string[]
 	centreShowcaseImageKeys: string[]
 	videoLink: string | null
+	proposalPdfKey?: string | null
+	proposalPdfUrl?: string | null
+	popupDays?: string | null
+	popupPrice?: string | null
+	brandingDays?: string | null
+	brandingPrice?: string | null
 	approvalStatus: ApprovalStatus
 	adminRejectionRemark: string | null
 	reviewedAt: string | null
@@ -668,6 +674,11 @@ export type CreateSpaceCommunityProfilePayload = {
 	activeLocations?: string[]
 	centreShowcaseImageKeys?: string[]
 	videoLink?: string
+	proposalPdfKey?: string
+	popupDays?: string
+	popupPrice?: string
+	brandingDays?: string
+	brandingPrice?: string
 	socialLinks?: { instagram?: string; linkedin?: string; youtube?: string; website?: string }
 	operatingCities?: string[]
 	pastEvents?: CommunityProfilePastEventPayload[]

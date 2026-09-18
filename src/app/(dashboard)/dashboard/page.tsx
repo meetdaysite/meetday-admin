@@ -45,7 +45,10 @@ import { getPendingHosts, getHosts } from "@/lib/api/hosts"
 import { getPendingBrands, getBrands } from "@/lib/api/brands"
 import { getCommunityProfiles, getPendingCommunityProfiles } from "@/lib/api/community-profiles"
 import { sendAnnouncement } from "@/lib/api/announcements"
-import { getSponsorshipChats, type SponsorshipChatThread } from "@/lib/api/sponsorship-chats"
+import { getSponsorshipChats } from "@/lib/api/sponsorship-chats"
+import { getSpaceChats } from "@/lib/api/space-chats"
+import { getSpaceHostChats } from "@/lib/api/space-host-chats"
+import { getCommunityCollaborationChats } from "@/lib/api/community-collaboration-chats"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import {
 	getDashboardHealth,
@@ -1298,17 +1301,25 @@ function RecentChatsBox() {
 		queryFn: () => getSponsorshipChats(),
 		refetchInterval: 30_000,
 	})
+	const spaceChatsQuery = useQuery({ queryKey: ["dashboard", "recent-space-chats"], queryFn: () => getSpaceChats("ACCEPTED"), refetchInterval: 30_000 })
+	const spaceHostChatsQuery = useQuery({ queryKey: ["dashboard", "recent-space-host-chats"], queryFn: () => getSpaceHostChats(), refetchInterval: 30_000 })
+	const communityChatsQuery = useQuery({ queryKey: ["dashboard", "recent-community-chats"], queryFn: () => getCommunityCollaborationChats(), refetchInterval: 30_000 })
 
 	const topThreads = useMemo(() => {
-		const threads = chatsQuery.data ?? []
+		const threads = [
+			...(chatsQuery.data ?? []).map((t) => ({ id: `sponsorship-${t.id}`, label: `${t.brandName} ↔ ${t.communityName}`, preview: t.lastMessagePreview ?? t.proposalName ?? "Sponsorship chat", at: t.lastMessageAt ?? t.createdAt, unreadCount: t.unreadCount })),
+			...(spaceChatsQuery.data ?? []).map((t) => ({ id: `space-${t.id}`, label: `${t.requesterName} ↔ ${t.spaceName}`, preview: t.lastMessagePreview ?? "Hub chat", at: t.lastMessageAt ?? t.createdAt, unreadCount: t.unreadCount })),
+			...(spaceHostChatsQuery.data ?? []).map((t) => ({ id: `space-host-${t.id}`, label: `${t.communityName} ↔ ${t.spaceName}`, preview: t.lastMessagePreview ?? "Hub partnership chat", at: t.lastMessageAt ?? t.createdAt, unreadCount: t.unreadCount })),
+			...(communityChatsQuery.data ?? []).map((t) => ({ id: `community-${t.id}`, label: `${t.requesterCommunityName} ↔ ${t.targetCommunityName}`, preview: t.lastMessagePreview ?? "Community collaboration chat", at: t.lastMessageAt ?? t.createdAt, unreadCount: t.unreadCount })),
+		]
 		return [...threads]
 			.sort((a, b) => {
-				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : new Date(a.createdAt).getTime()
-				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : new Date(b.createdAt).getTime()
+				const tA = new Date(a.at).getTime()
+				const tB = new Date(b.at).getTime()
 				return tB - tA
 			})
 			.slice(0, 5)
-	}, [chatsQuery.data])
+	}, [chatsQuery.data, spaceChatsQuery.data, spaceHostChatsQuery.data, communityChatsQuery.data])
 
 	return (
 		<div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-1">
@@ -1318,13 +1329,13 @@ function RecentChatsBox() {
 					View all
 				</Link>
 			</div>
-			{chatsQuery.isLoading ? (
+			{chatsQuery.isLoading || spaceChatsQuery.isLoading || spaceHostChatsQuery.isLoading || communityChatsQuery.isLoading ? (
 				<p className="text-body-sm text-text-tertiary py-6 text-center">Loading…</p>
 			) : topThreads.length === 0 ? (
 				<p className="text-body-sm text-text-tertiary py-6 text-center">No chat activity yet.</p>
 			) : (
 				<div className="divide-y divide-border-subtle">
-					{topThreads.map((t: SponsorshipChatThread) => (
+					{topThreads.map((t) => (
 						<Link
 							key={t.id}
 							href="/sponsorship-chats"
@@ -1334,14 +1345,12 @@ function RecentChatsBox() {
 								<MessageCircle size={14} className="text-text-secondary" />
 							</div>
 							<div className="min-w-0 flex-1">
-								<p className="text-body-sm font-medium text-text-primary truncate">
-									{t.brandName} ↔ {t.communityName}
-								</p>
-								<p className="text-caption text-text-tertiary truncate">{t.lastMessagePreview ?? t.proposalName}</p>
+									<p className="text-body-sm font-medium text-text-primary truncate">{t.label}</p>
+									<p className="text-caption text-text-tertiary truncate">{t.preview}</p>
 							</div>
 							<div className="flex flex-col items-end gap-1 shrink-0">
 								<span className="text-caption text-text-tertiary">
-									{formatDistanceToNow(new Date(t.lastMessageAt ?? t.createdAt), { addSuffix: true })}
+									{formatDistanceToNow(new Date(t.at), { addSuffix: true })}
 								</span>
 								{t.unreadCount > 0 && (
 									<span className="min-w-[18px] h-[18px] px-1.5 rounded-full bg-[#EE2C2C] text-white text-[9px] font-black flex items-center justify-center">

@@ -862,7 +862,7 @@ function NewSupportChatPicker({
 							tab === "SPACE" ? "bg-[#FFC940] text-black" : "bg-white text-black/50 hover:bg-neutral-50",
 						)}
 					>
-						Spaces
+						Hubs
 					</button>
 				</div>
 
@@ -873,7 +873,7 @@ function NewSupportChatPicker({
 							type="text"
 							value={search}
 							onChange={e => setSearch(e.target.value)}
-							placeholder={tab === "HOST" ? "Search communities by name or email…" : tab === "BRAND" ? "Search brands by name or email…" : "Search spaces by name or email…"}
+							placeholder={tab === "HOST" ? "Search communities by name or email…" : tab === "BRAND" ? "Search brands by name or email…" : "Search hubs by name or email…"}
 							className="w-full rounded-xl border-2 border-black bg-white pl-8 pr-3 py-2 text-xs font-semibold outline-none focus:bg-neutral-50 text-black placeholder:text-neutral-400"
 						/>
 					</div>
@@ -947,9 +947,9 @@ function NewSupportChatPicker({
 							))
 						)
 					) : spacesQuery.isLoading ? (
-						<p className="text-xs font-semibold text-neutral-500 py-4 text-center">Loading spaces…</p>
+						<p className="text-xs font-semibold text-neutral-500 py-4 text-center">Loading hubs…</p>
 					) : filteredSpaces.length === 0 ? (
-						<p className="text-xs font-semibold text-neutral-500 py-4 text-center">No spaces found.</p>
+						<p className="text-xs font-semibold text-neutral-500 py-4 text-center">No hubs found.</p>
 					) : (
 						filteredSpaces.map((s: SpacePartnerListItem) => (
 							<button

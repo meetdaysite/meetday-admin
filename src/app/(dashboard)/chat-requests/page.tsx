@@ -308,7 +308,7 @@ function SpaceRequestDetailDrawer({
 				<div className="rounded-xl bg-blue-50 border border-blue-200/80 p-3.5 text-xs text-blue-900 flex items-start gap-2.5">
 					<CheckCircle2 className="size-4 text-blue-600 shrink-0 mt-0.5" />
 					<p>
-						Once accepted by the Space partner, this chat automatically transitions into <strong>Ongoing Chats</strong> under <strong>Spaces</strong>.
+						Once accepted by the Hub partner, this chat automatically transitions into <strong>Ongoing Chats</strong> under <strong>Hubs</strong>.
 					</p>
 				</div>
 			</div>
@@ -424,13 +424,13 @@ function ChatRequestsContent() {
 			<div className="border border-border-default rounded-action overflow-hidden bg-surface-card w-full">
 				{/* 3 Main Tabs & Search Toolbar */}
 				<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b border-border-default bg-neutral-50/60 px-4 py-2.5 gap-3 w-full">
-					{/* 3 Main Tabs: Sponsorships, Campaigns, Spaces */}
+					{/* 3 Main Tabs: Sponsorships, Campaigns, Hubs */}
 					<div className="flex items-center gap-1.5 flex-wrap">
 						{(
 							[
 								{ key: "SPONSORSHIP", label: "Sponsorships", count: sponsorshipCount },
 								{ key: "CAMPAIGN", label: "Campaigns", count: campaignCount },
-								{ key: "SPACES", label: "Spaces", count: spacesCount },
+								{ key: "SPACES", label: "Hubs", count: spacesCount },
 							] as const
 						).map((tab) => {
 							const isActive = activeTab === tab.key
@@ -466,7 +466,7 @@ function ChatRequestsContent() {
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder={
 								activeTab === "SPACES"
-									? `Search ${spaceSubTab === "BRAND" ? "brand" : "community"} space requests…`
+									? `Search ${spaceSubTab === "BRAND" ? "brand" : "community"} hub requests…`
 									: activeTab === "SPONSORSHIP"
 									? "Search sender, proposal…"
 									: "Search applicant, campaign…"
@@ -484,7 +484,7 @@ function ChatRequestsContent() {
 					</div>
 				</div>
 
-				{/* Spaces Sub-tabs (Brand / Community) */}
+				{/* Hubs Sub-tabs (Brand / Community) */}
 				{activeTab === "SPACES" && (
 					<div className="flex items-center gap-2 border-b border-border-default bg-neutral-100/60 px-4 py-2">
 						{(
@@ -547,10 +547,10 @@ function ChatRequestsContent() {
 												<p className="font-semibold text-text-secondary text-xs">
 													{searchQuery
 														? "No space requests match your search."
-														: `No pending ${spaceSubTab === "BRAND" ? "brand" : "community"} space requests.`}
+																			: `No pending ${spaceSubTab === "BRAND" ? "brand" : "community"} hub requests.`}
 												</p>
 												<p className="text-[11px] text-text-tertiary">
-													Inbound connection requests from {spaceSubTab === "BRAND" ? "brands" : "communities"} to Community Spaces will appear here.
+													Inbound connection requests from {spaceSubTab === "BRAND" ? "brands" : "communities"} to Community Hubs will appear here.
 												</p>
 											</div>
 										</td>
@@ -784,7 +784,7 @@ function ChatRequestsContent() {
 				/>
 			)}
 
-			{/* Detail Drawer for Spaces */}
+			{/* Detail Drawer for Hubs */}
 			{inspectSpaceThread && (
 				<SpaceRequestDetailDrawer
 					thread={inspectSpaceThread}

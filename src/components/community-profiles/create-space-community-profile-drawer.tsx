@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ImageUploadZone } from "@/components/communities/create/ui/image-upload-zone"
 import { getEligibleSpacePartners, createSpaceCommunityProfile, updateSpaceCommunityProfile } from "@/lib/api/space-community-profiles"
 import { getCategories } from "@/lib/api/categories"
-import { uploadCommunityProfileLogo, uploadCommunityPastEventImage, uploadCommunityBrandLogo } from "@/lib/api/storage"
+import { uploadCommunityProfileLogo, uploadCommunityPastEventImage, uploadCommunityBrandLogo, uploadSpaceProposalPdf } from "@/lib/api/storage"
 import type { Category, EligibleSpacePartner, SpaceCommunityProfileDetail } from "@/types"
 
 // One past-event entry being edited — images can be a mix of already-uploaded keys (editing an
@@ -73,6 +73,12 @@ export function CreateSpaceCommunityProfileDrawer({
 	const [communitySize, setCommunitySize] = useState("")
 	const [experiencesPerYear, setExperiencesPerYear] = useState("")
 	const [videoLink, setVideoLink] = useState("")
+	const [proposalPdfKey, setProposalPdfKey] = useState<string | null>(null)
+	const [proposalPdfName, setProposalPdfName] = useState<string | null>(null)
+	const [popupDays, setPopupDays] = useState("")
+	const [popupPrice, setPopupPrice] = useState("")
+	const [brandingDays, setBrandingDays] = useState("")
+	const [brandingPrice, setBrandingPrice] = useState("")
 	const [categories, setCategories] = useState<Category[]>([])
 	const [categoryIds, setCategoryIds] = useState<Set<string>>(new Set())
 	const [instagram, setInstagram] = useState("")
@@ -132,6 +138,12 @@ export function CreateSpaceCommunityProfileDrawer({
 		setCommunitySize(p.communitySize)
 		setExperiencesPerYear(p.experiencesPerYear)
 		setVideoLink(p.videoLink ?? "")
+		setProposalPdfKey(p.proposalPdfKey ?? null)
+		setProposalPdfName(p.proposalPdfKey ? "Existing proposal PDF" : null)
+		setPopupDays(p.popupDays ?? "")
+		setPopupPrice(p.popupPrice ?? "")
+		setBrandingDays(p.brandingDays ?? "")
+		setBrandingPrice(p.brandingPrice ?? "")
 		setCategoryIds(new Set(p.categories.map((c) => c.id)))
 		setInstagram(p.spaceProfile.socialLinks?.instagram ?? "")
 		setLinkedin(p.spaceProfile.socialLinks?.linkedin ?? "")
@@ -173,6 +185,12 @@ export function CreateSpaceCommunityProfileDrawer({
 		setCommunitySize("")
 		setExperiencesPerYear("")
 		setVideoLink("")
+		setProposalPdfKey(null)
+		setProposalPdfName(null)
+		setPopupDays("")
+		setPopupPrice("")
+		setBrandingDays("")
+		setBrandingPrice("")
 		setCategoryIds(new Set())
 		setInstagram("")
 		setLinkedin("")
@@ -318,6 +336,11 @@ export function CreateSpaceCommunityProfileDrawer({
 					communitySize: communitySize.trim(),
 					experiencesPerYear: experiencesPerYear.trim(),
 					videoLink: videoLink.trim() || undefined,
+					proposalPdfKey: proposalPdfKey || undefined,
+					popupDays: popupDays.trim() || undefined,
+					popupPrice: popupPrice.trim() || undefined,
+					brandingDays: brandingDays.trim() || undefined,
+					brandingPrice: brandingPrice.trim() || undefined,
 					categoryIds: Array.from(categoryIds),
 					activeLocations,
 					centreShowcaseImageKeys,
@@ -340,6 +363,11 @@ export function CreateSpaceCommunityProfileDrawer({
 					communitySize: communitySize.trim(),
 					experiencesPerYear: experiencesPerYear.trim(),
 					videoLink: videoLink.trim() || undefined,
+					proposalPdfKey: proposalPdfKey || undefined,
+					popupDays: popupDays.trim() || undefined,
+					popupPrice: popupPrice.trim() || undefined,
+					brandingDays: brandingDays.trim() || undefined,
+					brandingPrice: brandingPrice.trim() || undefined,
 					categoryIds: Array.from(categoryIds),
 					activeLocations,
 					centreShowcaseImageKeys,
@@ -708,6 +736,45 @@ export function CreateSpaceCommunityProfileDrawer({
 					<div>
 						<label className={labelClass}>Video link (optional)</label>
 						<input type="text" value={videoLink} onChange={(e) => setVideoLink(e.target.value)} placeholder="https://youtube.com/watch?v=..." disabled={isLoading} className={inputClass} />
+					</div>
+
+					<div>
+						<label className={labelClass}>Proposal PDF (optional)</label>
+						<div className="flex items-center gap-2">
+							<input
+								type="file"
+								accept="application/pdf,.pdf"
+								disabled={isLoading}
+								onChange={async (e) => {
+									const file = e.target.files?.[0]
+									e.target.value = ""
+									if (!file) return
+									if (file.type !== "application/pdf") return setError("Only PDF files are accepted.")
+									try {
+										setIsLoading(true)
+										setProposalPdfKey(await uploadSpaceProposalPdf(file))
+										setProposalPdfName(file.name)
+									} catch {
+										setError("Failed to upload proposal PDF.")
+									} finally {
+										setIsLoading(false)
+									}
+								}}
+								className="text-xs"
+							/>
+							{proposalPdfName && <span className="text-xs text-text-secondary truncate">{proposalPdfName}</span>}
+							{proposalPdfKey && <button type="button" onClick={() => { setProposalPdfKey(null); setProposalPdfName(null) }} className="text-xs text-red-600 hover:underline">Remove</button>}
+						</div>
+					</div>
+
+					<div>
+						<label className={labelClass}>Branding and Activation Offerings</label>
+						<div className="grid grid-cols-2 gap-2">
+							<input type="text" value={popupDays} onChange={(e) => setPopupDays(e.target.value)} placeholder="Pop-up days" disabled={isLoading} className={inputClass} />
+							<input type="text" value={popupPrice} onChange={(e) => setPopupPrice(e.target.value)} placeholder="Pop-up price" disabled={isLoading} className={inputClass} />
+							<input type="text" value={brandingDays} onChange={(e) => setBrandingDays(e.target.value)} placeholder="Branding days" disabled={isLoading} className={inputClass} />
+							<input type="text" value={brandingPrice} onChange={(e) => setBrandingPrice(e.target.value)} placeholder="Branding price" disabled={isLoading} className={inputClass} />
+						</div>
 					</div>
 
 					<div>

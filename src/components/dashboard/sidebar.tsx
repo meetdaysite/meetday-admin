@@ -86,7 +86,7 @@ const NAV: NavItem[] = [
 		],
 	},
 	{
-		label: "Community Spaces",
+		label: "Community Hubs",
 		icon: BadgeCheck,
 		subItems: [
 			{
@@ -102,7 +102,7 @@ const NAV: NavItem[] = [
 				badgeKey: "spaceCommunityProfileRevisions",
 			},
 			{
-				label: "All Community Spaces",
+				label: "All Community Hubs",
 				href: "/community-spaces",
 				permission: "spaceProfile.approve",
 				exact: true,

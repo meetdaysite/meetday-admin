@@ -24,6 +24,7 @@ type PresignRequest =
 	| { context: "COMMUNITY_FEED_MEDIA";  contentType: ImageContentType | "video/mp4"; resourceId: string }
 	| { context: "SPONSORSHIP_MEDIA";     contentType: ImageContentType }
 	| { context: "SPONSORSHIP_DOCUMENT";  contentType: PitchDocContentType }
+	| { context: "SPACE_PROPOSAL_DOCUMENT"; contentType: "application/pdf" }
 	| { context: "SPONSORSHIP_CHAT_MEDIA"; contentType: ImageContentType | "application/pdf"; resourceId: string }
 	| { context: "SPACE_CHAT_MEDIA";      contentType: ImageContentType | "application/pdf"; resourceId: string }
 	| { context: "SPACE_HOST_CHAT_MEDIA"; contentType: ImageContentType | "application/pdf"; resourceId: string }
@@ -126,6 +127,15 @@ export async function uploadCommunityProfileLogo(file: File): Promise<string> {
 	const { uploadUrl, key } = await getPresignedUploadUrl({
 		context: "SPONSORSHIP_MEDIA",
 		contentType: file.type as ImageContentType,
+	})
+	await uploadToStorage(uploadUrl, file)
+	return key
+}
+
+export async function uploadSpaceProposalPdf(file: File): Promise<string> {
+	const { uploadUrl, key } = await getPresignedUploadUrl({
+		context: "SPACE_PROPOSAL_DOCUMENT",
+		contentType: "application/pdf",
 	})
 	await uploadToStorage(uploadUrl, file)
 	return key

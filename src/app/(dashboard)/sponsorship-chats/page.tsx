@@ -13,6 +13,7 @@ import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import { LinkifiedText } from "@/components/ui/linkified-text"
 import { MentionPicker, type MentionSuggestion } from "@/components/chat/MentionPicker"
 import { SystemMessageBubble } from "@/components/chat/SystemMessageBubble"
+import { AdminCommunityCollaborationChatPanel } from "@/components/chat/AdminCommunityCollaborationChatPanel"
 import { DealBanner, DealDetailsModal, DealReportModal } from "@/components/sponsorships/DealPanel"
 import { useChatTyping } from "@/lib/hooks/use-chat-typing"
 import {
@@ -42,6 +43,8 @@ import {
 	type SpaceHostChatMessage,
 	type SpaceHostChatThread,
 } from "@/lib/api/space-host-chats"
+import { getCommunityCollaborationChats, type CommunityCollaborationChatThread } from "@/lib/api/community-collaboration-chats"
+type MainTab = "SPONSORSHIP" | "CAMPAIGN" | "SPACES" | "COMMUNITIES"
 
 const THREADS_POLL_MS = 8000
 const MESSAGES_POLL_MS = 4000
@@ -64,7 +67,6 @@ function replyLabel(senderType: string) {
 	return "Community"
 }
 
-type MainTab = "SPONSORSHIP" | "CAMPAIGN" | "SPACES"
 type SpaceSubTab = "BRAND" | "COMMUNITY"
 
 function SponsorshipChatsContent() {
@@ -101,10 +103,16 @@ function SponsorshipChatsContent() {
 		queryFn: () => getSpaceHostChats(),
 		refetchInterval: THREADS_POLL_MS,
 	})
+	const communityCollaborationThreadsQuery = useQuery({
+		queryKey: ["admin-community-collaboration-chats"],
+		queryFn: () => getCommunityCollaborationChats(),
+		refetchInterval: THREADS_POLL_MS,
+	})
 
 	const allSponsorshipThreads = sponsorshipThreadsQuery.data ?? []
 	const allSpaceThreads = spaceThreadsQuery.data ?? []
 	const allSpaceHostThreads = spaceHostThreadsQuery.data ?? []
+	const allCommunityCollaborationThreads = communityCollaborationThreadsQuery.data ?? []
 
 	// Compute unread counts for tab badges
 	const sponsorshipUnreadCount = allSponsorshipThreads
@@ -128,6 +136,7 @@ function SponsorshipChatsContent() {
 	// Inter-entity chats between Spaces and Communities are consolidated under Spaces -> Community
 	const spacesCommunityUnreadCount = spacesCommunityDirectUnreadCount + spaceHostUnreadCount
 	const spacesUnreadCount = spacesBrandUnreadCount + spacesCommunityUnreadCount
+	const communitiesUnreadCount = allCommunityCollaborationThreads.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
 
 	// Filter sponsorship/campaign threads
 	const filteredSponsorshipThreads = allSponsorshipThreads
@@ -197,6 +206,12 @@ function SponsorshipChatsContent() {
 		})
 		.sort((a, b) => b.sortTime - a.sortTime)
 
+	const filteredCommunityCollaborationThreads = allCommunityCollaborationThreads.filter((t) => {
+		if (!searchQuery.trim()) return true
+		const q = searchQuery.toLowerCase()
+		return t.requesterCommunityName.toLowerCase().includes(q) || t.targetCommunityName.toLowerCase().includes(q)
+	}).sort((a, b) => new Date(b.lastMessageAt ?? b.createdAt).getTime() - new Date(a.lastMessageAt ?? a.createdAt).getTime())
+
 	const selectedSponsorshipThread =
 		activeTab !== "SPACES"
 			? filteredSponsorshipThreads.find((t) => t.id === selectedId) ??
@@ -213,6 +228,10 @@ function SponsorshipChatsContent() {
 			? allSpaceHostThreads.find((t) => t.id === selectedId) ?? null
 			: null
 
+	const selectedCommunityCollaborationThread = activeTab === "COMMUNITIES"
+		? allCommunityCollaborationThreads.find((t) => t.id === selectedId) ?? null
+		: null
+
 	function handleSelectThread(id: string) {
 		setSelectedId(id)
 		if (activeTab === "SPACES") {
@@ -220,6 +239,10 @@ function SponsorshipChatsContent() {
 				prev?.map((t) => (t.id === id ? { ...t, unreadCount: 0 } : t)),
 			)
 			queryClient.setQueryData<SpaceHostChatThread[]>(["admin-space-host-chats"], (prev) =>
+				prev?.map((t) => (t.id === id ? { ...t, unreadCount: 0 } : t)),
+			)
+		} else if (activeTab === "COMMUNITIES") {
+			queryClient.setQueryData<CommunityCollaborationChatThread[]>(["admin-community-collaboration-chats"], (prev) =>
 				prev?.map((t) => (t.id === id ? { ...t, unreadCount: 0 } : t)),
 			)
 		} else {
@@ -257,7 +280,8 @@ function SponsorshipChatsContent() {
 							[
 								{ key: "SPONSORSHIP", label: "Sponsorship", unread: sponsorshipUnreadCount },
 								{ key: "CAMPAIGN", label: "Campaign", unread: campaignUnreadCount },
-								{ key: "SPACES", label: "Spaces", unread: spacesUnreadCount },
+								{ key: "SPACES", label: "Hubs", unread: spacesUnreadCount },
+															{ key: "COMMUNITIES", label: "Community", unread: communitiesUnreadCount },
 							] as const
 						).map((tab) => {
 							const isActive = activeTab === tab.key
@@ -338,7 +362,9 @@ function SponsorshipChatsContent() {
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder={
 								activeTab === "SPACES"
-									? `Search ${spaceSubTab === "BRAND" ? "brand" : "community"} space chats…`
+									? `Search ${spaceSubTab === "BRAND" ? "brand" : "community"} hub chats…`
+									: activeTab === "COMMUNITIES"
+										? "Search community chats…"
 									: activeTab === "SPONSORSHIP"
 									? "Search sponsorships…"
 									: "Search campaigns…"
@@ -349,15 +375,22 @@ function SponsorshipChatsContent() {
 
 					{/* Thread list content */}
 					<div className="flex-1 overflow-y-auto">
-						{activeTab === "SPACES" ? (
+						{activeTab === "COMMUNITIES" ? (
+							communityCollaborationThreadsQuery.isLoading ? <p className="text-caption text-text-tertiary text-center py-8">Loading…</p> : filteredCommunityCollaborationThreads.length === 0 ? <p className="text-caption text-text-tertiary text-center py-8 px-4">No community-to-community chats yet.</p> : filteredCommunityCollaborationThreads.map((t) => (
+								<button key={t.id} onClick={() => handleSelectThread(t.id)} className={cn("w-full text-left px-4 py-3.5 border-b border-black/10 transition-colors", selectedId === t.id ? "bg-[#FFC940]/25" : "hover:bg-neutral-50")}>
+									<div className="flex items-center justify-between gap-2"><p className="truncate text-xs font-black">{t.requesterCommunityName} ↔ {t.targetCommunityName}</p><span className="text-[10px] text-black/40">{timeAgo(t.lastMessageAt ?? t.createdAt)}</span></div>
+									<p className="mt-1 truncate text-[11px] text-black/45">{t.lastMessagePreview ?? "No messages yet"}</p>
+								</button>
+							))
+						) : activeTab === "SPACES" ? (
 							(spaceSubTab === "BRAND" ? spaceThreadsQuery.isLoading : (spaceThreadsQuery.isLoading || spaceHostThreadsQuery.isLoading)) ? (
 								<p className="text-caption text-text-tertiary text-center py-8">Loading…</p>
 							) : spaceSubTab === "BRAND" ? (
 								filteredSpaceBrandThreads.length === 0 ? (
 									<p className="text-caption text-text-tertiary text-center py-8 px-4">
 										{searchQuery
-											? "No matching space chats found."
-											: "No ongoing brand space chats yet."}
+											? "No matching hub chats found."
+											: "No ongoing brand hub chats yet."}
 									</p>
 								) : (
 									filteredSpaceBrandThreads.map((t) => (
@@ -426,8 +459,8 @@ function SponsorshipChatsContent() {
 								consolidatedSpaceCommunityThreads.length === 0 ? (
 									<p className="text-caption text-text-tertiary text-center py-8 px-4">
 										{searchQuery
-											? "No matching space chats found."
-											: "No ongoing community space chats yet."}
+											? "No matching hub chats found."
+											: "No ongoing community hub chats yet."}
 									</p>
 								) : (
 									consolidatedSpaceCommunityThreads.map((item) => {
@@ -675,13 +708,19 @@ function SponsorshipChatsContent() {
 					"min-w-0 flex flex-col h-full bg-[#F8F9FB] md:bg-white",
 					selectedId ? "flex-1 w-full" : "hidden md:flex flex-1"
 				)}>
-					{activeTab === "SPACES" ? (
+					{activeTab === "COMMUNITIES" ? (
+						selectedCommunityCollaborationThread ? (
+							<AdminCommunityCollaborationChatPanel key={selectedCommunityCollaborationThread.id} thread={selectedCommunityCollaborationThread} onBack={() => setSelectedId(null)} />
+						) : (
+							<div className="flex-1 flex items-center justify-center text-sm font-bold text-black/40">Select a community chat to view</div>
+						)
+					) : activeTab === "SPACES" ? (
 						selectedSpaceHostThread ? (
 							<AdminSpaceHostChatThreadPanel key={selectedSpaceHostThread.id} thread={selectedSpaceHostThread} onBack={() => setSelectedId(null)} />
 						) : selectedSpaceThread ? (
 							<AdminSpaceChatThreadPanel key={selectedSpaceThread.id} thread={selectedSpaceThread} onBack={() => setSelectedId(null)} />
 						) : (
-							<div className="flex-1 flex items-center justify-center text-sm font-bold text-black/40">Select a space chat to view</div>
+							<div className="flex-1 flex items-center justify-center text-sm font-bold text-black/40">Select a hub chat to view</div>
 						)
 					) : !selectedSponsorshipThread ? (
 						<div className="flex-1 flex items-center justify-center text-sm font-bold text-black/40">Select a chat to view</div>
