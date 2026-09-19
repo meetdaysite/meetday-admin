@@ -12,6 +12,7 @@ export type MeetdayChatThread = {
 	unreadCount: number
 	hasUnreadMention?: boolean
 	botDormant: boolean
+	chatContext?: "HOST" | "BRAND" | "SPACE_PARTNER"
 	userLogoUrl?: string | null
 	userAvatarUrl?: string | null
 }
@@ -91,9 +92,10 @@ export async function deleteMeetdayChatMessage(
 // Lets an admin pick a Brand/Community from search and open a chat window before any thread
 // exists yet — the thread is only actually created once the first message is sent.
 
-export async function getMeetdayChatByUserId(userId: string): Promise<{ threadId: string | null; messages: MeetdayChatMessage[] }> {
+export async function getMeetdayChatByUserId(userId: string, context: "HOST" | "BRAND" | "SPACE_PARTNER" = "HOST"): Promise<{ threadId: string | null; messages: MeetdayChatMessage[] }> {
 	const { data } = await apiClient.get<{ threadId: string | null; messages: MeetdayChatMessage[] }>(
 		`/admin/meetday-chats/by-user/${userId}`,
+		{ params: { context } },
 	)
 	return data
 }
@@ -101,10 +103,12 @@ export async function getMeetdayChatByUserId(userId: string): Promise<{ threadId
 export async function startMeetdayChatByUser(
 	userId: string,
 	payload: { content?: string; mediaKey?: string; replyToId?: string },
+	context: "HOST" | "BRAND" | "SPACE_PARTNER" = "HOST",
 ): Promise<MeetdayChatMessage & { threadId: string }> {
 	const { data } = await apiClient.post<MeetdayChatMessage & { threadId: string }>(
 		`/admin/meetday-chats/by-user/${userId}/messages`,
 		payload,
+		{ params: { context } },
 	)
 	return data
 }
