@@ -41,6 +41,12 @@ type PendingChatTarget = {
 	userLogoUrl: string | null
 }
 
+function toMeetdayChatContext(role: PendingChatTarget["userRole"] | "SPACE"): "HOST" | "BRAND" | "SPACE_PARTNER" {
+	if (role === "SPACE" || role === "SPACE_PARTNER") return "SPACE_PARTNER"
+	if (role === "BRAND") return "BRAND"
+	return "HOST"
+}
+
 function roleLabel(role: string | null | undefined): string {
 	if (role === "BRAND") return "Brand"
 	if (role === "HOST") return "Community"
@@ -83,7 +89,7 @@ export default function MeetdayChatsPage() {
 	async function handlePickTarget(target: PendingChatTarget) {
 		setPickerOpen(false)
 		try {
-			const existing = await getMeetdayChatByUserId(target.userId)
+			const existing = await getMeetdayChatByUserId(target.userId, toMeetdayChatContext(target.userRole))
 			if (existing.threadId) {
 				await queryClient.invalidateQueries({ queryKey: ["admin-meetday-chats"] })
 				setPendingTarget(null)
@@ -700,7 +706,7 @@ function PendingChatPanel({
 	const [input, setInput] = useState("")
 
 	const sendMutation = useMutation({
-		mutationFn: (content: string) => startMeetdayChatByUser(target.userId, { content }),
+		mutationFn: (content: string) => startMeetdayChatByUser(target.userId, { content }, toMeetdayChatContext(target.userRole)),
 		onSuccess: (message) => onThreadCreated(message.threadId),
 		onError: () => toast.error("Failed to send message."),
 	})
