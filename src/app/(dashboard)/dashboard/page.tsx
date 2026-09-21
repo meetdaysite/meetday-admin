@@ -50,6 +50,7 @@ import { getSpaceChats } from "@/lib/api/space-chats"
 import { getSpaceHostChats } from "@/lib/api/space-host-chats"
 import { getCommunityCollaborationChats } from "@/lib/api/community-collaboration-chats"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import {
 	getDashboardHealth,
 	getDashboardLiveOperations,
@@ -1248,13 +1249,25 @@ function AnnouncementsBox() {
 				placeholder="Subject (optional)"
 				className="w-full rounded-2xl border-[3px] border-black bg-white px-4 py-2.5 text-sm font-semibold outline-none focus:bg-neutral-50 transition-colors placeholder:text-neutral-400 text-black animate-none"
 			/>
-			<textarea
-				value={message}
-				onChange={e => setMessage(e.target.value)}
-				placeholder="Write your announcement…"
-				rows={4}
-				className="w-full rounded-2xl border-[3px] border-black bg-white px-4 py-2.5 text-sm font-semibold outline-none focus:bg-neutral-50 transition-colors placeholder:text-neutral-400 text-black resize-none"
-			/>
+
+			<div className="relative">
+				<textarea
+					value={message}
+					onChange={e => setMessage(e.target.value)}
+					placeholder="Write your announcement…"
+					rows={4}
+					className="w-full rounded-2xl border-[3px] border-black bg-white px-4 py-2.5 pb-9 text-sm font-semibold outline-none focus:bg-neutral-50 transition-colors placeholder:text-neutral-400 text-black resize-none"
+				/>
+				<div className="absolute right-2.5 bottom-3">
+					<EmojiPicker
+						onSelect={(emoji) => setMessage((prev) => prev + emoji)}
+						align="right"
+						position="top"
+						title="Add emoji to message"
+						buttonClassName="size-7 rounded-lg border-2 border-black bg-white hover:bg-neutral-100 flex items-center justify-center text-xs transition-colors cursor-pointer shadow-2xs"
+					/>
+				</div>
+			</div>
 
 			<button
 				onClick={handleSend}

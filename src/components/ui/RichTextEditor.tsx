@@ -20,7 +20,9 @@ import {
 	Eye,
 	Edit3,
 	RotateCcw,
+	Smile,
 } from "lucide-react"
+import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import { cn } from "@/lib/utils"
 
 function ListIndentIcon({ size = 14, className }: { size?: number; className?: string }) {
@@ -121,6 +123,36 @@ export function RichTextEditor({
 			// ignore queryCommandState errors in unsupported envs
 		}
 	}, [])
+
+	const savedSelectionRef = useRef<Range | null>(null)
+
+	const saveSelection = useCallback(() => {
+		if (typeof window === "undefined") return
+		const sel = window.getSelection()
+		if (sel && sel.rangeCount > 0 && editorRef.current?.contains(sel.anchorNode)) {
+			savedSelectionRef.current = sel.getRangeAt(0).cloneRange()
+		}
+	}, [])
+
+	const restoreSelection = useCallback(() => {
+		if (typeof window === "undefined" || !savedSelectionRef.current) return
+		const sel = window.getSelection()
+		if (sel) {
+			sel.removeAllRanges()
+			sel.addRange(savedSelectionRef.current)
+		}
+	}, [])
+
+	const handleInsertEmoji = (emoji: string) => {
+		if (!editorRef.current) return
+		editorRef.current.focus()
+		if (savedSelectionRef.current) {
+			restoreSelection()
+		}
+		document.execCommand("insertText", false, emoji)
+		handleInput()
+		saveSelection()
+	}
 
 	const handleInput = () => {
 		if (!editorRef.current) return
@@ -381,7 +413,7 @@ export function RichTextEditor({
 
 					<div className="h-5 w-[2px] bg-black/20 mx-1" />
 
-					{/* Link, Blockquote, Divider */}
+					{/* Link, Blockquote, Divider, Emoji */}
 					<button
 						type="button"
 						onClick={handleAddLink}
@@ -391,6 +423,16 @@ export function RichTextEditor({
 					>
 						<LinkIcon size={14} strokeWidth={2.5} />
 					</button>
+
+					<EmojiPicker
+						onSelect={handleInsertEmoji}
+						disabled={mode === "preview"}
+						position="bottom"
+						align="left"
+						title="Insert Emoji"
+						icon={<Smile size={14} strokeWidth={2.5} />}
+						buttonClassName="size-8 rounded-lg border-2 border-black bg-white text-black/80 hover:bg-neutral-100 flex items-center justify-center transition-all cursor-pointer disabled:opacity-40"
+					/>
 
 					<button
 						type="button"
@@ -672,7 +714,7 @@ export function RichTextEditor({
 								{/* Insert & Actions */}
 								<div className="flex flex-col gap-1.5 pt-2 border-t border-black/10">
 									<span className="text-[10px] font-black uppercase tracking-wider text-black/50">Insert & Actions</span>
-									<div className="grid grid-cols-6 gap-1.5">
+									<div className="grid grid-cols-7 gap-1.5">
 										<button
 											type="button"
 											onClick={handleAddLink}
@@ -681,6 +723,15 @@ export function RichTextEditor({
 										>
 											<LinkIcon size={14} strokeWidth={2.5} />
 										</button>
+
+										<EmojiPicker
+											onSelect={handleInsertEmoji}
+											position="bottom"
+											align="left"
+											title="Insert Emoji"
+											icon={<Smile size={14} strokeWidth={2.5} />}
+											buttonClassName="w-full h-8 rounded-lg border-2 border-black bg-white hover:bg-neutral-100 flex items-center justify-center text-black/80 cursor-pointer"
+										/>
 
 										<button
 											type="button"
@@ -768,9 +819,19 @@ export function RichTextEditor({
 						ref={editorRef}
 						contentEditable
 						onInput={handleInput}
-						onKeyDown={handleKeyDown}
-						onKeyUp={updateActiveFormats}
-						onMouseUp={updateActiveFormats}
+						onKeyDown={(e) => {
+							handleKeyDown(e)
+							saveSelection()
+						}}
+						onKeyUp={() => {
+							updateActiveFormats()
+							saveSelection()
+						}}
+						onMouseUp={() => {
+							updateActiveFormats()
+							saveSelection()
+						}}
+						onBlur={saveSelection}
 						style={{ minHeight }}
 						className={cn(
 							"w-full px-5 py-4 text-sm sm:text-base font-medium text-black outline-none focus:bg-neutral-50/40 transition-colors overflow-y-auto leading-relaxed",

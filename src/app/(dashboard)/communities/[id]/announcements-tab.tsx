@@ -41,6 +41,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { StatusBadge } from "@/components/ui/status-badge"
+import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import {
 	getCommunityAnnouncementsTab,
 	createCommunityAnnouncement,
@@ -416,6 +417,16 @@ function CreateView({
 								{TOOLBAR_ITEMS.map((item, i) =>
 									item === null ? (
 										<div key={i} className="mx-1 h-4 w-px bg-border-default" />
+									) : item.label === "Emoji" ? (
+										<EmojiPicker
+											key={item.label}
+											onSelect={(emoji) => setMessage(prev => prev + emoji)}
+											position="bottom"
+											align="left"
+											title="Insert Emoji"
+											icon={<item.icon size={12} />}
+											buttonClassName="flex h-6 w-6 items-center justify-center rounded text-text-secondary hover:bg-neutral-100 transition-colors cursor-pointer"
+										/>
 									) : (
 										<button
 											key={item.label}

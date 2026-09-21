@@ -85,7 +85,27 @@ const CATEGORIES: { label: string; icon: string; emojis: string[] }[] = [
 	},
 ]
 
-export function EmojiPicker({ onSelect }: { onSelect: (emoji: string) => void }) {
+export interface EmojiPickerProps {
+	onSelect: (emoji: string) => void
+	className?: string
+	buttonClassName?: string
+	icon?: React.ReactNode
+	align?: "left" | "right"
+	position?: "top" | "bottom"
+	title?: string
+	disabled?: boolean
+}
+
+export function EmojiPicker({
+	onSelect,
+	className,
+	buttonClassName,
+	icon,
+	align = "left",
+	position = "top",
+	title = "Insert emoji",
+	disabled = false,
+}: EmojiPickerProps) {
 	const [open, setOpen] = useState(false)
 	const [activeCategory, setActiveCategory] = useState(0)
 	const ref = useRef<HTMLDivElement>(null)
@@ -100,26 +120,35 @@ export function EmojiPicker({ onSelect }: { onSelect: (emoji: string) => void })
 	}, [open])
 
 	return (
-		<div className="relative shrink-0" ref={ref}>
+		<div className={`relative shrink-0 ${className || ""}`} ref={ref}>
 			<button
 				type="button"
+				disabled={disabled}
 				onClick={() => setOpen(o => !o)}
-				className="shrink-0 size-9 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-base leading-none transition-colors"
-				aria-label="Insert emoji"
+				className={
+					buttonClassName ||
+					"shrink-0 size-9 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-base leading-none transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+				}
+				title={title}
+				aria-label={title}
 			>
-				🙂
+				{icon || "🙂"}
 			</button>
 			{open && (
-				<div className="absolute bottom-full mb-2 left-0 z-50 w-[280px] sm:w-80 rounded-2xl border-[3px] border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
-					<div className="flex border-b-[3px] border-black overflow-x-auto shrink-0">
+				<div
+					className={`absolute z-50 w-[280px] sm:w-80 rounded-2xl border-[3px] border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden ${
+						position === "bottom" ? "top-full mt-2" : "bottom-full mb-2"
+					} ${align === "right" ? "right-0" : "left-0"}`}
+				>
+					<div className="flex border-b-[3px] border-black overflow-x-auto shrink-0 bg-neutral-50">
 						{CATEGORIES.map((cat, i) => (
 							<button
 								key={cat.label}
 								type="button"
 								onClick={() => setActiveCategory(i)}
 								title={cat.label}
-								className={`shrink-0 w-10 h-10 flex items-center justify-center text-base ${
-									activeCategory === i ? "bg-[#FFC940]" : "hover:bg-neutral-50"
+								className={`shrink-0 w-10 h-10 flex items-center justify-center text-base transition-colors ${
+									activeCategory === i ? "bg-[#FFC940] font-bold" : "hover:bg-neutral-100"
 								}`}
 							>
 								{cat.icon}
@@ -135,7 +164,7 @@ export function EmojiPicker({ onSelect }: { onSelect: (emoji: string) => void })
 									onSelect(emoji)
 									setOpen(false)
 								}}
-								className="text-lg hover:bg-neutral-100 rounded-lg p-1"
+								className="text-lg hover:bg-[#FFC940]/30 hover:scale-110 active:scale-95 transition-transform rounded-lg p-1 flex items-center justify-center cursor-pointer"
 							>
 								{emoji}
 							</button>
