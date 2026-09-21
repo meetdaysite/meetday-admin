@@ -143,7 +143,7 @@ export default function SpaceCommunityProfileRevisionsPage() {
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			<PageHeader
-				title="Community Space Profile Revisions"
+					title="Community Hub Profile Revisions"
 				description="Review edits submitted against already-approved community space profiles before they go live."
 			/>
 

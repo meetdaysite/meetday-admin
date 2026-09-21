@@ -182,7 +182,7 @@ export default function SpaceCommunityProfilesQueuePage() {
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			<PageHeader
-				title="Community Space Profile Queue"
+					title="Community Hub Profile Queue"
 				description="Review and approve community space profiles submitted by space partners before they're shown to brands/communities."
 			/>
 

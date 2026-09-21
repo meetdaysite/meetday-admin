@@ -90,13 +90,13 @@ const NAV: NavItem[] = [
 		icon: BadgeCheck,
 		subItems: [
 			{
-				label: "Space Profile Queue",
+									label: "Hub Profile Queue",
 				href: "/community-spaces/queue",
 				permission: "spaceProfile.approve",
 				badgeKey: "spaceCommunityProfileQueue",
 			},
 			{
-				label: "Space Profile Revisions",
+									label: "Hub Profile Revisions",
 				href: "/community-spaces/revisions",
 				permission: "spaceProfile.approve",
 				badgeKey: "spaceCommunityProfileRevisions",
@@ -108,7 +108,7 @@ const NAV: NavItem[] = [
 				exact: true,
 			},
 			{
-				label: "Community Space Reps",
+								label: "Community Hub Reps",
 				href: "/space-partners",
 				permission: "spaceProfile.approve",
 				exact: true,

@@ -200,11 +200,11 @@ export default function AllSpaceCommunityProfilesPage() {
 	return (
 		<div className="p-6 space-y-5 max-w-7xl mx-auto">
 			<PageHeader
-				title="All Community Space Profiles"
+					title="All Community Hub Profiles"
 				description="Every space partner community profile on the platform, regardless of status."
 				buttons={
 					<Button variant="red" onClick={() => setCreateOpen(true)} leftIcon={<Plus size={14} />}>
-						Add Community Space Profile
+							Add Community Hub Profile
 					</Button>
 				}
 			/>
