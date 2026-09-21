@@ -47,11 +47,12 @@ function toMeetdayChatContext(role: PendingChatTarget["userRole"] | "SPACE"): "H
 	return "HOST"
 }
 
-function roleLabel(role: string | null | undefined): string {
-	if (role === "BRAND") return "Brand"
-	if (role === "HOST") return "Community"
-	if (role === "SPACE_PARTNER") return "Space"
-	return role ?? ""
+function roleLabel(role: string | null | undefined, context?: MeetdayChatThread["chatContext"]): string {
+	const effectiveRole = context ?? role
+	if (effectiveRole === "BRAND") return "Brand"
+	if (effectiveRole === "HOST") return "Community"
+	if (effectiveRole === "SPACE_PARTNER") return "Hub"
+	return effectiveRole ?? ""
 }
 
 function timeAgo(iso: string | null) {
@@ -194,7 +195,7 @@ export default function MeetdayChatsPage() {
 											<p className="text-sm font-black text-black truncate">{t.userName}</p>
 											<span className="text-[10px] font-semibold text-black/40 shrink-0">{timeAgo(t.lastMessageAt ?? t.createdAt)}</span>
 										</div>
-										<p className="text-[11px] font-semibold text-black/50 truncate mt-0.5">{t.userRole ? `${roleLabel(t.userRole)} • ` : ""}{t.userEmail}</p>
+																<p className="text-[11px] font-semibold text-black/50 truncate mt-0.5">{(t.chatContext || t.userRole) ? `${roleLabel(t.userRole, t.chatContext)} • ` : ""}{t.userEmail}</p>
 										{t.lastMessagePreview && (
 											<p className="text-[11px] text-black/60 truncate mt-1">{t.lastMessagePreview}</p>
 										)}
@@ -264,7 +265,7 @@ function MeetdayAdminChatPanel({
 			id: "user",
 			name: thread.userName,
 			tag: thread.userName.replace(/\s+/g, ""),
-			role: thread.userRole === "BRAND" ? "Brand" : thread.userRole === "HOST" ? "Community" : thread.userRole === "SPACE_PARTNER" ? "Space" : "User",
+			role: roleLabel(thread.userRole, thread.chatContext) || "User",
 			avatarUrl: thread.userLogoUrl,
 		},
 	]
@@ -426,7 +427,7 @@ function MeetdayAdminChatPanel({
 					<div className="min-w-0 flex-1">
 						<p className="text-xs sm:text-sm font-heading font-black text-black truncate leading-tight">{thread.userName}</p>
 						<p className="text-[10px] sm:text-[11px] font-semibold text-black/50 truncate">
-							{thread.userRole ? `${roleLabel(thread.userRole)} • ` : ""}{thread.userEmail}
+							{(thread.chatContext || thread.userRole) ? `${roleLabel(thread.userRole, thread.chatContext)} • ` : ""}{thread.userEmail}
 						</p>
 					</div>
 				</div>
@@ -455,7 +456,7 @@ function MeetdayAdminChatPanel({
 						const isBot = m.senderType === "BOT"
 						const isAdminOwn = m.senderType === "ADMIN"
 						const isDeleted = !!m.deletedAt
-						const isDarkUserBubble = !isMeetday && (thread.userRole === "BRAND" || thread.userRole === "SPACE_PARTNER")
+						const isDarkUserBubble = !isMeetday && (thread.chatContext === "BRAND" || thread.chatContext === "SPACE_PARTNER" || (!thread.chatContext && thread.userRole === "BRAND"))
 						const isSystemMessage = m.content?.startsWith("[System]")
 						if (isSystemMessage) {
 							return (
@@ -466,7 +467,7 @@ function MeetdayAdminChatPanel({
 								</div>
 							)
 						}
-						const userRoleLabel = roleLabel(thread.userRole)
+						const userRoleLabel = roleLabel(thread.userRole, thread.chatContext)
 						const senderLabel = isBot ? "Meetday" : isMeetday ? "Meetday • Admin" : `${thread.userName}${userRoleLabel ? ` • ${userRoleLabel}` : ""}`
 						return (
 							<div
