@@ -129,7 +129,7 @@ function SponsorshipRequestDetailDrawer({
 						<div className="flex items-center gap-2.5 min-w-0 justify-end text-right">
 							<div className="min-w-0">
 								<p className="text-caption font-bold text-text-tertiary uppercase tracking-wider">
-									{receiverRole === "BRAND" ? "Brand (Recipient)" : receiverRole === "SPACE" ? "Space (Recipient)" : "Community (Recipient)"}
+									{receiverRole === "BRAND" ? "Brand (Recipient)" : receiverRole === "SPACE" ? "Hub (Recipient)" : "Community (Recipient)"}
 								</p>
 								<p className="font-bold text-text-primary text-body-sm truncate">{receiverName}</p>
 							</div>
@@ -209,7 +209,7 @@ function SpaceRequestDetailDrawer({
 		<Drawer
 			open={true}
 			onClose={onClose}
-			title="Space Interest Request"
+			title="Hub Interest Request"
 			description={`Requested on ${formatDateTime(thread.createdAt)}`}
 			width="max-w-lg"
 		>
@@ -253,7 +253,7 @@ function SpaceRequestDetailDrawer({
 						<div className="flex items-center gap-2.5 min-w-0 justify-end text-right">
 							<div className="min-w-0">
 								<p className="text-caption font-bold text-text-tertiary uppercase tracking-wider">
-									Space (Recipient)
+									Hub (Recipient)
 								</p>
 								<p className="font-bold text-text-primary text-body-sm truncate">{thread.spaceName}</p>
 							</div>
@@ -271,7 +271,7 @@ function SpaceRequestDetailDrawer({
 				{/* Target Community Space */}
 				<div className="rounded-xl border border-border-default bg-white p-4 space-y-1">
 					<p className="text-caption font-bold text-text-tertiary uppercase tracking-wider">
-						Target Community Space
+						Target Hub
 					</p>
 					<p className="text-body-md font-bold text-text-primary">
 						{thread.spaceName}
@@ -525,8 +525,8 @@ function ChatRequestsContent() {
 							<thead>
 								<tr className="border-b border-border-default text-caption text-text-tertiary bg-neutral-50/40">
 									<th className="px-4 py-2.5 font-semibold min-w-[200px]">Sent By (Requester)</th>
-									<th className="px-4 py-2.5 font-semibold min-w-[200px]">Sent To (Community Space)</th>
-									<th className="px-4 py-2.5 font-semibold min-w-[200px]">Target Space</th>
+									<th className="px-4 py-2.5 font-semibold min-w-[200px]">Sent To (Hub)</th>
+									<th className="px-4 py-2.5 font-semibold min-w-[200px]">Target Hub</th>
 									<th className="px-4 py-2.5 font-semibold min-w-[140px]">Date &amp; Time</th>
 									<th className="px-4 py-2.5 font-semibold min-w-[140px]">Status</th>
 									<th className="px-4 py-2.5 font-semibold min-w-[100px] text-right">Action</th>
@@ -590,7 +590,7 @@ function ChatRequestsContent() {
 													<div className="min-w-0">
 														<p className="font-semibold text-text-primary truncate">{row.spaceName}</p>
 														<span className="inline-block text-[10px] font-medium px-1.5 py-0.2 rounded bg-[#FFC940]/40 text-black font-semibold">
-															Community Space
+															Hub
 														</span>
 													</div>
 												</div>
@@ -602,7 +602,7 @@ function ChatRequestsContent() {
 													{row.spaceName}
 												</p>
 												<p className="text-[11px] text-text-tertiary">
-													Space Booking / Partnership
+													Hub Booking / Partnership
 												</p>
 											</td>
 
@@ -723,7 +723,7 @@ function ChatRequestsContent() {
 														<div className="min-w-0">
 															<p className="font-semibold text-text-primary truncate">{receiverName}</p>
 															<span className="inline-block text-[10px] font-medium px-1.5 py-0.2 rounded bg-neutral-100 text-text-secondary">
-																{receiverRole === "BRAND" ? "Brand" : receiverRole === "SPACE" ? "Space" : "Community"}
+																{receiverRole === "BRAND" ? "Brand" : receiverRole === "SPACE" ? "Hub" : "Community"}
 															</span>
 														</div>
 													</div>

@@ -6,7 +6,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { Image as ImageIcon, ArrowLeft, CheckCircle2 } from "lucide-react"
 import { cn, isPdfMediaUrl } from "@/lib/utils"
-import PageHeader from "@/components/ui/PageHeader"
 import { uploadSponsorshipChatImage, uploadSpaceChatImage, uploadSpaceHostChatImage } from "@/lib/api/storage"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
@@ -62,12 +61,13 @@ function timeAgo(iso: string | null) {
 
 function replyLabel(senderType: string) {
 	if (senderType === "ADMIN") return "Meetday"
-	if (senderType === "SPACE") return "Space"
+	if (senderType === "SPACE") return "Hub"
 	if (senderType === "BRAND") return "Brand"
 	return "Community"
 }
 
 type SpaceSubTab = "BRAND" | "COMMUNITY"
+type CommunitySubTab = "BRAND" | "HUBS" | "COMMUNITY"
 
 function SponsorshipChatsContent() {
 	const queryClient = useQueryClient()
@@ -77,9 +77,14 @@ function SponsorshipChatsContent() {
 		tabParam === "CAMPAIGN" ? "CAMPAIGN" : "SPONSORSHIP"
 
 	const [activeTab, setActiveTab] = useState<MainTab>(
-		tabParam === "SPACES" || tabParam === "SPACE" || tabParam === "SPACE_HOST" ? "SPACES" : initialTab
+		tabParam === "SPACES" || tabParam === "SPACE" || tabParam === "SPACE_HOST"
+			? "SPACES"
+			: tabParam === "COMMUNITIES" || tabParam === "COMMUNITY"
+				? "COMMUNITIES"
+				: initialTab
 	)
 	const [spaceSubTab, setSpaceSubTab] = useState<SpaceSubTab>(tabParam === "SPACE_HOST" ? "COMMUNITY" : "BRAND")
+	const [communitySubTab, setCommunitySubTab] = useState<CommunitySubTab>("BRAND")
 	const [searchQuery, setSearchQuery] = useState("")
 	const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -136,7 +141,11 @@ function SponsorshipChatsContent() {
 	// Inter-entity chats between Spaces and Communities are consolidated under Spaces -> Community
 	const spacesCommunityUnreadCount = spacesCommunityDirectUnreadCount + spaceHostUnreadCount
 	const spacesUnreadCount = spacesBrandUnreadCount + spacesCommunityUnreadCount
-	const communitiesUnreadCount = allCommunityCollaborationThreads.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
+
+	// Community sub-tab unread counts
+	const communityBrandUnreadCount = allSponsorshipThreads.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
+	const communityCollabUnreadCount = allCommunityCollaborationThreads.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
+	const communitiesUnreadCount = communityBrandUnreadCount + spacesCommunityUnreadCount + communityCollabUnreadCount
 
 	// Filter sponsorship/campaign threads
 	const filteredSponsorshipThreads = allSponsorshipThreads
@@ -144,6 +153,25 @@ function SponsorshipChatsContent() {
 			const isCampaign = t.type === "CAMPAIGN" || Boolean(t.campaignId) || (!t.proposalId && !t.proposalName && Boolean(t.campaignName))
 			return activeTab === "CAMPAIGN" ? isCampaign : !isCampaign
 		})
+		.filter((t) => {
+			if (!searchQuery.trim()) return true
+			const q = searchQuery.toLowerCase()
+			return (
+				t.brandName?.toLowerCase().includes(q) ||
+				t.communityName?.toLowerCase().includes(q) ||
+				(t.proposalName && t.proposalName.toLowerCase().includes(q)) ||
+				(t.campaignName && t.campaignName.toLowerCase().includes(q)) ||
+				(t.targetName && t.targetName.toLowerCase().includes(q))
+			)
+		})
+		.sort((a, b) => {
+			const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
+			const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+			return tB - tA
+		})
+
+	// Filter ongoing brand & community threads under Community tab -> Brand
+	const filteredCommunityBrandThreads = allSponsorshipThreads
 		.filter((t) => {
 			if (!searchQuery.trim()) return true
 			const q = searchQuery.toLowerCase()
@@ -213,24 +241,24 @@ function SponsorshipChatsContent() {
 	}).sort((a, b) => new Date(b.lastMessageAt ?? b.createdAt).getTime() - new Date(a.lastMessageAt ?? a.createdAt).getTime())
 
 	const selectedSponsorshipThread =
-		activeTab !== "SPACES"
-			? filteredSponsorshipThreads.find((t) => t.id === selectedId) ??
-			  (filteredSponsorshipThreads.length > 0 && selectedId ? allSponsorshipThreads.find((t) => t.id === selectedId) ?? null : null)
+		(activeTab === "SPONSORSHIP" || activeTab === "CAMPAIGN" || (activeTab === "COMMUNITIES" && communitySubTab === "BRAND"))
+			? allSponsorshipThreads.find((t) => t.id === selectedId) ?? null
 			: null
 
 	const selectedSpaceThread =
-		activeTab === "SPACES"
+		(activeTab === "SPACES" || (activeTab === "COMMUNITIES" && communitySubTab === "HUBS"))
 			? allSpaceThreads.find((t) => t.id === selectedId) ?? null
 			: null
 
 	const selectedSpaceHostThread =
-		activeTab === "SPACES"
+		(activeTab === "SPACES" || (activeTab === "COMMUNITIES" && communitySubTab === "HUBS"))
 			? allSpaceHostThreads.find((t) => t.id === selectedId) ?? null
 			: null
 
-	const selectedCommunityCollaborationThread = activeTab === "COMMUNITIES"
-		? allCommunityCollaborationThreads.find((t) => t.id === selectedId) ?? null
-		: null
+	const selectedCommunityCollaborationThread =
+		(activeTab === "COMMUNITIES" && communitySubTab === "COMMUNITY")
+			? allCommunityCollaborationThreads.find((t) => t.id === selectedId) ?? null
+			: null
 
 	function handleSelectThread(id: string) {
 		setSelectedId(id)
@@ -242,9 +270,22 @@ function SponsorshipChatsContent() {
 				prev?.map((t) => (t.id === id ? { ...t, unreadCount: 0 } : t)),
 			)
 		} else if (activeTab === "COMMUNITIES") {
-			queryClient.setQueryData<CommunityCollaborationChatThread[]>(["admin-community-collaboration-chats"], (prev) =>
-				prev?.map((t) => (t.id === id ? { ...t, unreadCount: 0 } : t)),
-			)
+			if (communitySubTab === "BRAND") {
+				queryClient.setQueryData<SponsorshipChatThread[]>(["admin-sponsorship-chats", "ACCEPTED"], (prev) =>
+					prev?.map((t) => (t.id === id ? { ...t, unreadCount: 0 } : t)),
+				)
+			} else if (communitySubTab === "HUBS") {
+				queryClient.setQueryData<SpaceChatThread[]>(["admin-space-chats", "ACCEPTED"], (prev) =>
+					prev?.map((t) => (t.id === id ? { ...t, unreadCount: 0 } : t)),
+				)
+				queryClient.setQueryData<SpaceHostChatThread[]>(["admin-space-host-chats"], (prev) =>
+					prev?.map((t) => (t.id === id ? { ...t, unreadCount: 0 } : t)),
+				)
+			} else {
+				queryClient.setQueryData<CommunityCollaborationChatThread[]>(["admin-community-collaboration-chats"], (prev) =>
+					prev?.map((t) => (t.id === id ? { ...t, unreadCount: 0 } : t)),
+				)
+			}
 		} else {
 			queryClient.setQueryData<SponsorshipChatThread[]>(["admin-sponsorship-chats", "ACCEPTED"], (prev) =>
 				prev?.map((t) => (t.id === id ? { ...t, unreadCount: 0 } : t)),
@@ -253,14 +294,71 @@ function SponsorshipChatsContent() {
 	}
 
 	const totalSpacesTabChats = spaceSubTab === "BRAND" ? filteredSpaceBrandThreads.length : consolidatedSpaceCommunityThreads.length
+	const totalCommunityTabChats =
+		communitySubTab === "BRAND"
+			? filteredCommunityBrandThreads.length
+			: communitySubTab === "HUBS"
+				? consolidatedSpaceCommunityThreads.length
+				: filteredCommunityCollaborationThreads.length
 
 	return (
-		<div className="flex-1 min-h-0 flex flex-col h-full md:p-6 md:space-y-4 md:max-w-7xl md:mx-auto w-full">
-			<div className="hidden md:flex items-center justify-between shrink-0">
-				<PageHeader title="Ongoing Chats" description="Active Community, Brand & Space Partner chat threads — monitor and participate as Meetday." />
+		<div className="flex-1 min-h-0 flex flex-col h-full md:p-4 md:space-y-3 md:max-w-7xl md:mx-auto w-full">
+			{/* Top Bar: Title on the left, Compact Tabs Navbar on the side */}
+			<div className={cn(
+				"flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 sm:px-0 shrink-0",
+				selectedId ? "hidden md:flex" : "flex"
+			)}>
+				<div className="flex items-center gap-2">
+					<h1 className="font-heading font-black text-lg sm:text-xl text-black tracking-tight">Ongoing Chats</h1>
+					<span className="hidden lg:inline text-xs font-semibold text-black/45">• Active threads</span>
+				</div>
+
+				{/* Compact Tabs Navbar on the Side */}
+				<div className="flex items-center gap-1 p-1 bg-neutral-100 rounded-xl border border-black/15 shadow-2xs overflow-x-auto no-scrollbar">
+					{(
+						[
+							{ key: "SPONSORSHIP", label: "Sponsorship", unread: sponsorshipUnreadCount },
+							{ key: "CAMPAIGN", label: "Campaign", unread: campaignUnreadCount },
+							{ key: "SPACES", label: "Hubs", unread: spacesUnreadCount },
+							{ key: "COMMUNITIES", label: "Community", unread: communitiesUnreadCount },
+						] as const
+					).map((tab) => {
+						const isActive = activeTab === tab.key
+						return (
+							<button
+								key={tab.key}
+								type="button"
+								onClick={() => {
+									setActiveTab(tab.key)
+									setSelectedId(null)
+								}}
+								className={cn(
+									"px-3 py-1 sm:py-1.5 text-[11px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none shrink-0",
+									isActive
+										? "bg-[#EE2C2C] text-white shadow-xs font-black"
+										: "text-black/70 hover:text-black hover:bg-neutral-200/70",
+								)}
+							>
+								<span>{tab.label}</span>
+								{tab.unread > 0 && (
+									<span
+										className={cn(
+											"min-w-[15px] h-[15px] px-1 rounded-full text-[8px] font-black flex items-center justify-center border",
+											isActive
+												? "bg-[#FFC940] text-black border-black/20"
+												: "bg-[#EE2C2C] text-white border-transparent",
+										)}
+									>
+										{tab.unread > 9 ? "9+" : tab.unread}
+									</span>
+								)}
+							</button>
+						)
+					})}
+				</div>
 			</div>
 
-			<div className="flex-1 min-h-0 flex flex-col md:flex-row bg-white overflow-hidden md:border-[3px] md:border-black md:rounded-[24px] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:h-[calc(100vh-250px)] h-full">
+			<div className="flex-1 min-h-0 flex flex-col md:flex-row bg-white overflow-hidden md:border-[3px] md:border-black md:rounded-[24px] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:h-[calc(100vh-130px)] h-full">
 				{/* Thread list */}
 				<div className={cn(
 					"flex flex-col h-full bg-white border-r-0 md:border-r-[3px] md:border-black",
@@ -268,53 +366,25 @@ function SponsorshipChatsContent() {
 				)}>
 					{/* Mobile Header */}
 					<div className="px-4 py-3 border-b border-black/10 md:hidden flex items-center justify-between shrink-0">
-						<h2 className="font-heading font-black text-base text-black">Ongoing Chats</h2>
+						<h2 className="font-heading font-black text-base text-black">
+							{activeTab === "SPACES"
+								? `Hubs (${spaceSubTab === "BRAND" ? "Brand" : "Community"})`
+								: activeTab === "COMMUNITIES"
+									? `Community (${communitySubTab === "BRAND" ? "Brand" : communitySubTab === "HUBS" ? "Hubs" : "Community"})`
+									: activeTab === "CAMPAIGN"
+										? "Campaign Chats"
+										: "Sponsorship Chats"}
+						</h2>
 						<span className="text-xs font-semibold text-black/50">
-							{activeTab === "SPACES" ? totalSpacesTabChats : filteredSponsorshipThreads.length} chats
+							{activeTab === "COMMUNITIES"
+								? totalCommunityTabChats
+								: activeTab === "SPACES"
+									? totalSpacesTabChats
+									: filteredSponsorshipThreads.length} chats
 						</span>
 					</div>
 
-					{/* 3 Main Tabs: Sponsorship, Campaign, Spaces */}
-					<div className="flex border-b border-black/10 md:border-b-[3px] md:border-black shrink-0">
-						{(
-							[
-								{ key: "SPONSORSHIP", label: "Sponsorship", unread: sponsorshipUnreadCount },
-								{ key: "CAMPAIGN", label: "Campaign", unread: campaignUnreadCount },
-								{ key: "SPACES", label: "Hubs", unread: spacesUnreadCount },
-															{ key: "COMMUNITIES", label: "Community", unread: communitiesUnreadCount },
-							] as const
-						).map((tab) => {
-							const isActive = activeTab === tab.key
-							return (
-								<button
-									key={tab.key}
-									type="button"
-									onClick={() => {
-										setActiveTab(tab.key)
-										setSelectedId(null)
-									}}
-									className={cn(
-										"flex-1 py-2.5 sm:py-3 text-xs font-black uppercase tracking-wider transition-colors relative cursor-pointer flex items-center justify-center gap-1.5",
-										isActive ? "bg-[#EE2C2C] text-white" : "bg-white text-black/60 hover:bg-neutral-50",
-									)}
-								>
-									<span>{tab.label}</span>
-									{tab.unread > 0 && (
-										<span
-											className={cn(
-												"min-w-[16px] h-[16px] px-1 rounded-full text-[9px] font-black flex items-center justify-center border",
-												isActive ? "bg-white text-[#EE2C2C] border-transparent" : "bg-[#FFC940] text-black border-black/10",
-											)}
-										>
-											{tab.unread > 9 ? "9+" : tab.unread}
-										</span>
-									)}
-								</button>
-							)
-						})}
-					</div>
-
-					{/* Spaces Sub-tabs: Brand & Community (Shown only when Spaces is active) */}
+					{/* Hubs Sub-tabs on top of chat list: Brand & Community (Shown only when Hubs is active) */}
 					{activeTab === "SPACES" && (
 						<div className="flex border-b border-black/10 md:border-b-[2px] md:border-black/20 bg-neutral-100 shrink-0">
 							{(
@@ -334,7 +404,48 @@ function SponsorshipChatsContent() {
 										}}
 										className={cn(
 											"flex-1 py-2 text-[11px] font-black uppercase tracking-wider transition-colors relative cursor-pointer flex items-center justify-center gap-1.5",
-											isSubActive ? "bg-[#FFC940] text-black shadow-xs font-black" : "bg-neutral-100 text-black/50 hover:bg-neutral-200/60",
+											isSubActive ? "bg-[#FFC940] text-black shadow-xs font-black" : "bg-neutral-100 text-black/50 hover:bg-neutral-200/60 font-bold",
+										)}
+									>
+										<span>{sub.label}</span>
+										{sub.unread > 0 && (
+											<span
+												className={cn(
+													"min-w-[15px] h-[15px] px-1 rounded-full text-[8px] font-black flex items-center justify-center border",
+													isSubActive ? "bg-black text-white border-transparent" : "bg-[#EE2C2C] text-white border-transparent",
+												)}
+											>
+												{sub.unread > 9 ? "9+" : sub.unread}
+											</span>
+										)}
+									</button>
+								)
+							})}
+						</div>
+					)}
+
+					{/* Community Sub-tabs on top of chat list: Brand, Hubs & Community (Shown only when Community is active) */}
+					{activeTab === "COMMUNITIES" && (
+						<div className="flex border-b border-black/10 md:border-b-[2px] md:border-black/20 bg-neutral-100 shrink-0">
+							{(
+								[
+									{ key: "BRAND", label: "Brand", unread: communityBrandUnreadCount },
+									{ key: "HUBS", label: "Hubs", unread: spacesCommunityUnreadCount },
+									{ key: "COMMUNITY", label: "Community", unread: communityCollabUnreadCount },
+								] as const
+							).map((sub) => {
+								const isSubActive = communitySubTab === sub.key
+								return (
+									<button
+										key={sub.key}
+										type="button"
+										onClick={() => {
+											setCommunitySubTab(sub.key)
+											setSelectedId(null)
+										}}
+										className={cn(
+											"flex-1 py-2 text-[11px] font-black uppercase tracking-wider transition-colors relative cursor-pointer flex items-center justify-center gap-1.5",
+											isSubActive ? "bg-[#FFC940] text-black shadow-xs font-black" : "bg-neutral-100 text-black/50 hover:bg-neutral-200/60 font-bold",
 										)}
 									>
 										<span>{sub.label}</span>
@@ -364,7 +475,7 @@ function SponsorshipChatsContent() {
 								activeTab === "SPACES"
 									? `Search ${spaceSubTab === "BRAND" ? "brand" : "community"} hub chats…`
 									: activeTab === "COMMUNITIES"
-										? "Search community chats…"
+										? `Search ${communitySubTab === "BRAND" ? "brand" : communitySubTab === "HUBS" ? "hub" : "community"} chats…`
 									: activeTab === "SPONSORSHIP"
 									? "Search sponsorships…"
 									: "Search campaigns…"
@@ -376,12 +487,279 @@ function SponsorshipChatsContent() {
 					{/* Thread list content */}
 					<div className="flex-1 overflow-y-auto">
 						{activeTab === "COMMUNITIES" ? (
-							communityCollaborationThreadsQuery.isLoading ? <p className="text-caption text-text-tertiary text-center py-8">Loading…</p> : filteredCommunityCollaborationThreads.length === 0 ? <p className="text-caption text-text-tertiary text-center py-8 px-4">No community-to-community chats yet.</p> : filteredCommunityCollaborationThreads.map((t) => (
-								<button key={t.id} onClick={() => handleSelectThread(t.id)} className={cn("w-full text-left px-4 py-3.5 border-b border-black/10 transition-colors", selectedId === t.id ? "bg-[#FFC940]/25" : "hover:bg-neutral-50")}>
-									<div className="flex items-center justify-between gap-2"><p className="truncate text-xs font-black">{t.requesterCommunityName} ↔ {t.targetCommunityName}</p><span className="text-[10px] text-black/40">{timeAgo(t.lastMessageAt ?? t.createdAt)}</span></div>
-									<p className="mt-1 truncate text-[11px] text-black/45">{t.lastMessagePreview ?? "No messages yet"}</p>
-								</button>
-							))
+							communitySubTab === "BRAND" ? (
+								sponsorshipThreadsQuery.isLoading ? (
+									<p className="text-caption text-text-tertiary text-center py-8">Loading…</p>
+								) : filteredCommunityBrandThreads.length === 0 ? (
+									<p className="text-caption text-text-tertiary text-center py-8 px-4">
+										{searchQuery ? "No matching brand chats found." : "No ongoing brand and community chats yet."}
+									</p>
+								) : (
+									filteredCommunityBrandThreads.map((t) => (
+										<button
+											key={t.id}
+											onClick={() => handleSelectThread(t.id)}
+											className={cn(
+												"w-full text-left px-4 py-3.5 border-b border-black/10 md:border-b-[2px] transition-colors flex items-center gap-3 cursor-pointer",
+												selectedId === t.id ? "bg-[#FFC940]/25" : "hover:bg-neutral-50",
+											)}
+										>
+											{/* Cascading Logos */}
+											<div className="relative w-11 h-9 shrink-0 select-none">
+												<div className="absolute left-0 top-0.5 w-7 h-7 rounded-lg border-2 border-black bg-neutral-100 flex items-center justify-center font-bold text-[10px] text-text-secondary z-0 overflow-hidden shadow-xs">
+													{t.brandLogoUrl ? (
+														// eslint-disable-next-line @next/next/no-img-element
+														<img src={t.brandLogoUrl} alt={t.brandName} className="w-full h-full object-cover" />
+													) : (
+														t.brandName?.charAt(0).toUpperCase() ?? "B"
+													)}
+												</div>
+												<div className="absolute right-0 bottom-0 w-7 h-7 rounded-lg border-2 border-black bg-[#FFC940] flex items-center justify-center font-black text-[10px] text-black z-10 shadow-xs overflow-hidden">
+													{t.communityLogoUrl ? (
+														// eslint-disable-next-line @next/next/no-img-element
+														<img src={t.communityLogoUrl} alt={t.communityName} className="w-full h-full object-cover" />
+													) : (
+														t.communityName?.charAt(0).toUpperCase() ?? "C"
+													)}
+												</div>
+												{t.unreadCount > 0 && (
+													<div className="absolute -top-1.5 -right-2 flex items-center gap-0.5 z-20">
+														{t.hasUnreadMention && (
+															<span
+																className="size-4 rounded-full bg-black text-[#FFC940] text-[9px] font-black flex items-center justify-center border border-white shadow-xs"
+																title="You were mentioned or replied to"
+															>
+																@
+															</span>
+														)}
+														<span className="min-w-[16px] h-[16px] px-1 rounded-full bg-[#EE2C2C] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-xs">
+															{t.unreadCount > 9 ? "9+" : t.unreadCount}
+														</span>
+													</div>
+												)}
+											</div>
+											<div className="flex-1 min-w-0">
+												<div className="flex items-center justify-between gap-2">
+													<div className="min-w-0 flex-1">
+														<p className="text-xs font-black text-black truncate">{t.brandName} • Brand</p>
+														<p className="text-xs font-bold text-black/70 truncate mt-0.5">{t.communityName} • {t.ownerType === "SPACE" ? "Hub" : "Community"}</p>
+													</div>
+													<span className="text-[10px] font-bold text-black/40 shrink-0 self-start mt-0.5">
+														{timeAgo(t.lastMessageAt ?? t.createdAt)}
+													</span>
+												</div>
+												<p className="text-[11px] font-semibold text-black/50 truncate mt-1">
+													{t.targetName || t.proposalName || t.campaignName || "Deal"}
+												</p>
+												<div className="flex items-center gap-1.5 mt-1">
+													{(() => {
+														const isThreadClosed =
+															t.isDealClosed ||
+															(!!t.lastMessagePreview &&
+																(t.lastMessagePreview.toLowerCase().includes("approved the deliverables report") ||
+																	t.lastMessagePreview.toLowerCase().includes("report approved") ||
+																	t.lastMessagePreview.toLowerCase().includes("deal is closed")))
+														if (isThreadClosed) {
+															return (
+																<span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-black text-white flex items-center gap-1">
+																	<CheckCircle2 size={10} strokeWidth={2.5} /> Closed
+																</span>
+															)
+														}
+														if (t.isDealLocked) {
+															return (
+																<span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-black/20 bg-[#FFC940] text-black flex items-center gap-0.5">
+																	Locked
+																</span>
+															)
+														}
+														return null
+													})()}
+												</div>
+												{t.lastMessagePreview && (
+													<p className="text-[11px] font-medium text-black/40 truncate mt-1">{t.lastMessagePreview}</p>
+												)}
+											</div>
+										</button>
+									))
+								)
+							) : communitySubTab === "HUBS" ? (
+								(spaceThreadsQuery.isLoading || spaceHostThreadsQuery.isLoading) ? (
+									<p className="text-caption text-text-tertiary text-center py-8">Loading…</p>
+								) : consolidatedSpaceCommunityThreads.length === 0 ? (
+									<p className="text-caption text-text-tertiary text-center py-8 px-4">
+										{searchQuery
+											? "No matching hub chats found."
+											: "No ongoing community hub chats yet."}
+									</p>
+								) : (
+									consolidatedSpaceCommunityThreads.map((item) => {
+										if (item.kind === "SPACE_CHAT") {
+											const t = item.thread
+											return (
+												<button
+													key={`sc-${t.id}`}
+													onClick={() => handleSelectThread(t.id)}
+													className={cn(
+														"w-full text-left px-4 py-3.5 border-b border-black/10 md:border-b-[2px] transition-colors flex items-center gap-3 cursor-pointer",
+														selectedId === t.id ? "bg-[#FFC940]/25" : "hover:bg-neutral-50",
+													)}
+												>
+													<div className="relative w-11 h-9 shrink-0 select-none">
+														<div className="absolute left-0 top-0.5 w-7 h-7 rounded-lg border-2 border-black bg-neutral-100 flex items-center justify-center font-bold text-[10px] text-text-secondary z-0 overflow-hidden shadow-xs">
+															{t.requesterLogoUrl ? (
+																// eslint-disable-next-line @next/next/no-img-element
+																<img src={t.requesterLogoUrl} alt={t.requesterName} className="w-full h-full object-cover" />
+															) : (
+																t.requesterName?.charAt(0).toUpperCase() ?? "C"
+															)}
+														</div>
+														<div className="absolute right-0 bottom-0 w-7 h-7 rounded-lg border-2 border-black bg-[#FFC940] flex items-center justify-center font-black text-[10px] text-black z-10 shadow-xs overflow-hidden">
+															{t.spaceLogoUrl ? (
+																// eslint-disable-next-line @next/next/no-img-element
+																<img src={t.spaceLogoUrl} alt={t.spaceName} className="w-full h-full object-cover" />
+															) : (
+																t.spaceName?.charAt(0).toUpperCase() ?? "S"
+															)}
+														</div>
+														{t.unreadCount > 0 && (
+															<div className="absolute -top-1.5 -right-2 flex items-center gap-0.5 z-20">
+																{t.hasUnreadMention && (
+																	<span
+																		className="size-4 rounded-full bg-black text-[#FFC940] text-[9px] font-black flex items-center justify-center border border-white shadow-xs"
+																		title="You were mentioned or replied to"
+																	>
+																		@
+																	</span>
+																)}
+																<span className="min-w-[16px] h-[16px] px-1 rounded-full bg-[#EE2C2C] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-xs">
+																	{t.unreadCount > 9 ? "9+" : t.unreadCount}
+																</span>
+															</div>
+														)}
+													</div>
+													<div className="flex-1 min-w-0">
+														<div className="flex items-center justify-between gap-2">
+															<div className="min-w-0 flex-1">
+																<p className="text-xs font-black text-black truncate">
+																	{t.requesterName} • Community
+																</p>
+																<p className="text-xs font-bold text-black/70 truncate mt-0.5">{t.spaceName} • Hub</p>
+															</div>
+															<span className="text-[10px] font-bold text-black/40 shrink-0 self-start mt-0.5">
+																{timeAgo(t.lastMessageAt ?? t.createdAt)}
+															</span>
+														</div>
+														{t.lastMessagePreview && (
+															<p className="text-[11px] font-medium text-black/40 truncate mt-1">{t.lastMessagePreview}</p>
+														)}
+													</div>
+												</button>
+											)
+										}
+										const t = item.thread
+										return (
+											<button
+												key={`sh-${t.id}`}
+												onClick={() => handleSelectThread(t.id)}
+												className={cn(
+													"w-full text-left px-4 py-3.5 border-b border-black/10 md:border-b-[2px] transition-colors flex items-center gap-3 cursor-pointer",
+													selectedId === t.id ? "bg-[#FFC940]/25" : "hover:bg-neutral-50",
+												)}
+											>
+												<div className="relative w-11 h-9 shrink-0 select-none">
+													<div className="absolute left-0 top-0.5 w-7 h-7 rounded-lg border-2 border-black bg-neutral-100 flex items-center justify-center font-bold text-[10px] text-text-secondary z-0 overflow-hidden shadow-xs">
+														{t.spaceLogoUrl ? (
+															// eslint-disable-next-line @next/next/no-img-element
+															<img src={t.spaceLogoUrl} alt={t.spaceName} className="w-full h-full object-cover" />
+														) : (
+															t.spaceName?.charAt(0).toUpperCase() ?? "S"
+														)}
+													</div>
+													<div className="absolute right-0 bottom-0 w-7 h-7 rounded-lg border-2 border-black bg-[#FFC940] flex items-center justify-center font-black text-[10px] text-black z-10 shadow-xs overflow-hidden">
+														{t.communityLogoUrl ? (
+															// eslint-disable-next-line @next/next/no-img-element
+															<img src={t.communityLogoUrl} alt={t.communityName} className="w-full h-full object-cover" />
+														) : (
+															t.communityName?.charAt(0).toUpperCase() ?? "C"
+														)}
+													</div>
+													{t.unreadCount > 0 && (
+														<div className="absolute -top-1.5 -right-2 flex items-center gap-0.5 z-20">
+															{t.hasUnreadMention && (
+																<span
+																	className="size-4 rounded-full bg-black text-[#FFC940] text-[9px] font-black flex items-center justify-center border border-white shadow-xs"
+																	title="You were mentioned or replied to"
+																>
+																	@
+																</span>
+															)}
+															<span className="min-w-[16px] h-[16px] px-1 rounded-full bg-[#EE2C2C] text-white text-[9px] font-black flex items-center justify-center border border-white shadow-xs">
+																{t.unreadCount > 9 ? "9+" : t.unreadCount}
+															</span>
+														</div>
+													)}
+												</div>
+												<div className="flex-1 min-w-0">
+													<div className="flex items-center justify-between gap-2">
+														<div className="min-w-0 flex-1">
+															<p className="text-xs font-black text-black truncate">
+																{t.spaceName} • Hub
+															</p>
+															<p className="text-xs font-bold text-black/70 truncate mt-0.5">{t.communityName} • Community</p>
+														</div>
+														<span className="text-[10px] font-bold text-black/40 shrink-0 self-start mt-0.5">
+															{timeAgo(t.lastMessageAt ?? t.createdAt)}
+														</span>
+													</div>
+													<div className="flex items-center gap-1.5 mt-1">
+														<span
+															className={cn(
+																"text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full border",
+																t.chatStatus === "ACCEPTED"
+																	? "bg-green-50 text-green-700 border-green-300"
+																	: t.chatStatus === "DECLINED"
+																		? "bg-red-50 text-red-600 border-red-300"
+																		: "bg-amber-50 text-amber-700 border-amber-300",
+															)}
+														>
+															{t.chatStatus === "ACCEPTED" ? "Accepted" : t.chatStatus === "DECLINED" ? "Declined" : "Pending"}
+														</span>
+													</div>
+													{t.lastMessagePreview && (
+														<p className="text-[11px] font-medium text-black/40 truncate mt-1">{t.lastMessagePreview}</p>
+													)}
+												</div>
+											</button>
+										)
+									})
+								)
+							) : (
+								communityCollaborationThreadsQuery.isLoading ? (
+									<p className="text-caption text-text-tertiary text-center py-8">Loading…</p>
+								) : filteredCommunityCollaborationThreads.length === 0 ? (
+									<p className="text-caption text-text-tertiary text-center py-8 px-4">
+										{searchQuery ? "No matching community chats found." : "No community-to-community chats yet."}
+									</p>
+								) : (
+									filteredCommunityCollaborationThreads.map((t) => (
+										<button
+											key={t.id}
+											onClick={() => handleSelectThread(t.id)}
+											className={cn(
+												"w-full text-left px-4 py-3.5 border-b border-black/10 transition-colors",
+												selectedId === t.id ? "bg-[#FFC940]/25" : "hover:bg-neutral-50"
+											)}
+										>
+											<div className="flex items-center justify-between gap-2">
+												<p className="truncate text-xs font-black">{t.requesterCommunityName} ↔ {t.targetCommunityName}</p>
+												<span className="text-[10px] text-black/40">{timeAgo(t.lastMessageAt ?? t.createdAt)}</span>
+											</div>
+											<p className="mt-1 truncate text-[11px] text-black/45">{t.lastMessagePreview ?? "No messages yet"}</p>
+										</button>
+									))
+								)
+							)
 						) : activeTab === "SPACES" ? (
 							(spaceSubTab === "BRAND" ? spaceThreadsQuery.isLoading : (spaceThreadsQuery.isLoading || spaceHostThreadsQuery.isLoading)) ? (
 								<p className="text-caption text-text-tertiary text-center py-8">Loading…</p>
@@ -442,7 +820,7 @@ function SponsorshipChatsContent() {
 														<p className="text-xs font-black text-black truncate">
 															{t.requesterName} • Brand
 														</p>
-														<p className="text-xs font-bold text-black/70 truncate mt-0.5">{t.spaceName} • Space</p>
+														<p className="text-xs font-bold text-black/70 truncate mt-0.5">{t.spaceName} • Hub</p>
 													</div>
 													<span className="text-[10px] font-bold text-black/40 shrink-0 self-start mt-0.5">
 														{timeAgo(t.lastMessageAt ?? t.createdAt)}
@@ -514,7 +892,7 @@ function SponsorshipChatsContent() {
 																<p className="text-xs font-black text-black truncate">
 																	{t.requesterName} • Community
 																</p>
-																<p className="text-xs font-bold text-black/70 truncate mt-0.5">{t.spaceName} • Space</p>
+																<p className="text-xs font-bold text-black/70 truncate mt-0.5">{t.spaceName} • Hub</p>
 															</div>
 															<span className="text-[10px] font-bold text-black/40 shrink-0 self-start mt-0.5">
 																{timeAgo(t.lastMessageAt ?? t.createdAt)}
@@ -574,7 +952,7 @@ function SponsorshipChatsContent() {
 													<div className="flex items-center justify-between gap-2">
 														<div className="min-w-0 flex-1">
 															<p className="text-xs font-black text-black truncate">
-																{t.spaceName} • Space
+																{t.spaceName} • Hub
 															</p>
 															<p className="text-xs font-bold text-black/70 truncate mt-0.5">{t.communityName} • Community</p>
 														</div>
@@ -659,7 +1037,7 @@ function SponsorshipChatsContent() {
 										<div className="flex items-center justify-between gap-2">
 											<div className="min-w-0 flex-1">
 												<p className="text-xs font-black text-black truncate">{t.brandName} • Brand</p>
-												<p className="text-xs font-bold text-black/70 truncate mt-0.5">{t.communityName} • {t.ownerType === "SPACE" ? "Space" : "Community"}</p>
+												<p className="text-xs font-bold text-black/70 truncate mt-0.5">{t.communityName} • {t.ownerType === "SPACE" ? "Hub" : "Community"}</p>
 											</div>
 											<span className="text-[10px] font-bold text-black/40 shrink-0 self-start mt-0.5">
 												{timeAgo(t.lastMessageAt ?? t.createdAt)}
@@ -709,10 +1087,26 @@ function SponsorshipChatsContent() {
 					selectedId ? "flex-1 w-full" : "hidden md:flex flex-1"
 				)}>
 					{activeTab === "COMMUNITIES" ? (
-						selectedCommunityCollaborationThread ? (
-							<AdminCommunityCollaborationChatPanel key={selectedCommunityCollaborationThread.id} thread={selectedCommunityCollaborationThread} onBack={() => setSelectedId(null)} />
+						communitySubTab === "BRAND" ? (
+							selectedSponsorshipThread ? (
+								<AdminChatThreadPanel key={selectedSponsorshipThread.id} thread={selectedSponsorshipThread} onBack={() => setSelectedId(null)} />
+							) : (
+								<div className="flex-1 flex items-center justify-center text-sm font-bold text-black/40">Select a brand chat to view</div>
+							)
+						) : communitySubTab === "HUBS" ? (
+							selectedSpaceHostThread ? (
+								<AdminSpaceHostChatThreadPanel key={selectedSpaceHostThread.id} thread={selectedSpaceHostThread} onBack={() => setSelectedId(null)} />
+							) : selectedSpaceThread ? (
+								<AdminSpaceChatThreadPanel key={selectedSpaceThread.id} thread={selectedSpaceThread} onBack={() => setSelectedId(null)} />
+							) : (
+								<div className="flex-1 flex items-center justify-center text-sm font-bold text-black/40">Select a hub chat to view</div>
+							)
 						) : (
-							<div className="flex-1 flex items-center justify-center text-sm font-bold text-black/40">Select a community chat to view</div>
+							selectedCommunityCollaborationThread ? (
+								<AdminCommunityCollaborationChatPanel key={selectedCommunityCollaborationThread.id} thread={selectedCommunityCollaborationThread} onBack={() => setSelectedId(null)} />
+							) : (
+								<div className="flex-1 flex items-center justify-center text-sm font-bold text-black/40">Select a community chat to view</div>
+							)
 						)
 					) : activeTab === "SPACES" ? (
 						selectedSpaceHostThread ? (
@@ -1050,7 +1444,7 @@ function AdminChatThreadPanel({
 										? "Meetday Admin"
 										: isBrand
 											? `${thread.brandName} (Brand)`
-											: `${thread.communityName} (${thread.ownerType === "SPACE" ? "Space" : "Community"})`}
+											: `${thread.communityName} (${thread.ownerType === "SPACE" ? "Hub" : "Community"})`}
 								</span>
 								<div className="flex items-center gap-2 text-[10px] font-bold text-neutral-400">
 									<button
@@ -1453,7 +1847,7 @@ function AdminSpaceChatThreadPanel({
 								{thread.requesterName} ↔ {thread.spaceName}
 							</p>
 							<p className="text-[10px] sm:text-xs font-bold text-black/50 truncate">
-								{thread.requesterType === "BRAND" ? "Brand" : "Community"} interest in this Space
+								{thread.requesterType === "BRAND" ? "Brand" : "Community"} interest in this Hub
 							</p>
 						</div>
 					</div>
@@ -1499,7 +1893,7 @@ function AdminSpaceChatThreadPanel({
 							{/* Top role label and action buttons */}
 							<div className={cn("flex items-center gap-2 mb-0.5 px-1 select-none", isAdmin ? "flex-row-reverse" : "flex-row")}>
 								<span className="text-[10px] font-bold uppercase tracking-wide text-neutral-400">
-									{isAdmin ? "Meetday Admin" : isSpace ? `${thread.spaceName} (Space)` : `${thread.requesterName} (${thread.requesterType === "BRAND" ? "Brand" : "Community"})`}
+									{isAdmin ? "Meetday Admin" : isSpace ? `${thread.spaceName} (Hub)` : `${thread.requesterName} (${thread.requesterType === "BRAND" ? "Brand" : "Community"})`}
 								</span>
 								<div className="flex items-center gap-2 text-[10px] font-bold text-neutral-400">
 									<button
@@ -1857,7 +2251,7 @@ function AdminSpaceHostChatThreadPanel({
 								{thread.spaceName} ↔ {thread.communityName}
 							</p>
 							<p className="text-[10px] sm:text-xs font-bold text-black/50 truncate">
-								Space Partner interest in this Community
+								Hub interest in this Community
 							</p>
 						</div>
 					</div>
@@ -1902,7 +2296,7 @@ function AdminSpaceHostChatThreadPanel({
 							{/* Top role label and action buttons */}
 							<div className={cn("flex items-center gap-2 mb-0.5 px-1 select-none", isAdmin ? "flex-row-reverse" : "flex-row")}>
 								<span className="text-[10px] font-bold uppercase tracking-wide text-neutral-400">
-									{isAdmin ? "Meetday Admin" : isSpace ? `${thread.spaceName} (Space)` : `${thread.communityName} (Community)`}
+									{isAdmin ? "Meetday Admin" : isSpace ? `${thread.spaceName} (Hub)` : `${thread.communityName} (Community)`}
 								</span>
 								<div className="flex items-center gap-2 text-[10px] font-bold text-neutral-400">
 									<button
