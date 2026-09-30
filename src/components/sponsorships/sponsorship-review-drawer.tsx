@@ -220,16 +220,18 @@ function SponsorshipDetailContent({
 				<div className="space-y-3.5">
 					<DetailRow
 						icon={Mail}
-						label={detail.hostProfile ? "Host" : "Space Partner"}
+						label={detail.hostProfile ? "Host" : detail.spaceProfile ? "Space Partner" : "Brand"}
 						value={
 							<span>
-								<span className="block">{detail.hostProfile?.displayName ?? detail.spaceProfile?.businessName ?? "—"}</span>
+								<span className="block">{detail.hostProfile?.displayName ?? detail.spaceProfile?.businessName ?? detail.brandProfile?.brandName ?? "—"}</span>
 								<span className="text-[11px] text-text-tertiary">
 									{detail.hostProfile
 										? `${detail.hostProfile.user.firstName} ${detail.hostProfile.user.lastName} · ${detail.hostProfile.user.email}`
 										: detail.spaceProfile
 											? `${detail.spaceProfile.user.firstName} ${detail.spaceProfile.user.lastName} · ${detail.spaceProfile.user.email}`
-											: ""}
+											: detail.brandProfile
+												? `${detail.brandProfile.user.firstName} ${detail.brandProfile.user.lastName} · ${detail.brandProfile.user.email}`
+												: ""}
 								</span>
 							</span>
 						}

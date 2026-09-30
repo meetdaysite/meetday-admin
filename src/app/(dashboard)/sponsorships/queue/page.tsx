@@ -117,8 +117,8 @@ export default function SponsorshipQueuePage() {
 		return proposals.filter(
 			p =>
 				(p.name ?? "").toLowerCase().includes(q) ||
-				(p.hostProfile?.displayName ?? p.spaceProfile?.businessName ?? "").toLowerCase().includes(q) ||
-				(p.hostProfile?.user.email ?? p.spaceProfile?.user.email ?? "").toLowerCase().includes(q),
+				(p.hostProfile?.displayName ?? p.spaceProfile?.businessName ?? p.brandProfile?.brandName ?? "").toLowerCase().includes(q) ||
+				(p.hostProfile?.user.email ?? p.spaceProfile?.user.email ?? p.brandProfile?.user.email ?? "").toLowerCase().includes(q),
 		)
 	}, [proposals, search])
 
@@ -177,14 +177,18 @@ export default function SponsorshipQueuePage() {
 				header: "Proposal",
 				cell: ({ row }) => (
 					<div className="min-w-[250px]">
-						<TwoLineCell primary={row.original.name ?? "—"} secondary={row.original.hostProfile?.displayName ?? row.original.spaceProfile?.businessName} />
+						<TwoLineCell primary={row.original.name ?? "—"} secondary={row.original.hostProfile?.displayName ?? row.original.spaceProfile?.businessName ?? row.original.brandProfile?.brandName} />
 					</div>
 				),
 			},
 			{
 				id: "type",
 				header: "Type",
-				cell: ({ row }) => <ChipCell>{row.original.hostProfile ? "Community" : "Community Space"}</ChipCell>,
+				cell: ({ row }) => (
+					<ChipCell>
+						{row.original.hostProfile ? "Community" : row.original.spaceProfile ? "Community Hubs" : "Brand"}
+					</ChipCell>
+				),
 			},
 			{
 				id: "city",
