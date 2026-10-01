@@ -358,6 +358,17 @@ export type SponsorshipSpaceProfile = {
 	}
 }
 
+export type SponsorshipBrandProfile = {
+	id: string
+	brandName: string
+	user: {
+		id: string
+		firstName: string
+		lastName: string
+		email: string
+	}
+}
+
 export type SponsorshipProposal = {
 	id: string
 	name: string | null
@@ -374,6 +385,7 @@ export type SponsorshipProposal = {
 	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
 	hostProfile: EventHostProfile | null
 	spaceProfile?: SponsorshipSpaceProfile | null
+	brandProfile?: SponsorshipBrandProfile | null
 }
 
 export type SponsorshipsListResponse = {
@@ -417,6 +429,7 @@ export type SponsorshipDetail = {
 	updatedAt: string
 	hostProfile: EventHostProfile | null
 	spaceProfile?: SponsorshipSpaceProfile | null
+	brandProfile?: SponsorshipBrandProfile | null
 	videoUrl: string | null
 }
 

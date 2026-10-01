@@ -45,6 +45,7 @@ import {
 } from "@/lib/api/space-host-chats"
 import { getCommunityCollaborationChats, type CommunityCollaborationChatThread } from "@/lib/api/community-collaboration-chats"
 type MainTab = "SPONSORSHIP" | "CAMPAIGN" | "SPACES" | "COMMUNITIES"
+type SponsorshipSubTab = "COMMUNITY" | "HUBS" | "BRANDS"
 
 const THREADS_POLL_MS = 8000
 const MESSAGES_POLL_MS = 4000
@@ -79,6 +80,7 @@ function SponsorshipChatsContent() {
 	const [activeTab, setActiveTab] = useState<MainTab>(
 		tabParam === "SPACES" || tabParam === "SPACE" || tabParam === "SPACE_HOST" ? "SPACES" : initialTab
 	)
+	const [sponsorshipSubTab, setSponsorshipSubTab] = useState<SponsorshipSubTab>("COMMUNITY")
 	const [spaceSubTab, setSpaceSubTab] = useState<SpaceSubTab>(tabParam === "SPACE_HOST" ? "COMMUNITY" : "BRAND")
 	const [searchQuery, setSearchQuery] = useState("")
 	const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -143,6 +145,12 @@ function SponsorshipChatsContent() {
 		.filter((t) => {
 			const isCampaign = t.type === "CAMPAIGN" || Boolean(t.campaignId) || (!t.proposalId && !t.proposalName && Boolean(t.campaignName))
 			return activeTab === "CAMPAIGN" ? isCampaign : !isCampaign
+		})
+		.filter((t) => {
+			if (activeTab !== "SPONSORSHIP") return true
+			if (sponsorshipSubTab === "HUBS") return t.ownerType === "SPACE"
+			if (sponsorshipSubTab === "BRANDS") return t.ownerType === "BRAND"
+			return t.ownerType !== "SPACE" && t.ownerType !== "BRAND"
 		})
 		.filter((t) => {
 			if (!searchQuery.trim()) return true
@@ -253,6 +261,11 @@ function SponsorshipChatsContent() {
 	}
 
 	const totalSpacesTabChats = spaceSubTab === "BRAND" ? filteredSpaceBrandThreads.length : consolidatedSpaceCommunityThreads.length
+	const sponsorshipSubTabCounts = {
+		COMMUNITY: allSponsorshipThreads.filter((t) => t.type !== "CAMPAIGN" && t.ownerType !== "SPACE" && t.ownerType !== "BRAND").length,
+		HUBS: allSponsorshipThreads.filter((t) => t.type !== "CAMPAIGN" && t.ownerType === "SPACE").length,
+		BRANDS: allSponsorshipThreads.filter((t) => t.type !== "CAMPAIGN" && t.ownerType === "BRAND").length,
+	}
 
 	return (
 		<div className="flex-1 min-h-0 flex flex-col h-full md:p-6 md:space-y-4 md:max-w-7xl md:mx-auto w-full">
@@ -313,6 +326,35 @@ function SponsorshipChatsContent() {
 							)
 						})}
 					</div>
+
+					{activeTab === "SPONSORSHIP" && (
+						<div className="flex border-b border-black/10 md:border-b-[2px] md:border-black/20 bg-neutral-100 shrink-0">
+							{([
+								{ key: "COMMUNITY", label: "Community" },
+								{ key: "HUBS", label: "Hubs" },
+								{ key: "BRANDS", label: "Brands" },
+							] as const).map((sub) => {
+								const isSubActive = sponsorshipSubTab === sub.key
+								return (
+									<button
+										key={sub.key}
+										type="button"
+										onClick={() => {
+											setSponsorshipSubTab(sub.key)
+											setSelectedId(null)
+										}}
+										className={cn(
+											"flex-1 py-2 text-[11px] font-black uppercase tracking-wider transition-colors relative cursor-pointer flex items-center justify-center gap-1.5",
+											isSubActive ? "bg-[#FFC940] text-black shadow-xs" : "bg-neutral-100 text-black/50 hover:bg-neutral-200/60",
+										)}
+									>
+										<span>{sub.label}</span>
+										{sponsorshipSubTabCounts[sub.key] > 0 && <span className="text-[9px]">{sponsorshipSubTabCounts[sub.key]}</span>}
+									</button>
+								)
+							})}
+						</div>
+					)}
 
 					{/* Spaces Sub-tabs: Brand & Community (Shown only when Spaces is active) */}
 					{activeTab === "SPACES" && (
