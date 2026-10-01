@@ -14,7 +14,7 @@ export type SponsorshipChatThread = {
 	isCampaign?: boolean
 	communityName: string
 	// Whether the proposal owner (labeled "community" above) is a Host/Community or a Space Partner.
-	ownerType?: "HOST" | "SPACE" | "BRAND"
+	ownerType?: "HOST" | "SPACE"
 	brandName: string
 	senderRole?: "BRAND" | "HOST"
 	senderName?: string
