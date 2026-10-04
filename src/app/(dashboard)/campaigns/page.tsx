@@ -47,6 +47,7 @@ export default function CampaignsPage() {
 	const [search, setSearch] = useState("")
 
 	const { item: selectedCampaign, open: drawerOpen, openDrawer, closeDrawer } = useDrawer<Campaign>()
+	const [drawerMode, setDrawerMode] = useState<"view" | "edit">("view")
 
 	const fetcher = useCallback(() => {
 		const params: GetCampaignsParams = { page, limit: PAGE_LIMIT }
@@ -164,8 +165,25 @@ export default function CampaignsPage() {
 					<AgeDateCell iso={row.original.createdAt ?? undefined} getDaysSince={getDaysSince} format={formatDate} />
 				),
 			},
+			{
+				id: "actions",
+				header: "",
+				cell: ({ row }) => (
+					<button
+						type="button"
+						onClick={e => {
+							e.stopPropagation()
+							setDrawerMode("edit")
+							openDrawer(row.original)
+						}}
+						className="rounded-md border border-border-default px-2.5 py-1 text-xs font-semibold text-text-primary hover:bg-neutral-50"
+					>
+						Edit
+					</button>
+				),
+			},
 		],
-		[],
+		[openDrawer],
 	)
 
 	const totalPages = Math.ceil(total / PAGE_LIMIT)
@@ -218,7 +236,10 @@ export default function CampaignsPage() {
 				columns={columns}
 				data={filtered}
 				emptyMessage="No campaigns found matching current filters."
-				onRowClick={openDrawer}
+				onRowClick={campaign => {
+					setDrawerMode("view")
+					openDrawer(campaign)
+				}}
 				pagination={{
 					page,
 					totalPages,
@@ -232,7 +253,9 @@ export default function CampaignsPage() {
 				open={drawerOpen}
 				onClose={closeDrawer}
 				campaign={selectedCampaign}
+				initialMode={drawerMode}
 				onAction={handleAction}
+				onUpdated={fetchCampaigns}
 			/>
 		</div>
 	)

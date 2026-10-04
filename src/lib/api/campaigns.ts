@@ -1,5 +1,5 @@
 import { apiClient } from "./client"
-import type { Campaign, CampaignsListResponse, CampaignStatus } from "@/types"
+import type { Campaign, CampaignsListResponse, CampaignStatus, CampaignUpdatePayload } from "@/types"
 
 export type GetCampaignsParams = {
 	status?: CampaignStatus
@@ -27,6 +27,11 @@ export async function getCampaigns(
 
 export async function getCampaignById(id: string): Promise<Campaign> {
 	const { data } = await apiClient.get<Campaign>(`/admin/campaigns/${id}`)
+	return data
+}
+
+export async function updateCampaign(id: string, payload: CampaignUpdatePayload): Promise<Campaign> {
+	const { data } = await apiClient.patch<Campaign>(`/admin/campaigns/${id}`, payload)
 	return data
 }
 

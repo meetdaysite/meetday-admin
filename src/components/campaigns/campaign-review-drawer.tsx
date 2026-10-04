@@ -18,9 +18,10 @@ import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ReasonDialog } from "@/components/events/event-review-drawer"
-import { getCampaignById } from "@/lib/api/campaigns"
+import { CampaignEditForm } from "@/components/campaigns/campaign-edit-form"
+import { getCampaignById, updateCampaign } from "@/lib/api/campaigns"
 import { formatDate } from "@/lib/formatters"
-import type { Campaign } from "@/types"
+import type { Campaign, CampaignUpdatePayload } from "@/types"
 
 export type CampaignAction = "approve" | "reject"
 
@@ -28,7 +29,9 @@ export type CampaignReviewDrawerProps = {
 	open: boolean
 	onClose: () => void
 	campaign: Campaign | null
+	initialMode?: "view" | "edit"
 	onAction: (campaignId: string, action: CampaignAction, message?: string) => Promise<void>
+	onUpdated?: (campaign: Campaign) => void
 }
 
 function SectionLabel({ children }: { children: string }) {
@@ -202,18 +205,20 @@ function CampaignDetailContent({
 	)
 }
 
-export function CampaignReviewDrawer({ open, onClose, campaign, onAction }: CampaignReviewDrawerProps) {
+export function CampaignReviewDrawer({ open, onClose, campaign, initialMode = "view", onAction, onUpdated }: CampaignReviewDrawerProps) {
 	const router = useRouter()
 	const [detail, setDetail] = useState<Campaign | null>(null)
 	const [fetchState, setFetchState] = useState<"loading" | "error" | "done">("loading")
 	const [errorMessage, setErrorMessage] = useState<string | null>(null)
 	const [actionLoading, setActionLoading] = useState<CampaignAction | null>(null)
 	const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
+	const [mode, setMode] = useState<"view" | "edit">("view")
 
 	useEffect(() => {
 		if (!open || !campaign) return
 		let cancelled = false
 		setDetail(null)
+		setMode(initialMode)
 		setFetchState("loading")
 		setErrorMessage(null)
 
@@ -240,11 +245,12 @@ export function CampaignReviewDrawer({ open, onClose, campaign, onAction }: Camp
 		return () => {
 			cancelled = true
 		}
-	}, [open, campaign?.id, router])
+	}, [open, campaign?.id, initialMode, router])
 
 	function handleClose() {
 		setActionLoading(null)
 		setRejectDialogOpen(false)
+		setMode("view")
 		setDetail(null)
 		setFetchState("loading")
 		setErrorMessage(null)
@@ -269,6 +275,31 @@ export function CampaignReviewDrawer({ open, onClose, campaign, onAction }: Camp
 		handleClose()
 	}
 
+	async function handleSave(payload: CampaignUpdatePayload) {
+		if (!detail) return
+		try {
+			const updated = await updateCampaign(detail.id, payload)
+			setDetail(updated)
+			setMode("view")
+			onUpdated?.(updated)
+			toast.success("Campaign updated", { description: "The brand has been notified." })
+		} catch (err: unknown) {
+			const axiosErr = err as { response?: { status?: number; data?: { message?: string | string[] } } }
+			const status = axiosErr.response?.status
+			if (status === 401) {
+				router.replace("/login")
+				return
+			}
+			const message = axiosErr.response?.data?.message
+			toast.error("Failed to update campaign", {
+				description: status === 403
+					? "You don't have permission to edit campaigns."
+					: Array.isArray(message) ? message.join(", ") : message ?? "Please check the details and try again.",
+			})
+			throw err
+		}
+	}
+
 	const status = detail?.status ?? campaign?.status
 	const canReview = status === "UNDER_REVIEW"
 	const isBusy = actionLoading !== null
@@ -282,7 +313,7 @@ export function CampaignReviewDrawer({ open, onClose, campaign, onAction }: Camp
 			<Drawer
 				open={open}
 				onClose={handleClose}
-				title={campaign?.name ?? "Campaign Brief"}
+				title={mode === "edit" ? "Edit Campaign" : campaign?.name ?? "Campaign Brief"}
 				description={brandDisplay}
 				width="max-w-lg"
 			>
@@ -296,9 +327,13 @@ export function CampaignReviewDrawer({ open, onClose, campaign, onAction }: Camp
 					</div>
 				)}
 
-				{fetchState === "done" && detail && <CampaignDetailContent detail={detail} />}
+				{fetchState === "done" && detail && mode === "edit" && (
+					<CampaignEditForm campaign={detail} onCancel={() => setMode("view")} onSubmit={handleSave} />
+				)}
 
-				<DrawerFooter className="justify-between">
+				{fetchState === "done" && detail && mode === "view" && <CampaignDetailContent detail={detail} />}
+
+				{mode === "view" && <DrawerFooter className="justify-between">
 					<div className="flex items-center gap-2">
 						{!canReview && (
 							<button
@@ -308,6 +343,13 @@ export function CampaignReviewDrawer({ open, onClose, campaign, onAction }: Camp
 								Close
 							</button>
 						)}
+						<button
+							onClick={() => setMode("edit")}
+							disabled={isBusy || fetchState !== "done"}
+							className="rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors disabled:opacity-50"
+						>
+							Edit
+						</button>
 					</div>
 					{canReview && (
 						<div className="flex items-center gap-2">
@@ -328,7 +370,7 @@ export function CampaignReviewDrawer({ open, onClose, campaign, onAction }: Camp
 							</button>
 						</div>
 					)}
-				</DrawerFooter>
+				</DrawerFooter>}
 			</Drawer>
 
 			<ReasonDialog

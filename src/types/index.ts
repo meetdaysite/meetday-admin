@@ -1051,3 +1051,13 @@ export type CampaignsListResponse = {
 	page: number
 	limit: number
 }
+
+export type CampaignUpdatePayload = Partial<
+	Pick<
+		Campaign,
+		"name" | "goal" | "locations" | "audience" | "startDate" | "endDate" | "offerType" | "budgetAmount" | "budgetCurrency"
+	>
+> & {
+	barterElements?: string
+	description?: string
+}

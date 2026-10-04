@@ -35,6 +35,7 @@ export default function CampaignQueuePage() {
 
 	const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
 	const [drawerOpen, setDrawerOpen] = useState(false)
+	const [drawerMode, setDrawerMode] = useState<"view" | "edit">("view")
 
 	const fetchCampaigns = useCallback(async () => {
 		setIsLoading(true)
@@ -74,8 +75,9 @@ export default function CampaignQueuePage() {
 		)
 	}, [campaigns, search])
 
-	function openDrawer(campaign: Campaign) {
+	function openDrawer(campaign: Campaign, mode: "view" | "edit" = "view") {
 		setSelectedCampaign(campaign)
+		setDrawerMode(mode)
 		setDrawerOpen(true)
 	}
 
@@ -158,6 +160,22 @@ export default function CampaignQueuePage() {
 					<AgeDateCell iso={row.original.createdAt ?? undefined} getDaysSince={getDaysSince} format={formatDate} />
 				),
 			},
+			{
+				id: "actions",
+				header: "",
+				cell: ({ row }) => (
+					<button
+						type="button"
+						onClick={e => {
+							e.stopPropagation()
+							openDrawer(row.original, "edit")
+						}}
+						className="rounded-md border border-border-default px-2.5 py-1 text-xs font-semibold text-text-primary hover:bg-neutral-50"
+					>
+						Edit
+					</button>
+				),
+			},
 		],
 		[],
 	)
@@ -184,7 +202,7 @@ export default function CampaignQueuePage() {
 				columns={columns}
 				data={filtered}
 				emptyMessage="No campaigns pending review."
-				onRowClick={openDrawer}
+				onRowClick={campaign => openDrawer(campaign)}
 				getRowClassName={getRowTint}
 			/>
 
@@ -195,7 +213,9 @@ export default function CampaignQueuePage() {
 					setSelectedCampaign(null)
 				}}
 				campaign={selectedCampaign}
+				initialMode={drawerMode}
 				onAction={handleAction}
+				onUpdated={fetchCampaigns}
 			/>
 		</div>
 	)
