@@ -336,11 +336,11 @@ export function CreateSpaceCommunityProfileDrawer({
 					communitySize: communitySize.trim(),
 					experiencesPerYear: experiencesPerYear.trim(),
 					videoLink: videoLink.trim() || undefined,
-					proposalPdfKey: proposalPdfKey || undefined,
-					popupDays: popupDays.trim() || undefined,
-					popupPrice: popupPrice.trim() || undefined,
-					brandingDays: brandingDays.trim() || undefined,
-					brandingPrice: brandingPrice.trim() || undefined,
+					proposalPdfKey: proposalPdfKey === null ? "" : (proposalPdfKey || undefined),
+					popupDays: popupDays.trim(),
+					popupPrice: popupPrice.trim(),
+					brandingDays: brandingDays.trim(),
+					brandingPrice: brandingPrice.trim(),
 					categoryIds: Array.from(categoryIds),
 					activeLocations,
 					centreShowcaseImageKeys,
@@ -349,7 +349,7 @@ export function CreateSpaceCommunityProfileDrawer({
 					pastEvents: pastEventsPayload,
 					brandsWorkedWith: brandsWorkedWithPayload,
 				})
-				toast.success("Community space profile updated")
+				toast.success("Community hub profile updated")
 				onUpdated?.(profile)
 			} else {
 				const profile = await createSpaceCommunityProfile({
@@ -376,7 +376,7 @@ export function CreateSpaceCommunityProfileDrawer({
 					pastEvents: pastEventsPayload,
 					brandsWorkedWith: brandsWorkedWithPayload,
 				})
-				toast.success("Community space profile created and activated")
+				toast.success("Community hub profile created and activated")
 				onCreated(profile)
 			}
 			reset()
@@ -384,9 +384,9 @@ export function CreateSpaceCommunityProfileDrawer({
 			const axiosErr = err as { response?: { status?: number; data?: { message?: string } } }
 			const status = axiosErr?.response?.status
 			if (status === 403) {
-				setError(`You don't have permission to ${isEditing ? "edit" : "create"} community space profiles.`)
+				setError(`You don't have permission to ${isEditing ? "edit" : "create"} community hub profiles.`)
 			} else if (status === 409) {
-				setError("This space partner already has a community profile.")
+				setError("This space partner already has a community hub profile.")
 			} else {
 				setError(axiosErr?.response?.data?.message ?? "Something went wrong. Please try again.")
 			}
@@ -395,11 +395,11 @@ export function CreateSpaceCommunityProfileDrawer({
 		}
 	}
 
-	const title = isEditing ? "Edit Community Space Profile" : step === "select-partner" ? "Add Community Space Profile" : "Community Space Profile Details"
+	const title = isEditing ? "Edit Community Hub Profile" : step === "select-partner" ? "Add Community Hub Profile" : "Community Hub Profile Details"
 	const description = isEditing
 		? "Edit any field on this profile. Changes are saved immediately, regardless of approval status."
 		: step === "select-partner"
-			? "Pick a space partner who doesn't have a community profile yet."
+			? "Pick a space partner who doesn't have a community hub profile yet."
 			: `Creating for ${selectedPartner?.businessName}. Activated immediately — no review needed.`
 
 	return (
@@ -425,7 +425,7 @@ export function CreateSpaceCommunityProfileDrawer({
 						</div>
 					) : partners.length === 0 ? (
 						<p className="text-xs text-text-tertiary py-6 text-center">
-							No space partners without a community profile match your search.
+							No space partners without a community hub profile match your search.
 						</p>
 					) : (
 						<div className="rounded-xl border border-border-default divide-y divide-border-subtle overflow-hidden max-h-96 overflow-y-auto">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, Mail, Users, Calendar, AlertTriangle, ShieldAlert, Tag, MapPin, Link2, Globe, Building2, Video } from "lucide-react"
+import { Loader2, Mail, Users, Calendar, AlertTriangle, ShieldAlert, Tag, MapPin, Link2, Globe, Building2, Video, FileText } from "lucide-react"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ReasonDialog } from "@/components/events/event-review-drawer"
@@ -86,6 +86,10 @@ function ProposedChangesSection({ detail }: { detail: SpaceCommunityProfileDetai
 		{ key: "communitySize", label: "Community size" },
 		{ key: "experiencesPerYear", label: "Experiences/year" },
 		{ key: "videoLink", label: "Video link" },
+		{ key: "popupDays", label: "Pop-up days" },
+		{ key: "popupPrice", label: "Pop-up price" },
+		{ key: "brandingDays", label: "Branding days" },
+		{ key: "brandingPrice", label: "Branding price" },
 	]
 
 	const changedText = textFields.filter((f) => revision[f.key] !== undefined && revision[f.key] !== (detail as unknown as Record<string, unknown>)[f.key])
@@ -251,6 +255,49 @@ function SpaceCommunityProfileDetailContent({ detail }: { detail: SpaceCommunity
 					<div>
 						<SectionLabel>About</SectionLabel>
 						<p className="text-xs text-text-primary leading-relaxed whitespace-pre-wrap">{detail.about}</p>
+					</div>
+				</>
+			)}
+
+			{detail.proposalPdfUrl && (
+				<>
+					<div className="border-t border-border-subtle" />
+					<div>
+						<SectionLabel>Proposal Document</SectionLabel>
+						<a
+							href={detail.proposalPdfUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-50 border border-border-subtle text-xs font-semibold text-text-primary hover:bg-neutral-100 transition-colors"
+						>
+							<FileText size={14} className="text-text-secondary" />
+							View Proposal PDF
+						</a>
+					</div>
+				</>
+			)}
+
+			{(detail.popupDays || detail.popupPrice || detail.brandingDays || detail.brandingPrice) && (
+				<>
+					<div className="border-t border-border-subtle" />
+					<div>
+						<SectionLabel>Branding & Activation Offerings</SectionLabel>
+						<div className="grid grid-cols-2 gap-2.5">
+							{(detail.popupDays || detail.popupPrice) && (
+								<div className="rounded-lg bg-neutral-50 border border-border-subtle p-3 space-y-1">
+									<p className="text-[11px] font-semibold text-text-secondary">Pop-up Activation</p>
+									{detail.popupDays && <p className="text-xs text-text-primary"><span className="text-text-tertiary">Days:</span> {detail.popupDays}</p>}
+									{detail.popupPrice && <p className="text-xs font-semibold text-text-primary"><span className="text-text-tertiary font-normal">Price:</span> {detail.popupPrice}</p>}
+								</div>
+							)}
+							{(detail.brandingDays || detail.brandingPrice) && (
+								<div className="rounded-lg bg-neutral-50 border border-border-subtle p-3 space-y-1">
+									<p className="text-[11px] font-semibold text-text-secondary">Branding Slot</p>
+									{detail.brandingDays && <p className="text-xs text-text-primary"><span className="text-text-tertiary">Days:</span> {detail.brandingDays}</p>}
+									{detail.brandingPrice && <p className="text-xs font-semibold text-text-primary"><span className="text-text-tertiary font-normal">Price:</span> {detail.brandingPrice}</p>}
+								</div>
+							)}
+						</div>
 					</div>
 				</>
 			)}
