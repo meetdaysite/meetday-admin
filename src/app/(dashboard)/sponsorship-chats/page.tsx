@@ -269,8 +269,58 @@ function SponsorshipChatsContent() {
 
 	return (
 		<div className="flex-1 min-h-0 flex flex-col h-full md:p-6 md:space-y-4 md:max-w-7xl md:mx-auto w-full">
-			<div className="hidden md:flex items-center justify-between shrink-0">
-				<PageHeader title="Ongoing Chats" description="Active Community, Brand & Space Partner chat threads — monitor and participate as Meetday." />
+			{/* Top Header & Navigation Bar */}
+			<div className={cn("shrink-0 space-y-3", selectedId ? "hidden md:block" : "block")}>
+				<div className="hidden md:block [&_.mb-6]:mb-0">
+					<PageHeader
+						title="Ongoing Chats"
+						description="Active Community, Brand & Space Partner chat threads — monitor and participate as Meetday."
+					/>
+				</div>
+
+				{/* Navigation Bar under heading */}
+				<div className="flex items-center gap-1.5 p-1 bg-neutral-100 rounded-xl border border-black/15 shadow-2xs w-fit overflow-x-auto no-scrollbar">
+					{(
+						[
+							{ key: "SPONSORSHIP", label: "Sponsorship", unread: sponsorshipUnreadCount },
+							{ key: "CAMPAIGN", label: "Campaign", unread: campaignUnreadCount },
+							{ key: "SPACES", label: "Hubs", unread: spacesUnreadCount },
+							{ key: "COMMUNITIES", label: "Community", unread: communitiesUnreadCount },
+						] as const
+					).map((tab) => {
+						const isActive = activeTab === tab.key
+						return (
+							<button
+								key={tab.key}
+								type="button"
+								onClick={() => {
+									setActiveTab(tab.key)
+									setSelectedId(null)
+								}}
+								className={cn(
+									"px-3.5 py-1.5 text-xs font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none shrink-0",
+									isActive
+										? "bg-[#EE2C2C] text-white shadow-xs font-black"
+										: "text-black/70 hover:text-black hover:bg-neutral-200/70 font-bold",
+								)}
+							>
+								<span>{tab.label}</span>
+								{tab.unread > 0 && (
+									<span
+										className={cn(
+											"min-w-[15px] h-[15px] px-1 rounded-full text-[8px] font-black flex items-center justify-center border",
+											isActive
+												? "bg-[#FFC940] text-black border-black/20"
+												: "bg-[#EE2C2C] text-white border-transparent",
+										)}
+									>
+										{tab.unread > 9 ? "9+" : tab.unread}
+									</span>
+								)}
+							</button>
+						)
+					})}
+				</div>
 			</div>
 
 			<div className="flex-1 min-h-0 flex flex-col md:flex-row bg-white overflow-hidden md:border-[3px] md:border-black md:rounded-[24px] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:h-[calc(100vh-250px)] h-full">
@@ -285,46 +335,6 @@ function SponsorshipChatsContent() {
 						<span className="text-xs font-semibold text-black/50">
 							{activeTab === "SPACES" ? totalSpacesTabChats : filteredSponsorshipThreads.length} chats
 						</span>
-					</div>
-
-					{/* 3 Main Tabs: Sponsorship, Campaign, Spaces */}
-					<div className="flex border-b border-black/10 md:border-b-[3px] md:border-black shrink-0">
-						{(
-							[
-								{ key: "SPONSORSHIP", label: "Sponsorship", unread: sponsorshipUnreadCount },
-								{ key: "CAMPAIGN", label: "Campaign", unread: campaignUnreadCount },
-								{ key: "SPACES", label: "Hubs", unread: spacesUnreadCount },
-															{ key: "COMMUNITIES", label: "Community", unread: communitiesUnreadCount },
-							] as const
-						).map((tab) => {
-							const isActive = activeTab === tab.key
-							return (
-								<button
-									key={tab.key}
-									type="button"
-									onClick={() => {
-										setActiveTab(tab.key)
-										setSelectedId(null)
-									}}
-									className={cn(
-										"flex-1 py-2.5 sm:py-3 text-xs font-black uppercase tracking-wider transition-colors relative cursor-pointer flex items-center justify-center gap-1.5",
-										isActive ? "bg-[#EE2C2C] text-white" : "bg-white text-black/60 hover:bg-neutral-50",
-									)}
-								>
-									<span>{tab.label}</span>
-									{tab.unread > 0 && (
-										<span
-											className={cn(
-												"min-w-[16px] h-[16px] px-1 rounded-full text-[9px] font-black flex items-center justify-center border",
-												isActive ? "bg-white text-[#EE2C2C] border-transparent" : "bg-[#FFC940] text-black border-black/10",
-											)}
-										>
-											{tab.unread > 9 ? "9+" : tab.unread}
-										</span>
-									)}
-								</button>
-							)
-						})}
 					</div>
 
 					{activeTab === "SPONSORSHIP" && (
@@ -345,7 +355,7 @@ function SponsorshipChatsContent() {
 										}}
 										className={cn(
 											"flex-1 py-2 text-[11px] font-black uppercase tracking-wider transition-colors relative cursor-pointer flex items-center justify-center gap-1.5",
-											isSubActive ? "bg-[#FFC940] text-black shadow-xs" : "bg-neutral-100 text-black/50 hover:bg-neutral-200/60",
+											isSubActive ? "bg-[#FFC940] text-black shadow-xs font-black" : "bg-neutral-100 text-black/50 hover:bg-neutral-200/60 font-bold",
 										)}
 									>
 										<span>{sub.label}</span>
