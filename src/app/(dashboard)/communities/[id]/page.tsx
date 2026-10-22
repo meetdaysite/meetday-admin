@@ -611,6 +611,26 @@ export default function CommunityDetailPage() {
 									<dt className="text-text-tertiary">Created on</dt>
 									<dd className="text-text-primary font-medium">{createdDate}</dd>
 								</div>
+								{community.creator && (
+									<div className="flex flex-col gap-1 border-t border-border-subtle pt-2">
+										<dt className="text-text-tertiary">Created by (Rep)</dt>
+										<dd className="text-text-primary font-medium">
+											{community.creator.firstName} {community.creator.lastName}
+										</dd>
+										{community.creator.email && (
+											<dd className="text-[11px] text-text-tertiary break-all">
+												{community.creator.email}
+											</dd>
+										)}
+										{community.creator.phone && (
+											<dd className="text-[11px] text-text-brand font-medium">
+												<a href={`tel:${community.creator.phone}`} className="hover:underline">
+													{community.creator.phone}
+												</a>
+											</dd>
+										)}
+									</div>
+								)}
 								<div className="flex items-center justify-between gap-2">
 									<dt className="text-text-tertiary">Access</dt>
 									<dd className="text-text-primary font-medium">{accessLabel}</dd>
@@ -660,11 +680,20 @@ export default function CommunityDetailPage() {
 							<div className="flex flex-col gap-2">
 								{community.managers.map(mgr => (
 									<div key={mgr.id} className="flex items-center justify-between gap-2">
-										<div className="flex items-center gap-2">
+										<div className="flex items-center gap-2 min-w-0">
 											<div className="h-7 w-7 shrink-0 rounded-full bg-surface-brand-soft flex items-center justify-center text-[10px] font-semibold text-text-brand">
 												{mgr.initial}
 											</div>
-											<span className="text-xs text-text-primary">{mgr.name}</span>
+											<div className="min-w-0">
+												<span className="text-xs text-text-primary block font-medium truncate">{mgr.name}</span>
+												{(mgr.email || mgr.phone) && (
+													<span className="text-[10px] text-text-tertiary block truncate">
+														{mgr.email}
+														{mgr.email && mgr.phone && " · "}
+														{mgr.phone && <a href={`tel:${mgr.phone}`} className="text-text-brand hover:underline">{mgr.phone}</a>}
+													</span>
+												)}
+											</div>
 										</div>
 										<span
 											className={cn(

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, Mail, Users, Calendar, AlertTriangle, ShieldAlert, Tag, MapPin, Link2, Globe, CreditCard, Landmark } from "lucide-react"
+import { Loader2, Mail, Phone, Users, Calendar, AlertTriangle, ShieldAlert, Tag, MapPin, Link2, Globe, CreditCard, Landmark } from "lucide-react"
 import { toast } from "sonner"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -489,13 +489,28 @@ function CommunityProfileDetailContent({ detail }: { detail: CommunityProfileDet
 						label="Host"
 						value={
 							<span>
-								<span className="block">{detail.hostProfile.displayName ?? "—"}</span>
-								<span className="text-[11px] text-text-tertiary">
-									{detail.hostProfile.user.firstName} {detail.hostProfile.user.lastName} · {detail.hostProfile.user.email}
+								<span className="block font-medium">{detail.hostProfile.displayName ?? "—"}</span>
+								<span className="text-[11px] text-text-tertiary block">
+									{detail.hostProfile.user.firstName} {detail.hostProfile.user.lastName} · {detail.hostProfile.user.email ?? "No email"}
+									{detail.hostProfile.user.phone && ` · ${detail.hostProfile.user.phone}`}
 								</span>
 							</span>
 						}
 					/>
+					{detail.hostProfile.user.phone && (
+						<DetailRow
+							icon={Phone}
+							label="Contact Number"
+							value={
+								<a
+									href={`tel:${detail.hostProfile.user.phone}`}
+									className="text-text-brand hover:underline font-medium"
+								>
+									{detail.hostProfile.user.phone}
+								</a>
+							}
+						/>
+					)}
 					<DetailRow icon={Users} label="Community size" value={`${detail.size} members`} />
 					<DetailRow icon={Users} label="Avg. guest count" value={detail.avgGuestCount} />
 					<DetailRow icon={Calendar} label="Experiences/year" value={detail.experiencesPerYear} />

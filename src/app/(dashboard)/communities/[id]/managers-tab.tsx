@@ -164,7 +164,20 @@ export function ManagersTab({
 												{m.avatarInitial}
 											</div>
 										)}
-										<p className="text-xs font-semibold text-text-primary truncate">{m.name}</p>
+										<div className="min-w-0">
+											<p className="text-xs font-semibold text-text-primary truncate">{m.name}</p>
+											{(m.email || m.phone) && (
+												<p className="text-[11px] text-text-tertiary truncate">
+													{m.email}
+													{m.email && m.phone && " · "}
+													{m.phone && (
+														<a href={`tel:${m.phone}`} className="text-text-brand hover:underline font-medium">
+															{m.phone}
+														</a>
+													)}
+												</p>
+											)}
+										</div>
 									</div>
 									<span
 										className={cn(

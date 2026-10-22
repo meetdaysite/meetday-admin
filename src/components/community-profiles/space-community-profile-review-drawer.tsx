@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, Mail, Users, Calendar, AlertTriangle, ShieldAlert, Tag, MapPin, Link2, Globe, Building2, Video, FileText } from "lucide-react"
+import { Loader2, Mail, Phone, Users, Calendar, AlertTriangle, ShieldAlert, Tag, MapPin, Link2, Globe, Building2, Video, FileText } from "lucide-react"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ReasonDialog } from "@/components/events/event-review-drawer"
@@ -181,13 +181,28 @@ function SpaceCommunityProfileDetailContent({ detail }: { detail: SpaceCommunity
 						label="Space partner"
 						value={
 							<span>
-								<span className="block">{detail.spaceProfile.businessName}</span>
-								<span className="text-[11px] text-text-tertiary">
-									{detail.spaceProfile.user.firstName} {detail.spaceProfile.user.lastName} · {detail.spaceProfile.user.email}
+								<span className="block font-medium">{detail.spaceProfile.businessName}</span>
+								<span className="text-[11px] text-text-tertiary block">
+									{detail.spaceProfile.user.firstName} {detail.spaceProfile.user.lastName} · {detail.spaceProfile.user.email ?? "No email"}
+									{detail.spaceProfile.user.phone && ` · ${detail.spaceProfile.user.phone}`}
 								</span>
 							</span>
 						}
 					/>
+					{detail.spaceProfile.user.phone && (
+						<DetailRow
+							icon={Phone}
+							label="Contact Number"
+							value={
+								<a
+									href={`tel:${detail.spaceProfile.user.phone}`}
+									className="text-text-brand hover:underline font-medium"
+								>
+									{detail.spaceProfile.user.phone}
+								</a>
+							}
+						/>
+					)}
 					<DetailRow icon={Building2} label="Venues / event spaces" value={detail.numberOfVenues} />
 					<DetailRow icon={Users} label="Venue capacity" value={detail.venueCapacity} />
 					<DetailRow icon={Users} label="Community size" value={detail.communitySize} />

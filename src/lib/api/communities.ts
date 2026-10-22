@@ -202,6 +202,13 @@ export type ApiOverviewResponse = {
 		coverUrl: string | null
 		createdAt: string
 		url: string
+		creator?: {
+			id: string
+			firstName: string
+			lastName: string
+			email: string | null
+			phone: string | null
+		} | null
 	}
 	stats: {
 		totalMembers: OverviewStatField
@@ -224,6 +231,8 @@ export type ApiOverviewResponse = {
 		lastName: string
 		avatarUrl: string | null
 		role: string
+		email?: string | null
+		phone?: string | null
 	}[]
 	recentActivity: {
 		type: string
@@ -257,6 +266,8 @@ export type CommunityDetailManager = {
 	initial: string
 	avatarUrl: string | null
 	role: "Owner" | "Manager" | "Moderator"
+	email?: string | null
+	phone?: string | null
 }
 
 export type CommunityDetailExperience = {
@@ -298,6 +309,13 @@ export type CommunityDetailData = {
 	communityUrl: string
 	status: CommunityStatus
 	createdAt: string
+	creator?: {
+		id: string
+		firstName: string
+		lastName: string
+		email: string | null
+		phone: string | null
+	} | null
 	statCards: CommunityDetailStatCard[]
 	managers: CommunityDetailManager[]
 	upcomingExperiences: CommunityDetailExperience[]
@@ -397,6 +415,8 @@ export async function getCommunityById(id: string): Promise<CommunityDetailData>
 			initial: m.firstName[0].toUpperCase(),
 			avatarUrl: m.avatarUrl,
 			role: DISPLAY_ROLES[m.role],
+			email: m.email,
+			phone: m.phone,
 		}))
 
 	const upcomingExperiences: CommunityDetailExperience[] = o.upcomingExperiences.map(e => ({
@@ -1846,6 +1866,8 @@ export type ManagerTeamMember = {
 	avatarColor: string
 	avatarInitial: string
 	role: ManagerRoleType
+	email?: string | null
+	phone?: string | null
 }
 
 export type ManagersTabStats = {
@@ -1870,6 +1892,8 @@ type ApiManagerEntry = {
 	lastName: string
 	avatarUrl: string | null
 	role: string
+	email?: string | null
+	phone?: string | null
 }
 
 const MANAGER_ROLE_MAP: Record<string, ManagerRoleType> = {
@@ -1893,6 +1917,8 @@ export async function getCommunityManagers(communityId: string): Promise<Manager
 			avatarColor: AVATAR_COLORS[i % AVATAR_COLORS.length],
 			avatarInitial: m.firstName[0].toUpperCase(),
 			role,
+			email: m.email,
+			phone: m.phone,
 		}
 	})
 

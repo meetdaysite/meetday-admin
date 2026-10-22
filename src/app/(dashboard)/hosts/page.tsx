@@ -155,10 +155,11 @@ export default function HostsPage() {
 				header: "Host",
 				cell: ({ row }) => {
 					const h = row.original
+					const phonePart = h.user.phone ? ` · ${h.user.phone}` : ""
 					return (
 						<TwoLineCell
 							primary={h.displayName}
-							secondary={`${h.user.firstName} ${h.user.lastName} · ${h.user.email}`}
+							secondary={`${h.user.firstName} ${h.user.lastName} · ${h.user.email ?? "—"}${phonePart}`}
 						/>
 					)
 				},

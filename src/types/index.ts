@@ -159,6 +159,7 @@ export type Host = {
 		firstName: string
 		lastName: string
 		email: string | null
+		phone?: string | null
 	}
 	categories: HostCategory[]
 	createdAt?: string
@@ -498,7 +499,7 @@ export type CommunityProfile = {
 		kycStatus: KycStatus
 		panVerificationStatus: KycStatus
 		bankVerificationStatus: KycStatus
-		user: { id: string; firstName: string; lastName: string; email: string | null }
+		user: { id: string; firstName: string; lastName: string; email: string | null; phone?: string | null }
 	}
 }
 
@@ -561,7 +562,7 @@ export type EligibleHost = {
 	id: string
 	displayName: string | null
 	operatingCities: string[]
-	user: { id: string; firstName: string; lastName: string; email: string | null }
+	user: { id: string; firstName: string; lastName: string; email: string | null; phone?: string | null }
 }
 
 export type EligibleHostsListResponse = {
@@ -635,7 +636,7 @@ export type SpaceCommunityProfile = {
 		businessName: string
 		operatingCities: string[]
 		socialLinks: { instagram?: string; linkedin?: string; youtube?: string; website?: string } | null
-		user: { id: string; firstName: string; lastName: string; email: string | null }
+		user: { id: string; firstName: string; lastName: string; email: string | null; phone?: string | null }
 	}
 }
 
@@ -663,7 +664,7 @@ export type EligibleSpacePartner = {
 	id: string
 	businessName: string
 	operatingCities: string[]
-	user: { id: string; firstName: string; lastName: string; email: string | null }
+	user: { id: string; firstName: string; lastName: string; email: string | null; phone?: string | null }
 }
 
 export type EligibleSpacePartnersListResponse = {
