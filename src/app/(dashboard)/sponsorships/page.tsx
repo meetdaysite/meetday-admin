@@ -14,6 +14,7 @@ import {
 	getSponsorshipById,
 	getSponsorships,
 	rejectSponsorship,
+	setSponsorshipVisibility,
 	type GetSponsorshipsParams,
 } from "@/lib/api/sponsorships"
 import { formatDate, formatDateRange, getDaysSince } from "@/lib/formatters"
@@ -225,6 +226,31 @@ export default function SponsorshipsPage() {
 		}
 	}
 
+	async function handleToggleVisibility(proposalId: string, isHidden: boolean) {
+		try {
+			await setSponsorshipVisibility(proposalId, isHidden)
+			toast.success(isHidden ? "Proposal hidden from explore" : "Proposal unhidden")
+			fetchProposals()
+		} catch (err: unknown) {
+			const axiosErr = err as { response?: { status?: number; data?: { message?: string } } }
+			const status = axiosErr?.response?.status
+			if (status === 401) {
+				router.replace("/login")
+				throw err
+			}
+			if (status === 403) {
+				toast.error("Permission denied", {
+					description: "You don't have permission to update proposal visibility.",
+				})
+			} else {
+				toast.error("Failed to update visibility", {
+					description: axiosErr?.response?.data?.message ?? "Something went wrong. Please try again.",
+				})
+			}
+			throw err
+		}
+	}
+
 	const totalPages = Math.ceil(total / PAGE_LIMIT)
 
 	const columns = useMemo<ColumnDef<SponsorshipProposal>[]>(
@@ -276,8 +302,13 @@ export default function SponsorshipsPage() {
 				cell: ({ row }) => {
 					const isCompleted = row.original.status === "PUBLISHED" && isProposalCompleted(row.original)
 					return (
-						<div className="flex items-center gap-1.5">
+						<div className="flex items-center gap-1.5 flex-wrap">
 							<StatusCell status={isCompleted ? "COMPLETED" : row.original.status} />
+							{row.original.isHidden && (
+								<span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
+									Hidden
+								</span>
+							)}
 							{row.original.pendingRevision && (
 								<span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 border border-blue-200">
 									Edit pending
@@ -360,6 +391,7 @@ export default function SponsorshipsPage() {
 				proposal={selectedProposal}
 				onAction={handleAction}
 				onEdit={setEditingProposal}
+				onToggleVisibility={handleToggleVisibility}
 			/>
 
 			<CreateSponsorshipDrawer

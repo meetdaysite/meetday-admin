@@ -48,6 +48,8 @@ export type SponsorshipReviewDrawerProps = {
 	// Opens the full edit form for this proposal, pre-filled with every field — available
 	// regardless of status or who created it.
 	onEdit?: (detail: SponsorshipDetail) => void
+	// Toggles visibility from explore/browse — available regardless of status.
+	onToggleVisibility?: (proposalId: string, isHidden: boolean) => Promise<void>
 	// "revision" mode reviews the pendingRevision snapshot on an already-published proposal
 	// instead of the proposal's own UNDER_REVIEW status.
 	mode?: "proposal" | "revision"
@@ -192,6 +194,11 @@ function SponsorshipDetailContent({
 				{detail.pendingRevision && (
 					<span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1.5 text-[11px] font-semibold text-blue-700 border border-blue-200">
 						Edit pending review
+					</span>
+				)}
+				{detail.isHidden && (
+					<span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-700 border border-amber-200">
+						Hidden from explore
 					</span>
 				)}
 			</div>
@@ -381,13 +388,14 @@ function SponsorshipDetailContent({
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
-export function SponsorshipReviewDrawer({ open, onClose, proposal, onAction, onEdit, mode = "proposal" }: SponsorshipReviewDrawerProps) {
+export function SponsorshipReviewDrawer({ open, onClose, proposal, onAction, onEdit, onToggleVisibility, mode = "proposal" }: SponsorshipReviewDrawerProps) {
 	const router = useRouter()
 	const [detail, setDetail] = useState<SponsorshipDetail | null>(null)
 	const [fetchState, setFetchState] = useState<"loading" | "error" | "done">("loading")
 	const [errorMessage, setErrorMessage] = useState<string | null>(null)
 	const [actionLoading, setActionLoading] = useState<SponsorshipAction | null>(null)
 	const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
+	const [visibilityLoading, setVisibilityLoading] = useState(false)
 
 	useEffect(() => {
 		if (!open || !proposal) return
@@ -455,6 +463,17 @@ export function SponsorshipReviewDrawer({ open, onClose, proposal, onAction, onE
 		handleClose()
 	}
 
+	async function handleToggleVisibility() {
+		if (!detail || !onToggleVisibility) return
+		setVisibilityLoading(true)
+		try {
+			await onToggleVisibility(detail.id, !detail.isHidden)
+			setDetail({ ...detail, isHidden: !detail.isHidden })
+		} finally {
+			setVisibilityLoading(false)
+		}
+	}
+
 	const status = detail?.status ?? proposal?.status
 	const canReview = mode === "revision" ? !!detail?.pendingRevision : status === "UNDER_REVIEW"
 	const isBusy = actionLoading !== null
@@ -507,6 +526,16 @@ export function SponsorshipReviewDrawer({ open, onClose, proposal, onAction, onE
 							>
 								<Link2 size={13} />
 								Share
+							</button>
+						)}
+						{onToggleVisibility && detail && (
+							<button
+								onClick={handleToggleVisibility}
+								disabled={visibilityLoading || fetchState !== "done"}
+								className="flex items-center gap-1.5 rounded-lg border border-border-default px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-50 transition-colors disabled:opacity-50"
+							>
+								{visibilityLoading && <Loader2 size={12} className="animate-spin" />}
+								{detail.isHidden ? "Unhide from explore" : "Hide proposal"}
 							</button>
 						)}
 						{!canReview && (

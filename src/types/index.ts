@@ -383,6 +383,7 @@ export type SponsorshipProposal = {
 	createdAt: string
 	updatedAt: string
 	pendingRevision: Record<string, unknown> | null
+	isHidden?: boolean
 	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
 	hostProfile: EventHostProfile | null
 	spaceProfile?: SponsorshipSpaceProfile | null
@@ -421,6 +422,7 @@ export type SponsorshipDetail = {
 	sponsorTiers: SponsorTier[]
 	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
 	status: SponsorshipStatus
+	isHidden?: boolean
 	pendingRevision: (Record<string, unknown> & { imageUrl?: string | null; docUrl?: string | null }) | null
 	adminRejectionRemark: string | null
 	reviewedBy: string | null
@@ -481,6 +483,7 @@ export type CommunityProfile = {
 	size: string
 	avgGuestCount: string
 	experiencesPerYear: string
+	audienceAge?: string | null
 	approvalStatus: ApprovalStatus
 	adminRejectionRemark: string | null
 	reviewedAt: string | null
@@ -581,6 +584,7 @@ export type CreateCommunityProfilePayload = {
 	size: string
 	avgGuestCount: string
 	experiencesPerYear: string
+	audienceAge?: string | null
 	categoryIds: string[]
 	socialLinks?: { instagram?: string; linkedin?: string; youtube?: string; website?: string }
 	operatingCities?: string[]

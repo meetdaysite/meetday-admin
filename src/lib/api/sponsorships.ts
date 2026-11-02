@@ -74,6 +74,11 @@ export async function rejectSponsorshipRevision(id: string, remark: string): Pro
 	await apiClient.post(`/admin/sponsorships/${id}/revision/reject`, { remark })
 }
 
+export async function setSponsorshipVisibility(id: string, isHidden: boolean): Promise<SponsorshipDetail> {
+	const { data } = await apiClient.patch<SponsorshipDetail>(`/admin/sponsorships/${id}/visibility`, { isHidden })
+	return data
+}
+
 export async function getSponsorshipInterests(
 	params?: { page?: number; limit?: number },
 ): Promise<SponsorshipInterestsListResponse> {

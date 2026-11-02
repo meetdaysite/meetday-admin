@@ -10,6 +10,7 @@ import { getEligibleHosts, createCommunityProfile, updateCommunityProfile } from
 import { getCategories } from "@/lib/api/categories"
 import { uploadCommunityProfileLogo, uploadCommunityPastEventImage, uploadCommunityBrandLogo } from "@/lib/api/storage"
 import type { Category, CommunityProfileDetail, EligibleHost } from "@/types"
+import { AudienceAgeInput } from "./audience-age-input"
 
 // ─── Types ────────────────────────────────────────────
 
@@ -77,6 +78,7 @@ export function CreateCommunityProfileDrawer({
 	const [size, setSize] = useState("")
 	const [avgGuestCount, setAvgGuestCount] = useState("")
 	const [experiencesPerYear, setExperiencesPerYear] = useState("")
+	const [audienceAge, setAudienceAge] = useState("")
 	const [categories, setCategories] = useState<Category[]>([])
 	const [categoryIds, setCategoryIds] = useState<Set<string>>(new Set())
 	const [instagram, setInstagram] = useState("")
@@ -132,6 +134,7 @@ export function CreateCommunityProfileDrawer({
 		setSize(p.size)
 		setAvgGuestCount(p.avgGuestCount)
 		setExperiencesPerYear(p.experiencesPerYear)
+		setAudienceAge(p.audienceAge || "")
 		setCategoryIds(new Set(p.categories.map((c) => c.id)))
 		setInstagram(p.hostProfile.socialLinks?.instagram ?? "")
 		setLinkedin(p.hostProfile.socialLinks?.linkedin ?? "")
@@ -169,6 +172,7 @@ export function CreateCommunityProfileDrawer({
 		setSize("")
 		setAvgGuestCount("")
 		setExperiencesPerYear("")
+		setAudienceAge("")
 		setCategoryIds(new Set())
 		setInstagram("")
 		setLinkedin("")
@@ -335,6 +339,7 @@ export function CreateCommunityProfileDrawer({
 					size: size.trim(),
 					avgGuestCount: avgGuestCount.trim(),
 					experiencesPerYear: experiencesPerYear.trim(),
+					audienceAge: audienceAge.trim() || undefined,
 					categoryIds: Array.from(categoryIds),
 					socialLinks,
 					operatingCities,
@@ -353,6 +358,7 @@ export function CreateCommunityProfileDrawer({
 					size: size.trim(),
 					avgGuestCount: avgGuestCount.trim(),
 					experiencesPerYear: experiencesPerYear.trim(),
+					audienceAge: audienceAge.trim() || undefined,
 					categoryIds: Array.from(categoryIds),
 					socialLinks,
 					operatingCities,
@@ -696,6 +702,14 @@ export function CreateCommunityProfileDrawer({
 							/>
 						</div>
 					</div>
+
+					<AudienceAgeInput
+						value={audienceAge}
+						onChange={setAudienceAge}
+						disabled={isLoading}
+						labelClass={labelClass}
+						inputClass={inputClass}
+					/>
 
 					<div>
 						<label className={labelClass}>

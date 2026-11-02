@@ -98,6 +98,7 @@ function ProposedChangesSection({ detail }: { detail: CommunityProfileDetail }) 
 		{ key: "size", label: "Community size" },
 		{ key: "avgGuestCount", label: "Avg. guest count" },
 		{ key: "experiencesPerYear", label: "Experiences/year" },
+		{ key: "audienceAge", label: "Audience age" },
 	]
 
 	const changedText = textFields.filter((f) => revision[f.key] !== undefined && revision[f.key] !== (detail as any)[f.key])
@@ -514,6 +515,7 @@ function CommunityProfileDetailContent({ detail }: { detail: CommunityProfileDet
 					<DetailRow icon={Users} label="Community size" value={`${detail.size} members`} />
 					<DetailRow icon={Users} label="Avg. guest count" value={detail.avgGuestCount} />
 					<DetailRow icon={Calendar} label="Experiences/year" value={detail.experiencesPerYear} />
+					{detail.audienceAge && <DetailRow icon={Users} label="Audience age" value={detail.audienceAge} />}
 					{detail.categories.length > 0 && (
 						<DetailRow
 							icon={Tag}
