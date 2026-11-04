@@ -438,6 +438,8 @@ export type SponsorshipDetail = {
 
 export type CreateSponsorshipPayload = {
 	hostProfileId?: string
+	spaceProfileId?: string
+	brandProfileId?: string
 	name: string
 	about: string
 	imageKey: string

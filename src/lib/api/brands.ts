@@ -2,6 +2,7 @@ import { apiClient } from "./client"
 import type { ApprovalStatus, Brand, BrandProfileStatus, BrandsListResponse } from "@/types"
 
 export type GetBrandsParams = {
+	search?: string
 	profileStatus?: BrandProfileStatus
 	approvalStatus?: ApprovalStatus
 	page?: number

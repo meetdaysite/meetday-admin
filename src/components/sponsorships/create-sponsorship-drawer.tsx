@@ -1,12 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Loader2, Plus, X, FileText, Search } from "lucide-react"
+import { Loader2, Plus, X, FileText, Search, Users, Building, Briefcase } from "lucide-react"
 import { toast } from "sonner"
 import { Drawer, DrawerFooter } from "@/components/ui/drawer"
 import { ImageUploadZone } from "@/components/communities/create/ui/image-upload-zone"
 import { createSponsorship, updateSponsorship } from "@/lib/api/sponsorships"
 import { getHosts } from "@/lib/api/hosts"
+import { getSpacePartners } from "@/lib/api/space-profiles"
+import { getBrands } from "@/lib/api/brands"
 import { uploadSponsorshipDocument, uploadSponsorshipImage } from "@/lib/api/storage"
 import { VenueAutocompleteInput } from "@/components/sponsorships/venue-autocomplete-input"
 import { extractApiErrorMessage } from "@/lib/error-handler"
@@ -14,12 +16,13 @@ import type { SponsorshipDetail, SponsorTier } from "@/types"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-// Only the fields actually displayed/used here — matches both the full `Host` type
-// (from the host picker) and `SponsorshipDetail.hostProfile` (when editing an existing proposal).
-type HostRef = {
+type CreatorType = "COMMUNITY" | "HUB" | "BRAND"
+
+type EntityRef = {
 	id: string
-	displayName: string
-	user: { firstName: string; lastName: string; email: string | null }
+	type: CreatorType
+	name: string
+	subtitle?: string
 }
 
 type CreateSponsorshipDrawerProps = {
@@ -54,11 +57,14 @@ export function CreateSponsorshipDrawer({
 	onUpdated,
 }: CreateSponsorshipDrawerProps) {
 	const isEditing = !!editingProposal
-	const [selectedHost, setSelectedHost] = useState<HostRef | null>(null)
-	const [hostPickerOpen, setHostPickerOpen] = useState(false)
-	const [hostSearch, setHostSearch] = useState("")
-	const [hosts, setHosts] = useState<HostRef[]>([])
-	const [hostsLoading, setHostsLoading] = useState(false)
+
+	// Creator attribution
+	const [activeCreatorTab, setActiveCreatorTab] = useState<CreatorType>("COMMUNITY")
+	const [selectedEntity, setSelectedEntity] = useState<EntityRef | null>(null)
+	const [pickerOpen, setPickerOpen] = useState(false)
+	const [searchQuery, setSearchQuery] = useState("")
+	const [entities, setEntities] = useState<EntityRef[]>([])
+	const [entitiesLoading, setEntitiesLoading] = useState(false)
 
 	const [name, setName] = useState("")
 	const [about, setAbout] = useState("")
@@ -86,23 +92,92 @@ export function CreateSponsorshipDrawer({
 	const [isLoading, setIsLoading] = useState(false)
 	const [error, setError] = useState<string | null>(null)
 
+	// Fetch entities according to selected tab and search query
 	useEffect(() => {
-		if (!hostPickerOpen) return
-		setHostsLoading(true)
+		if (!pickerOpen) return
+		setEntitiesLoading(true)
+		const trimmed = searchQuery.trim() || undefined
+
 		const timeout = setTimeout(() => {
-			getHosts({ search: hostSearch.trim() || undefined, limit: 20 })
-				.then((r) => setHosts(r.hosts))
-				.catch(() => toast.error("Failed to load hosts"))
-				.finally(() => setHostsLoading(false))
+			if (activeCreatorTab === "COMMUNITY") {
+				getHosts({ search: trimmed, limit: 20 })
+					.then((r) => {
+						const list: EntityRef[] = r.hosts.map((h) => ({
+							id: h.id,
+							type: "COMMUNITY",
+							name: h.displayName || `${h.user.firstName} ${h.user.lastName}`,
+							subtitle: h.user.email ?? undefined,
+						}))
+						setEntities(list)
+					})
+					.catch(() => toast.error("Failed to load communities"))
+					.finally(() => setEntitiesLoading(false))
+			} else if (activeCreatorTab === "HUB") {
+				getSpacePartners(trimmed)
+					.then((spaces) => {
+						const list: EntityRef[] = spaces.map((s) => ({
+							id: s.id,
+							type: "HUB",
+							name: s.businessName,
+							subtitle: s.user ? `${s.user.firstName} ${s.user.lastName} · ${s.user.email}` : undefined,
+						}))
+						setEntities(list)
+					})
+					.catch(() => toast.error("Failed to load community hubs"))
+					.finally(() => setEntitiesLoading(false))
+			} else {
+				getBrands({ search: trimmed, limit: 20 })
+					.then((r) => {
+						const list: EntityRef[] = (r.brands || []).map((b) => ({
+							id: b.id,
+							type: "BRAND",
+							name: b.brandName,
+							subtitle: b.workEmail || (b.user ? `${b.user.firstName} ${b.user.lastName} · ${b.user.email}` : undefined),
+						}))
+						setEntities(list)
+					})
+					.catch(() => toast.error("Failed to load brands"))
+					.finally(() => setEntitiesLoading(false))
+			}
 		}, 300)
+
 		return () => clearTimeout(timeout)
-	}, [hostPickerOpen, hostSearch])
+	}, [pickerOpen, activeCreatorTab, searchQuery])
 
 	// Pre-fill every field from the proposal being edited.
 	useEffect(() => {
 		if (!open || !editingProposal) return
 		const p = editingProposal
-		setSelectedHost(p.hostProfile)
+
+		if (p.brandProfile) {
+			setSelectedEntity({
+				id: p.brandProfile.id,
+				type: "BRAND",
+				name: p.brandProfile.brandName,
+				subtitle: p.brandProfile.user?.email ?? undefined,
+			})
+			setActiveCreatorTab("BRAND")
+		} else if (p.spaceProfile) {
+			setSelectedEntity({
+				id: p.spaceProfile.id,
+				type: "HUB",
+				name: p.spaceProfile.businessName,
+				subtitle: p.spaceProfile.user?.email ?? undefined,
+			})
+			setActiveCreatorTab("HUB")
+		} else if (p.hostProfile) {
+			setSelectedEntity({
+				id: p.hostProfile.id,
+				type: "COMMUNITY",
+				name: p.hostProfile.displayName || `${p.hostProfile.user?.firstName} ${p.hostProfile.user?.lastName}`,
+				subtitle: p.hostProfile.user?.email ?? undefined,
+			})
+			setActiveCreatorTab("COMMUNITY")
+		} else {
+			setSelectedEntity(null)
+			setActiveCreatorTab("COMMUNITY")
+		}
+
 		setName(p.name ?? "")
 		setAbout(p.about ?? "")
 		setImageKey(p.imageKey)
@@ -123,10 +198,11 @@ export function CreateSponsorshipDrawer({
 	}, [open, editingProposal])
 
 	function reset() {
-		setSelectedHost(null)
-		setHostPickerOpen(false)
-		setHostSearch("")
-		setHosts([])
+		setSelectedEntity(null)
+		setPickerOpen(false)
+		setSearchQuery("")
+		setEntities([])
+		setActiveCreatorTab("COMMUNITY")
 		setName("")
 		setAbout("")
 		setImageKey(null)
@@ -220,7 +296,9 @@ export function CreateSponsorshipDrawer({
 		setIsLoading(true)
 		try {
 			const payload = {
-				...(selectedHost && { hostProfileId: selectedHost.id }),
+				...(selectedEntity?.type === "COMMUNITY" && { hostProfileId: selectedEntity.id }),
+				...(selectedEntity?.type === "HUB" && { spaceProfileId: selectedEntity.id }),
+				...(selectedEntity?.type === "BRAND" && { brandProfileId: selectedEntity.id }),
 				name: name.trim(),
 				about: about.trim(),
 				imageKey,
@@ -265,9 +343,9 @@ export function CreateSponsorshipDrawer({
 
 	const description = isEditing
 		? "Edit any field on this proposal. Changes are saved immediately, regardless of status."
-		: selectedHost
-			? `Published immediately under ${selectedHost.displayName || `${selectedHost.user.firstName} ${selectedHost.user.lastName}`} — no KYC or review required.`
-			: "Published immediately under the Meetday Official host — no KYC or review required."
+		: selectedEntity
+			? `Published immediately under ${selectedEntity.name} (${selectedEntity.type === "COMMUNITY" ? "Community" : selectedEntity.type === "HUB" ? "Hub" : "Brand"}) — no KYC or review required.`
+			: "Published immediately under Meetday Official (Community) — no KYC or review required."
 
 	return (
 		<Drawer
@@ -280,17 +358,20 @@ export function CreateSponsorshipDrawer({
 			<form onSubmit={handleSubmit} className="space-y-5">
 				<div>
 					<label className={labelClass}>Publish under</label>
-					{selectedHost ? (
-						<div className="flex items-center justify-between gap-2 rounded-lg border border-border-default px-3 py-2 text-xs">
-							<span className="truncate">
-								<span className="font-semibold">
-									{selectedHost.displayName || `${selectedHost.user.firstName} ${selectedHost.user.lastName}`}
+					{selectedEntity ? (
+						<div className="flex items-center justify-between gap-2 rounded-lg border border-border-default px-3 py-2 text-xs bg-surface-canvas">
+							<div className="flex items-center gap-2 min-w-0">
+								<span className="shrink-0 rounded bg-neutral-100 border border-neutral-200 px-1.5 py-0.5 text-[10px] font-bold text-neutral-800">
+									{selectedEntity.type === "COMMUNITY" ? "Community" : selectedEntity.type === "HUB" ? "Hub" : "Brand"}
 								</span>
-								{selectedHost.user.email && <span className="text-text-tertiary"> · {selectedHost.user.email}</span>}
-							</span>
+								<span className="truncate">
+									<span className="font-semibold text-text-primary">{selectedEntity.name}</span>
+									{selectedEntity.subtitle && <span className="text-text-tertiary"> · {selectedEntity.subtitle}</span>}
+								</span>
+							</div>
 							<button
 								type="button"
-								onClick={() => setSelectedHost(null)}
+								onClick={() => setSelectedEntity(null)}
 								disabled={isLoading}
 								className="shrink-0 text-xs font-semibold text-text-brand hover:underline disabled:opacity-50"
 							>
@@ -301,46 +382,108 @@ export function CreateSponsorshipDrawer({
 						<div className="space-y-2">
 							<button
 								type="button"
-								onClick={() => setHostPickerOpen((v) => !v)}
+								onClick={() => setPickerOpen((v) => !v)}
 								disabled={isLoading}
 								className="flex w-full items-center justify-between rounded-lg border border-dashed border-border-default px-3 py-2 text-xs text-text-tertiary hover:bg-neutral-50 disabled:opacity-50"
 							>
-								Meetday Official (default) — click to attribute to a specific host instead
+								Meetday Official (default) — click to attribute to a Community, Hub, or Brand
 							</button>
-							{hostPickerOpen && (
-								<div className="rounded-lg border border-border-default overflow-hidden">
+							{pickerOpen && (
+								<div className="rounded-lg border border-border-default overflow-hidden bg-surface-canvas">
+									{/* Entity Type Selector Tabs */}
+									<div className="flex border-b border-border-subtle bg-neutral-50/70 p-1 gap-1">
+										<button
+											type="button"
+											onClick={() => {
+												setActiveCreatorTab("COMMUNITY")
+												setSearchQuery("")
+											}}
+											className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-xs font-semibold transition-colors ${
+												activeCreatorTab === "COMMUNITY"
+													? "bg-white text-text-primary shadow-sm border border-border-subtle"
+													: "text-text-secondary hover:text-text-primary"
+											}`}
+										>
+											<Users size={12} />
+											Communities
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setActiveCreatorTab("HUB")
+												setSearchQuery("")
+											}}
+											className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-xs font-semibold transition-colors ${
+												activeCreatorTab === "HUB"
+													? "bg-white text-text-primary shadow-sm border border-border-subtle"
+													: "text-text-secondary hover:text-text-primary"
+											}`}
+										>
+											<Building size={12} />
+											Community Hubs
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setActiveCreatorTab("BRAND")
+												setSearchQuery("")
+											}}
+											className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-xs font-semibold transition-colors ${
+												activeCreatorTab === "BRAND"
+													? "bg-white text-text-primary shadow-sm border border-border-subtle"
+													: "text-text-secondary hover:text-text-primary"
+											}`}
+										>
+											<Briefcase size={12} />
+											Brands
+										</button>
+									</div>
+
+									{/* Search Input for chosen category */}
 									<div className="relative border-b border-border-subtle">
 										<Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
 										<input
 											type="text"
-											value={hostSearch}
-											onChange={(e) => setHostSearch(e.target.value)}
-											placeholder="Search hosts by name or email…"
+											value={searchQuery}
+											onChange={(e) => setSearchQuery(e.target.value)}
+											placeholder={
+												activeCreatorTab === "COMMUNITY"
+													? "Search communities by name or email…"
+													: activeCreatorTab === "HUB"
+														? "Search community hubs by business name or email…"
+														: "Search brands by brand name or email…"
+											}
 											className={`${inputClass} border-0 rounded-none pl-8`}
 										/>
 									</div>
+
+									{/* Entity list */}
 									<div className="max-h-48 overflow-y-auto divide-y divide-border-subtle">
-										{hostsLoading ? (
+										{entitiesLoading ? (
 											<p className="px-3 py-3 text-xs text-text-tertiary text-center">Loading…</p>
-										) : hosts.length === 0 ? (
-											<p className="px-3 py-3 text-xs text-text-tertiary text-center">No hosts found.</p>
+										) : entities.length === 0 ? (
+											<p className="px-3 py-3 text-xs text-text-tertiary text-center">
+												No {activeCreatorTab === "COMMUNITY" ? "communities" : activeCreatorTab === "HUB" ? "community hubs" : "brands"} found.
+											</p>
 										) : (
-											hosts.map((h) => (
+											entities.map((item) => (
 												<button
-													key={h.id}
+													key={item.id}
 													type="button"
 													onClick={() => {
-														setSelectedHost(h)
-														setHostPickerOpen(false)
+														setSelectedEntity(item)
+														setPickerOpen(false)
 													}}
 													className="w-full flex flex-col gap-0.5 px-3 py-2 text-left hover:bg-neutral-50 transition-colors"
 												>
 													<span className="text-xs font-semibold text-text-primary">
-														{h.displayName || `${h.user.firstName} ${h.user.lastName}`}
+														{item.name}
 													</span>
-													<span className="text-[11px] text-text-tertiary">
-														{h.user.email ?? "—"}
-													</span>
+													{item.subtitle && (
+														<span className="text-[11px] text-text-tertiary truncate">
+															{item.subtitle}
+														</span>
+													)}
 												</button>
 											))
 										)}
